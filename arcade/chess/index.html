@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>8-BIT GAMBIT</title>
+<link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABMElEQVR4AcyVTQ4BQRBGi72EEGtWDmDpAuydwAWcxQWcwJ4LWDqAFWshJA5AXuJLpJOKv5YuyUubmu5W35sxU7XCn/gNNOud2zO5hcU1oNS77crgeN4ZqK7xVyPxDCgZqUEJr4etATXABmi+5n06xjGgJKSDV0mwAVgArdf4ar3OxzGgjjTW2j0DHXsjFgBrgA1410R5A+qU7oHUQCrwknt11sBiPjXQ/t788ga8zrq9oYF3Plc9jgGuO7QaXYPTZV8BLMC7iTfrpcF4MjNgD/DWlzdAd1B5fPgOXse56+UNeIn0/+XZAN68X+txDXybrD8YGfAUBJn09otnQB1z3cHrPFc9noFcybgPgPsAZDbdP44Bdch1h7TTfx3HMaCEvPlywhsRtH86/t1A+oPp8R0AAP//YN2WeAAAAAZJREFUAwCt4sb183LYIwAAAABJRU5ErkJggg==">
+<link rel="stylesheet" href="css/font.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ======== TITLE ======== -->
+  <section id="screen-title" class="screen active">
+    <div class="title-avatars">
+      <canvas id="title-canvas-1" width="64" height="64"></canvas>
+      <h1 class="logo">8-BIT<br>GAMBIT</h1>
+      <canvas id="title-canvas-2" width="64" height="64"></canvas>
+    </div>
+    <p class="tagline">A CHESS ARCADE OF QUESTIONABLE RIVALS</p>
+    <p class="blink big">&mdash; CLICK OR PRESS ENTER &mdash;</p>
+    <p id="title-stats" class="small"></p>
+    <button id="btn-reset" class="tiny-link hidden">RESET PROGRESS</button>
+  </section>
+
+  <!-- ======== PROFILE ======== -->
+  <section id="screen-profile" class="screen">
+    <h2>NEW CHALLENGER REGISTRATION</h2>
+    <label class="small" for="initials">ENTER INITIALS</label>
+    <input id="initials" maxlength="3" value="AAA" autocomplete="off" spellcheck="false">
+    <label class="small">CHOOSE YOUR FIGHTER</label>
+    <div id="avatar-pick"></div>
+    <button id="btn-profile-done" class="big-btn">START</button>
+  </section>
+
+  <!-- ======== VS ======== -->
+  <section id="screen-vs" class="screen">
+    <div id="vs-banner" class="hidden">&#9733; A NEW CHALLENGER APPROACHES! &#9733;</div>
+    <div class="vs-row">
+      <div class="vs-card">
+        <canvas id="vs-player" width="96" height="96"></canvas>
+        <div id="vs-player-name" class="vs-name"></div>
+        <div id="vs-player-rank" class="vs-sub"></div>
+      </div>
+      <div class="vs-mark">VS</div>
+      <div class="vs-card">
+        <canvas id="vs-rival" width="96" height="96"></canvas>
+        <div id="vs-rival-name" class="vs-name"></div>
+        <div id="vs-rival-title" class="vs-sub"></div>
+      </div>
+    </div>
+    <p id="vs-bio" class="small"></p>
+    <p id="vs-taunt" class="taunt"></p>
+    <button id="btn-fight" class="big-btn">FIGHT!</button>
+  </section>
+
+  <!-- ======== GAME ======== -->
+  <section id="screen-game" class="screen">
+    <div class="game-layout">
+      <div class="side-card" id="card-player">
+        <canvas class="hud-avatar" id="hud-player" width="64" height="64"></canvas>
+        <div class="hud-name" id="hud-player-name"></div>
+        <div class="hud-sub" id="hud-player-rank"></div>
+        <div class="tray-label">CAPTURED:</div>
+        <canvas class="captures" id="cap-player"></canvas>
+      </div>
+
+      <div class="board-col">
+        <canvas id="board"></canvas>
+        <div id="dialogue">
+          <span id="dialogue-name"></span>
+          <span id="dialogue-text"></span>
+        </div>
+      </div>
+
+      <div class="side-card" id="card-rival">
+        <canvas class="hud-avatar" id="hud-rival" width="64" height="64"></canvas>
+        <div class="hud-name" id="hud-rival-name"></div>
+        <div class="hud-sub" id="hud-rival-title"></div>
+        <div class="tray-label">CAPTURED:</div>
+        <canvas class="captures" id="cap-rival"></canvas>
+        <div class="btn-stack">
+          <button id="btn-undo">UNDO</button>
+          <button id="btn-resign">RESIGN</button>
+          <button id="btn-mute">SOUND: ON</button>
+          <button id="btn-menu">MENU</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ======== GAME OVER OVERLAY ======== -->
+<div id="overlay-over" class="overlay hidden">
+  <div class="over-box">
+    <div id="over-banner">YOU WIN!</div>
+    <div id="over-taunt" class="taunt"></div>
+    <div id="over-rating" class="over-line"></div>
+    <div id="over-rank" class="over-line"></div>
+    <button id="btn-continue" class="big-btn">CONTINUE</button>
+  </div>
+</div>
+
+<!-- ======== PROMOTION OVERLAY ======== -->
+<div id="overlay-promote" class="overlay hidden">
+  <div class="promo-box">
+    <div class="small">PROMOTE TO:</div>
+    <div id="promo-choices"></div>
+  </div>
+</div>
+
+<div id="crt"></div>
+
+<script src="vendor/chess.js"></script>
+<script src="js/palette.js"></script>
+<script src="js/sprites.js"></script>
+<script src="js/avatars.js"></script>
+<script src="js/sound.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/roster.js"></script>
+<script src="js/engine/eval.js"></script>
+<script src="js/engine/search.js"></script>
+<script src="js/engine/ai.js"></script>
+<script src="js/adaptive.js"></script>
+<script src="js/board.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/game.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
