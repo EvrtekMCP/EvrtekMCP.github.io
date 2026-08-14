@@ -265,12 +265,40 @@ button {
   border: 2px solid var(--dark);
 }
 
+/* right column: rival card + controls panel stacked */
+.side-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 168px;
+  margin-top: 26px;
+}
+.side-col .side-card {
+  width: 100%;
+  margin-top: 0;
+}
+
+/* controls: a machine panel, visually distinct from player cards */
+.controls-card {
+  background: var(--deep);
+  border: 3px solid var(--cyan);
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.55);
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.controls-label {
+  color: var(--cyan);
+  font-size: 6px;
+  align-self: flex-start;
+}
+
 .btn-stack {
   display: flex;
   flex-direction: column;
   gap: 8px;
   width: 100%;
-  margin-top: 10px;
 }
 .btn-stack button { font-size: 8px; padding: 8px 4px; }
 
@@ -330,5 +358,17 @@ button {
 @media (max-width: 1020px) {
   .game-layout { flex-wrap: wrap; }
   .side-card { width: 44vw; margin-top: 0; }
+  .side-col { width: 44vw; margin-top: 0; }
+  .side-col .side-card { width: 100%; }
   .board-col { order: -1; width: 100%; align-items: center; }
+}
+
+/* VS screen stacks on narrow viewports so both fighters stay on-screen */
+@media (max-width: 560px) {
+  .vs-row {
+    flex-direction: column;
+    gap: 14px;
+  }
+  .vs-mark { font-size: 26px; }
+  .vs-card { min-width: 200px; padding: 14px 20px; }
 }
