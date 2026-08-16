@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BEAT MACHINE</title>
+<meta name="description" content="A 90s-flavored browser beat machine. Two tracks, sixteen steps, zero samples — every sound synthesized live.">
+<link rel="icon" href="beat-machine-favicon.svg" type="image/svg+xml">
+<link rel="icon" href="beat-machine-favicon.ico" type="image/x-icon" sizes="32x32">
+<link rel="apple-touch-icon" href="beat-machine-touch-icon.png">
+<meta property="og:title" content="Beat Machine — Reimertek Arcade">
+<meta property="og:description" content="A sixteen-step groove box with two choirs of synthesized 808-style voices. Sequence a beat, export the .wav — zero samples were used; none exist.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://reimertek.com/arcade/beat-machine/og-beat-machine.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="machine" data-choir="0">
+  <header id="top">
+    <div class="disc-wrap">
+      <button class="track-disc" id="track0" type="button" title="Conduct TRACK 1" aria-label="Conduct TRACK 1">
+        <span class="rec-label"><span class="tlabel">TRACK 1</span></span>
+      </button>
+      <button class="led" id="led0" type="button" title="Mute/unmute TRACK 1" aria-label="Mute TRACK 1"></button>
+    </div>
+    <div id="viz-panel">
+      <canvas id="viz"></canvas>
+      <div id="viz-buttons"></div>
+    </div>
+    <div class="disc-wrap">
+      <button class="track-disc" id="track1" type="button" title="Conduct TRACK 2" aria-label="Conduct TRACK 2">
+        <span class="rec-label"><span class="tlabel">TRACK 2</span></span>
+      </button>
+      <button class="led" id="led1" type="button" title="Mute/unmute TRACK 2" aria-label="Mute TRACK 2"></button>
+    </div>
+  </header>
+
+  <main id="mid">
+    <aside id="instruments" class="panel">
+      <h2>INSTRUMENTS</h2>
+      <div id="inst-rows"></div>
+    </aside>
+    <section id="seq">
+      <div id="lights"></div>
+      <div id="gridrows"></div>
+    </section>
+    <aside id="morphs" class="panel">
+      <h2>MORPHS</h2>
+      <div id="morph-rows"></div>
+    </aside>
+  </main>
+
+  <footer id="tools">
+    <div class="tool">
+      <h3>BPM</h3>
+      <div class="lcd" id="bpm-lcd">120</div>
+      <input id="bpm-slider" type="range" min="40" max="208" value="120">
+    </div>
+    <div class="tool">
+      <h3>TRANSPORT</h3>
+      <button id="play" class="big-btn" type="button">&#9654; PLAY</button>
+    </div>
+    <div class="tool">
+      <h3>SWING</h3>
+      <div class="lcd" id="swing-lcd">0%</div>
+      <input id="swing-slider" type="range" min="0" max="100" value="0">
+    </div>
+    <div class="tool">
+      <h3>MASTER</h3>
+      <div class="lcd" id="master-lcd">85</div>
+      <input id="master-slider" type="range" min="0" max="100" value="85">
+    </div>
+    <div class="tool">
+      <h3>PATTERN</h3>
+      <button id="clear" class="big-btn" type="button">CLEAR</button>
+    </div>
+    <div class="tool">
+      <h3>FILE</h3>
+      <button id="save-btn" class="file-btn" type="button" title="Download your work as a .beat.json working file">SAVE</button>
+      <button id="load-btn" class="file-btn" type="button" title="Open a saved .beat.json working file">LOAD</button>
+      <button id="wav-btn" class="file-btn" type="button" title="Export the groove as a .wav (2 loops + tail)">.WAV</button>
+      <input id="load-input" type="file" accept=".json,application/json" hidden>
+    </div>
+  </footer>
+
+  <button id="badge" type="button" title="Change skin">BEAT MACHINE &middot; synthesized 808-style &middot; EVRTEK</button>
+</div>
+
+<div id="tone-overlay">
+  <div id="tone-window">
+    <div id="tone-titlebar">
+      <span id="tone-title">TONE SELECTOR</span>
+      <button id="tone-close" type="button" title="Close">&#10005;</button>
+    </div>
+    <div id="tone-strip"></div>
+    <canvas id="tone-canvas"></canvas>
+    <div id="tone-caption">CLICK to add a tone &middot; DRAG to bend it &middot; DOUBLE-CLICK to remove &middot; stack up to 4 for chords</div>
+    <div id="tone-harmony">
+      <button id="harm-btn" type="button">+ HARMONY</button>
+      <div id="harm-chooser"></div>
+      <span id="tone-legend"><i class="dot-user"></i> your tones <i class="dot-harm"></i> harmony</span>
+    </div>
+  </div>
+</div>
+
+<div id="power-overlay">
+  <div id="power-logo">BEAT<br>MACHINE</div>
+  <button id="power" type="button">&#9211; POWER ON</button>
+  <div id="power-sub">TWO TRACKS &middot; SIXTEEN STEPS &middot; ZERO SAMPLES</div>
+</div>
+
+<script src="js/state.js"></script>
+<script src="js/kit.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/grid.js"></script>
+<script src="js/tonepicker.js"></script>
+<script src="js/viz.js"></script>
+<script src="js/fileio.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

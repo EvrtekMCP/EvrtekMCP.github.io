@@ -1,0 +1,508 @@
+/* BEAT MACHINE — style.css
+   Total 90s, three wardrobes: GRID EDITION (default) / STUDIO PUTTY /
+   MIDNIGHT CLUB. Skins per Yori's art direction (ART-DIRECTION-CLU.md),
+   approved by Evrtek. All tokens on body[data-skin]; conducted-track accent
+   on body[data-choir]. Invariants: two-accent re-tint, LCDs recolor as a set
+   (never follow track accent), vinyl stays vinyl, bevel light top-left.
+   No external fonts, no external anything. */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root, body[data-skin="grid"] {
+  /* ---- structure (skin-independent) ---- */
+  --row-h: 36px;        /* C2: one row height across instruments/grid/morphs */
+  --row-gap: 3px;
+  --reg-head: 32px;     /* C2: one header height above all three row systems */
+  /* ---- GRID EDITION (default skin — the house colors) ---- */
+  --steel: #1E1B38;
+  --steel-hi: #34305C;
+  --steel-lo: #0D0B1E;
+  --panel: #17142E;
+  --text: #D8D6F0;
+  --text-dim: #8A92BC;
+  --lcd-bg: #061018;
+  --lcd-green: #53E6FF;               /* the LCD set color (name is historic) */
+  --lcd-glow: rgba(83, 230, 255, 0.75);
+  --harm: #B18AFF;
+  --acc0: #53E6FF;  --acc0-soft: rgba(83, 230, 255, 0.3);
+  --acc1: #FFCC33;  --acc1-soft: rgba(255, 204, 51, 0.3);
+  --viz-a: #0F5468; --viz-b: #53E6FF; --viz-cap: #FFCC33;
+  --viz-fade: #04080D;
+  --cell: #14112A; --cell-b: #181530; --cell-hover: #221E42;
+  --stage: #0B0A18;
+  --glow-cell: 9px;
+}
+
+body[data-skin="putty"] {
+  --steel: #D4CFC3;
+  --steel-hi: #F0ECE2;
+  --steel-lo: #8A8577;
+  --panel: #C2BCAE;
+  --text: #3A372F;
+  --text-dim: #6E695C;
+  --lcd-bg: #9AB07C;                  /* inverted calculator LCD */
+  --lcd-green: #1D2416;
+  --lcd-glow: rgba(0, 0, 0, 0);       /* backlit paper doesn't glow */
+  --harm: #7A4FBF;
+  --acc0: #FF5A33;  --acc0-soft: rgba(255, 90, 51, 0.35);
+  --acc1: #2F7DD0;  --acc1-soft: rgba(47, 125, 208, 0.35);
+  /* accents darken to silkscreen ink for text/focus on putty's light faces */
+  --acc0-ink: #C2401F;
+  --acc1-ink: #1F5590;
+  --viz-a: #B33A1E; --viz-b: #FF5A33; --viz-cap: #2F7DD0;
+  --viz-fade: #0C0908;
+  --cell: #ABA595; --cell-b: #B3AC9C; --cell-hover: #C0B9A8;
+  --stage: #55524A;
+  --glow-cell: 7px;
+}
+
+body[data-skin="club"] {
+  --steel: #16171B;
+  --steel-hi: #2A2C33;
+  --steel-lo: #050507;
+  --panel: #0D0E11;
+  --text: #9AA3AD;
+  --text-dim: #5A6068;
+  --lcd-bg: #140505;                  /* VFD red-orange set */
+  --lcd-green: #FF6B4A;
+  --lcd-glow: rgba(255, 107, 74, 0.8);
+  --harm: #50DCFF;
+  --acc0: #FF3355;  --acc0-soft: rgba(255, 51, 85, 0.35);
+  --acc1: #E8EAF6;  --acc1-soft: rgba(232, 234, 246, 0.3);
+  --viz-a: #7A1428; --viz-b: #FF3355; --viz-cap: #E8EAF6;
+  --viz-fade: #070203;
+  --cell: #0A0B0E; --cell-b: #0E0F13; --cell-hover: #1A1C22;
+  --stage: #060608;
+  --glow-cell: 16px;                  /* the point of this skin */
+}
+
+/* conducted-track accent — the machine's visual signature, every skin.
+   --accent paints surfaces; --accent-ink carries text and focus rings
+   (identical to --accent except on putty, where ink darkens for contrast). */
+:root { --acc0-ink: var(--acc0); --acc1-ink: var(--acc1); }
+body, body[data-choir="0"] {
+  --accent: var(--acc0); --accent-soft: var(--acc0-soft);
+  --accent-ink: var(--acc0-ink);
+}
+body[data-choir="1"] {
+  --accent: var(--acc1); --accent-soft: var(--acc1-soft);
+  --accent-ink: var(--acc1-ink);
+}
+
+html, body { height: 100%; }
+body {
+  /* C1: centered stage, spotlight + vignette — the machine sits in a room */
+  background-color: var(--stage);
+  background-image:
+    radial-gradient(ellipse 60% 50% at 50% 42%, rgba(255, 255, 255, 0.05), transparent 70%),
+    radial-gradient(ellipse 120% 100% at 50% 50%, transparent 60%, rgba(0, 0, 0, 0.5) 100%);
+  font-family: Tahoma, Verdana, "Segoe UI", sans-serif;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  min-width: 1060px;
+}
+body[data-skin="grid"] {
+  /* ordered S1 stage: house weave + faint gridlines (+ spotlight/vignette) */
+  background-image:
+    radial-gradient(ellipse 60% 50% at 50% 42%, rgba(140, 160, 255, 0.06), transparent 70%),
+    radial-gradient(ellipse 120% 100% at 50% 50%, transparent 60%, rgba(0, 0, 0, 0.55) 100%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.012) 0 2px, transparent 2px 6px),
+    linear-gradient(rgba(83, 230, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(83, 230, 255, 0.025) 1px, transparent 1px);
+  background-size: auto, auto, auto, 48px 48px, 48px 48px;
+}
+
+button { font-family: inherit; cursor: pointer; }
+h2, h3 {
+  font-size: 10px; letter-spacing: 2px; color: var(--text-dim);
+  font-weight: bold; text-transform: uppercase;
+}
+
+/* C9: visible focus everywhere, keyboard is a first-class citizen */
+:focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 2px;
+}
+
+/* ---- bevel helpers (light always top-left — skin invariant) ---- */
+.panel {
+  background: var(--panel);
+  border: 2px solid;
+  border-color: var(--steel-lo) var(--steel-hi) var(--steel-hi) var(--steel-lo);
+  border-radius: 6px;
+}
+.bevel-btn, .big-btn, .viz-btn, .morph-btn, .strip-cell, #power, #tone-close,
+#harm-btn, .harm-type, .file-btn {
+  background: linear-gradient(var(--steel-hi), var(--panel));
+  border: 2px solid;
+  border-color: var(--steel-hi) var(--steel-lo) var(--steel-lo) var(--steel-hi);
+  border-radius: 4px;
+  color: var(--text);
+  font-weight: bold;
+}
+.big-btn:active, .viz-btn:active, .morph-btn:active:not(:disabled),
+.strip-cell:active, #power:active, #harm-btn:active, .harm-type:active,
+.file-btn:active:not(:disabled) {
+  background: linear-gradient(var(--panel), var(--steel-hi));
+  border-color: var(--steel-lo) var(--steel-hi) var(--steel-hi) var(--steel-lo);
+}
+
+/* ================= machine chassis ================= */
+#machine {
+  width: 1024px;
+  background: var(--steel);
+  border: 3px solid;
+  border-color: var(--steel-hi) var(--steel-lo) var(--steel-lo) var(--steel-hi);
+  border-radius: 12px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  padding: 14px 16px 10px;
+  user-select: none;
+}
+
+/* ---- header: records + visualizer ---- */
+#top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+
+/* choir selectors: old-school 45 rpm records (Evrtek), C8 mute commits,
+   C9 real buttons */
+.disc-wrap { position: relative; width: 118px; height: 118px; flex: none; }
+.track-disc {
+  width: 118px; height: 118px; display: block; padding: 0;
+  border: none;
+  border-radius: 50%;
+  position: relative;
+  cursor: pointer;
+  background:
+    repeating-radial-gradient(circle at 50% 50%,
+      #0d0d10 0px, #17171b 1.6px, #0b0b0e 3.2px),
+    radial-gradient(circle at 50% 50%, #101014, #060608 85%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6), inset 0 0 6px rgba(0, 0, 0, 0.9);
+  transition: opacity 0.25s;
+}
+.track-disc::before {
+  /* light streak across the grooves — the part that spins */
+  content: '';
+  position: absolute; inset: 3px;
+  border-radius: 50%;
+  background: conic-gradient(from 205deg,
+    transparent 0deg 30deg, rgba(255, 255, 255, 0.09) 48deg,
+    transparent 66deg 200deg, rgba(255, 255, 255, 0.06) 218deg,
+    transparent 236deg 360deg);
+  pointer-events: none;
+}
+.track-disc.spinning::before { animation: disc-spin 1.6s linear infinite; }
+@keyframes disc-spin { to { transform: rotate(360deg); } }
+.track-disc.active {
+  box-shadow: 0 0 0 3px var(--accent), 0 0 20px var(--accent-soft),
+              0 4px 12px rgba(0, 0, 0, 0.6);
+}
+.track-disc.muted { opacity: 0.6; }      /* C8: mute reads across the room */
+.rec-label {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  display: flex; align-items: flex-end; justify-content: center;
+  padding-bottom: 7px;
+  border: 1px solid rgba(0, 0, 0, 0.55);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+}
+.rec-label .tlabel { font-size: 8px; font-weight: bold; letter-spacing: 0.5px; }
+
+/* record labels per skin (vinyl itself never changes — invariant) */
+#track0 .rec-label { background: radial-gradient(circle at 40% 32%, #8FF0FF, #1E9DBE 78%); }
+#track0 .tlabel { color: #052228; }
+#track1 .rec-label { background: radial-gradient(circle at 40% 32%, #FFE08A, #CC9A1F 78%); }
+#track1 .tlabel { color: #241C04; }
+body[data-skin="putty"] #track0 .rec-label { background: radial-gradient(circle at 40% 32%, #F7EFDC, #DCCFB2 78%); }
+body[data-skin="putty"] #track0 .tlabel { color: #C2401F; }
+body[data-skin="putty"] #track1 .rec-label { background: radial-gradient(circle at 40% 32%, #F7EFDC, #DCCFB2 78%); }
+body[data-skin="putty"] #track1 .tlabel { color: #1F5590; }
+body[data-skin="club"] #track0 .rec-label { background: radial-gradient(circle at 40% 32%, #FF5C77, #8A1226 78%); }
+body[data-skin="club"] #track0 .tlabel { color: #FFE3E8; }
+body[data-skin="club"] #track1 .rec-label { background: radial-gradient(circle at 40% 32%, #F2F4FA, #B9BFD4 78%); }
+body[data-skin="club"] #track1 .tlabel { color: #16171B; }
+
+.led {
+  /* the spindle: lit = that record is singing, dark = muted (C9: a button) */
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 13px; height: 13px; border-radius: 50%; padding: 0;
+  background: #0c0e11;
+  border: 2px solid rgba(0, 0, 0, 0.6);
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.8);
+  cursor: pointer;
+  z-index: 1;
+}
+#led0.on {
+  background: radial-gradient(circle at 35% 30%, #ffffff, var(--acc0) 65%);
+  box-shadow: 0 0 9px var(--acc0), inset 0 0 2px rgba(255, 255, 255, 0.8);
+}
+#led1.on {
+  background: radial-gradient(circle at 35% 30%, #ffffff, var(--acc1) 65%);
+  box-shadow: 0 0 9px var(--acc1), inset 0 0 2px rgba(255, 255, 255, 0.8);
+}
+
+#viz-panel {
+  flex: 1; display: flex; gap: 6px; align-items: stretch;
+  background: var(--panel);
+  border: 2px solid;
+  border-color: var(--steel-lo) var(--steel-hi) var(--steel-hi) var(--steel-lo);
+  border-radius: 6px;
+  padding: 6px;
+}
+#viz {
+  flex: 1; height: 128px; width: 100%;
+  background: var(--viz-fade);
+  border: 2px solid;
+  border-color: #060608 var(--steel-hi) var(--steel-hi) #060608;
+  border-radius: 4px;
+}
+#viz-buttons { display: flex; flex-direction: column; gap: 4px; width: 58px; }
+.viz-btn { flex: 1; font-size: 8px; letter-spacing: 1px; padding: 0 2px; }
+.viz-btn.active {
+  color: var(--accent-ink);
+  text-shadow: 0 0 6px var(--accent-soft);
+  border-color: var(--accent) var(--steel-lo) var(--steel-lo) var(--accent);
+}
+
+/* ---- middle: instruments | grid | morphs (C2: one row system) ---- */
+#mid { display: flex; gap: 10px; }
+
+#instruments { width: 196px; flex: none; padding: 0 8px 8px; }
+#instruments h2, #morphs h2 {
+  height: var(--reg-head);
+  display: flex; align-items: center;
+  border-bottom: 1px solid var(--steel-lo);
+  margin-bottom: var(--row-gap);
+}
+.inst-row {
+  height: var(--row-h); margin-bottom: var(--row-gap);
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: 1px 0;
+}
+.inst-row select {
+  width: 100%; font-size: 11px; font-family: Consolas, "Courier New", monospace;
+  background: var(--lcd-bg); color: var(--lcd-green);
+  border: 2px solid;
+  border-color: var(--steel-lo) var(--steel-hi) var(--steel-hi) var(--steel-lo);
+  border-radius: 3px; padding: 1px 2px;
+}
+.vol-dial { width: 100%; height: 10px; accent-color: var(--accent); }
+
+#seq { flex: none; padding-top: 2px; /* mirrors the side panels' border-top */ }
+#lights {
+  height: var(--reg-head);
+  display: flex; gap: 3px; align-items: center;
+  margin-bottom: var(--row-gap);
+  justify-content: center;
+}
+.light {
+  width: 36px; height: 9px; border-radius: 5px;
+  background: var(--steel-lo);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+.light.beat1 { box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.07); }
+body[data-skin="putty"] .light.beat1 {
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+.light.lit {
+  background: var(--accent);
+  box-shadow: 0 0 9px var(--accent);
+}
+
+.grid-row { display: flex; gap: var(--row-gap); margin-bottom: var(--row-gap); }
+.cell {
+  width: var(--row-h); height: var(--row-h); position: relative;
+  background: var(--cell);
+  border: 2px solid;
+  border-color: var(--steel-lo) var(--steel-hi) var(--steel-hi) var(--steel-lo);
+  border-radius: 4px;
+}
+.cell.bar-b { background: var(--cell-b); }
+.cell:hover { background: var(--cell-hover); }
+.cell.on {
+  background: var(--accent);
+  border-color: var(--accent) var(--steel-lo) var(--steel-lo) var(--accent);
+  box-shadow: 0 0 var(--glow-cell) var(--accent-soft);
+}
+body[data-skin="club"] .cell.on {
+  box-shadow: 0 0 var(--glow-cell) var(--accent-soft), 0 0 4px var(--accent);
+}
+.cell.play { outline: 2px solid rgba(255, 255, 255, 0.45); outline-offset: -1px; }
+body[data-skin="putty"] .cell.play { outline-color: rgba(0, 0, 0, 0.5); }
+/* C6: chord pip — corner triangle, one pixel language for "chord here" */
+.cell.chord::after {
+  content: '';
+  position: absolute; top: 2px; right: 2px;
+  border-left: 7px solid transparent;
+  border-top: 7px solid rgba(8, 10, 14, 0.8);
+}
+body[data-skin="putty"] .cell.chord::after { border-top-color: rgba(255, 255, 255, 0.85); }
+.cell .tell { display: none; }   /* superseded by the pip */
+
+#morphs { width: 128px; flex: none; padding: 0 8px 8px; }
+.morph-row {
+  height: var(--row-h); margin-bottom: var(--row-gap);
+  display: flex; gap: 4px; align-items: center;
+}
+.morph-btn { flex: 1; height: calc(var(--row-h) - 6px); font-size: 9px; letter-spacing: 1px; padding: 0; }
+.morph-btn.morph-note.lit {
+  color: var(--accent-ink);
+  text-shadow: 0 0 6px var(--accent-soft);
+}
+.morph-btn.morph-note.harm { border-bottom-color: var(--harm); }
+.morph-btn.dormant { color: var(--text-dim); opacity: 0.55; cursor: not-allowed; }
+
+/* ---- bottom tool bar (C5: even breathing room) ---- */
+#tools { display: flex; gap: 10px; margin-top: 12px; }
+.tool {
+  flex: 1; text-align: center; padding: 10px 8px 12px;
+  background: var(--panel);
+  border: 2px solid;
+  border-color: var(--steel-lo) var(--steel-hi) var(--steel-hi) var(--steel-lo);
+  border-radius: 6px;
+}
+.tool h3 { margin-bottom: 8px; }
+.lcd {
+  font-family: Consolas, "Courier New", monospace;
+  background: var(--lcd-bg); color: var(--lcd-green);
+  font-size: 19px; font-weight: bold;
+  padding: 2px 8px; margin-bottom: 8px;
+  display: inline-block; min-width: 68px;
+  border: 2px solid;
+  border-color: var(--steel-lo) var(--steel-hi) var(--steel-hi) var(--steel-lo);
+  border-radius: 3px;
+  text-shadow: 0 0 7px var(--lcd-glow);
+}
+.tool input[type="range"] { width: 92%; accent-color: var(--accent); }
+.big-btn { width: 92%; padding: 8px 0; font-size: 13px; letter-spacing: 2px; }
+#play { margin-top: 14px; }
+#clear { margin-top: 14px; }
+#clear.arm {
+  background: linear-gradient(#8a2626, #5f1717);
+  border-color: #b05555 #2a0808 #2a0808 #b05555;
+  color: #ffd7d7; text-shadow: 0 0 6px rgba(255, 80, 80, 0.8);
+}
+.file-btn {
+  display: block; width: 92%; margin: 0 auto 4px;
+  padding: 3px 0; font-size: 9px; letter-spacing: 2px;
+}
+.file-btn:disabled { color: var(--text-dim); opacity: 0.6; cursor: wait; }
+.file-btn.ok { color: var(--lcd-green); text-shadow: 0 0 6px var(--lcd-glow); }
+.file-btn.bad { color: #ff7070; text-shadow: 0 0 6px rgba(255, 80, 80, 0.7); }
+body[data-skin="putty"] .file-btn.bad { color: #A32713; text-shadow: none; }
+
+/* C4: etched nameplate — proud but quiet. Also the skin switcher (Part C). */
+#badge {
+  display: block; margin: 12px auto 0;
+  padding: 6px 24px;
+  font-size: 10px; font-weight: bold;
+  letter-spacing: 5px; text-transform: uppercase;
+  color: var(--text);
+  background: linear-gradient(var(--panel), var(--steel));
+  border: 1px solid var(--steel-lo);
+  border-radius: 3px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 0 -1px 0 rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+}
+#badge:hover { color: var(--accent); text-shadow: 0 0 7px var(--accent-soft); }
+
+/* ================= tone selector popup ================= */
+#tone-overlay {
+  position: fixed; inset: 0; z-index: 40;
+  background: rgba(5, 7, 9, 0.62);
+  display: none; align-items: center; justify-content: center;
+}
+#tone-overlay.open { display: flex; }
+#tone-window {
+  width: 700px;
+  background: var(--steel);
+  border: 3px solid;
+  border-color: var(--steel-hi) var(--steel-lo) var(--steel-lo) var(--steel-hi);
+  border-radius: 8px;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.8);
+  padding-bottom: 4px;
+}
+#tone-titlebar {
+  display: flex; align-items: center; justify-content: space-between;
+  background: linear-gradient(90deg, #16345c, #2e64a8);  /* 9x blue, all skins */
+  border-radius: 5px 5px 0 0;
+  padding: 5px 8px; margin-bottom: 8px;
+}
+#tone-title { font-size: 12px; font-weight: bold; color: #fff; letter-spacing: 1px; }
+#tone-close {
+  width: 22px; height: 20px; font-size: 10px; line-height: 1; padding: 0;
+}
+#tone-strip {
+  display: flex; gap: 3px; justify-content: center; margin: 0 14px 8px;
+}
+.strip-cell { width: 36px; height: 16px; padding: 0; }
+.strip-cell.on {
+  background: var(--accent);
+  border-color: var(--accent) var(--steel-lo) var(--steel-lo) var(--accent);
+  box-shadow: 0 0 7px var(--accent-soft);
+}
+.strip-cell.play { outline: 2px solid rgba(255, 255, 255, 0.45); outline-offset: -1px; }
+body[data-skin="putty"] .strip-cell.play { outline-color: rgba(0, 0, 0, 0.5); }
+#tone-canvas {
+  display: block; margin: 0 auto;
+  background: var(--viz-fade);
+  border: 2px solid;
+  border-color: #060608 var(--steel-hi) var(--steel-hi) #060608;
+  border-radius: 4px;
+  touch-action: none;
+}
+#tone-caption {
+  text-align: center; font-size: 11px; color: var(--text-dim);   /* C7 */
+  letter-spacing: 1px; margin: 7px 0 5px;
+}
+#tone-harmony {
+  display: flex; align-items: center; gap: 10px;
+  padding: 4px 16px 10px; position: relative;
+}
+#harm-btn { font-size: 10px; letter-spacing: 1px; padding: 6px 10px; }
+#harm-btn.active {
+  color: var(--harm); text-shadow: 0 0 6px var(--harm);
+  border-color: var(--harm) var(--steel-lo) var(--steel-lo) var(--harm);
+}
+#harm-chooser { display: none; gap: 6px; }
+#harm-chooser.open { display: flex; }
+.harm-type { font-size: 10px; padding: 4px 10px; letter-spacing: 1px; }
+.harm-type small {
+  display: block; font-size: 8px; font-weight: normal;
+  color: var(--text-dim); letter-spacing: 0; text-transform: lowercase;
+}
+#tone-legend {
+  margin-left: auto; font-size: 10px; color: var(--text-dim); letter-spacing: 1px;  /* C7 */
+}
+#tone-legend i {
+  display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+  vertical-align: -1px; margin: 0 3px 0 8px;
+}
+#tone-legend .dot-user { background: var(--accent); box-shadow: 0 0 5px var(--accent); }
+#tone-legend .dot-harm { border: 2px solid var(--harm); width: 7px; height: 7px; }
+
+/* ================= power gate (house-branded, pre-skin) ================= */
+#power-overlay {
+  position: fixed; inset: 0; z-index: 50;
+  background: radial-gradient(ellipse at center, #14122A 0%, #08070F 75%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 26px;
+}
+#power-overlay.off { display: none; }
+#power-logo {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 52px; font-weight: bold; line-height: 1.05;
+  letter-spacing: 14px; text-align: center;
+  color: #53E6FF;
+  text-shadow: 0 0 18px rgba(83, 230, 255, 0.8), 0 0 50px rgba(83, 230, 255, 0.35);
+}
+#power {
+  font-size: 17px; letter-spacing: 3px; padding: 14px 34px;
+}
+#power:hover { color: #53E6FF; text-shadow: 0 0 8px rgba(83, 230, 255, 0.7); }
+#power-sub { font-size: 10px; letter-spacing: 4px; color: #8A92BC; }
