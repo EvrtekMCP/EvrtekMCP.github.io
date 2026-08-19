@@ -9,8 +9,6 @@
 
   var ctx = null;
   var master, analyser, comp, verbIn, choirBus = [], rowGains = [[], []];
-  var rowShapers = [[], []], rowSpaceSends = [[], []];   // Q7/Q8 morph nodes
-  var chokeReg = [{}, {}];                               // Q2: per-choir groups
 
   var LOOKAHEAD_MS = 25;
   var SCHEDULE_AHEAD = 0.12; // seconds
@@ -39,7 +37,6 @@
     get analyser() { return analyser; },
     get playing() { return BM.state.playing; },
     makeImpulse: makeImpulse,   // shared with fileio's offline render
-    crunchCurve: function (a) { return crunchCurve(a); },
 
     init: function () {
       if (ctx) return;
@@ -70,20 +67,10 @@
         bus.connect(comp);
         choirBus[c] = bus;
         for (var r = 0; r < BM.ROWS; r++) {
-          var row = BM.state.choirs[c].rows[r];
           var g = ctx.createGain();
-          g.gain.value = row.vol;
-          // Q7/Q8 chain: rowGain -> crunch shaper -> bus, with a post-shaper
-          // send into the reverb. curve null = passthrough, gain 0 = dry.
-          var sh = ctx.createWaveShaper();
-          sh.oversample = '2x';
-          sh.curve = crunchCurve(row.morphs.crunch);
-          var sp = ctx.createGain();
-          sp.gain.value = row.morphs.space * 0.7;
-          g.connect(sh); sh.connect(bus); sh.connect(sp); sp.connect(verbIn);
+          g.gain.value = BM.state.choirs[c].rows[r].vol;
+          g.connect(bus);
           rowGains[c][r] = g;
-          rowShapers[c][r] = sh;
-          rowSpaceSends[c][r] = sp;
         }
       }
       if (ctx.state === 'suspended') ctx.resume();
@@ -97,17 +84,6 @@
       BM.state.choirs[c].rows[r].vol = v;
       if (rowGains[c][r]) rowGains[c][r].gain.setTargetAtTime(v, ctx.currentTime, 0.02);
     },
-    // Q7/Q8: per-row morph amounts (0..1)
-    setRowMorph: function (c, r, which, v) {
-      BM.state.choirs[c].rows[r].morphs[which] = v;
-      if (which === 'crunch' && rowShapers[c][r]) {
-        rowShapers[c][r].curve = crunchCurve(v);
-      } else if (which === 'space' && rowSpaceSends[c][r]) {
-        rowSpaceSends[c][r].gain.setTargetAtTime(v * 0.7, ctx.currentTime, 0.02);
-      }
-      BM.emit('morph', { c: c, r: r, which: which, v: v });
-    },
-
     setChoirMute: function (c, muted) {
       BM.state.choirs[c].muted = muted;
       if (choirBus[c]) choirBus[c].gain.setTargetAtTime(muted ? 0 : 1, ctx.currentTime, 0.015);
@@ -124,8 +100,8 @@
     auditionRung: function (c, r, rung, vel) {
       if (!ctx) return;
       var row = BM.state.choirs[c].rows[r];
-      fire(c, row.voice, rowGains[c][r],
-           ctx.currentTime + 0.001, BM.rungToSemi(rung), vel == null ? 0.9 : vel);
+      BM.kit.trigger(ctx, row.voice, rowGains[c][r], verbIn,
+                     ctx.currentTime + 0.001, BM.rungToSemi(rung), vel == null ? 0.9 : vel);
     },
 
     start: function () {
@@ -142,7 +118,6 @@
       BM.state.playing = false;
       clearInterval(timer); timer = null;
       hitQueue.length = 0;
-      chokeReg = [{}, {}];
       BM.emit('transport', { playing: false });
     },
 
@@ -158,37 +133,6 @@
   };
 
   function stepDur() { return 60 / BM.state.bpm / 4; }
-
-  // Q7: soft-clip curve; drive scales with amount, output self-normalized
-  function crunchCurve(amount) {
-    if (!amount) return null;               // null curve = clean passthrough
-    var n = 1024, curve = new Float32Array(n);
-    var k = amount * 30;
-    for (var i = 0; i < n; i++) {
-      var x = (i / (n - 1)) * 2 - 1;
-      curve[i] = (1 + k) * x / (1 + k * Math.abs(x));
-    }
-    return curve;
-  }
-
-  // Q2: trigger + choke bookkeeping (hats are mutually exclusive per choir).
-  // Only STRICTLY LATER hits choke: simultaneous tones (chords, harmony
-  // shadows, same-step chat+ohat) coexist, and an audition never silences a
-  // hit the lookahead already scheduled in the future.
-  function fire(c, voice, dest, when, semi, vel) {
-    var handle = BM.kit.trigger(ctx, voice, dest, verbIn, when, semi, vel);
-    var grp = BM.kit.CHOKE[voice];
-    if (!grp || !handle) return;
-    var prev = chokeReg[c][grp];
-    if (!prev || when > prev.when) {
-      if (prev) {
-        prev.handles.forEach(function (h) { if (h && h.choke) h.choke(when); });
-      }
-      chokeReg[c][grp] = { when: when, handles: [handle] };
-    } else if (when === prev.when) {
-      prev.handles.push(handle);
-    }
-  }
 
   function tick() {
     while (nextStepTime < ctx.currentTime + SCHEDULE_AHEAD) {
@@ -211,13 +155,13 @@
         if (!st) continue;
         var i;
         for (i = 0; i < st.rungs.length; i++) {
-          fire(c, row.voice, rowGains[c][r], when, BM.rungToSemi(st.rungs[i]), 1);
+          BM.kit.trigger(ctx, row.voice, rowGains[c][r], verbIn,
+                         when, BM.rungToSemi(st.rungs[i]), 1);
         }
         var harm = BM.harmonyForRungs(st.rungs, row.harmony);
-        // shadows sing softer; stacked layers softer still (Q3)
-        var hvel = row.harmony.length > 1 ? 0.5 : 0.6;
         for (i = 0; i < harm.length; i++) {
-          fire(c, row.voice, rowGains[c][r], when, BM.rungToSemi(harm[i]), hvel);
+          BM.kit.trigger(ctx, row.voice, rowGains[c][r], verbIn,
+                         when, BM.rungToSemi(harm[i]), 0.6); // shadows sing softer
         }
         if (!choir.muted) hits.push({ c: c, r: r, n: st.rungs.length + harm.length });
       }

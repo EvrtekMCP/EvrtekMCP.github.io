@@ -26,15 +26,11 @@
   //   sweet  = +2 rungs  (diatonic third)
   //   power  = nearest ladder note at/above +7 semitones (fifth-ish)
   //   double = +7 rungs  (exact octave)
-  //   low    = -7 rungs  (exact octave down)
-  // Q3: a row holds an ARRAY of up to 2 types ([] = none).
   BM.HARMONY_TYPES = [
     { id: 'sweet',  label: 'SWEET',  hint: 'close & warm' },
     { id: 'power',  label: 'POWER',  hint: 'big & open' },
-    { id: 'double', label: 'DOUBLE', hint: 'octave shine' },
-    { id: 'low',    label: 'LOW',    hint: 'octave deep' }
+    { id: 'double', label: 'DOUBLE', hint: 'octave shine' }
   ];
-  BM.MAX_HARMONY_LAYERS = 2;
 
   function powerRung(base) {
     var target = BM.rungToSemi(base) + 7;
@@ -47,50 +43,34 @@
     return best;
   }
 
-  BM.harmonyForRungs = function (rungs, types) {
-    if (!types) return [];
-    if (typeof types === 'string') types = [types];   // legacy callers/saves
-    if (!types.length) return [];
-    var taken = {}, out = [], i, t, h;
+  BM.harmonyForRungs = function (rungs, type) {
+    if (!type) return [];
+    var taken = {}, out = [], i, h;
     for (i = 0; i < rungs.length; i++) taken[rungs[i]] = true;
-    for (t = 0; t < types.length; t++) {
-      var type = types[t];
-      for (i = 0; i < rungs.length; i++) {
-        var b = rungs[i];
-        if (type === 'sweet') h = b + 2;
-        else if (type === 'double') h = b + 7;
-        else if (type === 'low') h = b - 7;
-        else h = powerRung(b);
-        if (h > BM.RUNG_MAX) h = BM.RUNG_MAX;   // clamp to canvas range
-        if (h < BM.RUNG_MIN) h = BM.RUNG_MIN;
-        if (!taken[h]) { taken[h] = true; out.push(h); }
-      }
+    for (i = 0; i < rungs.length; i++) {
+      var b = rungs[i];
+      if (type === 'sweet') h = b + 2;
+      else if (type === 'double') h = b + 7;
+      else h = powerRung(b);
+      if (h > BM.RUNG_MAX) h = BM.RUNG_MAX;   // clamp to canvas range
+      if (!taken[h]) { taken[h] = true; out.push(h); }
     }
     return out;
   };
 
   // ---- voices (definitions live in kit.js; ids + labels here) -----------
-  // Q9: two curated banks of exactly ten, feeding the PERC | INST pickers.
-  BM.PERC_ORDER = ['kick', 'snare', 'clap', 'chat', 'ohat', 'tom',
-                   'cowbell', 'shaker', 'crash', 'laser'];
-  BM.INST_ORDER = ['bass', 'blip', 'sqlead', 'stab', 'pluck', 'bell',
-                   'epiano', 'organ', 'acid', 'choir'];
-  BM.VOICE_ORDER = BM.PERC_ORDER.concat(BM.INST_ORDER);
+  BM.VOICE_ORDER = ['kick', 'snare', 'clap', 'chat', 'ohat', 'ltom', 'htom',
+                    'cowbell', 'rim', 'shaker', 'bass', 'blip'];
   BM.VOICE_LABELS = {
-    kick: 'KICK', snare: 'SNARE', clap: 'CLAP', chat: 'HAT CLOSED',
-    ohat: 'HAT OPEN', tom: 'TOM', cowbell: 'COWBELL', shaker: 'SHAKER',
-    crash: 'CRASH', laser: 'LASER ZAP',
-    bass: 'BASS', blip: 'BLIP', sqlead: 'SQ LEAD', stab: 'RAVE STAB',
-    pluck: 'PLUCK', bell: 'BELL', epiano: 'E-PIANO', organ: 'ORGAN',
-    acid: 'ACID', choir: 'CHOIR AAH'
+    kick: 'KICK', snare: 'SNARE', clap: 'CLAP', chat: 'HAT (CLOSED)',
+    ohat: 'HAT (OPEN)', ltom: 'TOM (LOW)', htom: 'TOM (HIGH)',
+    cowbell: 'COWBELL', rim: 'RIMSHOT', shaker: 'SHAKER',
+    bass: 'BASS TONE', blip: 'ARCADE BLIP'
   };
-  // old save files land somewhere musically sensible, not on a kick
-  BM.VOICE_MIGRATE = { ltom: 'tom', htom: 'tom', rim: 'cowbell' };
 
   // ---- state ------------------------------------------------------------
   function makeRow(voice) {
-    return { voice: voice, vol: 0.8, harmony: [],
-             morphs: { crunch: 0, space: 0 }, steps: emptySteps() };
+    return { voice: voice, vol: 0.8, harmony: null, steps: emptySteps() };
   }
   function emptySteps() {
     var a = []; for (var i = 0; i < BM.STEPS; i++) a.push(null); return a;
@@ -164,10 +144,8 @@
     BM.emit('pattern', { c: c, r: r, s: s });
   };
 
-  BM.setHarmony = function (c, r, types) {
-    // array of up to MAX_HARMONY_LAYERS type ids; [] clears
-    BM.state.choirs[c].rows[r].harmony =
-      (types || []).slice(0, BM.MAX_HARMONY_LAYERS);
+  BM.setHarmony = function (c, r, type) {
+    BM.state.choirs[c].rows[r].harmony = type; // string id or null
     BM.emit('pattern', { c: c, r: r });
   };
 
@@ -180,7 +158,7 @@
     var rows = BM.state.choirs[c].rows;
     for (var r = 0; r < rows.length; r++) {
       rows[r].steps = emptySteps();
-      rows[r].harmony = [];
+      rows[r].harmony = null;
     }
     BM.emit('pattern', { c: c });
   };
@@ -205,7 +183,7 @@
     m[0].steps[14] = { rungs: [1] };
     m[1].steps[2] = { rungs: [2] };  m[1].steps[7] = { rungs: [4] };
     m[1].steps[11] = { rungs: [2, 4] }; m[1].steps[15] = { rungs: [5] };
-    m[1].harmony = ['sweet'];
+    m[1].harmony = 'sweet';
     m[2].steps[4] = { rungs: [0] };  m[2].steps[12] = { rungs: [0] };
     m[3].steps[8] = { rungs: [0] };
     BM.emit('pattern', {});

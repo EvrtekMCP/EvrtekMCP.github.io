@@ -1,20 +1,16 @@
 /* BEAT MACHINE — fileio.js
-   Save/load working files, autosave (Q1), and .wav exports. Zero deps.
+   Save/load working files and export .wav renders. Zero dependencies.
    - Save: full project state as versioned JSON, browser-downloaded.
-   - Load: native file picker -> validated & sanitized -> hot-swapped in.
-     Accepts format v1 (launch) and v2 (adds harmony arrays, morphs, skin
-     already; migrates retired voice ids).
-   - WAV: OfflineAudioContext renders through a mirror of the live graph
-     (incl. crunch/space morphs and hat chokes), 16-bit PCM 44.1k stereo.
-   - LOOP (Q6): renders two passes, exports exactly the second loop's
-     window — tails baked, byte-length exactly one bar. */
+   - Load: native file picker -> validated & sanitized -> hot-swapped in
+     (keeps playing if playing; all knobs re-sync).
+   - WAV: OfflineAudioContext renders 2 loops + reverb tail through a
+     mirror of the live graph, encoded as 16-bit PCM 44.1kHz stereo. */
 (function () {
   'use strict';
   window.BM = window.BM || {};
 
   var FORMAT = 'beat-machine-project';
-  var VERSION = 2;
-  var AUTOSAVE_KEY = 'bm-project';
+  var VERSION = 1;
 
   function stamp() {
     var d = new Date();
@@ -46,9 +42,7 @@
         return {
           muted: !!ch.muted,
           rows: ch.rows.map(function (r) {
-            return { voice: r.voice, vol: r.vol,
-                     harmony: r.harmony.slice(),
-                     morphs: { crunch: r.morphs.crunch, space: r.morphs.space },
+            return { voice: r.voice, vol: r.vol, harmony: r.harmony,
                      steps: r.steps.map(function (st) {
                        return st ? { rungs: st.rungs.slice() } : null;
                      }) };
@@ -58,28 +52,18 @@
     }, null, 1);
   }
 
-  var HARMONY_IDS = { sweet: 1, power: 1, double: 1, low: 1 };
+  var HARMONY_IDS = { sweet: 1, power: 1, double: 1 };
 
   function clampNum(v, lo, hi, fb) {
     v = Number(v);
     return isFinite(v) ? Math.min(hi, Math.max(lo, v)) : fb;
   }
 
-  function sanitizeHarmony(h) {
-    if (typeof h === 'string') h = [h];        // v1 saves stored a string
-    if (!Array.isArray(h)) return [];
-    var out = [], seen = {};
-    for (var i = 0; i < h.length && out.length < BM.MAX_HARMONY_LAYERS; i++) {
-      if (HARMONY_IDS[h[i]] && !seen[h[i]]) { seen[h[i]] = 1; out.push(h[i]); }
-    }
-    return out;
-  }
-
-  // Strict sanitize: retired voices migrate, unknown voices fall back,
-  // rungs clamped & deduped, malformed anything becomes empty, not an error.
+  // Strict sanitize: unknown voices fall back, rungs clamped & deduped,
+  // anything malformed becomes an empty step rather than an error.
   function sanitize(raw) {
     if (!raw || raw.format !== FORMAT) return null;
-    if (raw.version !== 1 && raw.version !== 2) return null;
+    if (typeof raw.version !== 'number' || raw.version > VERSION) return null;
     if (!Array.isArray(raw.choirs) || raw.choirs.length !== 2) return null;
     var out = {
       bpm: Math.round(clampNum(raw.bpm, 40, 208, 120)),
@@ -94,13 +78,10 @@
       var choir = { muted: !!rc.muted, rows: [] };
       for (var r = 0; r < BM.ROWS; r++) {
         var rr = rows[r] || {};
-        var vid = BM.VOICE_MIGRATE[rr.voice] || rr.voice;
-        var voice = BM.VOICE_ORDER.indexOf(vid) !== -1 ? vid : BM.VOICE_ORDER[0];
-        var rm = rr.morphs || {};
+        var voice = BM.VOICE_ORDER.indexOf(rr.voice) !== -1 ? rr.voice
+                    : BM.VOICE_ORDER[0];
         var row = { voice: voice, vol: clampNum(rr.vol, 0, 1, 0.8),
-                    harmony: sanitizeHarmony(rr.harmony),
-                    morphs: { crunch: clampNum(rm.crunch, 0, 1, 0),
-                              space: clampNum(rm.space, 0, 1, 0) },
+                    harmony: HARMONY_IDS[rr.harmony] ? rr.harmony : null,
                     steps: [] };
         var steps = Array.isArray(rr.steps) ? rr.steps : [];
         for (var s = 0; s < BM.STEPS; s++) {
@@ -130,13 +111,8 @@
         var src = proj.choirs[c].rows[r];
         var dst = s.choirs[c].rows[r];
         dst.voice = src.voice; dst.vol = src.vol;
-        dst.harmony = src.harmony; dst.morphs = src.morphs;
-        dst.steps = src.steps;
-        if (BM.state.powered) {
-          BM.audio.setRowVol(c, r, src.vol);
-          BM.audio.setRowMorph(c, r, 'crunch', src.morphs.crunch);
-          BM.audio.setRowMorph(c, r, 'space', src.morphs.space);
-        }
+        dst.harmony = src.harmony; dst.steps = src.steps;
+        if (BM.state.powered) BM.audio.setRowVol(c, r, src.vol);
       }
       if (BM.state.powered) BM.audio.setChoirMute(c, s.choirs[c].muted);
       else BM.emit('mute', { c: c, muted: s.choirs[c].muted });
@@ -177,27 +153,12 @@
     return new Blob([ab], { type: 'audio/wav' });
   }
 
-  // minimal buffer view for encodeWav — lets us export an exact slice
-  function sliceBuf(buf, startFrame, frames) {
-    var chans = [];
-    for (var c = 0; c < buf.numberOfChannels; c++) {
-      chans.push(buf.getChannelData(c).subarray(startFrame, startFrame + frames));
-    }
-    return { numberOfChannels: buf.numberOfChannels, length: frames,
-             sampleRate: buf.sampleRate,
-             getChannelData: function (c) { return chans[c]; } };
-  }
-
   // ---- offline render (mirror of the live graph) ------------------------
-  // seamless=false: 2 loops + reverb tail (the "listen to it" file)
-  // seamless=true : renders 2 loops, returns exactly loop 2 (the DAW file)
-  function render(seamless) {
+  function renderWav() {
     var s = BM.state;
-    var sr = 44100, loops = 2, tail = seamless ? 0.2 : 1.6;
+    var sr = 44100, loops = 2, tail = 1.6;
     var stepD = 60 / s.bpm / 4;
-    var loopFrames = Math.round(BM.STEPS * stepD * sr);
-    var base = seamless ? 0 : 0.03;
-    var total = base + loops * BM.STEPS * stepD + tail;
+    var total = loops * BM.STEPS * stepD + tail;
     var off = new OfflineAudioContext(2, Math.ceil(total * sr), sr);
 
     var master = off.createGain(); master.gain.value = 0.9;
@@ -210,68 +171,34 @@
     var verbOut = off.createGain(); verbOut.gain.value = 0.9;
     verbIn.connect(conv); conv.connect(verbOut); verbOut.connect(comp);
 
-    // per-row chains mirroring live: gain -> shaper -> out (+ space send)
-    var rowNodes = [[], []];
-    var c, r;
-    for (c = 0; c < 2; c++) {
-      for (r = 0; r < BM.ROWS; r++) {
-        var row = s.choirs[c].rows[r];
-        var g = off.createGain(); g.gain.value = row.vol;
-        var sh = off.createWaveShaper(); sh.oversample = '2x';
-        sh.curve = BM.audio.crunchCurve(row.morphs.crunch);
-        var sp = off.createGain(); sp.gain.value = row.morphs.space * 0.7;
-        g.connect(sh); sh.connect(comp); sh.connect(sp); sp.connect(verbIn);
-        rowNodes[c][r] = g;
-      }
-    }
-
-    // time-ordered scheduling so chokes work across rows (Q2) — same rule
-    // as live: only strictly-later hits choke; simultaneous tones coexist
-    var chokes = [{}, {}];
-    function offFire(cc, voice, dest, when, semi, vel) {
-      var handle = BM.kit.trigger(off, voice, dest, verbIn, when, semi, vel);
-      var grp = BM.kit.CHOKE[voice];
-      if (!grp || !handle) return;
-      var prev = chokes[cc][grp];
-      if (!prev || when > prev.when) {
-        if (prev) {
-          prev.handles.forEach(function (h) { if (h && h.choke) h.choke(when); });
-        }
-        chokes[cc][grp] = { when: when, handles: [handle] };
-      } else if (when === prev.when) {
-        prev.handles.push(handle);
-      }
-    }
-    for (var L = 0; L < loops; L++) {
-      for (var st = 0; st < BM.STEPS; st++) {
-        var when = base + (L * BM.STEPS + st) * stepD +
-                   (st % 2 === 1 ? s.swing * stepD * 0.5 : 0);
-        for (c = 0; c < 2; c++) {
-          if (s.choirs[c].muted) continue;            // export what you hear
-          for (r = 0; r < BM.ROWS; r++) {
-            var row2 = s.choirs[c].rows[r];
-            var beat = row2.steps[st];
+    var base = 0.03;
+    for (var c = 0; c < 2; c++) {
+      var choir = s.choirs[c];
+      if (choir.muted) continue;                    // export what you hear
+      for (var r = 0; r < BM.ROWS; r++) {
+        var row = choir.rows[r];
+        var g = off.createGain(); g.gain.value = row.vol; g.connect(comp);
+        for (var L = 0; L < loops; L++) {
+          for (var st = 0; st < BM.STEPS; st++) {
+            var beat = row.steps[st];
             if (!beat) continue;
+            var when = base + (L * BM.STEPS + st) * stepD +
+                       (st % 2 === 1 ? s.swing * stepD * 0.5 : 0);
             var i;
             for (i = 0; i < beat.rungs.length; i++) {
-              offFire(c, row2.voice, rowNodes[c][r], when,
-                      BM.rungToSemi(beat.rungs[i]), 1);
+              BM.kit.trigger(off, row.voice, g, verbIn, when,
+                             BM.rungToSemi(beat.rungs[i]), 1);
             }
-            var harm = BM.harmonyForRungs(beat.rungs, row2.harmony);
-            var hvel = row2.harmony.length > 1 ? 0.5 : 0.6;
+            var harm = BM.harmonyForRungs(beat.rungs, row.harmony);
             for (i = 0; i < harm.length; i++) {
-              offFire(c, row2.voice, rowNodes[c][r], when,
-                      BM.rungToSemi(harm[i]), hvel);
+              BM.kit.trigger(off, row.voice, g, verbIn, when,
+                             BM.rungToSemi(harm[i]), 0.6);
             }
           }
         }
       }
     }
-
-    return off.startRendering().then(function (buf) {
-      if (!seamless) return encodeWav(buf);
-      return encodeWav(sliceBuf(buf, loopFrames, loopFrames));
-    });
+    return off.startRendering().then(encodeWav);
   }
 
   BM.fileio = {
@@ -280,14 +207,8 @@
                'beat-machine_' + stamp() + '.beat.json');
     },
     exportWav: function () {
-      return render(false).then(function (blob) {
+      return renderWav().then(function (blob) {
         download(blob, 'beat-machine_' + stamp() + '.wav');
-        return blob.size;
-      });
-    },
-    exportLoopWav: function () {
-      return render(true).then(function (blob) {
-        download(blob, 'beat-machine-loop_' + stamp() + '.wav');
         return blob.size;
       });
     },
@@ -298,16 +219,6 @@
       if (!proj) return false;
       apply(proj);
       return true;
-    },
-    // Q1: quiet persistence — same serializer, same sanitizer on the way in
-    autosave: function () {
-      try { localStorage.setItem(AUTOSAVE_KEY, serialize()); } catch (e) { /* full/private */ }
-    },
-    tryRestore: function () {                // true if a stored groove loaded
-      var text = null;
-      try { text = localStorage.getItem(AUTOSAVE_KEY); } catch (e) { return false; }
-      if (!text) return false;
-      return BM.fileio.loadFromText(text);
     },
     // exposed for verification
     _serialize: serialize

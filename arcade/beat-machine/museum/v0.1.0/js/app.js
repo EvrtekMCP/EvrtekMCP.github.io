@@ -81,45 +81,9 @@
     wireViz();
     wireFile();
     wireSkin();
-    wireKeys();
-    wireAutosave();
-    // Q1: yesterday's groove comes back; first visit gets the demo
-    if (!BM.fileio.tryRestore()) BM.loadDemo();
+    BM.loadDemo();
     requestAnimationFrame(frame);
   });
-
-  // ---- Q5: keyboard shortcuts -------------------------------------------
-  // Space = play/stop · 1/2 = conduct track · M = mute conducted track.
-  // Inert while typing in a control; buttons keep their native key behavior.
-  function wireKeys() {
-    document.addEventListener('keydown', function (e) {
-      if (e.repeat) return;                        // no machine-gun toggles
-      var t = e.target;
-      if (t && t.closest && t.closest('input, select, textarea')) return;
-      if (e.key === ' ') {
-        if (t && t.tagName === 'BUTTON') return;   // native Space wins there
-        e.preventDefault();
-        if (!BM.state.powered) return;
-        if (BM.state.playing) BM.audio.stop(); else BM.audio.start();
-      } else if (e.key === '1' || e.key === '2') {
-        document.getElementById('track' + (e.key === '1' ? 0 : 1)).click();
-      } else if (e.key === 'm' || e.key === 'M') {
-        document.getElementById('led' + BM.state.activeChoir).click();
-      }
-    });
-  }
-
-  // ---- Q1: autosave (debounced, quiet) ----------------------------------
-  function wireAutosave() {
-    var timer = null;
-    function queueSave() {
-      clearTimeout(timer);
-      timer = setTimeout(function () { BM.fileio.autosave(); }, 400);
-    }
-    ['pattern', 'mute', 'morph', 'skin', 'settings'].forEach(function (ev) {
-      BM.on(ev, queueSave);
-    });
-  }
 
   // ---- power gate (autoplay policy; doubles as first play press) --------
   function wireTransport() {
@@ -154,7 +118,6 @@
     bpmS.addEventListener('input', function () {
       BM.state.bpm = parseInt(bpmS.value, 10);
       bpmL.textContent = bpmS.value;
-      BM.emit('settings', {});
     });
 
     var swS = document.getElementById('swing-slider');
@@ -162,7 +125,6 @@
     swS.addEventListener('input', function () {
       BM.state.swing = parseInt(swS.value, 10) / 100;
       swL.textContent = swS.value + '%';
-      BM.emit('settings', {});
     });
 
     var maS = document.getElementById('master-slider');
@@ -172,7 +134,6 @@
       maL.textContent = v;
       if (BM.state.powered) BM.audio.setMasterVol(v / 100);
       else BM.state.masterVol = v / 100;
-      BM.emit('settings', {});
     });
 
     // CLEAR — two-click confirm, clears the conducted choir only
@@ -204,27 +165,10 @@
     }, 1600);
   }
 
-  function wireRenderBtn(btn, fn) {
-    btn.addEventListener('click', function () {
-      if (btn.disabled) return;
-      btn.disabled = true;
-      var old = btn.textContent;
-      btn.textContent = 'RENDER…';
-      fn().then(function () {
-        btn.disabled = false;
-        btn.textContent = old;
-        flash(btn, 'SAVED ✓', true);
-      }, function () {
-        btn.disabled = false;
-        btn.textContent = old;
-        flash(btn, 'FAILED ✗', false);
-      });
-    });
-  }
-
   function wireFile() {
     var saveBtn = document.getElementById('save-btn');
     var loadBtn = document.getElementById('load-btn');
+    var wavBtn = document.getElementById('wav-btn');
     var input = document.getElementById('load-input');
 
     saveBtn.addEventListener('click', function () {
@@ -249,11 +193,20 @@
       reader.readAsText(f);
     });
 
-    wireRenderBtn(document.getElementById('wav-btn'), function () {
-      return BM.fileio.exportWav();
-    });
-    wireRenderBtn(document.getElementById('loop-btn'), function () {
-      return BM.fileio.exportLoopWav();
+    wavBtn.addEventListener('click', function () {
+      if (wavBtn.disabled) return;
+      wavBtn.disabled = true;
+      var old = wavBtn.textContent;
+      wavBtn.textContent = 'RENDER…';
+      BM.fileio.exportWav().then(function () {
+        wavBtn.disabled = false;
+        wavBtn.textContent = old;
+        flash(wavBtn, 'SAVED ✓', true);
+      }, function () {
+        wavBtn.disabled = false;
+        wavBtn.textContent = old;
+        flash(wavBtn, 'FAILED ✗', false);
+      });
     });
 
     // a loaded project must resync every knob and readout
@@ -304,10 +257,9 @@
       disc.classList.toggle('muted', muted);           // C8: reads across the room
       disc.setAttribute('aria-pressed', BM.state.activeChoir === c);
       led.classList.toggle('on', !muted);
-      led.title = (muted
+      led.title = muted
         ? 'TRACK ' + (c + 1) + ' muted — click to unmute'
-        : 'TRACK ' + (c + 1) + ' singing — click to mute') +
-        (BM.state.activeChoir === c ? ' · key: M' : '');   // Q5 tooltip note
+        : 'TRACK ' + (c + 1) + ' singing — click to mute';
       led.setAttribute('aria-label', led.title);        // C9
     });
   }

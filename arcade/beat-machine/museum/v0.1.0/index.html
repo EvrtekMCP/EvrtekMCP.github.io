@@ -9,7 +9,7 @@
 <link rel="icon" href="beat-machine-favicon.ico" type="image/x-icon" sizes="32x32">
 <link rel="apple-touch-icon" href="beat-machine-touch-icon.png">
 <meta property="og:title" content="Beat Machine — Reimertek Arcade">
-<meta property="og:description" content="A sixteen-step groove box with twenty synthesized voices — 808-style drums to FM bells. Sequence a beat, export the .wav — zero samples were used; none exist.">
+<meta property="og:description" content="A sixteen-step groove box with two choirs of synthesized 808-style voices. Sequence a beat, export the .wav — zero samples were used; none exist.">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://reimertek.com/arcade/beat-machine/og-beat-machine.png">
 <meta name="twitter:card" content="summary_large_image">
@@ -20,7 +20,7 @@
 <div id="machine" data-choir="0">
   <header id="top">
     <div class="disc-wrap">
-      <button class="track-disc" id="track0" type="button" title="Conduct TRACK 1 — key: 1" aria-label="Conduct TRACK 1">
+      <button class="track-disc" id="track0" type="button" title="Conduct TRACK 1" aria-label="Conduct TRACK 1">
         <span class="rec-label"><span class="tlabel">TRACK 1</span></span>
       </button>
       <button class="led" id="led0" type="button" title="Mute/unmute TRACK 1" aria-label="Mute TRACK 1"></button>
@@ -30,7 +30,7 @@
       <div id="viz-buttons"></div>
     </div>
     <div class="disc-wrap">
-      <button class="track-disc" id="track1" type="button" title="Conduct TRACK 2 — key: 2" aria-label="Conduct TRACK 2">
+      <button class="track-disc" id="track1" type="button" title="Conduct TRACK 2" aria-label="Conduct TRACK 2">
         <span class="rec-label"><span class="tlabel">TRACK 2</span></span>
       </button>
       <button class="led" id="led1" type="button" title="Mute/unmute TRACK 2" aria-label="Mute TRACK 2"></button>
@@ -60,7 +60,7 @@
     </div>
     <div class="tool">
       <h3>TRANSPORT</h3>
-      <button id="play" class="big-btn" type="button" title="Play / stop — key: Space">&#9654; PLAY</button>
+      <button id="play" class="big-btn" type="button">&#9654; PLAY</button>
     </div>
     <div class="tool">
       <h3>SWING</h3>
@@ -81,12 +81,11 @@
       <button id="save-btn" class="file-btn" type="button" title="Download your work as a .beat.json working file">SAVE</button>
       <button id="load-btn" class="file-btn" type="button" title="Open a saved .beat.json working file">LOAD</button>
       <button id="wav-btn" class="file-btn" type="button" title="Export the groove as a .wav (2 loops + tail)">.WAV</button>
-      <button id="loop-btn" class="file-btn" type="button" title="Export a perfectly loopable one-bar .wav (tails baked in)">LOOP</button>
       <input id="load-input" type="file" accept=".json,application/json" hidden>
     </div>
   </footer>
 
-  <button id="badge" type="button" title="Change skin">BEAT MACHINE &middot; zero samples &middot; EVRTEK</button>
+  <button id="badge" type="button" title="Change skin">BEAT MACHINE &middot; synthesized 808-style &middot; EVRTEK</button>
 </div>
 
 <div id="tone-overlay">

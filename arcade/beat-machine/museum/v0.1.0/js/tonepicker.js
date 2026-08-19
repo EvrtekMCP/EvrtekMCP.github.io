@@ -11,7 +11,6 @@
   var overlay, win, titleEl, stripEl, canvas, g2d, harmBtn, chooserEl;
   var cur = null;            // {c, r} while open
   var drag = null;           // {col, idx} while dragging a user dot
-  var typeBtns = [];         // harmony chooser toggle buttons
   var playCol = -1;
   var stripCells = [];
 
@@ -57,49 +56,24 @@
         if (e.key === 'Escape') BM.tonePicker.close();
       });
 
-      // Q3 contract: the main button is the one-press remover when harmony
-      // is active; when none is set it opens the chooser (which stays open
-      // so a second layer can be stacked).
       harmBtn.addEventListener('click', function () {
         if (!cur) return;
-        if (row().harmony.length) {
-          BM.setHarmony(cur.c, cur.r, []);
-          chooserEl.classList.remove('open');
-          renderHarmUI();
-        } else {
-          chooserEl.classList.toggle('open');
-        }
+        var row = BM.state.choirs[cur.c].rows[cur.r];
+        if (row.harmony) { BM.setHarmony(cur.c, cur.r, null); renderHarmUI(); }
+        else chooserEl.classList.toggle('open');
       });
       BM.HARMONY_TYPES.forEach(function (t) {
         var b = document.createElement('button');
         b.type = 'button';
         b.className = 'harm-type';
-        b.setAttribute('data-harm', t.id);
         b.innerHTML = t.label + '<small>' + t.hint + '</small>';
         b.addEventListener('click', function () {
-          var arr = row().harmony.slice();
-          var idx = arr.indexOf(t.id);
-          if (idx !== -1) arr.splice(idx, 1);
-          else {
-            if (arr.length >= BM.MAX_HARMONY_LAYERS) arr.shift();
-            arr.push(t.id);
-          }
-          BM.setHarmony(cur.c, cur.r, arr);
+          BM.setHarmony(cur.c, cur.r, t.id);
+          chooserEl.classList.remove('open');
           renderHarmUI();
         });
-        typeBtns.push(b);
         chooserEl.appendChild(b);
       });
-      var clearB = document.createElement('button');
-      clearB.type = 'button';
-      clearB.className = 'harm-type harm-clear';
-      clearB.textContent = 'CLEAR';
-      clearB.addEventListener('click', function () {
-        BM.setHarmony(cur.c, cur.r, []);
-        chooserEl.classList.remove('open');
-        renderHarmUI();
-      });
-      chooserEl.appendChild(clearB);
 
       canvas.addEventListener('pointerdown', onDown);
       canvas.addEventListener('pointermove', onMove);
@@ -203,22 +177,15 @@
 
   function renderHarmUI() {
     var h = row().harmony;
-    var labels = {};
-    BM.HARMONY_TYPES.forEach(function (x) { labels[x.id] = x.label; });
-    if (h.length) {
-      harmBtn.textContent = 'REMOVE HARMONY (' + h.map(function (id) {
-        return labels[id] || id;
-      }).join('+') + ')';
+    if (h) {
+      var t = null;
+      BM.HARMONY_TYPES.forEach(function (x) { if (x.id === h) t = x; });
+      harmBtn.textContent = 'REMOVE HARMONY (' + (t ? t.label : h) + ')';
       harmBtn.classList.add('active');
     } else {
       harmBtn.textContent = '+ HARMONY';
       harmBtn.classList.remove('active');
     }
-    typeBtns.forEach(function (b) {
-      var on = h.indexOf(b.getAttribute('data-harm')) !== -1;
-      b.classList.toggle('active', on);
-      b.setAttribute('aria-pressed', on);
-    });
   }
 
   // ---- drawing ----------------------------------------------------------
@@ -282,7 +249,7 @@
     }
 
     // harmony layer first (under user dots)
-    if (harmony.length) {
+    if (harmony) {
       drawChains(steps, harmony, true, harmCol);
     }
     drawChains(steps, null, false, accent);

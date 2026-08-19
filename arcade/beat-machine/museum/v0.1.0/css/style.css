@@ -284,10 +284,8 @@ body[data-skin="club"] #track1 .tlabel { color: #16171B; }
   display: flex; flex-direction: column; justify-content: space-between;
   padding: 1px 0;
 }
-.picker-pair { display: flex; gap: 4px; }
 .inst-row select {
-  flex: 1 1 0; width: auto; min-width: 0;
-  font-size: 10px; font-family: Consolas, "Courier New", monospace;
+  width: 100%; font-size: 11px; font-family: Consolas, "Courier New", monospace;
   background: var(--lcd-bg); color: var(--lcd-green);
   border: 2px solid;
   border-color: var(--steel-lo) var(--steel-hi) var(--steel-hi) var(--steel-lo);
@@ -351,29 +349,7 @@ body[data-skin="putty"] .cell.chord::after { border-top-color: rgba(255, 255, 25
   height: var(--row-h); margin-bottom: var(--row-gap);
   display: flex; gap: 4px; align-items: center;
 }
-.morph-btn { flex: 1; height: calc(var(--row-h) - 6px); font-size: 8px; letter-spacing: 0.5px; padding: 0; }
-.morph-btn.morph-fx.lit {
-  color: var(--accent-ink);
-  text-shadow: 0 0 6px var(--accent-soft);
-}
-
-/* Q7/Q8: shared morph dial popover */
-#morph-pop {
-  position: fixed; z-index: 45;
-  display: none; flex-direction: column; gap: 6px;
-  padding: 9px 12px;
-  background: var(--steel);
-  border: 2px solid;
-  border-color: var(--steel-hi) var(--steel-lo) var(--steel-lo) var(--steel-hi);
-  border-radius: 6px;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6);
-}
-#morph-pop.open { display: flex; }
-#morph-pop-label {
-  font-size: 9px; font-weight: bold; letter-spacing: 1px;
-  color: var(--text-dim); text-align: center; white-space: nowrap;
-}
-#morph-pop input[type="range"] { width: 150px; accent-color: var(--accent); }
+.morph-btn { flex: 1; height: calc(var(--row-h) - 6px); font-size: 9px; letter-spacing: 1px; padding: 0; }
 .morph-btn.morph-note.lit {
   color: var(--accent-ink);
   text-shadow: 0 0 6px var(--accent-soft);
@@ -412,8 +388,8 @@ body[data-skin="putty"] .cell.chord::after { border-top-color: rgba(255, 255, 25
   color: #ffd7d7; text-shadow: 0 0 6px rgba(255, 80, 80, 0.8);
 }
 .file-btn {
-  display: block; width: 92%; margin: 0 auto 3px;
-  padding: 2px 0; font-size: 9px; letter-spacing: 2px;
+  display: block; width: 92%; margin: 0 auto 4px;
+  padding: 3px 0; font-size: 9px; letter-spacing: 2px;
 }
 .file-btn:disabled { color: var(--text-dim); opacity: 0.6; cursor: wait; }
 .file-btn.ok { color: var(--lcd-green); text-shadow: 0 0 6px var(--lcd-glow); }
@@ -496,11 +472,6 @@ body[data-skin="putty"] .strip-cell.play { outline-color: rgba(0, 0, 0, 0.5); }
 #harm-chooser { display: none; gap: 6px; }
 #harm-chooser.open { display: flex; }
 .harm-type { font-size: 10px; padding: 4px 10px; letter-spacing: 1px; }
-.harm-type.active {
-  color: var(--harm); text-shadow: 0 0 6px var(--harm);
-  border-color: var(--harm) var(--steel-lo) var(--steel-lo) var(--harm);
-}
-.harm-clear { color: var(--text); }
 .harm-type small {
   display: block; font-size: 8px; font-weight: normal;
   color: var(--text-dim); letter-spacing: 0; text-transform: lowercase;
