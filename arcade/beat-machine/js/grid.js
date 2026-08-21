@@ -113,6 +113,8 @@
     sel.setAttribute('aria-label', name + ' voice for line ' + (r + 1));
     var dash = document.createElement('option');
     dash.value = ''; dash.textContent = '—';
+    // C11: the dash is visual; screen readers get a real name
+    dash.setAttribute('aria-label', 'no ' + name.toLowerCase() + ' voice');
     sel.appendChild(dash);
     list.forEach(function (id) {
       var o = document.createElement('option');
