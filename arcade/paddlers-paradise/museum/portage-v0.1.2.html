@@ -1,0 +1,2240 @@
+<title>PORTAGE</title>
+<!--
+  PORTAGE v0.1.2 — an Algonquin canoe trip. Single-file artifact build:
+  the same six classic scripts as the repo, inlined. Every pixel and sound
+  generated in code; no external requests of any kind. Deliberately
+  single-theme: the game paints its own world and background explicitly.
+-->
+<style>
+  html, body {
+    margin: 0; padding: 0; height: 100%; overflow: hidden;
+    background: #0c1a12;
+    touch-action: none;
+    -webkit-user-select: none; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #screen {
+    position: absolute; inset: 0; margin: auto;
+    image-rendering: pixelated; image-rendering: crisp-edges;
+    display: block;
+  }
+</style>
+<canvas id="screen"></canvas>
+<script>
+// PORTAGE — SPRITES & PALETTE
+// ---------------------------------------------------------------------------
+// Every sprite is a string map drawn in code (house rule: sprite maps +
+// nearest-neighbour upscale, no outside art). One character = one art pixel.
+// buildSprite() turns a map into an offscreen canvas at art resolution; the
+// renderer draws the whole frame at art resolution and upscales once, so
+// everything stays on the same pixel grid.
+// ---------------------------------------------------------------------------
+
+'use strict';
+
+// --- the Algonquin palette --------------------------------------------------
+var PAL = {
+  // world
+  deep:   '#17435f', water: '#1e567a', shallow:'#2b6b8f', ripple:'#3f83a8',
+  sand:   '#c9b27c', sandDk: '#a8905e',
+  grass:  '#2a5c35', grassDk:'#20492a', forest: '#1b3f24',
+  trail:  '#8a6b45', trailDk:'#6f5436',
+  rock:   '#8d8d95', rockDk: '#6e6e78',
+  // flora
+  pine:   '#2c6e3f', pineDk: '#1f5330', birch: '#e8e4da', birchDk:'#b8b4aa',
+  trunk:  '#5d4632', lily:   '#3f8a4f', lilyFl: '#e8b4c8',
+  // things
+  canoe:  '#a33e2f', canoeDk:'#7c2c21', paddle: '#c9a86a',
+  tent:   '#4a7ab5', tentDk: '#375d8c',
+  fire1:  '#e8842a', fire2:  '#f2c14b', ember:  '#8c3a1d',
+  signOr: '#e2731f', signYl: '#e8c832', post:   '#4d3a28',
+  dock:   '#9a7b52', dockDk: '#7c6140',
+  // creatures
+  skin:   '#d9a86c', shirt:  '#b53a3a', shirtDk:'#8c2c2c', hat:    '#3a5c3a',
+  moose:  '#5c4230', mooseDk:'#43301f', antler: '#c9b27c',
+  loon:   '#1a1a22', loonWh: '#e8e8f0',
+  heron:  '#7a8a99', beaver: '#4d3520', turtle: '#3f5c35',
+  // ui
+  white:  '#f2f2e8', black:  '#10100c', gold:   '#f2c14b',
+  bad:    '#d94f4f', good:   '#69c977', uiBg:   'rgba(12,20,16,0.82)',
+};
+
+// char -> palette key, shared by all sprite maps below
+var INK = {
+  'w': 'white',  'k': 'black',
+  'c': 'canoe',  'C': 'canoeDk', 'p': 'paddle',
+  's': 'skin',   'r': 'shirt',   'R': 'shirtDk', 'h': 'hat',
+  't': 'tent',   'T': 'tentDk',
+  'f': 'fire1',  'F': 'fire2',   'e': 'ember',
+  'P': 'pine',   'q': 'pineDk',  'b': 'birch',   'B': 'birchDk', 'u': 'trunk',
+  'm': 'moose',  'M': 'mooseDk', 'a': 'antler',
+  'l': 'loon',   'L': 'loonWh',
+  'H': 'heron',  'v': 'beaver',  'V': 'turtle',
+  'o': 'signOr', 'y': 'signYl',  'n': 'post',
+  'd': 'dock',   'D': 'dockDk',
+  'g': 'lily',   'G': 'lilyFl',
+  'x': 'rock',   'X': 'rockDk',
+};
+
+// --- sprite maps ('.' = transparent) ---------------------------------------
+var MAPS = {
+
+  // the tripper, on foot, facing up (rotated to heading in the renderer)
+  walk1: [
+    '..hh..',
+    '.hhhh.',
+    '..ss..',
+    'rrrrrr',
+    '.rRRr.',
+    '.rrrr.',
+    '.k..k.',
+    '.k....',
+  ],
+  walk2: [
+    '..hh..',
+    '.hhhh.',
+    '..ss..',
+    'rrrrrr',
+    '.rRRr.',
+    '.rrrr.',
+    '.k..k.',
+    '....k.',
+  ],
+  stand: [
+    '..hh..',
+    '.hhhh.',
+    '..ss..',
+    'rrrrrr',
+    '.rRRr.',
+    '.rrrr.',
+    '.k..k.',
+    '.k..k.',
+  ],
+
+  // the red canoe with paddler, bow up (two paddle frames, L and R stroke)
+  canoeL: [
+    '...cc...',
+    '..cCCc..',
+    '..cCCc..',
+    '.pcCCc..',
+    'ppcssc..',
+    '.pcrrc..',
+    '..cRRc..',
+    '..cCCc..',
+    '..cCCc..',
+    '..cCCc..',
+    '..cCCc..',
+    '...cc...',
+  ],
+  canoeR: [
+    '...cc...',
+    '..cCCc..',
+    '..cCCc..',
+    '..cCCcp.',
+    '..csscpp',
+    '..crrcp.',
+    '..cRRc..',
+    '..cCCc..',
+    '..cCCc..',
+    '..cCCc..',
+    '..cCCc..',
+    '...cc...',
+  ],
+
+  // portaging: the canoe overhead, hull up, legs below — the classic shape
+  carry1: [
+    '...cc...',
+    '..cccc..',
+    '.cCCCCc.',
+    '.cCCCCc.',
+    '.cCCCCc.',
+    '..cccc..',
+    '..k..k..',
+    '..k.....',
+  ],
+  carry2: [
+    '...cc...',
+    '..cccc..',
+    '.cCCCCc.',
+    '.cCCCCc.',
+    '.cCCCCc.',
+    '..cccc..',
+    '..k..k..',
+    '.....k..',
+  ],
+
+  // a beached canoe, side-on-ish from above
+  canoeBeached: [
+    '.cccccc.',
+    'cCCCCCCc',
+    'cCCCCCCc',
+    '.cccccc.',
+  ],
+
+  pine: [
+    '....P....',
+    '...PPP...',
+    '..PPPPP..',
+    '...qPq...',
+    '..PPPPP..',
+    '.PPPPPPP.',
+    '..qPPPq..',
+    '.PPPPPPP.',
+    'PPPPPPPPP',
+    '....u....',
+    '....u....',
+  ],
+  birch: [
+    '..PPP..',
+    '.PPPPP.',
+    'PPqPqPP',
+    '.PPPPP.',
+    '..PPP..',
+    '...b...',
+    '...B...',
+    '...b...',
+    '...b...',
+    '...B...',
+  ],
+  rock: [
+    '..xxx..',
+    '.xxxxx.',
+    'xxXxXxx',
+    '.XXXXX.',
+  ],
+  lily: [
+    '.gg.gG',
+    'gggg.g',
+    '.gg...',
+  ],
+
+  tent: [
+    '.....tt.....',
+    '....tttt....',
+    '...tttttt...',
+    '..ttTTTTtt..',
+    '.ttTTkkTTtt.',
+    'ttTTTkkTTTtt',
+  ],
+  fire1: [
+    '..F...',
+    '.fFf..',
+    '.ffF..',
+    'efffe.',
+    '.eee..',
+  ],
+  fire2: [
+    '...f..',
+    '..Ff..',
+    '.fFFf.',
+    'effffe',
+    '.eee..',
+  ],
+
+  campSign: [       // the orange campsite sign on a post
+    'oooo',
+    'okko',
+    'oooo',
+    '.nn.',
+    '.nn.',
+    '.nn.',
+  ],
+  portSign: [       // the yellow portage sign on a post
+    'yyyy',
+    'ykky',
+    'yyyy',
+    '.nn.',
+    '.nn.',
+    '.nn.',
+  ],
+  board: [          // the permit board at the access point
+    'nnnnnnnnnn',
+    'nwwwwwwwwn',
+    'nwkwkwkkwn',
+    'nwwwwwwwwn',
+    'nwkkwkwkwn',
+    'nwwwwwwwwn',
+    'nnnnnnnnnn',
+    '...nn.....',
+    '...nn.....',
+  ],
+
+  moose: [
+    'a..a....a..a',
+    '.aa......aa.',
+    '..mm....mm..',
+    '..mmmmmmmm..',
+    '.mmmmmmmmmm.',
+    'Mmmmmmmmmmm.',
+    'kM.mmmmmmm..',
+    '...M..M.....',
+    '...M..M.....',
+  ],
+  loon: [
+    '.kk.....',
+    'kkkk....',
+    '.klllll.',
+    '.lLlLll.',
+    '..lllll.',
+  ],
+  heron: [
+    '.kk...',
+    '.HH...',
+    '..H...',
+    '..HH..',
+    '.HHHH.',
+    '.HHHH.',
+    '..HH..',
+    '..k...',
+    '..k...',
+  ],
+  beaver: [
+    '.vvvv..',
+    'vvvvvv.',
+    'kvvvvv.',
+    '.vvvv..',
+    '..kkkk.',
+  ],
+  turtle: [
+    '.VVVV.',
+    'VVkVVV',
+    'kVVVVk',
+  ],
+
+};
+
+// --- builder ----------------------------------------------------------------
+
+var SPRITES = {};
+
+function buildSprite(name, rows, ink) {
+  var h = rows.length, w = 0, y, x;
+  for (y = 0; y < h; y++) w = Math.max(w, rows[y].length);
+  var c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  var g = c.getContext('2d');
+  for (y = 0; y < h; y++) {
+    for (x = 0; x < rows[y].length; x++) {
+      var ch = rows[y][x];
+      if (ch === '.' || ch === ' ') continue;
+      var key = ink[ch];
+      if (!key) continue;
+      g.fillStyle = PAL[key];
+      g.fillRect(x, y, 1, 1);
+    }
+  }
+  SPRITES[name] = c;
+  return c;
+}
+
+function buildAllSprites() {
+  var name;
+  for (name in MAPS) buildSprite(name, MAPS[name], INK);
+  // the objective chevron, in gold, with its own tiny ink
+  buildSprite('marker', ['g....g', 'gg..gg', '.gggg.', '..gg..'], { g: 'gold' });
+}
+
+// --- deterministic PRNG (mulberry32) ---------------------------------------
+// One fixed seed shapes the terrain (the park does not rearrange itself);
+// a per-trip seed drives wind and wildlife so every trip differs a little.
+function rngFrom(seed) {
+  var a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+</script>
+<script>
+// PORTAGE — THE WORLD
+// ---------------------------------------------------------------------------
+// Hand-authored geography of the classic beginner route out of the Canoe Lake
+// access point: north up Canoe Lake, the 295m portage past the Joe Lake dam,
+// through Joe and Little Joe and Baby Joe, and on to Burnt Island Lake. Lake
+// names and portage lengths are real facts; the shapes are drawn from
+// knowledge of the place, never traced from the published park map (Evrtek's
+// ruling: clean data only, no theft).
+//
+// The world is authored as lake polygons + portage polylines + points of
+// interest, then rasterised once into a coarse grid for collision and
+// pre-rendered once into an offscreen canvas for drawing. World units are art
+// pixels. North is up. The map is fun-sized, not to scale — a 3-day trip in
+// about fifteen minutes.
+// ---------------------------------------------------------------------------
+
+'use strict';
+
+var WORLD = {
+  W: 1200, H: 1600,          // world size, art px
+  CELL: 4,                   // collision cell, art px
+  // terrain codes
+  DEEP: 0, WATER: 1, SHALLOW: 2, SAND: 3, GRASS: 4, TRAIL: 5,
+};
+
+// --- lakes as smoothed polygons ---------------------------------------------
+// Control points, clockwise-ish. Smoothed with Catmull-Rom before filling so
+// the shorelines read as lakes rather than as polygons.
+
+var LAKES = [
+  {
+    name: 'Canoe Lake',
+    big: true,                              // open water: wind matters here
+    pts: [
+      [560, 1030], [660, 1050], [740, 1120], [780, 1220], [790, 1340],
+      [740, 1460], [640, 1520], [540, 1530], [450, 1480], [400, 1380],
+      [390, 1260], [420, 1140], [480, 1060],
+    ],
+    islands: [
+      { c: [590, 1265], r: 34 },            // Wapomeo, roughly
+      { c: [520, 1170], r: 16 },
+    ],
+  },
+  {
+    name: 'Joe Lake',
+    pts: [
+      [610, 690], [700, 700], [770, 760], [790, 850], [770, 940],
+      [700, 990], [620, 1000], [560, 950], [545, 860], [560, 770],
+    ],
+    islands: [
+      { c: [745, 785], r: 20 },             // the island the campsite sits on
+    ],
+  },
+  {
+    name: 'Little Joe Lake',
+    pts: [
+      [430, 520], [510, 540], [560, 600], [560, 670], [500, 720],
+      [420, 720], [370, 660], [365, 580],
+    ],
+    islands: [],
+    lilies: true,                           // shallow, weedy — moose country
+  },
+  {
+    name: 'Baby Joe Lake',
+    pts: [
+      [360, 320], [430, 335], [460, 390], [440, 450], [380, 470],
+      [325, 440], [310, 375],
+    ],
+    islands: [],
+  },
+  {
+    name: 'Burnt Island Lake',
+    big: true,
+    pts: [
+      [200, 70], [420, 40], [640, 55], [850, 90], [950, 150],
+      [930, 220], [780, 250], [600, 230], [430, 250], [260, 240],
+      [150, 190], [140, 120],
+    ],
+    islands: [
+      { c: [520, 140], r: 26 },
+      { c: [750, 160], r: 18 },
+    ],
+  },
+];
+
+// narrows: water channels joining lakes that you paddle straight through
+var CHANNELS = [
+  { from: [620, 1000], to: [640, 960], w: 26 },    // Joe south bay
+  { from: [560, 770], to: [520, 700], w: 22 },     // Joe -> Little Joe narrows
+];
+
+// --- portages ---------------------------------------------------------------
+// Each portage is a trail polyline; the two ends are canoe landings. Lengths
+// are the real posted lengths, which the HUD shows on the yellow signs.
+
+var PORTAGES = [
+  {
+    name: 'Joe Lake Dam portage', metres: 295,
+    path: [[622, 1035], [640, 1000], [643, 990]],
+    lakes: ['Canoe Lake', 'Joe Lake'],
+  },
+  {
+    name: 'Little Joe portage', metres: 435,
+    path: [[424, 530], [404, 486], [392, 459]],
+    lakes: ['Little Joe Lake', 'Baby Joe Lake'],
+  },
+  {
+    name: 'Burnt Island portage', metres: 200,
+    path: [[352, 322], [340, 284], [328, 248]],
+    lakes: ['Baby Joe Lake', 'Burnt Island Lake'],
+  },
+];
+
+// --- points of interest ------------------------------------------------------
+
+var POIS = {
+  dock:      { x: 600, y: 1500, name: 'Canoe Lake Access Point' },
+  board:     { x: 585, y: 1512 },                       // the permit board
+  canoeStart:{ x: 615, y: 1496 },                       // your canoe, waiting
+  cairn:     { x: 782, y: 860, name: 'Tom Thomson cairn',
+               text: 'A stone cairn to the painter Tom Thomson, who knew these lakes.' },
+};
+
+var CAMPSITES = [
+  { id: 'joe',   x: 745, y: 785,  lake: 'Joe Lake',          name: 'Joe Lake island site' },
+  { id: 'burnt', x: 520, y: 138,  lake: 'Burnt Island Lake', name: 'Burnt Island — island site' },
+  { id: 'canoe', x: 430, y: 1200, lake: 'Canoe Lake',        name: 'Canoe Lake west site' },
+  { id: 'ljoe',  x: 500, y: 545,  lake: 'Little Joe Lake',   name: 'Little Joe site' },
+];
+
+// --- wildlife ----------------------------------------------------------------
+// Anchors + habits. Actual individuals are spawned per trip from the trip
+// seed in game.js; these are the places and hours they keep.
+
+var WILDLIFE_SPOTS = [
+  { species: 'Common Loon',        at: [600, 1300], water: true,  from: 0,  to: 24 },
+  { species: 'Common Loon',        at: [680, 860],  water: true,  from: 0,  to: 24 },
+  { species: 'Common Loon',        at: [500, 140],  water: true,  from: 0,  to: 24 },
+  { species: 'Moose',              at: [400, 690],  water: false, from: 6,  to: 10 },
+  { species: 'Moose',              at: [430, 250],  water: false, from: 17, to: 21 },
+  { species: 'Great Blue Heron',   at: [430, 1420], water: false, from: 7,  to: 19 },
+  { species: 'Beaver',             at: [630, 1010], water: true,  from: 17, to: 22 },
+  { species: 'Painted Turtle',     at: [545, 640],  water: true,  from: 9,  to: 17 },
+  { species: 'Painted Turtle',     at: [760, 930],  water: true,  from: 9,  to: 17 },
+];
+
+// ---------------------------------------------------------------------------
+// Rasterisation
+// ---------------------------------------------------------------------------
+
+var GRID = null;           // Uint8Array of terrain codes, gw x gh
+var GW = 0, GH = 0;
+var TREES = [];            // {x, y, kind} scattered on land, for the renderer
+var LILIES = [];           // lily pads on the weedy lake
+
+function smoothPoly(pts, subdiv) {
+  // Catmull-Rom through the control points, closed loop
+  var out = [], n = pts.length, i, t, p0, p1, p2, p3;
+  for (i = 0; i < n; i++) {
+    p0 = pts[(i - 1 + n) % n]; p1 = pts[i];
+    p2 = pts[(i + 1) % n];     p3 = pts[(i + 2) % n];
+    for (t = 0; t < subdiv; t++) {
+      var u = t / subdiv, u2 = u * u, u3 = u2 * u;
+      out.push([
+        0.5 * ((2 * p1[0]) + (-p0[0] + p2[0]) * u + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * u2 + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * u3),
+        0.5 * ((2 * p1[1]) + (-p0[1] + p2[1]) * u + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * u2 + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * u3),
+      ]);
+    }
+  }
+  return out;
+}
+
+function pointInPoly(x, y, poly) {
+  var inside = false, i, j, n = poly.length;
+  for (i = 0, j = n - 1; i < n; j = i++) {
+    var xi = poly[i][0], yi = poly[i][1], xj = poly[j][0], yj = poly[j][1];
+    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+/**
+ * Author roughly, snap precisely. Every authored point of interest is walked
+ * to the nearest cell of the terrain it actually needs, spiralling outward —
+ * so a campsite authored a few pixels into the lake climbs out onto its own
+ * shore instead of drowning the player. This ran the first probe of the world
+ * red (every start point was DEEP water) and is the reason it can never
+ * happen again: the shapes own the truth, the points follow.
+ */
+function snapTo(x, y, wants, maxR) {
+  if (wants(terrainAt(x, y))) return { x: x, y: y };
+  var r, a;
+  for (r = 4; r <= (maxR || 120); r += 4) {
+    for (a = 0; a < Math.PI * 2; a += Math.PI / 16) {
+      var nx = x + Math.cos(a) * r, ny = y + Math.sin(a) * r;
+      if (nx < 8 || ny < 8 || nx > WORLD.W - 8 || ny > WORLD.H - 8) continue;
+      if (wants(terrainAt(nx, ny))) return { x: nx, y: ny };
+    }
+  }
+  return { x: x, y: y };
+}
+
+function wantsLand(t)    { return !isWater(t); }
+function wantsShallow(t) { return t === WORLD.SHALLOW; }
+
+function fixupGeography() {
+  // the dock stands on the south shore of Canoe Lake, planks reaching north
+  var d = snapTo(POIS.dock.x, POIS.dock.y + 30, wantsLand);
+  // walk it back toward the water so the planks actually reach it
+  var w = snapTo(d.x, d.y, wantsShallow, 60);
+  var dx = w.x - d.x, dy = w.y - d.y, len = Math.hypot(dx, dy) || 1;
+  POIS.dock.x = Math.round(w.x - (dx / len) * 8);
+  POIS.dock.y = Math.round(w.y - (dy / len) * 8);
+  var land = snapTo(POIS.dock.x, POIS.dock.y, wantsLand, 60);
+  POIS.start = { x: land.x, y: land.y };
+  POIS.board.x = land.x - 14; POIS.board.y = land.y + 4;
+  var bl = snapTo(POIS.board.x, POIS.board.y, wantsLand, 40);
+  POIS.board.x = bl.x; POIS.board.y = bl.y;
+  // the canoe waits in the shallows beside the dock
+  var cs = snapTo(POIS.dock.x + 10, POIS.dock.y - 4, wantsShallow, 60);
+  POIS.canoeStart.x = cs.x; POIS.canoeStart.y = cs.y;
+
+  // campsites climb out of the water onto their own ground
+  CAMPSITES.forEach(function (c) {
+    var p = snapTo(c.x, c.y, wantsLand);
+    // then a step further inland, off the beach
+    var p2 = snapTo(p.x, p.y, function (t) { return t === WORLD.GRASS; }, 24);
+    c.x = Math.round(p2.x); c.y = Math.round(p2.y);
+  });
+
+  var cn = snapTo(POIS.cairn.x + 20, POIS.cairn.y, wantsLand);
+  POIS.cairn.x = Math.round(cn.x); POIS.cairn.y = Math.round(cn.y);
+}
+
+function buildWorld() {
+  var CELL = WORLD.CELL;
+  GW = Math.ceil(WORLD.W / CELL);
+  GH = Math.ceil(WORLD.H / CELL);
+  GRID = new Uint8Array(GW * GH);
+  GRID.fill(WORLD.GRASS);
+
+  var polys = LAKES.map(function (l) { return { lake: l, poly: smoothPoly(l.pts, 6) }; });
+
+  var gx, gy, i;
+  for (gy = 0; gy < GH; gy++) {
+    for (gx = 0; gx < GW; gx++) {
+      var x = gx * CELL + CELL / 2, y = gy * CELL + CELL / 2;
+      for (i = 0; i < polys.length; i++) {
+        if (pointInPoly(x, y, polys[i].poly)) {
+          var isle = false, isl = polys[i].lake.islands, k;
+          for (k = 0; k < isl.length; k++) {
+            var dx = x - isl[k].c[0], dy = y - isl[k].c[1];
+            if (dx * dx + dy * dy < isl[k].r * isl[k].r) { isle = true; break; }
+          }
+          GRID[gy * GW + gx] = isle ? WORLD.GRASS : WORLD.WATER;
+          break;
+        }
+      }
+    }
+  }
+
+  // channels: stamp water along the joining lines
+  CHANNELS.forEach(function (c) {
+    stampLine(c.from, c.to, c.w / 2, WORLD.WATER);
+  });
+
+  // shallows + sand: water next to land becomes shallow; land next to water, sand
+  var next = new Uint8Array(GRID);
+  for (gy = 1; gy < GH - 1; gy++) {
+    for (gx = 1; gx < GW - 1; gx++) {
+      var t = GRID[gy * GW + gx];
+      var nearOther = false, ox, oy;
+      for (oy = -1; oy <= 1 && !nearOther; oy++) {
+        for (ox = -1; ox <= 1; ox++) {
+          var o = GRID[(gy + oy) * GW + (gx + ox)];
+          if ((t === WORLD.WATER) !== (o === WORLD.WATER || o === WORLD.SHALLOW)) {
+            if ((t === WORLD.WATER && o === WORLD.GRASS) || (t === WORLD.GRASS && (o === WORLD.WATER))) { nearOther = true; break; }
+          }
+        }
+      }
+      if (nearOther) next[gy * GW + gx] = (t === WORLD.WATER) ? WORLD.SHALLOW : WORLD.SAND;
+    }
+  }
+  GRID = next;
+
+  // deep water: water far from any shore (a second pass over the result)
+  var deep = new Uint8Array(GRID);
+  for (gy = 3; gy < GH - 3; gy++) {
+    for (gx = 3; gx < GW - 3; gx++) {
+      if (GRID[gy * GW + gx] !== WORLD.WATER) continue;
+      var allWater = true, ox2, oy2;
+      for (oy2 = -3; oy2 <= 3 && allWater; oy2++) {
+        for (ox2 = -3; ox2 <= 3; ox2++) {
+          var o2 = GRID[(gy + oy2) * GW + (gx + ox2)];
+          if (o2 !== WORLD.WATER && o2 !== WORLD.DEEP) { allWater = false; break; }
+        }
+      }
+      if (allWater) deep[gy * GW + gx] = WORLD.DEEP;
+    }
+  }
+  GRID = deep;
+
+  // portage trails carved into the land
+  PORTAGES.forEach(function (p) {
+    var i2;
+    for (i2 = 0; i2 < p.path.length - 1; i2++) {
+      stampLine(p.path[i2], p.path[i2 + 1], 5, WORLD.TRAIL, true);
+    }
+  });
+
+  fixupGeography();          // points snap to the terrain they need
+  scatterFlora();            // then the forest keeps clear of the real spots
+}
+
+function stampLine(a, b, radius, code, landOnly) {
+  var CELL = WORLD.CELL;
+  var len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  var steps = Math.ceil(len / (CELL / 2)), s;
+  for (s = 0; s <= steps; s++) {
+    var x = a[0] + ((b[0] - a[0]) * s) / steps;
+    var y = a[1] + ((b[1] - a[1]) * s) / steps;
+    var r = Math.ceil(radius / CELL), ox, oy;
+    var cgx = Math.floor(x / CELL), cgy = Math.floor(y / CELL);
+    for (oy = -r; oy <= r; oy++) {
+      for (ox = -r; ox <= r; ox++) {
+        if (ox * ox + oy * oy > r * r) continue;
+        var gx = cgx + ox, gy = cgy + oy;
+        if (gx < 0 || gy < 0 || gx >= GW || gy >= GH) continue;
+        var cur = GRID[gy * GW + gx];
+        if (landOnly && (cur === WORLD.WATER || cur === WORLD.DEEP || cur === WORLD.SHALLOW)) continue;
+        GRID[gy * GW + gx] = code;
+      }
+    }
+  }
+}
+
+function terrainAt(x, y) {
+  var gx = Math.floor(x / WORLD.CELL), gy = Math.floor(y / WORLD.CELL);
+  if (gx < 0 || gy < 0 || gx >= GW || gy >= GH) return WORLD.GRASS;
+  return GRID[gy * GW + gx];
+}
+
+function isWater(t) { return t === WORLD.WATER || t === WORLD.DEEP || t === WORLD.SHALLOW; }
+
+function scatterFlora() {
+  // Terrain is the same every trip, so the forest is too: fixed seed.
+  var rnd = rngFrom(0x0A160), i;
+  TREES.length = 0;
+  for (i = 0; i < 2600; i++) {
+    var x = rnd() * WORLD.W, y = rnd() * WORLD.H;
+    var t = terrainAt(x, y);
+    if (t !== WORLD.GRASS) continue;
+    // keep a small clearing around trails, camps and signs
+    if (nearAnyTrail(x, y, 10)) continue;
+    if (nearAnyCamp(x, y, 16)) continue;
+    TREES.push({ x: x, y: y, kind: rnd() < 0.72 ? 'pine' : 'birch' });
+  }
+  TREES.sort(function (a, b) { return a.y - b.y; });   // painter's order
+
+  LILIES.length = 0;
+  var lakes = LAKES.filter(function (l) { return l.lilies; });
+  lakes.forEach(function (l) {
+    var cx = 0, cy = 0;
+    l.pts.forEach(function (p) { cx += p[0]; cy += p[1]; });
+    cx /= l.pts.length; cy /= l.pts.length;
+    var j;
+    for (j = 0; j < 40; j++) {
+      var a = rnd() * Math.PI * 2, r = 30 + rnd() * 90;
+      var lx = cx + Math.cos(a) * r, ly = cy + Math.sin(a) * r;
+      if (isWater(terrainAt(lx, ly))) LILIES.push({ x: lx, y: ly });
+    }
+  });
+}
+
+function nearAnyTrail(x, y, d) {
+  var i, j;
+  for (i = 0; i < PORTAGES.length; i++) {
+    var p = PORTAGES[i].path;
+    for (j = 0; j < p.length - 1; j++) {
+      if (distToSeg(x, y, p[j], p[j + 1]) < d) return true;
+    }
+  }
+  return false;
+}
+
+function nearAnyCamp(x, y, d) {
+  var i;
+  for (i = 0; i < CAMPSITES.length; i++) {
+    var c = CAMPSITES[i];
+    if (Math.hypot(x - c.x, y - c.y) < d) return true;
+  }
+  if (Math.hypot(x - POIS.dock.x, y - POIS.dock.y) < d * 2) return true;
+  return false;
+}
+
+function distToSeg(px, py, a, b) {
+  var dx = b[0] - a[0], dy = b[1] - a[1];
+  var t = ((px - a[0]) * dx + (py - a[1]) * dy) / (dx * dx + dy * dy || 1);
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (a[0] + dx * t), py - (a[1] + dy * t));
+}
+
+// --- landings ---------------------------------------------------------------
+// The only places a canoe goes ashore: the dock, portage ends, and the water
+// edge of each campsite. Keeping landings explicit means nobody ever strands
+// a canoe somewhere unreachable.
+
+var LANDINGS = [];
+
+function buildLandings() {
+  LANDINGS.length = 0;
+  LANDINGS.push({ x: POIS.dock.x, y: POIS.dock.y - 8, kind: 'dock', name: 'Access Point dock' });
+  PORTAGES.forEach(function (p, i) {
+    var a = p.path[0], b = p.path[p.path.length - 1];
+    LANDINGS.push({ x: a[0], y: a[1], kind: 'portage', portage: i, end: 0, name: p.name + ' (' + p.metres + ' m)' });
+    LANDINGS.push({ x: b[0], y: b[1], kind: 'portage', portage: i, end: 1, name: p.name + ' (' + p.metres + ' m)' });
+  });
+  CAMPSITES.forEach(function (c) {
+    // campsite landing sits at the nearest water within a short walk
+    var best = null, bd = 1e9, a;
+    for (a = 0; a < Math.PI * 2; a += Math.PI / 12) {
+      var r;
+      for (r = 4; r < 40; r += 4) {
+        var x = c.x + Math.cos(a) * r, y = c.y + Math.sin(a) * r;
+        if (isWater(terrainAt(x, y))) {
+          var d = r;
+          if (d < bd) { bd = d; best = { x: x, y: y }; }
+          break;
+        }
+      }
+    }
+    if (best) LANDINGS.push({ x: best.x, y: best.y, kind: 'camp', camp: c.id, name: c.name });
+  });
+}
+
+</script>
+<script>
+// PORTAGE — AUDIO
+// ---------------------------------------------------------------------------
+// Everything synthesised in WebAudio — no sample files, same law as the art.
+// The soundtrack of Algonquin is mostly silence with a loon in it, so that is
+// what this is: loon wails on the water, paddle strokes, fire crackle at
+// camp, a mosquito at dusk, and a small chime when something goes right.
+// ---------------------------------------------------------------------------
+
+'use strict';
+
+var AUDIO = (function () {
+  var ctx = null;
+  var muted = false;
+  var master = null;
+  var buzzOsc = null, buzzGain = null;
+  var crackleTimer = 0, loonTimer = 20;
+
+  function unlock() {
+    if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    ctx = new AC();
+    master = ctx.createGain();
+    master.gain.value = 0.5;
+    master.connect(ctx.destination);
+  }
+
+  function on() { return ctx && ctx.state === 'running' && !muted; }
+
+  function tone(type, f0, f1, dur, vol, delay) {
+    if (!on()) return;
+    var t = ctx.currentTime + (delay || 0);
+    var o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(f0, t);
+    o.frequency.exponentialRampToValueAtTime(Math.max(1, f1), t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(master);
+    o.start(t); o.stop(t + dur + 0.05);
+  }
+
+  function noise(dur, vol, cutoff, delay) {
+    if (!on()) return;
+    var t = ctx.currentTime + (delay || 0);
+    var n = Math.floor(ctx.sampleRate * dur);
+    var buf = ctx.createBuffer(1, n, ctx.sampleRate);
+    var d = buf.getChannelData(0), i;
+    for (i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    var src = ctx.createBufferSource(); src.buffer = buf;
+    var f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = cutoff;
+    var g = ctx.createGain(); g.gain.value = vol;
+    src.connect(f).connect(g).connect(master);
+    src.start(t);
+  }
+
+  // The loon: a wail that rises, holds with vibrato, and falls away.
+  function loon() {
+    if (!on()) return;
+    var t = ctx.currentTime;
+    var o = ctx.createOscillator(), g = ctx.createGain();
+    var vib = ctx.createOscillator(), vibG = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(540, t);
+    o.frequency.linearRampToValueAtTime(880, t + 0.45);
+    o.frequency.setValueAtTime(880, t + 0.9);
+    o.frequency.linearRampToValueAtTime(560, t + 1.5);
+    vib.type = 'sine'; vib.frequency.value = 5.5;
+    vibG.gain.value = 14;
+    vib.connect(vibG).connect(o.frequency);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.14, t + 0.25);
+    g.gain.setValueAtTime(0.14, t + 1.1);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 1.6);
+    o.connect(g).connect(master);
+    o.start(t); o.stop(t + 1.7);
+    vib.start(t); vib.stop(t + 1.7);
+    // the echo off the far shore
+    tone('sine', 700, 560, 0.8, 0.03, 1.9);
+  }
+
+  function paddle()   { noise(0.16, 0.20, 900); }
+  function chime()    { tone('triangle', 660, 660, 0.12, 0.12); tone('triangle', 990, 990, 0.2, 0.10, 0.10); }
+  function tailSlap() { noise(0.10, 0.45, 700); }
+  function morning()  { tone('triangle', 523, 523, 0.15, 0.09); tone('triangle', 784, 784, 0.28, 0.08, 0.14); }
+
+  function setBuzz(level) {
+    if (!ctx) return;
+    if (level > 0 && !buzzOsc && on()) {
+      buzzOsc = ctx.createOscillator(); buzzGain = ctx.createGain();
+      buzzOsc.type = 'sawtooth'; buzzOsc.frequency.value = 380;
+      var wob = ctx.createOscillator(), wobG = ctx.createGain();
+      wob.type = 'sine'; wob.frequency.value = 8; wobG.gain.value = 30;
+      wob.connect(wobG).connect(buzzOsc.frequency);
+      buzzGain.gain.value = 0;
+      buzzOsc.connect(buzzGain).connect(master);
+      buzzOsc.start(); wob.start();
+      buzzOsc._wob = wob;
+    }
+    if (buzzGain) buzzGain.gain.value = 0.02 * level;
+    if (level <= 0 && buzzOsc) {
+      buzzOsc.stop(); buzzOsc._wob.stop(); buzzOsc = null; buzzGain = null;
+    }
+  }
+
+  // ambient pass, called each frame with the situation
+  function ambient(dt, state) {
+    if (!on()) return;
+    // loons keep their own irregular clock, mostly on open water, more at dusk
+    loonTimer -= dt * (state.onWater ? 1.6 : 0.5) * (state.dusk ? 2 : 1);
+    if (loonTimer <= 0) { loon(); loonTimer = 18 + Math.random() * 30; }
+    if (state.campfire) {
+      crackleTimer -= dt;
+      if (crackleTimer <= 0) { noise(0.05, 0.10, 1400); crackleTimer = 0.12 + Math.random() * 0.5; }
+    }
+    setBuzz(state.mosquito ? 1 : 0);
+  }
+
+  function toggleMute() {
+    muted = !muted;
+    if (muted) setBuzz(0);
+    if (master) master.gain.value = muted ? 0 : 0.5;   // silences sounds in flight
+    return muted;
+  }
+
+  /** Everything paused (cards, map, title): stop the drone, keep the peace. */
+  function hush() { setBuzz(0); }
+
+  return {
+    unlock: unlock, ambient: ambient, paddle: paddle, chime: chime,
+    loon: loon, tailSlap: tailSlap, morning: morning, hush: hush,
+    toggleMute: toggleMute, isMuted: function () { return muted; },
+  };
+})();
+
+</script>
+<script>
+// PORTAGE — GAME STATE
+// ---------------------------------------------------------------------------
+// The trip: launch at the Canoe Lake access point, paddle north, portage,
+// camp before dark, reach Burnt Island Lake, and come home. Energy, food and
+// daylight are the whole economy. Nothing here kills you — the worst night in
+// Algonquin is a rough one, and so it is in the game.
+//
+// The vantage is old-school GTA on purpose, and so is the grammar: the canoe
+// is the car. You walk, you board, you paddle — and on a portage you carry it
+// over your head, which no car ever asked of anyone.
+// ---------------------------------------------------------------------------
+
+'use strict';
+
+var TUNE = {
+  daySeconds: 300,          // real seconds from 06:00 to 21:00
+  dayStartMin: 360,         // 06:00 in minutes
+  dayEndMin: 1260,          // 21:00
+  duskMin: 1170,            // 19:30 — the light starts to go
+  roughMin: 1290,           // 21:30 — the dark catches you
+
+  walk: 46, bushwhack: 24, carry: 27, paddle: 58, paddleShallow: 46,
+  windMaxSlow: 22,          // px/s lost paddling dead into a big blow
+
+  drainWalk: 0.22, drainBush: 0.5, drainCarry: 0.8, drainPaddle: 0.24,
+  headwindDrain: 2.0,       // drain multiplier straight into the wind
+  mosquitoDrain: 0.5,       // dusk on land, away from a fire
+
+  energyMax: 100, exhaustedAt: 18, exhaustedMult: 0.55,
+  snackEnergy: 35, snacks: 3, meals: 4,
+
+  interact: 20, waypointAt: 26,
+  sightRadius: 38, calmSpeed: 24, sightSeconds: 1.1, fleeRadius: 22,
+};
+
+var DEV = (location.hash || '').indexOf('dev') >= 0;
+
+// --- the whole game -----------------------------------------------------------
+
+var S = null;               // state; rebuilt for every trip
+var LAKE_POLYS = [];        // [{name, poly}] for lakeAt()
+
+function newTrip() {
+  var seed = (Date.now() & 0xffffffff) >>> 0;
+  var rnd = rngFrom(seed);
+  S = {
+    mode: 'title',
+    seed: seed, rnd: rnd,
+    day: 1, clock: TUNE.dayStartMin + 60,   // 07:00 on day 1
+    energy: TUNE.energyMax, food: TUNE.meals, snacks: TUNE.snacks,
+    player: { x: (POIS.start || POIS.dock).x, y: (POIS.start || POIS.dock).y, ang: -Math.PI / 2, speed: 0, anim: 0 },
+    travel: 'foot',
+    canoe: { x: POIS.canoeStart.x, y: POIS.canoeStart.y, ang: -Math.PI / 2, beached: true },
+    wind: rollWind(rnd, 1),
+    objIndex: 0, wpIndex: 0,
+    journal: [], seen: {},
+    log: [],
+    stats: { paddle: 0, portage: 0, roughNights: 0, camps: 0 },
+    toasts: [], toastT: 0,
+    campfire: null,           // {x, y} while a camp is pitched this evening
+    sightT: 0, sightTarget: null,
+    animals: [],
+    card: null,               // {title, lines[], button} for camp/night/end
+    mapOpen: false,
+    hintT: 0,
+  };
+  spawnAnimals();
+}
+
+function rollWind(rnd, day) {
+  // day 1 gentle, later days rougher — a real forecast shape
+  var str = Math.min(1, 0.15 + rnd() * 0.35 + (day - 1) * 0.2);
+  return { from: rnd() * Math.PI * 2, str: str };
+}
+
+// --- objectives ----------------------------------------------------------------
+// Each objective: text for the HUD, a chain of waypoints for the marker, and a
+// completion test. Waypoints advance on proximity; completion can be stricter.
+
+var OBJS = [];
+
+function buildObjectives() {
+  var P = function (i, end) {
+    var L = LANDINGS.filter(function (l) { return l.kind === 'portage' && l.portage === i && l.end === end; })[0];
+    return [L.x, L.y];
+  };
+  var C = function (id) {
+    var c = CAMPSITES.filter(function (c2) { return c2.id === id; })[0];
+    return [c.x, c.y];
+  };
+  OBJS = [
+    { text: 'Walk to your red canoe and launch it',
+      wps: [[POIS.canoeStart.x, POIS.canoeStart.y]],
+      done: function () { return S.travel === 'canoe'; } },
+    { text: 'Paddle north up Canoe Lake to the yellow portage sign',
+      wps: [P(0, 0)],
+      done: function () { return S.travel !== 'canoe' && near(P(0, 0), 30); } },
+    { text: 'Portage 295 m over the Joe Lake dam, then put in',
+      wps: [P(0, 1)],
+      done: function () { return S.travel === 'canoe' && lakeAt(S.player.x, S.player.y) === 'Joe Lake'; } },
+    { text: 'Camp at the Joe Lake island site before dark',
+      wps: [C('joe')],
+      done: function () { return S.lastCamp === 'joe'; } },
+    { text: 'Day 2 — make for Burnt Island Lake',
+      wps: [P(1, 0), P(1, 1), P(2, 0), P(2, 1)],
+      done: function () { return S.travel === 'canoe' && lakeAt(S.player.x, S.player.y) === 'Burnt Island Lake'; } },
+    { text: 'Camp at the Burnt Island north site',
+      wps: [C('burnt')],
+      done: function () { return S.lastCamp === 'burnt'; } },
+    { text: 'Head home to the Canoe Lake dock',
+      wps: [P(2, 1), P(2, 0), P(1, 1), P(1, 0), P(0, 1), P(0, 0), [POIS.dock.x, POIS.dock.y]],
+      done: function () { return S.travel !== 'canoe' && near([POIS.dock.x, POIS.dock.y], 26); } },
+  ];
+}
+
+function currentTarget() {
+  var o = OBJS[S.objIndex];
+  if (!o) return null;
+  return o.wps[Math.min(S.wpIndex, o.wps.length - 1)];
+}
+
+function near(pt, d) {
+  return Math.hypot(S.player.x - pt[0], S.player.y - pt[1]) < d;
+}
+
+function tickObjectives() {
+  var o = OBJS[S.objIndex];
+  if (!o) return;
+  var t = currentTarget();
+  if (t && near(t, TUNE.waypointAt) && S.wpIndex < o.wps.length - 1) S.wpIndex++;
+  if (o.done()) {
+    S.objIndex++; S.wpIndex = 0;
+    if (S.objIndex >= OBJS.length) { endTrip(); return; }
+    AUDIO.chime();
+    toast(OBJS[S.objIndex].text);
+  }
+}
+
+// --- lakes -----------------------------------------------------------------------
+
+function buildLakePolys() {
+  LAKE_POLYS = LAKES.map(function (l) { return { name: l.name, poly: smoothPoly(l.pts, 6), big: !!l.big }; });
+}
+
+function lakeAt(x, y) {
+  var i;
+  for (i = 0; i < LAKE_POLYS.length; i++) {
+    if (pointInPoly(x, y, LAKE_POLYS[i].poly)) return LAKE_POLYS[i].name;
+  }
+  return null;
+}
+
+function onBigOpenWater() {
+  if (S.travel !== 'canoe') return false;
+  if (terrainAt(S.player.x, S.player.y) !== WORLD.DEEP) return false;
+  var l = lakeAt(S.player.x, S.player.y), i;
+  for (i = 0; i < LAKE_POLYS.length; i++) {
+    if (LAKE_POLYS[i].name === l) return LAKE_POLYS[i].big;
+  }
+  return false;
+}
+
+// --- wildlife ----------------------------------------------------------------------
+
+function spawnAnimals() {
+  S.animals = WILDLIFE_SPOTS.map(function (w) {
+    return {
+      species: w.species, home: w.at.slice(), water: w.water,
+      from: w.from, to: w.to,
+      x: w.at[0] + (S.rnd() - 0.5) * 30, y: w.at[1] + (S.rnd() - 0.5) * 30,
+      ang: S.rnd() * Math.PI * 2, state: 'idle', t: S.rnd() * 4, fleeT: 0,
+    };
+  });
+}
+
+function hourNow() { return S.clock / 60; }
+
+function animalActive(a) {
+  var h = hourNow();
+  return h >= a.from && h <= a.to && a.state !== 'gone';
+}
+
+function tickAnimals(dt) {
+  var px = S.player.x, py = S.player.y, pspeed = S.player.speed;
+  S.sightTarget = null;
+  S.animals.forEach(function (a) {
+    if (!animalActive(a)) return;
+    a.t -= dt;
+    if (a.state === 'idle') {
+      if (a.t <= 0) { a.ang = S.rnd() * Math.PI * 2; a.t = 2 + S.rnd() * 4; }
+      // small drift, tethered home
+      var drift = a.species === 'Moose' ? 5 : 8;
+      a.x += Math.cos(a.ang) * drift * dt;
+      a.y += Math.sin(a.ang) * drift * dt;
+      var hx = a.home[0] - a.x, hy = a.home[1] - a.y;
+      if (Math.hypot(hx, hy) > 46) { a.ang = Math.atan2(hy, hx); }
+      // stay in / out of water as its kind demands
+      var wet = isWater(terrainAt(a.x, a.y));
+      if (a.water !== wet) { a.x = a.home[0]; a.y = a.home[1]; }
+
+      var d = Math.hypot(px - a.x, py - a.y);
+      if (d < TUNE.fleeRadius && pspeed > TUNE.calmSpeed) {
+        a.state = 'flee'; a.fleeT = 1.2;
+        if (a.species === 'Beaver') AUDIO.tailSlap();
+      } else if (d < TUNE.sightRadius && pspeed <= TUNE.calmSpeed) {
+        S.sightTarget = a;
+      }
+    } else if (a.state === 'flee') {
+      var away = Math.atan2(a.y - py, a.x - px);
+      a.x += Math.cos(away) * 40 * dt;
+      a.y += Math.sin(away) * 40 * dt;
+      a.fleeT -= dt;
+      if (a.fleeT <= 0) a.state = 'gone';   // dove, or slipped into the trees
+    }
+  });
+
+  if (S.sightTarget) {
+    S.sightT += dt;
+    if (S.sightT >= TUNE.sightSeconds) {
+      recordSighting(S.sightTarget);
+      S.sightT = 0;
+    }
+  } else {
+    S.sightT = 0;
+  }
+}
+
+function recordSighting(a) {
+  a.state = 'gone';           // it goes about its day; the moment was yours
+  if (!S.seen[a.species]) {
+    S.seen[a.species] = true;
+    S.journal.push({ species: a.species, day: S.day });
+    toast(a.species + ' — sighted! (' + S.journal.length + ' in the journal)');
+    AUDIO.chime();
+    if (a.species === 'Common Loon') AUDIO.loon();
+  }
+}
+
+// --- movement -------------------------------------------------------------------
+
+function moveSpeed(dirX, dirY) {
+  var t = terrainAt(S.player.x, S.player.y);
+  var sp;
+  if (S.travel === 'canoe') {
+    sp = t === WORLD.SHALLOW ? TUNE.paddleShallow : TUNE.paddle;
+    if (onBigOpenWater() && S.wind.str > 0.05) {
+      var fx = Math.cos(S.wind.from), fy = Math.sin(S.wind.from);
+      var head = dirX * fx + dirY * fy;               // >0 = into the wind
+      if (head > 0) sp -= head * S.wind.str * TUNE.windMaxSlow;
+    }
+  } else if (S.travel === 'carry') {
+    sp = TUNE.carry * (t === WORLD.TRAIL ? 1 : 0.7);
+  } else {
+    sp = (t === WORLD.TRAIL || t === WORLD.SAND) ? TUNE.walk : TUNE.bushwhack;
+  }
+  if (S.energy <= TUNE.exhaustedAt) sp *= TUNE.exhaustedMult;
+  return Math.max(10, sp);
+}
+
+function passable(x, y) {
+  var t = terrainAt(x, y);
+  if (x < 4 || y < 4 || x > WORLD.W - 4 || y > WORLD.H - 4) return false;
+  if (S.travel === 'canoe') return isWater(t);
+  return !isWater(t);
+}
+
+function tickMove(dt, inX, inY) {
+  var mag = Math.hypot(inX, inY);
+  if (mag < 0.1) { S.player.speed = 0; return; }
+  inX /= mag; inY /= mag;
+
+  var sp = moveSpeed(inX, inY);
+  var nx = S.player.x + inX * sp * dt;
+  var ny = S.player.y + inY * sp * dt;
+  if (passable(nx, ny)) { S.player.x = nx; S.player.y = ny; }
+  else if (passable(nx, S.player.y)) { S.player.x = nx; }
+  else if (passable(S.player.x, ny)) { S.player.y = ny; }
+  else { S.player.speed = 0; return; }
+
+  S.player.ang = Math.atan2(inY, inX);
+  S.player.speed = sp;
+  S.player.anim += dt * sp * 0.28;
+
+  // the canoe rides with you when aboard or overhead
+  if (S.travel !== 'foot') {
+    S.canoe.x = S.player.x; S.canoe.y = S.player.y; S.canoe.ang = S.player.ang;
+  }
+
+  // energy
+  var drain = S.travel === 'canoe' ? TUNE.drainPaddle
+    : S.travel === 'carry' ? TUNE.drainCarry
+    : (terrainAt(S.player.x, S.player.y) === WORLD.TRAIL ? TUNE.drainWalk : TUNE.drainBush);
+  if (S.travel === 'canoe' && onBigOpenWater()) {
+    var fx = Math.cos(S.wind.from), fy = Math.sin(S.wind.from);
+    if (inX * fx + inY * fy > 0.3) drain *= TUNE.headwindDrain;
+  }
+  var wasAbove = S.energy > TUNE.exhaustedAt;
+  S.energy = Math.max(0, S.energy - drain * dt);
+  if (wasAbove && S.energy <= TUNE.exhaustedAt) {
+    toast('Exhausted — eat a snack, or make camp.');
+  }
+
+  // the trip log's odometers
+  if (S.travel === 'canoe') S.stats.paddle += sp * dt;
+  if (S.travel === 'carry') S.stats.portage += sp * dt;
+  // paddle strokes, for the ears
+  if (S.travel === 'canoe') {
+    S.strokeT = (S.strokeT || 0) - dt;
+    if (S.strokeT <= 0) { AUDIO.paddle(); S.strokeT = 0.55; }
+  }
+}
+
+// --- context action ---------------------------------------------------------------
+// One button, whose meaning is always written on it. This is most of the
+// "figure out what to do" answer: stand near a thing, the button names it.
+
+function nearestLanding(maxD) {
+  var best = null, bd = maxD || TUNE.interact;
+  LANDINGS.forEach(function (l) {
+    var d = Math.hypot(S.player.x - l.x, S.player.y - l.y);
+    if (d < bd) { bd = d; best = l; }
+  });
+  return best;
+}
+
+function nearestCampsite(maxD) {
+  var best = null, bd = maxD || 24;
+  CAMPSITES.forEach(function (c) {
+    var d = Math.hypot(S.player.x - c.x, S.player.y - c.y);
+    if (d < bd) { bd = d; best = c; }
+  });
+  return best;
+}
+
+function nearCanoe() {
+  return S.canoe.beached &&
+    Math.hypot(S.player.x - S.canoe.x, S.player.y - S.canoe.y) < TUNE.interact;
+}
+
+function waterNearby() {
+  // Only ever return a point that was ACTUALLY verified to be water. The
+  // first version tested at radius r and returned r+6 unverified — the review
+  // fleet found 149 standing positions where that put the canoe on dry land
+  // with no way to move and no button to press. Prefer the deeper point when
+  // it is also water; fall back to the proven sample.
+  var a, r;
+  for (r = 6; r <= 22; r += 4) {
+    for (a = 0; a < Math.PI * 2; a += Math.PI / 8) {
+      var wx = S.player.x + Math.cos(a) * r, wy = S.player.y + Math.sin(a) * r;
+      if (isWater(terrainAt(wx, wy))) {
+        var dx2 = S.player.x + Math.cos(a) * (r + 6), dy2 = S.player.y + Math.sin(a) * (r + 6);
+        if (isWater(terrainAt(dx2, dy2))) return { x: dx2, y: dy2 };
+        return { x: wx, y: wy };
+      }
+    }
+  }
+  return null;
+}
+
+function contextAction() {
+  if (S.mode !== 'play') return null;
+
+  if (S.travel === 'canoe') {
+    var l = nearestLanding(30);
+    if (l) return { label: 'LAND HERE', act: function () { landCanoe(l); } };
+    // A campsite can be approached from any side — if its shore is close,
+    // land right where the bow touches instead of demanding one blessed spot
+    // (the Joe island proved it: south approach stalled 30px from an east
+    // landing the island itself blocked the way to).
+    var c0 = nearestCampsite(44);
+    if (c0) return { label: 'LAND AT CAMP', act: function () {
+      landCanoe({ x: S.player.x, y: S.player.y });
+    } };
+    return null;
+  }
+
+  if (S.travel === 'carry') {
+    var w = waterNearby();
+    if (w) return { label: 'PUT IN & PADDLE', act: function () { putIn(w); } };
+    return { label: 'SET CANOE DOWN', act: function () {
+      S.travel = 'foot'; S.canoe.beached = true;
+      S.canoe.x = S.player.x; S.canoe.y = S.player.y;
+    } };
+  }
+
+  // on foot — intent is a time of day. In the EVENING (or exhausted) the
+  // campsite outranks the canoe: you are here to stop. In the MORNING the
+  // canoe outranks the campsite: you are here to leave. Without this the two
+  // flows deadlock — the first drive camped four nights running because MAKE
+  // CAMP shadowed LAUNCH, and the fix for that made LAUNCH shadow MAKE CAMP
+  // at dinnertime. The clock is the tiebreak a real trip uses.
+  var evening = hourNow() >= 16 || S.energy <= TUNE.exhaustedAt;
+  var cSite = nearestCampsite();
+  if (evening && cSite) return { label: 'MAKE CAMP', act: function () { makeCamp(cSite); } };
+  if (nearCanoe()) {
+    // At a portage sign the canoe goes over your head — water is ALWAYS
+    // nearby at a landing, so if launching outranked carrying, the portage
+    // could never begin (found by the first full playthrough drive).
+    var pl = nearestLanding(TUNE.interact + 6);
+    if (pl && pl.kind === 'portage') {
+      var metres = PORTAGES[pl.portage].metres;
+      return { label: 'CARRY CANOE — ' + metres + ' m', act: function () {
+        S.travel = 'carry'; S.canoe.beached = false;
+      } };
+    }
+    var w2 = waterNearby();
+    if (w2) return { label: 'LAUNCH CANOE', act: function () { putIn(w2); } };
+    return { label: 'CARRY CANOE', act: function () { S.travel = 'carry'; S.canoe.beached = false; } };
+  }
+  if (cSite) return { label: 'MAKE CAMP', act: function () { makeCamp(cSite); } };
+  return null;
+}
+
+function putIn(w) {
+  if (!w || !isWater(terrainAt(w.x, w.y))) return;   // never board onto land
+  S.travel = 'canoe';
+  S.canoe.beached = false;
+  S.player.x = w.x; S.player.y = w.y;
+  S.canoe.x = w.x; S.canoe.y = w.y;
+  AUDIO.paddle();
+}
+
+function landCanoe(l) {
+  // Find dry ground FIRST; only then commit to being on foot. The first
+  // version switched to 'foot' before searching, and a failed search left
+  // the player standing on open water, frozen (review fleet: stranding
+  // positions at all four campsites). The search radius covers the widest
+  // distance the LAND AT CAMP offer can fire from.
+  var a, r;
+  for (r = 6; r <= 48; r += 4) {
+    for (a = 0; a < Math.PI * 2; a += Math.PI / 8) {
+      var x = l.x + Math.cos(a) * r, y = l.y + Math.sin(a) * r;
+      if (!isWater(terrainAt(x, y))) {
+        S.travel = 'foot';
+        S.canoe.beached = true;
+        S.canoe.x = l.x; S.canoe.y = l.y;
+        S.player.x = x; S.player.y = y;
+        return true;
+      }
+    }
+  }
+  return false;              // no shore in reach: stay in the canoe
+}
+
+// --- camp & nights -----------------------------------------------------------------
+
+function makeCamp(site) {
+  S.lastCamp = site.id;
+  S.stats.camps++;
+  S.campfire = { x: site.x, y: site.y };
+  var ate = S.food > 0;
+  if (ate) S.food--;
+  var lines = [
+    'Tent up at ' + site.name + '.',
+    ate ? 'Dinner over the fire' + (S.food === 0 ? ' — that was the last of the food.' : '.')
+        : 'No food left. A hungry night.',
+    sightingsToday() > 0 ? sightingsToday() + ' sighting' + (sightingsToday() > 1 ? 's' : '') + ' in the journal today.' : 'Quiet day on the water.',
+  ];
+  S.log.push('Day ' + S.day + ' — camped at ' + site.name + '.');
+  S.card = { title: 'NIGHT ' + S.day, lines: lines, button: 'SLEEP', kind: 'camp', ate: ate };
+  S.mode = 'card';
+}
+
+function sightingsToday() {
+  return S.journal.filter(function (j) { return j.day === S.day; }).length;
+}
+
+function roughNight() {
+  S.stats.roughNights++;
+  // No fire, no dinner — and no meal deducted: the review fleet caught the
+  // first version silently consuming food the morning ignored, which cost a
+  // player their last meal for nothing.
+  S.log.push('Day ' + S.day + ' — the dark caught me out. A rough night.');
+  S.card = {
+    title: 'THE DARK CATCHES YOU',
+    lines: [
+      'No campsite, no fire, all mosquitoes.',
+      'Too dark to cook — dinner stays in the barrel.',
+      'Camp earlier tomorrow — look for the orange signs.',
+    ],
+    button: 'ENDURE', kind: 'rough', ate: true,
+  };
+  S.mode = 'card';
+}
+
+function nextMorning(rough) {
+  S.day++;
+  S.clock = TUNE.dayStartMin + 30;      // 06:30, mist on the water
+  S.energy = rough ? 45 : (S.card && S.card.ate === false ? 60 : TUNE.energyMax);
+  S.wind = rollWind(S.rnd, S.day);
+  S.campfire = null;
+  spawnAnimals();
+  S.card = null;
+  S.mode = 'play';
+  AUDIO.morning();
+  tickObjectives();          // last night's camp may have finished an objective
+  toast('Day ' + S.day + ' — ' + (OBJS[S.objIndex] ? OBJS[S.objIndex].text : 'homeward.'));
+}
+
+function endTrip() {
+  var days = S.day;
+  S.log.push('Day ' + S.day + ' — took out at the Canoe Lake dock. Trip complete.');
+  S.card = {
+    title: 'TRIP COMPLETE',
+    lines: [
+      days + ' day' + (days > 1 ? 's' : '') + ' in the interior.',
+      Math.round(S.stats.paddle / 40) / 10 + ' km paddled · ' + Math.round(S.stats.portage * 2.5) + ' m portaged.',
+      S.journal.length + ' wildlife sighting' + (S.journal.length === 1 ? '' : 's') + ' in the journal.',
+      S.stats.roughNights ? S.stats.roughNights + ' rough night(s). It happens.' : 'Every night under canvas. Well tripped.',
+    ],
+    button: 'ANOTHER TRIP', kind: 'end',
+  };
+  S.mode = 'card';
+}
+
+// --- toasts -----------------------------------------------------------------------
+
+function toast(text) {
+  S.toasts.push({ text: text, ttl: 4 });
+  if (S.toasts.length > 3) S.toasts.shift();
+}
+
+// --- per-frame --------------------------------------------------------------------
+
+function tickGame(dt, input) {
+  if (S.mode === 'title' || S.mode === 'card') return;
+  if (S.mode === 'play' && S.mapOpen) return;         // the map is a rest stop
+
+  // clock
+  var minPerSec = (TUNE.dayEndMin - TUNE.dayStartMin) / TUNE.daySeconds;
+  S.clock += minPerSec * dt;
+  if (S.clock >= TUNE.roughMin) { roughNight(); return; }
+  if (!S.duskWarned && S.clock >= TUNE.duskMin) {
+    S.duskWarned = true;
+    toast('The light is going — find a campsite (orange sign).');
+  }
+  if (S.clock < TUNE.duskMin) S.duskWarned = false;
+
+  tickMove(dt, input.x, input.y);
+  tickAnimals(dt);
+  tickObjectives();
+
+  // dusk mosquitoes on land, unless a fire is going nearby
+  var duskish = S.clock >= TUNE.duskMin;
+  var nearFire = S.campfire && Math.hypot(S.player.x - S.campfire.x, S.player.y - S.campfire.y) < 30;
+  S.mosquito = duskish && S.travel !== 'canoe' && !nearFire;
+  if (S.mosquito) S.energy = Math.max(0, S.energy - TUNE.mosquitoDrain * dt);
+
+  // toasts age out
+  S.toasts.forEach(function (t) { t.ttl -= dt; });
+  S.toasts = S.toasts.filter(function (t) { return t.ttl > 0; });
+
+  AUDIO.ambient(dt, {
+    onWater: S.travel === 'canoe',
+    dusk: duskish,
+    campfire: !!nearFire,
+    mosquito: !!S.mosquito,
+  });
+}
+
+function doAction() {
+  if (S.mode === 'title') { S.mode = 'play'; toast(OBJS[0].text); return; }
+  if (S.mode === 'card') {
+    if (S.card.kind === 'end') { newTrip(); buildObjectives(); S.mode = 'title'; return; }
+    nextMorning(S.card.kind === 'rough');
+    return;
+  }
+  if (S.mapOpen) { S.mapOpen = false; return; }
+  var a = contextAction();
+  if (a) a.act();
+}
+
+function eatSnack() {
+  if (S.mode !== 'play' || S.mapOpen || S.snacks <= 0) return;
+  S.snacks--;
+  S.energy = Math.min(TUNE.energyMax, S.energy + TUNE.snackEnergy);
+  AUDIO.chime();
+  toast('Snack. ' + S.snacks + ' left.');
+}
+
+// dev conveniences, only behind #dev
+function devKey(code) {
+  if (!DEV) return;
+  if (code === 'KeyT') S.clock += 60;
+  if (code === 'KeyU') S.energy = TUNE.energyMax;
+  if (code === 'KeyY') {
+    var t = currentTarget();
+    if (t) { S.player.x = t[0]; S.player.y = t[1] - 4;
+      if (S.travel !== 'foot') { S.canoe.x = t[0]; S.canoe.y = t[1] - 4; } }
+  }
+}
+
+</script>
+<script>
+// PORTAGE — RENDERER
+// ---------------------------------------------------------------------------
+// One art-resolution framebuffer, upscaled once with nearest-neighbour, so
+// every sprite, ripple and letter sits on the same pixel grid. The terrain is
+// rasterised to an offscreen canvas a single time; each frame blits the
+// visible window of it and draws entities over the top, painter's order.
+// ---------------------------------------------------------------------------
+
+'use strict';
+
+var R = {
+  canvas: null, ctx: null,
+  fb: null, g: null,               // framebuffer + its context
+  scale: 3, artW: 320, artH: 240,
+  terrain: null,
+  camX: 0, camY: 0,
+  buttons: {},                     // art-space hit rects, rebuilt every frame
+  joyView: null,                   // set by main.js when a touch stick is live
+};
+
+function initRender(canvas) {
+  R.canvas = canvas;
+  R.ctx = canvas.getContext('2d');
+  R.fb = document.createElement('canvas');
+  R.g = R.fb.getContext('2d');
+  onResize();
+  window.addEventListener('resize', onResize);
+  prerenderTerrain();
+}
+
+function onResize() {
+  var dpr = Math.min(2, window.devicePixelRatio || 1);
+  var w = Math.round(window.innerWidth * dpr);
+  var h = Math.round(window.innerHeight * dpr);
+  // A hidden or still-loading tab can report 0x0; building a zero-size
+  // framebuffer would poison every drawImage after it. Wait and retry.
+  if (w < 8 || h < 8) { setTimeout(onResize, 200); return; }
+  R.canvas.width = w; R.canvas.height = h;
+  R.canvas.style.width = window.innerWidth + 'px';
+  R.canvas.style.height = window.innerHeight + 'px';
+  // Pick the scale from BOTH axes: ~240 art px on the short side, and never
+  // more than ~470 on the long one — a portrait phone used to balloon to 540
+  // art px tall and the trip looked like a satellite photo (Evrtek's phone
+  // playtest). The long-side cap is what actually zooms the phone in.
+  R.scale = Math.max(2,
+    Math.floor(Math.min(w, h) / 240),
+    Math.ceil(Math.max(w, h) / 470));
+  R.artW = Math.ceil(w / R.scale);
+  R.artH = Math.ceil(h / R.scale);
+  R.fb.width = R.artW; R.fb.height = R.artH;
+  R.ctx.imageSmoothingEnabled = false;
+  R.g.imageSmoothingEnabled = false;
+}
+
+// --- terrain, once -----------------------------------------------------------
+
+function prerenderTerrain() {
+  var c = document.createElement('canvas');
+  c.width = WORLD.W; c.height = WORLD.H;
+  var g = c.getContext('2d');
+  var CELL = WORLD.CELL, gx, gy;
+
+  for (gy = 0; gy < GH; gy++) {
+    for (gx = 0; gx < GW; gx++) {
+      var t = GRID[gy * GW + gx];
+      var v = (gx * 7 + gy * 13) % 5;           // quiet per-cell variation
+      var col;
+      if (t === WORLD.DEEP)         col = v ? PAL.deep : PAL.water;
+      else if (t === WORLD.WATER)   col = v ? PAL.water : PAL.deep;
+      else if (t === WORLD.SHALLOW) col = v ? PAL.shallow : PAL.water;
+      else if (t === WORLD.SAND)    col = v ? PAL.sand : PAL.sandDk;
+      else if (t === WORLD.TRAIL)   col = v ? PAL.trail : PAL.trailDk;
+      else                          col = v === 0 ? PAL.grassDk : (v === 3 ? PAL.forest : PAL.grass);
+      g.fillStyle = col;
+      g.fillRect(gx * CELL, gy * CELL, CELL, CELL);
+    }
+  }
+
+  // the dock: a few planks into Canoe Lake
+  g.fillStyle = PAL.dock;
+  g.fillRect(POIS.dock.x - 3, POIS.dock.y - 16, 6, 20);
+  g.fillStyle = PAL.dockDk;
+  for (var py = POIS.dock.y - 14; py < POIS.dock.y + 2; py += 4) g.fillRect(POIS.dock.x - 3, py, 6, 1);
+
+  // lilies are furniture, not actors — bake them
+  LILIES.forEach(function (l) {
+    g.drawImage(SPRITES.lily, Math.round(l.x - 3), Math.round(l.y - 1));
+  });
+
+  R.terrain = c;
+}
+
+// --- helpers -------------------------------------------------------------------
+
+function sx(x) { return Math.round(x - R.camX); }
+function sy(y) { return Math.round(y - R.camY); }
+
+function drawSprite(name, x, y, ang) {
+  var s = SPRITES[name];
+  if (ang === undefined || ang === null) {
+    R.g.drawImage(s, Math.round(sx(x) - s.width / 2), Math.round(sy(y) - s.height / 2));
+    return;
+  }
+  R.g.save();
+  R.g.translate(sx(x), sy(y));
+  R.g.rotate(ang);
+  R.g.drawImage(s, -Math.round(s.width / 2), -Math.round(s.height / 2));
+  R.g.restore();
+}
+
+function text(str, x, y, col, size, align) {
+  // Regular text, per Evrtek: the UI pass renders at device resolution, so
+  // this is a real font drawn crisp — only the WORLD is pixel art.
+  R.g.font = '600 ' + (size || 7) + 'px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+  R.g.textAlign = align || 'left';
+  R.g.textBaseline = 'top';
+  R.g.fillStyle = 'rgba(8,12,10,0.75)';
+  R.g.fillText(str, x + 0.5, y + 0.5);
+  R.g.fillStyle = col || PAL.white;
+  R.g.fillText(str, x, y);
+}
+
+function pill(x, y, w, h, label, col) {
+  R.g.fillStyle = PAL.uiBg;
+  R.g.fillRect(x, y, w, h);
+  R.g.strokeStyle = col || PAL.gold;
+  R.g.lineWidth = 2 / R.scale;
+  R.g.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+  text(label, x + w / 2, y + (h - 7) / 2 + 0.5, col || PAL.gold, 7, 'center');
+}
+
+// --- the frame -------------------------------------------------------------------
+
+function draw(state, nowMs) {
+  var g = R.g;
+  g.clearRect(0, 0, R.artW, R.artH);
+
+  if (state.mode === 'title') {
+    present();                       // clears to the framebuffer (empty)
+    uiPass(function () { drawTitle(nowMs); });
+    return;
+  }
+
+  // camera — when the viewport out-sizes the world on an axis, centre the
+  // world instead of letting the min/max clamp invert (review fleet: a
+  // 2560x660 window put the camera in a jittering tug-of-war)
+  R.camX = R.artW >= WORLD.W ? (WORLD.W - R.artW) / 2
+    : Math.max(0, Math.min(WORLD.W - R.artW, state.player.x - R.artW / 2));
+  R.camY = R.artH >= WORLD.H ? (WORLD.H - R.artH) / 2
+    : Math.max(0, Math.min(WORLD.H - R.artH, state.player.y - R.artH / 2));
+
+  // terrain window (source rect kept inside the terrain canvas — a negative
+  // camera offset must become a destination offset, not an out-of-bounds read)
+  var tsx = Math.max(0, R.camX), tsy = Math.max(0, R.camY);
+  var tdx = Math.max(0, -R.camX), tdy = Math.max(0, -R.camY);
+  var tw = Math.min(R.artW - tdx, WORLD.W - tsx), th = Math.min(R.artH - tdy, WORLD.H - tsy);
+  g.fillStyle = PAL.forest;
+  g.fillRect(0, 0, R.artW, R.artH);
+  g.drawImage(R.terrain, tsx, tsy, tw, th, tdx, tdy, tw, th);
+
+  drawWater(state, nowMs);
+  drawEntities(state, nowMs);
+  drawDayTint(state);
+
+  present();
+  uiPass(function () {
+    drawMarker(state, nowMs);
+    if (state.mapOpen) drawMap(state);
+    else drawHUD(state, nowMs);
+    if (state.mode === 'card') drawCard(state);
+  });
+}
+
+function present() {
+  R.ctx.setTransform(1, 0, 0, 1, 0, 0);
+  R.ctx.clearRect(0, 0, R.canvas.width, R.canvas.height);
+  R.ctx.drawImage(R.fb, 0, 0, R.artW, R.artH, 0, 0, R.artW * R.scale, R.artH * R.scale);
+  R.lastDraw = performance.now();
+}
+
+/**
+ * The UI pass draws AFTER the pixel world has been presented, straight onto
+ * the main canvas under a scale transform — so every layout number stays in
+ * art units but text renders at device resolution. The world keeps its low-bit
+ * soul; the words are just words (Evrtek's ruling from the phone playtest:
+ * "the text should just be, like, regular text").
+ */
+function uiPass(fn) {
+  var g0 = R.g;
+  R.g = R.ctx;
+  R.ctx.save();
+  R.ctx.setTransform(R.scale, 0, 0, R.scale, 0, 0);
+  R.ctx.imageSmoothingEnabled = false;
+  fn();
+  R.ctx.restore();
+  R.g = g0;
+  R.lastDraw = performance.now();
+}
+
+// ripples + whitecaps, only inside the visible window
+function drawWater(state, nowMs) {
+  var g = R.g, CELL = WORLD.CELL;
+  var t = nowMs / 1000;
+  var gx0 = Math.floor(R.camX / CELL), gy0 = Math.floor(R.camY / CELL);
+  var gx1 = Math.ceil((R.camX + R.artW) / CELL), gy1 = Math.ceil((R.camY + R.artH) / CELL);
+  var windy = state.wind.str > 0.45;
+  g.fillStyle = PAL.ripple;
+  for (var gy = gy0; gy < gy1; gy++) {
+    for (var gx = gx0; gx < gx1; gx++) {
+      if (gx < 0 || gy < 0 || gx >= GW || gy >= GH) continue;
+      var ter = GRID[gy * GW + gx];
+      if (ter !== WORLD.WATER && ter !== WORLD.DEEP) continue;
+      var h = (gx * 2654435761 ^ gy * 340573321) >>> 0;
+      if ((h % 13) !== 0) continue;
+      var phase = Math.sin(t * 1.4 + (h % 628) / 100);
+      if (phase < 0.35) continue;
+      var x = gx * CELL - R.camX, y = gy * CELL - R.camY;
+      g.fillRect(x, y + (h % 3), 3, 1);
+      if (windy && ter === WORLD.DEEP && (h % 3) === 0) {
+        g.fillStyle = PAL.white;
+        g.fillRect(x, y + 2, 2, 1);            // whitecap
+        g.fillStyle = PAL.ripple;
+      }
+    }
+  }
+}
+
+function drawEntities(state, nowMs) {
+  var list = [];
+
+  // trees in view (TREES is y-sorted; simple filter is fast enough)
+  for (var i = 0; i < TREES.length; i++) {
+    var tr = TREES[i];
+    if (tr.y < R.camY - 14 || tr.y > R.camY + R.artH + 12) continue;
+    if (tr.x < R.camX - 8 || tr.x > R.camX + R.artW + 8) continue;
+    list.push({ y: tr.y, f: drawTree, a: tr });
+  }
+
+  // signs at landings & POIs
+  LANDINGS.forEach(function (l) {
+    if (l.kind === 'portage') list.push({ y: l.y, f: function (o) { drawSprite('portSign', o.x, o.y - 4); }, a: l });
+  });
+  CAMPSITES.forEach(function (c) {
+    list.push({ y: c.y, f: function (o) { drawSprite('campSign', o.x + 8, o.y - 2); }, a: c });
+  });
+  list.push({ y: POIS.board.y, f: function () { drawSprite('board', POIS.board.x, POIS.board.y - 4); }, a: null });
+  list.push({ y: POIS.cairn.y, f: function () { drawSprite('rock', POIS.cairn.x, POIS.cairn.y); }, a: null });
+
+  // the canoe, when beached
+  if (state.canoe.beached) {
+    list.push({ y: state.canoe.y, f: function () { drawSprite('canoeBeached', state.canoe.x, state.canoe.y); }, a: null });
+  }
+
+  // camp furniture on the evening of a camp
+  if (state.campfire) {
+    list.push({ y: state.campfire.y - 1, f: function () { drawSprite('tent', state.campfire.x - 8, state.campfire.y - 6); }, a: null });
+    list.push({ y: state.campfire.y, f: function () {
+      drawSprite((Math.floor(nowMs / 160) % 2) ? 'fire1' : 'fire2', state.campfire.x + 8, state.campfire.y);
+    }, a: null });
+  }
+
+  // wildlife
+  state.animals.forEach(function (a) {
+    if (!animalActive(a) || a.state === 'gone') return;
+    var name = a.species === 'Moose' ? 'moose'
+      : a.species === 'Common Loon' ? 'loon'
+      : a.species === 'Great Blue Heron' ? 'heron'
+      : a.species === 'Beaver' ? 'beaver' : 'turtle';
+    list.push({ y: a.y, f: function (an) { drawSprite(name, an.x, an.y); }, a: a });
+  });
+
+  // the tripper
+  list.push({ y: state.player.y, f: function () { drawPlayer(state); }, a: null });
+
+  list.sort(function (a, b) { return a.y - b.y; });
+  list.forEach(function (e) { e.f(e.a); });
+
+  // sighting ring above the animal being watched
+  if (state.sightTarget && state.sightT > 0.1) {
+    var a2 = state.sightTarget;
+    var frac = Math.min(1, state.sightT / TUNE.sightSeconds);
+    R.g.strokeStyle = PAL.gold;
+    R.g.beginPath();
+    R.g.arc(sx(a2.x), sy(a2.y) - 10, 4, -Math.PI / 2, -Math.PI / 2 + frac * Math.PI * 2);
+    R.g.stroke();
+  }
+}
+
+function drawTree(tr) {
+  drawSprite(tr.kind === 'pine' ? 'pine' : 'birch', tr.x, tr.y - 5);
+}
+
+function drawPlayer(state) {
+  var p = state.player;
+  var frame;
+  var rot = p.ang + Math.PI / 2;          // sprites face up
+  if (state.travel === 'canoe') {
+    frame = (Math.floor(p.anim / 6) % 2) ? 'canoeL' : 'canoeR';
+    drawSprite(frame, p.x, p.y, rot);
+  } else if (state.travel === 'carry') {
+    frame = (Math.floor(p.anim / 5) % 2) ? 'carry1' : 'carry2';
+    drawSprite(frame, p.x, p.y, rot);
+  } else {
+    frame = p.speed > 1 ? ((Math.floor(p.anim / 5) % 2) ? 'walk1' : 'walk2') : 'stand';
+    drawSprite(frame, p.x, p.y, rot);
+  }
+}
+
+function drawMarker(state, nowMs) {
+  var t = currentTarget();
+  if (!t || state.mode !== 'play') return;
+  var bob = Math.sin(nowMs / 240) * 2;
+  var mx = sx(t[0]), my = sy(t[1]) - 14 + bob;
+  var on = mx > 8 && mx < R.artW - 8 && my > 8 && my < R.artH - 8;
+  if (on) {
+    drawSprite('marker', t[0], t[1] - 14 + bob);
+  } else {
+    // pinned to the screen edge, pointing the way
+    var cx = R.artW / 2, cy = R.artH / 2;
+    var dx = t[0] - state.player.x, dy = t[1] - state.player.y;
+    var len = Math.hypot(dx, dy) || 1;
+    var ux = dx / len, uy = dy / len;
+    var kx = ux !== 0 ? (R.artW / 2 - 14) / Math.abs(ux) : Infinity;
+    var ky = uy !== 0 ? (R.artH / 2 - 14) / Math.abs(uy) : Infinity;
+    var k = Math.min(kx, ky);
+    var ex = cx + ux * k;
+    var ey = cy + uy * k;
+    // keep the pinned marker out from under the HUD panels
+    ey = Math.max(40, Math.min(R.artH - 30, ey));
+    ex = Math.max(12, Math.min(R.artW - 36, ex));
+    R.g.save();
+    R.g.translate(Math.round(ex), Math.round(ey));
+    R.g.rotate(Math.atan2(dy, dx) + Math.PI / 2);
+    R.g.drawImage(SPRITES.marker, -3, -2);
+    R.g.restore();
+    text(Math.round(len / 8) * 10 + ' m', Math.round(ex), Math.round(ey) + 6, PAL.gold, 7, 'center');
+  }
+}
+
+// dawn is silver, noon is clear, dusk is amber, night is a deep blue blanket
+function drawDayTint(state) {
+  var h = state.clock / 60;
+  var g = R.g, a = 0, col = '#000';
+  if (h < 7)        { col = '#7a86b8'; a = 0.28 * (7 - h); }
+  else if (h > 20)  { col = '#0a1030'; a = Math.min(0.62, 0.3 + (h - 20) * 0.35); }
+  else if (h > 18.5){ col = '#c46a2a'; a = 0.22 * ((h - 18.5) / 1.5); }
+  if (a <= 0.01) return;
+  g.globalAlpha = a;
+  g.fillStyle = col;
+  g.fillRect(0, 0, R.artW, R.artH);
+  g.globalAlpha = 1;
+  // a warm pool around a lit fire, cut out of the night
+  if (state.campfire && h > 18.5) {
+    var fx = sx(state.campfire.x + 8), fy = sy(state.campfire.y);
+    var grad = g.createRadialGradient(fx, fy, 2, fx, fy, 34);
+    grad.addColorStop(0, 'rgba(242,193,75,0.30)');
+    grad.addColorStop(1, 'rgba(242,193,75,0)');
+    g.fillStyle = grad;
+    g.fillRect(fx - 36, fy - 36, 72, 72);
+  }
+}
+
+// --- HUD -------------------------------------------------------------------------
+
+function clockText(state) {
+  var m = Math.floor(state.clock);
+  var h24 = Math.floor(m / 60), mm = m % 60;
+  var ap = h24 >= 12 ? 'PM' : 'AM';
+  var h12 = ((h24 + 11) % 12) + 1;
+  return h12 + ':' + (mm < 10 ? '0' : '') + mm + ' ' + ap;
+}
+
+function drawHUD(state, nowMs) {
+  var g = R.g;
+  R.buttons = {};
+
+  // top-left: day, clock, energy, food
+  g.fillStyle = PAL.uiBg;
+  g.fillRect(2, 2, 96, 30);
+  text('DAY ' + state.day + '  ' + clockText(state), 6, 5, PAL.white);
+  // energy
+  g.fillStyle = PAL.black; g.fillRect(6, 14, 62, 5);
+  g.fillStyle = state.energy > TUNE.exhaustedAt ? PAL.good : PAL.bad;
+  g.fillRect(7, 15, Math.round(60 * state.energy / TUNE.energyMax), 3);
+  text('E', 70, 13, PAL.white);
+  // food + snacks
+  var fx = 6;
+  for (var i = 0; i < state.food; i++) { g.fillStyle = PAL.gold; g.fillRect(fx, 23, 4, 4); fx += 6; }
+  text('MEALS', fx + 2, 22, PAL.white);
+
+  // wind, under the panel
+  var wx = 14, wy = 42;
+  g.fillStyle = PAL.uiBg; g.fillRect(2, 34, 52, 16);
+  g.save();
+  g.translate(wx, wy);
+  g.rotate(state.wind.from + Math.PI);        // arrow points where wind blows TO
+  g.fillStyle = state.wind.str > 0.45 ? PAL.bad : PAL.white;
+  g.fillRect(-4, -1, 8, 2); g.fillRect(2, -3, 2, 6);
+  g.restore();
+  text('WIND', 24, 38, state.wind.str > 0.45 ? PAL.bad : PAL.white);
+
+  // top-right: MAP and sound buttons
+  R.buttons.map = { x: R.artW - 30, y: 4, w: 26, h: 14 };
+  pill(R.buttons.map.x, R.buttons.map.y, 26, 14, 'MAP', PAL.white);
+  R.buttons.mute = { x: R.artW - 30, y: 21, w: 26, h: 14 };
+  pill(R.buttons.mute.x, R.buttons.mute.y, 26, 14, AUDIO.isMuted() ? 'SND✕' : 'SND', PAL.white);
+
+  // objective bar, bottom centre
+  var obj = OBJS[state.objIndex];
+  if (obj) {
+    var ow = Math.min(R.artW - 8, Math.max(150, obj.text.length * 5 + 16));
+    var ox = (R.artW - ow) / 2, oy = R.artH - 14;
+    g.fillStyle = PAL.uiBg; g.fillRect(ox, oy, ow, 12);
+    text('★ ' + obj.text, R.artW / 2, oy + 2, PAL.gold, 7, 'center');
+  }
+
+  // toasts stack above the objective bar
+  var ty = R.artH - 28;
+  for (var t2 = state.toasts.length - 1; t2 >= 0; t2--) {
+    var msg = state.toasts[t2].text;
+    var tw = msg.length * 5 + 10;
+    g.fillStyle = PAL.uiBg; g.fillRect((R.artW - tw) / 2, ty, tw, 11);
+    text(msg, R.artW / 2, ty + 2, PAL.white, 7, 'center');
+    ty -= 13;
+  }
+
+  // context action button, bottom-right — the one button that matters
+  var act = contextAction();
+  if (act) {
+    var label = act.label + ' (E)';
+    var aw = Math.max(64, label.length * 5 + 12);
+    R.buttons.action = { x: R.artW - aw - 4, y: R.artH - 34, w: aw, h: 16, isAction: true };
+    pill(R.buttons.action.x, R.buttons.action.y, aw, 16, label, PAL.gold);
+  }
+
+  // snack button, bottom-left
+  if (state.snacks > 0) {
+    R.buttons.snack = { x: 4, y: R.artH - 34, w: 62, h: 16 };
+    pill(R.buttons.snack.x, R.buttons.snack.y, 62, 16, 'SNACK×' + state.snacks + ' (Q)', PAL.white);
+  }
+
+  // mosquito hint
+  if (state.mosquito && Math.floor(nowMs / 400) % 2) {
+    text('~ mosquitoes ~', R.artW / 2, 22, PAL.bad, 7, 'center');
+  }
+
+  // touch joystick ghost
+  if (R.joyView) {
+    g.strokeStyle = 'rgba(242,242,232,0.5)';
+    g.beginPath(); g.arc(R.joyView.x, R.joyView.y, 14, 0, Math.PI * 2); g.stroke();
+    g.fillStyle = 'rgba(242,242,232,0.7)';
+    g.fillRect(R.joyView.x + R.joyView.dx * 10 - 2, R.joyView.y + R.joyView.dy * 10 - 2, 5, 5);
+  }
+}
+
+// --- cards & screens ---------------------------------------------------------------
+
+function drawCard(state) {
+  var g = R.g, c = state.card;
+  g.fillStyle = 'rgba(8,12,10,0.78)';
+  g.fillRect(0, 0, R.artW, R.artH);
+  var w = Math.min(R.artW - 16, 230), x = (R.artW - w) / 2, y = R.artH / 2 - 48;
+  g.fillStyle = PAL.uiBg; g.fillRect(x, y, w, 96);
+  g.strokeStyle = PAL.gold; g.strokeRect(x + 0.5, y + 0.5, w - 1, 96 - 1);
+  text(c.title, R.artW / 2, y + 7, PAL.gold, 9, 'center');
+  for (var i = 0; i < c.lines.length; i++) {
+    text(c.lines[i], R.artW / 2, y + 24 + i * 11, PAL.white, 7, 'center');
+  }
+  R.buttons = {};
+  R.buttons.action = { x: R.artW / 2 - 44, y: y + 70, w: 88, h: 16, isAction: true };
+  pill(R.buttons.action.x, R.buttons.action.y, 88, 16, c.button, PAL.gold);
+}
+
+function drawTitle(nowMs) {
+  var g = R.g;
+  g.fillStyle = '#12291a';
+  g.fillRect(0, 0, R.artW, R.artH);
+  // a quiet lake band with ripples
+  g.fillStyle = PAL.water;
+  g.fillRect(0, R.artH * 0.62, R.artW, R.artH * 0.38);
+  g.fillStyle = PAL.ripple;
+  for (var i = 0; i < 30; i++) {
+    var h = (i * 2654435761) >>> 0;
+    var x = (h % R.artW), y = R.artH * 0.62 + (h % Math.round(R.artH * 0.34));
+    if (Math.sin(nowMs / 900 + i) > 0.2) g.fillRect(x, y, 4, 1);
+  }
+  g.drawImage(SPRITES.pine, 14, Math.round(R.artH * 0.62) - 12);
+  g.drawImage(SPRITES.birch, 30, Math.round(R.artH * 0.62) - 11);
+  g.drawImage(SPRITES.canoeL, Math.round(R.artW * 0.7), Math.round(R.artH * 0.74));
+
+  R.g.font = '800 22px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+  text('PORTAGE', R.artW / 2, R.artH * 0.2, PAL.gold, 22, 'center');
+  text('an Algonquin canoe trip', R.artW / 2, R.artH * 0.2 + 26, PAL.white, 8, 'center');
+  text('paddle · portage · camp before dark', R.artW / 2, R.artH * 0.2 + 40, PAL.white, 7, 'center');
+
+  var lines = [
+    'MOVE   WASD / arrows / touch-drag',
+    'ACT    E / tap the button',
+    'MAP    M   ·   SNACK  Q',
+  ];
+  for (var l = 0; l < lines.length; l++) {
+    text(lines[l], R.artW / 2, R.artH * 0.52 + l * 10, PAL.white, 7, 'center');
+  }
+
+  R.buttons = {};
+  R.buttons.action = { x: R.artW / 2 - 56, y: Math.round(R.artH * 0.84), w: 112, h: 18, isAction: true };
+  if (Math.floor(nowMs / 500) % 2) pill(R.buttons.action.x, R.buttons.action.y, 112, 18, 'START THE TRIP', PAL.gold);
+  else pill(R.buttons.action.x, R.buttons.action.y, 112, 18, 'START THE TRIP', PAL.white);
+}
+
+// --- the park map ------------------------------------------------------------------
+
+function drawMap(state) {
+  var g = R.g;
+  g.fillStyle = 'rgba(8,12,10,0.9)';
+  g.fillRect(0, 0, R.artW, R.artH);
+
+  var pad = 8;
+  var vertical = R.artW < 340;               // phone portrait: stack, not split
+  var sc = vertical
+    ? Math.min((R.artW - pad * 2) / WORLD.W, (R.artH * 0.55) / WORLD.H)
+    : Math.min((R.artW * 0.55) / WORLD.W, (R.artH - pad * 2) / WORLD.H);
+  var mw = WORLD.W * sc, mh = WORLD.H * sc;
+  var mx = vertical ? (R.artW - mw) / 2 : pad;
+  var my = vertical ? 10 : (R.artH - mh) / 2;
+  g.drawImage(R.terrain, 0, 0, WORLD.W, WORLD.H, mx, my, mw, mh);
+  g.strokeStyle = PAL.gold; g.strokeRect(mx + 0.5, my + 0.5, mw - 1, mh - 1);
+
+  // labels
+  g.font = '700 6px monospace'; g.textAlign = 'left';
+  LAKES.forEach(function (l) {
+    var cx = 0, cy = 0;
+    l.pts.forEach(function (p) { cx += p[0]; cy += p[1]; });
+    cx /= l.pts.length; cy /= l.pts.length;
+    text(l.name.replace(' Lake', ''), mx + cx * sc, my + cy * sc - 3, PAL.white, 6, 'center');
+  });
+
+  // you, and where you are bound
+  g.fillStyle = PAL.bad;
+  g.fillRect(mx + state.player.x * sc - 1, my + state.player.y * sc - 1, 3, 3);
+  var t = currentTarget();
+  if (t) {
+    g.fillStyle = PAL.gold;
+    g.fillRect(mx + t[0] * sc - 1, my + t[1] * sc - 1, 3, 3);
+  }
+
+  // the journal — beside the map on wide screens, under it on phones
+  var jx = vertical ? 10 : mx + mw + 10;
+  var jy = vertical ? my + mh + 8 : my + 2;
+  text('TRIP JOURNAL', jx, jy, PAL.gold, 8);
+  if (state.journal.length === 0) text('nothing yet — move gently', jx, jy + 12, PAL.white, 6);
+  state.journal.forEach(function (j, i) {
+    text('• ' + j.species + '  (day ' + j.day + ')', jx, jy + 12 + i * 9, PAL.white, 6);
+  });
+  var ly = jy + 12 + Math.max(1, state.journal.length) * 9 + 8;
+  text('TRIP LOG', jx, ly, PAL.gold, 8);
+  state.log.slice(-4).forEach(function (line, i) {
+    text(line.length > 34 ? line.slice(0, 33) + '…' : line, jx, ly + 12 + i * 9, PAL.white, 6);
+  });
+
+  R.buttons = {};
+  R.buttons.map = { x: R.artW - 30, y: 4, w: 26, h: 14 };
+  pill(R.buttons.map.x, R.buttons.map.y, 26, 14, 'BACK', PAL.white);
+}
+
+</script>
+<script>
+// PORTAGE — WIRING
+// ---------------------------------------------------------------------------
+// Boot order, the input layer (keyboard + one-thumb touch), and the loop.
+// Input rule for mobile: drag anywhere to move, tap a drawn button to act —
+// nothing needs a second hand, nothing needs a keyboard.
+// ---------------------------------------------------------------------------
+
+'use strict';
+
+(function () {
+
+  var keys = {};
+  var joy = { id: null, ox: 0, oy: 0, dx: 0, dy: 0 };
+
+  // --- boot ------------------------------------------------------------------
+  buildAllSprites();
+  buildWorld();
+  buildLandings();
+  buildLakePolys();
+  newTrip();
+  buildObjectives();
+
+  var canvas = document.getElementById('screen');
+  initRender(canvas);
+
+  // --- keyboard ---------------------------------------------------------------
+  window.addEventListener('keydown', function (e) {
+    if (e.repeat) return;
+    keys[e.code] = true;
+    AUDIO.unlock();
+    if (e.code === 'Space' || e.code === 'KeyE' || e.code === 'Enter') { e.preventDefault(); doAction(); }
+    if (e.code === 'KeyM') { if (S.mode === 'play') S.mapOpen = !S.mapOpen; }
+    if (e.code === 'KeyQ') eatSnack();
+    if (e.code === 'KeyN') AUDIO.toggleMute();
+    if (e.code === 'Escape') { if (S.mapOpen) S.mapOpen = false; }
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].indexOf(e.code) >= 0) e.preventDefault();
+    devKey(e.code);
+  });
+  window.addEventListener('keyup', function (e) { keys[e.code] = false; });
+  window.addEventListener('blur', function () { keys = {}; joy.id = null; R.joyView = null; });
+
+  // --- pointer / touch ----------------------------------------------------------
+
+  function toArt(e) {
+    var dpr = R.canvas.width / window.innerWidth;
+    return { x: (e.clientX * dpr) / R.scale, y: (e.clientY * dpr) / R.scale };
+  }
+
+  function hitButton(p) {
+    var k, b;
+    for (k in R.buttons) {
+      b = R.buttons[k];
+      if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) return k;
+    }
+    return null;
+  }
+
+  canvas.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    AUDIO.unlock();
+    // capture the pointer so a release outside the window still reaches us —
+    // without it a mouse-drag that ended off-canvas left the stick held
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+    // never hit-test against a stale frame: if the throttled loop hasn't
+    // drawn since the last state change, the buttons may belong to the
+    // previous screen
+    if (performance.now() - (R.lastDraw || 0) > 50) draw(S, performance.now());
+    var p = toArt(e);
+    var hit = hitButton(p);
+    if (hit === 'action') { doAction(); return; }
+    if (hit === 'map')    { if (S.mapOpen) S.mapOpen = false; else if (S.mode === 'play') S.mapOpen = true; return; }
+    if (hit === 'mute')   { AUDIO.toggleMute(); return; }
+    if (hit === 'snack')  { eatSnack(); return; }
+    if (S.mode === 'title' || S.mode === 'card') { doAction(); return; }
+    if (S.mapOpen) { S.mapOpen = false; return; }
+    // anywhere else: the thumb-stick is born where the thumb lands
+    if (joy.id === null) {
+      joy.id = e.pointerId; joy.ox = p.x; joy.oy = p.y; joy.dx = 0; joy.dy = 0;
+      R.joyView = { x: p.x, y: p.y, dx: 0, dy: 0 };
+    }
+  });
+
+  canvas.addEventListener('pointermove', function (e) {
+    if (e.pointerId !== joy.id) return;
+    e.preventDefault();
+    var p = toArt(e);
+    var dx = p.x - joy.ox, dy = p.y - joy.oy;
+    var len = Math.hypot(dx, dy);
+    var max = 16;
+    if (len > max) { dx = (dx / len) * max; dy = (dy / len) * max; }
+    joy.dx = dx / max; joy.dy = dy / max;
+    if (R.joyView) { R.joyView.dx = joy.dx; R.joyView.dy = joy.dy; }
+  });
+
+  function endPointer(e) {
+    if (e.pointerId !== joy.id) return;
+    joy.id = null; joy.dx = 0; joy.dy = 0; R.joyView = null;
+  }
+  canvas.addEventListener('pointerup', endPointer);
+  canvas.addEventListener('pointercancel', endPointer);
+  canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+  // --- the loop -------------------------------------------------------------------
+
+  var last = performance.now();
+
+  function step(now) {
+    // clamp BOTH ends: rAF timestamps can precede a performance.now() taken
+    // by the fallback ticker, and a negative dt runs the trip backwards
+    var dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
+    last = now;
+
+    var ix = 0, iy = 0;
+    if (keys.KeyW || keys.ArrowUp) iy -= 1;
+    if (keys.KeyS || keys.ArrowDown) iy += 1;
+    if (keys.KeyA || keys.ArrowLeft) ix -= 1;
+    if (keys.KeyD || keys.ArrowRight) ix += 1;
+    ix += joy.dx; iy += joy.dy;
+
+    tickGame(dt, { x: ix, y: iy });
+    // while the game is paused, the world should also HOLD ITS BREATH: no
+    // mosquito drone over the map or a card — but the campfire may crackle
+    // through the night card, which is exactly when the fire is on screen
+    if (S.mode !== 'play' || S.mapOpen) {
+      if (S.mode === 'card' && S.card && S.card.kind === 'camp') {
+        AUDIO.ambient(dt, { onWater: false, dusk: true, campfire: true, mosquito: false });
+      } else {
+        AUDIO.hush();
+      }
+    }
+    draw(S, now);
+    if (DEV) window.__game = S;      // inspectable, dev only
+  }
+
+  function frame(now) {
+    // schedule FIRST: no exception below may ever kill the loop
+    requestAnimationFrame(frame);
+    step(now);
+  }
+  requestAnimationFrame(frame);
+
+  // Belt and braces: browsers throttle or suspend requestAnimationFrame in
+  // low-power modes and embedded panes. If no frame has run for a quarter
+  // second, this low-rate ticker keeps the trip moving — jankily, but moving,
+  // which on a battery-saver phone is the difference between a game and a
+  // freeze-frame.
+  setInterval(function () {
+    if (performance.now() - last > 250) step(performance.now());
+  }, 125);
+
+})();
+
+</script>

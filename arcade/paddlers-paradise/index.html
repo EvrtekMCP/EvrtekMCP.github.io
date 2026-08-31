@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Paddler's Paradise — an Algonquin canoe trip</title>
+<!--
+  PADDLER'S PARADISE (working name, Evrtek's) v0.2.0 — a top-down pixel-art
+  canoe trip through Algonquin Park.
+
+  Deliberately built with CLASSIC scripts, not ES modules, so this file runs
+  from a double-click on the hard drive (file://) with no server and no build
+  step. Everything on screen is generated in code — sprite maps, procedural
+  audio, hand-authored geography — no outside assets of any kind.
+
+  The geography is honest: Canoe Lake north to Joe Lake and on to Burnt Island
+  Lake is a real beginner route, the lake names and portage lengths are real
+  facts, and the shapes are drawn from knowledge — never traced from the
+  published park map (Evrtek's ruling: clean data only).
+-->
+<style>
+  html, body {
+    margin: 0; padding: 0; height: 100%; overflow: hidden;
+    background: #0c1a12;
+    touch-action: none;                 /* the game owns every gesture */
+    overscroll-behavior: none;          /* no rubber-band, no pull-to-refresh */
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    position: fixed; inset: 0; width: 100%;   /* iOS: a fixed body cannot be
+                                                 dragged into a nav gesture */
+  }
+  #screen {
+    position: absolute; inset: 0; margin: auto;
+    image-rendering: pixelated; image-rendering: crisp-edges;
+    display: block;
+  }
+</style>
+</head>
+<body>
+<canvas id="screen"></canvas>
+<script src="js/sprites.js?v=0.8.0"></script>
+<script src="js/tune.js?v=0.8.0"></script>
+<script src="js/world.js?v=0.8.0"></script>
+<script src="js/audio.js?v=0.8.0"></script>
+<script src="js/scenes.js?v=0.8.0"></script>
+<script src="js/game.js?v=0.8.0"></script>
+<script src="js/camp.js?v=0.8.0"></script>
+<script src="js/render.js?v=0.8.0"></script>
+<script src="js/main.js?v=0.8.0"></script>
+</body>
+</html>
