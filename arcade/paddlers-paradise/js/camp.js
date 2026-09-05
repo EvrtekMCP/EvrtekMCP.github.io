@@ -33,8 +33,8 @@ var CAMP = {
   canoe:  { x: 30,  y: 68 },
   sign:   { x: 102, y: 70 },
   trees: [
-    { x: 18,  y: 34, kind: 'hdPine'  },   // the barrel pine, standing apart
-    { x: 8,   y: 46, kind: 'hdPine'  },
+    { x: 18,  y: 34, kind: 'hdBigPine' }, // the barrel pine, towering apart (#3)
+    { x: 8,   y: 46, kind: 'hdBirch' },   // a birch beside it, so the pair reads as two
     { x: 152, y: 40, kind: 'hdPine'  },
     { x: 150, y: 56, kind: 'hdBirch' },
   ],
@@ -77,17 +77,11 @@ function buildCampTreeline() {
 buildCampTreeline();
 
 // --- per-site character (#4): mirrors, moved furniture, its own shore ------
+// The faces live on the park now (world.js: campsite.variant, one per site);
+// loadPark fills this table from them. A site with no face gets the default.
 var CAMP_BASE = null;
-var CAMP_VARIANTS = {
-  joe:   { mirror: false, phase: 1.2, coveX: 30,  groundSeed: 0xCA4B1, treeSeed: 0 },
-  burnt: { mirror: true,  phase: 2.6, coveX: 130, groundSeed: 0xB0A71, treeSeed: 1,
-           canoe: { x: 130, y: 62 }, sign: { x: 58, y: 64 } },
-  canoe: { mirror: false, phase: 0.2, coveX: 42,  groundSeed: 0xC0A0E, treeSeed: 2,
-           tent: { x: 98, y: 26 }, box: { x: 14, y: 17 }, sign: { x: 120, y: 66 },
-           barrel: { x: 62, y: 58 } },
-  ljoe:  { mirror: true,  phase: 3.6, coveX: 118, groundSeed: 0x10E77, treeSeed: 3,
-           tent: { x: 52, y: 30 }, canoe: { x: 130, y: 64 }, sign: { x: 58, y: 66 } },
-};
+var CAMP_VARIANTS = {};
+var CAMP_DEFAULT_VARIANT = { mirror: false, phase: 1.2, coveX: 30, groundSeed: 0xCA4B1, treeSeed: 0 };
 
 function applyCampVariant(siteId) {
   if (!CAMP_BASE) {
@@ -98,15 +92,20 @@ function applyCampVariant(siteId) {
     }));
   }
   var b = JSON.parse(JSON.stringify(CAMP_BASE));
-  var v = CAMP_VARIANTS[siteId] || CAMP_VARIANTS.joe;
+  var v = CAMP_VARIANTS[siteId] || CAMP_DEFAULT_VARIANT;
   var mx = function (p) { if (v.mirror) p.x = CAMP.W - p.x; return p; };
   CAMP.tent = mx(b.tent); CAMP.box = mx(b.box); CAMP.barrel = mx(b.barrel);
   CAMP.barrelPine = mx(b.barrelPine); CAMP.canoe = mx(b.canoe); CAMP.sign = mx(b.sign);
   CAMP.trees = b.trees.map(mx); CAMP.rocks = b.rocks.map(mx); CAMP.deadwood = b.deadwood.map(mx);
+  CAMP.feature = null;               // no site inherits the last one's curiosity
   var k;
   for (k in v) {
     if (k === 'mirror' || k === 'phase' || k === 'coveX' || k === 'groundSeed' || k === 'treeSeed') continue;
-    CAMP[k] = { x: v[k].x, y: v[k].y };
+    // a plain {x, y} override copies as before; the site's `feature` (note 4)
+    // carries its sprite, label, card lines and journal entry along with its
+    // stage spot, so copy the whole record — the overrides are already in
+    // this site's own (mirrored) stage coordinates
+    CAMP[k] = JSON.parse(JSON.stringify(v[k]));
   }
   CAMP.phase = v.phase; CAMP.coveX = v.coveX;
   CAMP.groundSeed = v.groundSeed; CAMP.treeSeed = v.treeSeed;
@@ -117,11 +116,16 @@ function applyCampVariant(siteId) {
 // solid things the tripper walks around, not through
 function campBlockers() {
   var b = [];
-  CAMP.trees.forEach(function (t) { b.push({ x: t.x, y: t.y + 4, r: 2.4 }); });
+  CAMP.trees.forEach(function (t) {
+    b.push({ x: t.x, y: t.y + 4, r: t.kind === 'hdBigPine' ? 3.2 : 2.4 });   // the big pine has a big butt
+  });
   CAMP.treeline.forEach(function (t) {
     if (t.front) b.push({ x: t.x, y: t.y + 5, r: 2.2 });
   });
   CAMP.rocks.forEach(function (r) { b.push({ x: r.x, y: r.y, r: 3.4 }); });
+  // the site's curiosity (note 4) is solid too — a small radius, so it
+  // never pinches the walk between the ring and the furniture round it
+  if (CAMP.feature) b.push({ x: CAMP.feature.x, y: CAMP.feature.y, r: CAMP.feature.r || 3 });
   b.push({ x: CAMP.bench.x, y: CAMP.bench.y, r: 2.2 });
   CAMP.deadwood.forEach(function (d) {
     if (d.kind === 'snag') b.push({ x: d.x, y: d.y + 4, r: 2 });
@@ -162,11 +166,14 @@ function enterCamp(site) {
   S.campSession = {
     site: site,
     chores: { tent: false, wood: 0, fire: false, cooked: false,
-              barrel: false, box: 0, stars: false, satTonight: false },
+              barrel: false, box: 0, stars: false, satTonight: false,
+              feature: false },        // had a look at the site's curiosity (note 4)
     guided: S.stats.camps === 0,
     critters: [], critT: 6,
     barrelPos: { x: CAMP.barrel.x, y: CAMP.barrel.y },   // where it rests (#2)
     carryingBarrel: false,
+    lookHint: false,                 // the guided 'worth a look' line, owed once the bar is free (note 4)
+    carryingWood: 0,                 // split logs in your arms; chores.wood is the PILE at the ring (#10)
     sources: CAMP.deadwood.map(function (d) {
       return { x: d.x, y: d.y, kind: d.kind, chops: 0, done: false };
     }),
@@ -230,20 +237,29 @@ function campAction() {
   var cands = [];
   var add = function (p, r, label, act) {
     var d = Math.hypot(S.player.x - p.x, S.player.y - p.y);
-    if (d < r) cands.push({ d: d, label: label, act: act });
+    // i breaks exact ties (STACK THE WOOD and LIGHT FIRE share the ring's
+    // spot) in ADD order, whatever the engine's sort does with equal keys
+    if (d < r) cands.push({ d: d, label: label, act: act, i: cands.length });
   };
 
   add(CAMP.tent, 13, ch.tent ? 'TURN IN' : 'PITCH TENT', ch.tent ? finishCampNight : function () {
     ch.tent = true;
     toast('Tent up. Home for the night.');
-    if (cs.guided) toast('Dead trees stand at the wood\'s edge — the axe wants work.');
+    if (cs.guided) toast('The axe wants work — buck a dead tree, carry the splits to the ring.');
+    // the bar holds one line and one pending: a third push here would evict
+    // the axe line unrendered, so the look hint waits its turn (tickCampLife)
+    if (cs.guided && CAMP.feature) cs.lookHint = true;
   });
 
   // firewood is chopped, not found stacked: each dead tree takes a few
-  // swings of the axe to buck into an armload
+  // swings of the axe to buck into an armload — and the armload is CARRIED
+  // to the ring (#10), not teleported. Arms at the cap: the axe waits.
+  var armsFull = cs.carryingWood >= TUNE.armload;
   cs.sources.forEach(function (sc) {
     if (sc.done) return;
-    add(sc, 9, 'CHOP WOOD', function () {
+    add(sc, 9, armsFull ? 'ARMS FULL' : 'CHOP WOOD', armsFull ? function () {
+      toast('ARMS FULL — STACK IT FIRST');
+    } : function () {
       if (cs.chopT > 0) return;              // mid-swing already
       cs.chopT = 0.0001;
       cs.chopAt = sc;
@@ -251,6 +267,17 @@ function campAction() {
       AUDIO.chop(0.2);                        // the thock lands with the blade
     });
   });
+
+  // the pile lives at the ring: stack what you carried, then the fire
+  if (cs.carryingWood > 0) {
+    add(CAMP.fire, 12, 'STACK THE WOOD', function () {
+      ch.wood += cs.carryingWood;
+      cs.carryingWood = 0;
+      if (S.woodMarker === 1) S.woodMarker = 2;    // the ring said where; you went (note 21)
+      toast('Stacked — ' + ch.wood + ' in the pile.');
+      if (cs.guided && ch.wood >= 6 && !ch.fire) toast('Enough to burn — light the fire ring.');
+    });
+  }
 
   if (!ch.fire) {
     add(CAMP.fire, 12, ch.wood >= 6 ? 'LIGHT FIRE' : 'NEED MORE WOOD', ch.wood >= 6 ? function () {
@@ -268,15 +295,18 @@ function campAction() {
   } else if (!ch.cooked) {
     add(CAMP.fire, 12, S.food > 0 ? 'COOK DINNER' : 'BARREL IS EMPTY', S.food > 0 ? function () {
       ch.cooked = true; S.food--;
-      S.energy = TUNE.energyMax;               // a hot meal fills the whole bar (#6)
-      toast('Dinner over the fire — you feel whole again.' + (S.food === 0 ? ' That was the last of the barrel.' : ''));
+      // a hot meal ADDS to the bar (note 20 reverses the v0.8.0 fill-to-full
+      // #6 order): dinner + sleep + breakfast wake a drained arrival near 85
+      S.energy = Math.min(TUNE.energyMax, S.energy + TUNE.dinnerEnergy);
+      toast('Dinner over the fire — you feel whole again.' + (S.food === 0 ? ' Last of the barrel.' : ''));
       if (cs.guided) toast('Hang the barrel on the big pine — bears know campsites.');
     } : function () {
       toast('Nothing left to cook. A fish tomorrow would fix that.');
     });
   }
 
-  if (!ch.barrel) add(cs.barrelPos, 9, 'PICK UP THE BARREL', function () {
+  // both hands are under the wood: the barrel waits until it is stacked
+  if (!ch.barrel && !cs.carryingWood) add(cs.barrelPos, 9, 'PICK UP THE BARREL', function () {
     cs.carryingBarrel = true;
     toast('Sixty pounds of dinners. Now, the big pine.');
     if (cs.guided) toast('Carry it to the big pine at the ' +
@@ -306,14 +336,29 @@ function campAction() {
     }
   });
 
+  // the thing about this site worth a look (note 4): every site has one —
+  // a ledge, a lashed table, a split boulder, a clawed birch — and the first
+  // look of the trip writes the journal and counts on the score card; every
+  // look after it just reads the card again
+  if (CAMP.feature) add(CAMP.feature, 10, CAMP.feature.label, function () {
+    var f = CAMP.feature, siteId = cs.site.id;
+    ch.feature = true;
+    if (!S.stats.features[siteId]) {
+      S.stats.features[siteId] = true;
+      S.log.push({ day: S.day, text: featureEntry(f.entry, S.day) });
+    }
+    S.card = { title: f.title, lines: f.lines.slice(), button: 'HUH.', kind: 'feature' };
+    S.mode = 'card';
+  });
+
   // living trees are spoken for (#3): the axe refuses, three ways
   CAMP.trees.forEach(function (tr) {
     add({ x: tr.x, y: tr.y + 4 }, 8, 'CHOP TREE', function () {
       cs.greenChops = (cs.greenChops || 0) + 1;
       toast(cs.greenChops === 1
-        ? 'The axe stops an inch from green bark. Living trees stay standing.'
+        ? 'The axe stops an inch from green bark. Living trees stand.'
         : cs.greenChops === 2
-        ? 'Still alive, still spoken for — the DEAD trees are the firewood.'
+        ? 'Still alive, still spoken for — DEAD trees are the firewood.'
         : 'The pine declines. Firmly.');
     });
   });
@@ -325,7 +370,7 @@ function campAction() {
     var hh = hourNow();
     if (hh >= 19.6 && !ch.stars) {
       ch.stars = true;
-      S.log.push('Day ' + S.day + ' — watched the stars come out over the lake.');
+      S.log.push({ day: S.day, text: 'Watched the stars come out over the lake.' });
     }
     var cap = hh >= 20.3 ? 'Sparks climb. The stars hold still.'
       : hh >= 18.6 ? 'The sun leans on the far treeline. Stay for this.'
@@ -353,14 +398,28 @@ function campAction() {
   });
 
   if (!cands.length) return null;
-  cands.sort(function (a, b) { return a.d - b.d; });
+  cands.sort(function (a, b) { return a.d - b.d || a.i - b.i; });
   return cands[0];
+}
+
+/**
+ * A feature's journal entry is authored 'Day N — …' (parks-shape §1.7): put
+ * the day in for N, then drop that lead — S.log carries {day, text} and the
+ * journal (note 12) already heads each day's page, so the line reads like
+ * its neighbours ('Camped at …', 'Watched the stars …').
+ */
+function featureEntry(entry, day) {
+  var s = String(entry || '').replace(/\bN\b/, String(day));
+  return s.replace(/^Day\s+\d+\s*[—–-]\s*/, '');
 }
 
 // --- the night, and the morning after ----------------------------------------
 
 function cancelCamp() {
-  if (S.campSession) S.suppressCampId = S.campSession.site.id;
+  if (S.campSession) {
+    S.suppressCampId = S.campSession.site.id;
+    S.roughFed = !!S.campSession.chores.cooked;   // dinner was real and paid for: the dark credits it
+  }
   S.campSession = null;
   S.campfire = null;
   leaveCampWorld();
@@ -374,6 +433,14 @@ function cancelCamp() {
 function tickCampLife(dt) {
   var cs = S.campSession;
   if (!cs) return;
+
+  // the guided look hint (note 4), delivered when the bar is empty — after
+  // the tent's two lines have had their turn; moot once the look is taken
+  if (cs.lookHint && (cs.chores.feature || !CAMP.feature)) cs.lookHint = false;
+  else if (cs.lookHint && !S.toasts.length) {
+    cs.lookHint = false;
+    toast('Something about this site is worth a look.');
+  }
 
   // the axe swing: raised, falling, impact at 0.24s, recovered by 0.42s
   if (cs.chopT > 0) {
@@ -395,9 +462,12 @@ function tickCampLife(dt) {
       if (sc2.chops >= TUNE.chopSwings) {
         sc2.done = true;
         cs.actCool = 0.5;               // a breath before the next station answers
-        cs.chores.wood += TUNE.logsPerTree;
-        toast('Split and stacked — ' + TUNE.logsPerTree + ' logs (' + cs.chores.wood + ' in the pile).');
-        if (cs.guided && cs.chores.wood >= 6 && !cs.chores.fire) toast('Enough to burn — light the fire ring.');
+        cs.carryingWood += TUNE.logsPerTree;      // in your arms, not yet in the pile (#10)
+        // the words say "the ring"; the FIRST armload of the trip also gets
+        // the ring pointed at, in the same orange dots the campsite targets
+        // use (note 21, Evrtek's play note)
+        if (S.woodMarker === 0) S.woodMarker = 1;
+        toast('Split — an armload of ' + TUNE.logsPerTree + '. Carry it to the ring.');
       }
     }
     if (cs.chopT >= 0.42) { cs.chopT = 0; cs.chopAt = null; }
@@ -608,7 +678,7 @@ function finishCampNight() {
   if (ch.stars) lines.push('The sky did its work. Sleep comes easy.');
   if (sightingsToday() > 0) lines.push(sightingsToday() + ' sighting' + (sightingsToday() > 1 ? 's' : '') + ' in the journal today.');
 
-  S.log.push('Day ' + S.day + ' — camped at ' + cs.site.name + '.');
+  S.log.push({ day: S.day, text: 'Camped at ' + cs.site.name + '.' });
   S.card = { title: 'NIGHT ' + S.day, lines: lines, button: 'SLEEP', kind: 'campNight' };
   S.mode = 'card';
 }
@@ -627,7 +697,7 @@ function showCampMorning() {
   if (S.food > 0) {
     S.food--;
     cs.breakfast = true;
-    S.energy = TUNE.energyMax;                 // breakfast counts too (#6)
+    S.energy = Math.min(TUNE.energyMax, S.energy + TUNE.breakfastEnergy);   // breakfast adds too (note 20)
     lines.push('Breakfast: oatmeal and lake coffee.');
   } else {
     lines.push('Nothing for breakfast. The rod is in the canoe.');
@@ -642,8 +712,12 @@ function breakCamp() {
   S.lookUp = false;
   S.day++;
   S.clock = TUNE.dayStartMin + 45;                  // 06:45, packed and moving
-  S.energy = Math.max(S.energy, 70);        // sleep gives a floor; meals fill
-  if (!cs.breakfast) S.energy = Math.max(40, S.energy - 12);
+  // sleep ADDS, with a floor (note 20) — breakfast has already been added by
+  // showCampMorning, and with additive meals the order no longer matters;
+  // then a hungry morning still costs a little on top of the meal it missed
+  S.energy = Math.min(TUNE.energyMax, Math.max(TUNE.sleepFloor, S.energy + TUNE.sleepEnergy));
+  if (!cs.breakfast) S.energy = Math.max(25, S.energy - 15);
+  S.roughFed = false;                               // a real bed spends the credit a struck camp left behind
   S.wind = rollWind(S.rnd, S.day);
   S.campfire = null;
   S.suppressCampId = S.campSession.site.id;   // quiet until you leave the ring
@@ -655,5 +729,5 @@ function breakCamp() {
   S.mode = 'play';
   AUDIO.morning();
   tickObjectives();
-  toast('Day ' + S.day + ' — ' + (OBJS[S.objIndex] ? OBJS[S.objIndex].text : 'homeward.'));
+  morningToast();
 }

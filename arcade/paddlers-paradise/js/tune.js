@@ -42,18 +42,38 @@ var TUNE_SCHEMA = {
         desc: 'Paddling speed in the shallows near shore.' },
       windMaxSlow: { label: 'Headwind penalty', value: 22, min: 0, max: 60, step: 1, unit: 'u/s',
         desc: 'Speed lost paddling dead into a full blow on big open water.' },
+      // note 21 (Evrtek, play notes): "each paddle stroke creates momentum
+      // and it doesn't die immediately — you should coast for a moment".
+      // 0 is the v0.9.0 canoe exactly: lift the paddle, dead stop.
+      glide: { label: 'Glide (s)', value: 0.8, min: 0, max: 2, step: 0.1, unit: 's',
+        desc: 'How long the canoe carries after the stroke stops. At 0 the hull stops dead the instant you lift the paddle.' },
+      // note 22 (Evrtek, 2026-09-04): "when using WASD, W should always be
+      // forward and S backward; A and D should rotate the character or steer
+      // left and right. True on the overworld; at camp the current movement
+      // makes sense because it is a side view." Built as a toggle so testers
+      // can compare — 1 is the new default, 0 is the v0.9.2 compass exactly.
+      // The touch stick is a DIRECTION under both settings: unchanged.
+      steerKeys: { label: 'Steer keys', value: 1, min: 0, max: 1, step: 1, unit: '',
+        desc: 'WASD/arrows steer: W forward, S back, A/D turn. At 0 the keys are a compass again (W = north). The camp stage is a side view and stays a compass either way.' },
+      turnFoot: { label: 'Turn rate on foot', value: 240, min: 60, max: 540, step: 10, unit: 'deg/s',
+        desc: 'How fast A/D spin the tripper on his feet. He can turn on the spot.' },
+      turnCanoe: { label: 'Turn rate afloat', value: 110, min: 30, max: 300, step: 5, unit: 'deg/s',
+        desc: 'How fast A/D swing the bow. A loaded hull is slow to come round — that is the point.' },
     },
   },
   energy: {
     label: 'Energy',
     vars: {
-      drainWalk: { label: 'Walk drain', value: 0.22, min: 0, max: 2, step: 0.01, unit: '/s',
-        desc: 'Energy per second walking a trail.' },
-      drainBush: { label: 'Bushwhack drain', value: 0.5, min: 0, max: 3, step: 0.01, unit: '/s',
+      // the four movement drains tripled in v0.9 (note 7, Evrtek: 'so meals
+      // matter') — a bar reset to 100 every morning never ran short at the
+      // old rates; the event drains below stayed put, they were penalties
+      drainWalk: { label: 'Walk drain', value: 0.66, min: 0, max: 3, step: 0.01, unit: '/s',
+        desc: 'Energy per second walking a trail or a beach.' },
+      drainBush: { label: 'Bushwhack drain', value: 1.5, min: 0, max: 5, step: 0.01, unit: '/s',
         desc: 'Energy per second off-trail.' },
-      drainCarry: { label: 'Portage drain', value: 0.8, min: 0, max: 3, step: 0.01, unit: '/s',
+      drainCarry: { label: 'Portage drain', value: 2.4, min: 0, max: 6, step: 0.01, unit: '/s',
         desc: 'Energy per second under the canoe.' },
-      drainPaddle: { label: 'Paddle drain', value: 0.24, min: 0, max: 2, step: 0.01, unit: '/s',
+      drainPaddle: { label: 'Paddle drain', value: 0.72, min: 0, max: 3, step: 0.01, unit: '/s',
         desc: 'Energy per second paddling.' },
       headwindDrain: { label: 'Headwind drain x', value: 2.0, min: 1, max: 5, step: 0.1, unit: 'x',
         desc: 'Drain multiplier paddling straight into the wind.' },
@@ -63,17 +83,39 @@ var TUNE_SCHEMA = {
         desc: 'Energy level below which the tripper slows to a trudge.' },
       exhaustedMult: { label: 'Exhausted pace x', value: 0.55, min: 0.2, max: 1, step: 0.05, unit: 'x',
         desc: 'Speed multiplier while exhausted.' },
+      exhaustedZeroMult: { label: 'Spent pace x', value: 0.3, min: 0.1, max: 1, step: 0.05, unit: 'x',
+        desc: 'Speed multiplier at an empty bar. Nothing strands you — every stroke is just a chore.' },
       snackEnergy: { label: 'Snack energy', value: 35, min: 5, max: 100, step: 1, unit: '',
         desc: 'Energy one snack restores.' },
+      // meals ADD to the bar now (note 20) instead of filling it: a drained
+      // arrival at camp wakes near 85, a fed 60 still wakes at 100, and a
+      // skipped meal shows in the morning
+      dinnerEnergy: { label: 'Dinner energy', value: 40, min: 0, max: 100, step: 1, unit: '',
+        desc: 'Energy a hot dinner over the fire adds.' },
+      breakfastEnergy: { label: 'Breakfast energy', value: 30, min: 0, max: 100, step: 1, unit: '',
+        desc: 'Energy oatmeal and lake coffee add at dawn.' },
+      sleepEnergy: { label: 'Sleep energy', value: 15, min: 0, max: 100, step: 1, unit: '',
+        desc: 'Energy a night under canvas adds.' },
+      sleepFloor: { label: 'Sleep floor', value: 45, min: 0, max: 100, step: 1, unit: '',
+        desc: 'The least a night in the tent leaves you with, whatever the evening cost.' },
+      roughNight: { label: 'Rough night', value: 30, min: 0, max: 100, step: 1, unit: '',
+        desc: 'Energy the morning after the dark catches you out. A rough night never beats a real bed.' },
+      roughNightFed: { label: 'Rough night, fed', value: 42, min: 0, max: 100, step: 1, unit: '',
+        desc: 'The same morning when dinner was eaten before the light went.' },
     },
   },
   provisions: {
     label: 'Provisions',
     vars: {
-      meals: { label: 'Meals in the barrel', value: 6, min: 1, max: 12, step: 1, unit: '',
+      // four is two nights with zero slack (note 7): a bear raid, a rough
+      // night or a third night sends you to the rod
+      meals: { label: 'Meals in the barrel', value: 4, min: 1, max: 12, step: 1, unit: '',
         desc: 'Dinners-and-breakfasts the trip starts with. Applies from the next trip.' },
       snacks: { label: 'Snacks packed', value: 3, min: 0, max: 9, step: 1, unit: '',
         desc: 'Trail snacks the trip starts with. Applies from the next trip.' },
+      // berries (note 8) top the pocket up past the packed three
+      berrySnackCap: { label: 'Pocket size', value: 9, min: 3, max: 12, step: 1, unit: '',
+        desc: 'The most snacks the pocket holds — picked berries stop counting here.' },
     },
   },
   wildlife: {
@@ -91,8 +133,12 @@ var TUNE_SCHEMA = {
         desc: 'Chance each known haunt is actually occupied on a given day.' },
       animalJitter: { label: 'Haunt wander', value: 55, min: 0, max: 160, step: 5, unit: 'u',
         desc: 'How far from its usual spot an animal may have settled today.' },
-      roamers: { label: 'Wandering extras', value: 2, min: 0, max: 6, step: 1, unit: '',
+      // the roamers went off the path in v0.9 (note 8): three a day, and
+      // each wants ninety units between it and any trail, camp, dock or vista
+      roamers: { label: 'Wandering extras', value: 3, min: 0, max: 6, step: 1, unit: '',
         desc: 'Extra animals per day at places nobody predicted.' },
+      roamRemote: { label: 'Roamer remoteness', value: 90, min: 0, max: 200, step: 5, unit: 'u',
+        desc: 'How far off every route feature a wandering extra settles. 0 puts them anywhere.' },
     },
   },
   fishing: {
@@ -110,6 +156,28 @@ var TUNE_SCHEMA = {
         desc: 'Wait multiplier through the middle of the day, when the fish sulk deep.' },
       fishWindow: { label: 'Strike window', value: 0.9, min: 0.2, max: 3, step: 0.05, unit: 's',
         desc: 'How long the STRIKE moment lasts before dinner swims off.' },
+      // what bites (note 6): the lake's rare rows and its one legend roll
+      // ahead of the common fish, each at its own odds, only in their hours
+      fishRareChance: { label: 'Rare fish odds', value: 0.1, min: 0, max: 0.5, step: 0.01, unit: '',
+        desc: 'Chance a bite is one of the lake\'s rare fish rather than the everyday ones.' },
+      fishLegendChance: { label: 'Legend odds', value: 0.01, min: 0, max: 0.2, step: 0.005, unit: '',
+        desc: 'Chance a bite is the lake\'s legend — the one everybody tells about.' },
+      // the snag (note 6): a sunken stump takes the lure instead of a fish;
+      // three failed pulls part the line, and time is the only cost
+      fishSnag: { label: 'Snag odds', value: 0.12, min: 0, max: 1, step: 0.01, unit: '',
+        desc: 'Chance a bite is a snag on open water.' },
+      fishSnagNear: { label: 'Snag odds, near wood', value: 0.4, min: 0, max: 1, step: 0.01, unit: '',
+        desc: 'Chance a bite is a snag with a deadhead or a shore stone near the bobber.' },
+      fishSnagReach: { label: 'Snag reach', value: 26, min: 8, max: 60, step: 1, unit: 'u',
+        desc: 'How close a deadhead or stone must be to the bobber to count as near.' },
+      fishSnagFree: { label: 'Pull free odds', value: 0.55, min: 0.05, max: 1, step: 0.05, unit: '',
+        desc: 'Chance each pull frees a snagged line. The third failed pull always parts it.' },
+      fishReRig: { label: 'Re-rig wait x', value: 1.5, min: 1, max: 4, step: 0.1, unit: 'x',
+        desc: 'Wait multiplier on the cast after a parted line.' },
+      // hidden: the fight minigame is a cut that is not built — fishFight()
+      // in game.js lands the fish outright while this stays 0
+      fishFight: { label: 'Fish fight', value: 0, min: 0, max: 1, step: 1, unit: '', hidden: true,
+        desc: 'The strike-to-net fight scene (not built yet). 0 lands the fish outright.' },
     },
   },
   camp: {
@@ -123,6 +191,8 @@ var TUNE_SCHEMA = {
         desc: 'Energy each axe swing costs.' },
       logsPerTree: { label: 'Logs per tree', value: 4, min: 2, max: 8, step: 1, unit: '',
         desc: 'Split logs one bucked tree yields. Lighting the ring costs 6.' },
+      armload: { label: 'Armload', value: 4, min: 2, max: 8, step: 1, unit: '',
+        desc: 'Split logs your arms can carry at once. At the cap the axe waits until you stack them at the ring.' },
       fireBurn: { label: 'Fire appetite', value: 1, min: 0.2, max: 3, step: 0.1, unit: 'x',
         desc: 'How fast the evening fire eats its logs while you sit with it. Bigger fires always burn faster.' },
       stoneEnergy: { label: 'Rock scrape cost', value: 1, min: 0, max: 10, step: 0.5, unit: '',
@@ -365,7 +435,9 @@ var OUTFIT = (function () {
       sum.textContent = group.label;
       det.appendChild(sum);
       var vk;
-      for (vk in group.vars) det.appendChild(row(vk, group.vars[vk]));
+      // a `hidden` dial builds into TUNE like any other but gets no slider
+      // (a switch for a cut that is not built yet has nothing to tune)
+      for (vk in group.vars) if (!group.vars[vk].hidden) det.appendChild(row(vk, group.vars[vk]));
       panel.appendChild(det);
     }
     document.body.appendChild(panel);
@@ -460,5 +532,17 @@ var OUTFIT = (function () {
     toggle: toggle,
     isOpen: function () { return open; },
     restored: restored,
+    /**
+     * One dial set from OUTSIDE the panel — the gear's KEYS pill, which is the
+     * only tune dial a player can reach while the Outfitter is hidden. Same
+     * clamp, same overrides-only autosave, and the panel's own row follows if
+     * it happens to be built. Returns 1 when the dial took.
+     */
+    set: function (k, v) {
+      var o = {}; o[k] = v;
+      var n = applyObj(o);
+      if (n) { save(); refresh(); }
+      return n;
+    },
   };
 })();

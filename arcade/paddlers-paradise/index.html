@@ -4,9 +4,24 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Paddler's Paradise — an Algonquin canoe trip</title>
+<!-- Cabinet icons (Yori, approved 2026-09-04). Local files only — the app still
+     makes zero external requests, and these resolve from file:// too. -->
+<link rel="icon" href="paddlers-favicon.svg" type="image/svg+xml">
+<link rel="icon" href="paddlers-favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="paddlers-touch-icon.png">
+<!-- Share card (Yori, approved 2026-09-04). Meta only: scrapers fetch these,
+     the page never does, so the zero-external-requests promise is untouched
+     and these sit inert when the file is opened from a hard drive. -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="PADDLER'S PARADISE">
+<meta property="og:description" content="A top-down canoe trip through Algonquin Park. Paddle it, land it, carry it. Camp before dark, or the dark catches you.">
+<meta property="og:url" content="https://reimertek.com/arcade/paddlers-paradise/">
+<meta property="og:image" content="https://reimertek.com/arcade/paddlers-paradise/og-paddlers.png">
+<meta name="twitter:card" content="summary_large_image">
 <!--
-  PADDLER'S PARADISE (working name, Evrtek's) v0.2.0 — a top-down pixel-art
-  canoe trip through Algonquin Park.
+  PADDLER'S PARADISE (working name, Evrtek's) v1.0.0 — a top-down pixel-art
+  canoe trip through Algonquin Park: THREE parks off Highway 60 — Canoe Lake,
+  Smoke Lake and Rock Lake — each picked from the car on the shelf screen.
 
   Deliberately built with CLASSIC scripts, not ES modules, so this file runs
   from a double-click on the hard drive (file://) with no server and no build
@@ -41,14 +56,14 @@
 </head>
 <body>
 <canvas id="screen"></canvas>
-<script src="js/sprites.js?v=0.8.0"></script>
-<script src="js/tune.js?v=0.8.0"></script>
-<script src="js/world.js?v=0.8.0"></script>
-<script src="js/audio.js?v=0.8.0"></script>
-<script src="js/scenes.js?v=0.8.0"></script>
-<script src="js/game.js?v=0.8.0"></script>
-<script src="js/camp.js?v=0.8.0"></script>
-<script src="js/render.js?v=0.8.0"></script>
-<script src="js/main.js?v=0.8.0"></script>
+<script src="js/sprites.js?v=1.0.0"></script>
+<script src="js/tune.js?v=1.0.0"></script>
+<script src="js/world.js?v=1.0.0"></script>
+<script src="js/audio.js?v=1.0.0"></script>
+<script src="js/scenes.js?v=1.0.0"></script>
+<script src="js/game.js?v=1.0.0"></script>
+<script src="js/camp.js?v=1.0.0"></script>
+<script src="js/render.js?v=1.0.0"></script>
+<script src="js/main.js?v=1.0.0"></script>
 </body>
 </html>
