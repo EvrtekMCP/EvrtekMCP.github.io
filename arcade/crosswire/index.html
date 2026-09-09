@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>CROSSWIRE — beta</title>
+<!-- Cabinet icons (Yori, 2026-09-08). Local files, relative paths: the game still
+     makes zero external requests and still runs from a double-clicked file. -->
+<link rel="icon" href="crosswire-favicon.svg" type="image/svg+xml">
+<link rel="icon" href="crosswire-favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="crosswire-touch-icon.png">
+<!-- Share card. Meta only: scrapers fetch these, the page never does, so the
+     zero-external-requests promise holds and they sit inert from file://. -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="CROSSWIRE">
+<meta property="og:description" content="Split it, mix it, light it up! Wire red, yellow and blue to the bulbs that demand them. Every sound synthesised, every pixel drawn in code.">
+<meta property="og:url" content="https://reimertek.com/arcade/crosswire/">
+<meta property="og:image" content="https://reimertek.com/arcade/crosswire/og-crosswire.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="css/crosswire.css?v=0.18.0">
+</head>
+<body>
+<div id="wrap">
+  <canvas id="stage" width="920" height="700" aria-label="Crosswire play field"></canvas>
+</div>
+<!-- Classic scripts, not modules: ES module imports are blocked from a
+     file:// URL, and every Arcade cabinet has to run straight off disk. -->
+<script src="js/version.js?v=0.18.0"></script>
+<script src="js/colours.js?v=0.18.0"></script>
+<script src="js/audio.js?v=0.18.0"></script>
+<script src="js/voice.js?v=0.18.0"></script>
+<script src="js/demo.js?v=0.18.0"></script>
+<script src="js/pieces.js?v=0.18.0"></script>
+<script src="js/board.js?v=0.18.0"></script>
+<script src="js/power.js?v=0.18.0"></script>
+<script src="js/bag.js?v=0.18.0"></script>
+<script src="js/input.js?v=0.18.0"></script>
+<script src="js/layout.js?v=0.18.0"></script>
+<script src="js/render.js?v=0.18.0"></script>
+<script src="js/game.js?v=0.18.0"></script>
+<script src="js/main.js?v=0.18.0"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- CROSSWIRE favicon: a four-way crosswire. Red in from the west, yellow from the north,
+       orange out east and south, the M junction at the crossing. Yori, 2026-09-08. -->
+  <rect width="32" height="32" rx="6.4" fill="#0a0e18"/>
+  <g stroke-linecap="round" stroke-width="5.2" fill="none">
+    <path d="M0 16H16" stroke="#ff3b30"/>
+    <path d="M16 0V16" stroke="#ffd60a"/>
+    <path d="M16 16H32" stroke="#ff8c1a"/>
+    <path d="M16 16V32" stroke="#ff8c1a"/>
+  </g>
+  <rect x="8.5" y="8.5" width="15" height="15" rx="3" fill="#0d1220" stroke="#ff8c1a" stroke-width="2.2"/>
+  <circle cx="16" cy="16" r="6.4" fill="#080c15" stroke="#ffd60a" stroke-width="1.4"/>
+  <text x="16" y="19.6" text-anchor="middle" font-family="Consolas, 'Courier New', monospace" font-weight="700" font-size="9.5" fill="#ffd60a">M</text>
+</svg>

@@ -1,0 +1,43 @@
+/* CROSSWIRE — the page is a frame around a canvas and nothing more. */
+/* iOS GESTURE LOCKDOWN, ported from Paddler's Paradise (Evrtek 2026-09-07):
+   the game owns every gesture, so a swipe is never the browser's back-swipe,
+   a drag is never pull-to-refresh, and a long press is never a text menu.
+   Three parts, all needed: this CSS, the viewport meta in index.html, and the
+   non-passive touch handlers in main.js — Safari honours only the last of
+   these for its own navigation gestures. */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #05070d;
+  color: #c9d6f0;
+  font-family: Consolas, "Courier New", monospace;
+  overflow: hidden;
+  touch-action: none;                 /* the game owns every gesture */
+  overscroll-behavior: none;          /* no rubber-band, no pull-to-refresh */
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+body {
+  position: fixed; inset: 0; width: 100%;   /* iOS: a fixed body cannot be
+                                               dragged into a nav gesture */
+}
+
+#wrap {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#stage {
+  display: block;
+  image-rendering: auto;
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px #1c2438, 0 18px 60px rgba(0, 0, 0, 0.6);
+  touch-action: none;
+}
+
+/* The game is keyboard and gamepad only, by ruling. Nothing here is
+   clickable, so nothing here should look clickable. */
+* { user-select: none; -webkit-user-select: none; }
