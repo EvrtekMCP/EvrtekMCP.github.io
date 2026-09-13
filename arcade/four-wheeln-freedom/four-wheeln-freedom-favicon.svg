@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- 4 WHEEL'N FREEDOM favicon: a knobby tire, the 4 on its hub. Yori, 2026-09-13. -->
+  <defs>
+    <linearGradient id="dusk" x1="0" y1="0.35" x2="0" y2="1"><stop offset="0" stop-color="#ff8c3c" stop-opacity="0"/><stop offset="1" stop-color="#ff8c3c" stop-opacity="0.35"/></linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="0.28"/><stop offset="0.5" stop-color="#000000" stop-opacity="0"/><stop offset="1" stop-color="#000000" stop-opacity="0.38"/></linearGradient>
+    <clipPath id="tile"><rect width="32" height="32" rx="6.4"/></clipPath>
+  </defs>
+  <rect width="32" height="32" rx="6.4" fill="#0d0b1e"/>
+  <rect width="32" height="32" fill="url(#dusk)" clip-path="url(#tile)"/>
+  <rect x="11.56" y="-1.98" width="2.75" height="3.97" rx="0.4" fill="#2c2d33" transform="translate(16 16) rotate(5.73)"/>
+  <rect x="11.56" y="-1.98" width="2.75" height="3.97" rx="0.4" fill="#2c2d33" transform="translate(16 16) rotate(31.44)"/>
+  <rect x="11.56" y="-1.98" width="2.75" height="3.97" rx="0.4" fill="#2c2d33" transform="translate(16 16) rotate(57.16)"/>
+  <rect x="11.56" y="-1.98" width="2.75" height="3.97" rx="0.4" fill="#2c2d33" transform="translate(16 16) rotate(82.87)"/>
+  <rect x="11.56" y="-1.98" width="2.75" height="3.97" rx="0.4" fill="#2c2d33" transform="translate(16 16) rotate(108.59)"/>
+  <rect x="11.56" y="-1.98" width="2.75" height="3.97" rx="0.4" fill="#2c2d33" transform="translate(16 16) rotate(134.3)"/>
+  <rect x="11.56" y="-1.98" width="2.75" height="3.97" rx="0.4" fill="#2c2d33" transform="translate(16 16) rotate(160.02)"/>
+  <rect x="11.56" y="-1.98" width="2.75" height="3.97" rx="0.4" fill="#2c2d33" transform="translate(16 16) rotate(185.73)"/>
+  <rect x="11.56" y="-1.98" width="2.75" height="3.97" rx="0.4" fill="#2c2d33" transform="translate(16 16) rotate(211.44)"/>
+  <rect x="11.56" y="-1.98" width="2.75" height="3.97" rx="0.4" fill="#2c2d33" transform="translate(16 16) rotate(237.16)"/>
+  <rect x="11.56" y="-1.98" width="2.75" height="3.97" rx="0.4" fill="#2c2d33" transform="translate(16 16) rotate(262.87)"/>
+  <rect x="11.56" y="-1.98" width="2.75" height="3.97" rx="0.4" fill="#2c2d33" transform="translate(16 16) rotate(288.59)"/>
+  <rect x="11.56" y="-1.98" width="2.75" height="3.97" rx="0.4" fill="#2c2d33" transform="translate(16 16) rotate(314.3)"/>
+  <rect x="11.56" y="-1.98" width="2.75" height="3.97" rx="0.4" fill="#2c2d33" transform="translate(16 16) rotate(340.02)"/>
+  <circle cx="16" cy="16" r="12.11" fill="#232428"/>
+  <circle cx="16" cy="16" r="10.18" fill="none" stroke="#34363c" stroke-width="0.77"/>
+  <circle cx="16" cy="16" r="8.26" fill="#8f949c"/>
+  <circle cx="16" cy="16" r="8.26" fill="url(#rim)"/>
+  <circle cx="22.08" cy="19.51" r="0.7" fill="#4a4d55"/>
+  <circle cx="16" cy="23.02" r="0.7" fill="#4a4d55"/>
+  <circle cx="9.92" cy="19.51" r="0.7" fill="#4a4d55"/>
+  <circle cx="9.92" cy="12.49" r="0.7" fill="#4a4d55"/>
+  <circle cx="16" cy="8.98" r="0.7" fill="#4a4d55"/>
+  <circle cx="22.08" cy="12.49" r="0.7" fill="#4a4d55"/>
+  <circle cx="16" cy="16" r="5.78" fill="#d6452f" stroke="#2a1410" stroke-width="0.58"/>
+  <path d="M17.82 11.87L19.94 11.87L18.95 20.13L16.83 20.13ZM13.49 16.47L19.39 16.47L19.16 18.36L13.26 18.36ZM15.52 11.87L17.82 11.87L15.79 16.47L13.49 16.47Z" fill="#fff4c4"/>
+</svg>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <title>4 Wheel'n Freedom — beta</title>
+    <meta name="theme-color" content="#0b0810">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="4 Wheel'n Freedom">
+    <!-- Cabinet icons (Yori, 2026-09-13). Local files, relative paths: the game makes no external requests. -->
+    <link rel="icon" href="four-wheeln-freedom-favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="four-wheeln-freedom-favicon.ico" sizes="any">
+    <link rel="apple-touch-icon" href="four-wheeln-freedom-touch-icon.png">
+    <!-- Share card. Meta only: scrapers fetch these, the page never does. -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="4 Wheel'n Freedom">
+    <meta property="og:description" content="Low-poly RC off-roading in your browser: jumps, mud, a two-log bridge, NOS with a wheelie, a time trial round the loop and two minutes of tricks. Built for your phone.">
+    <meta property="og:url" content="https://reimertek.com/arcade/four-wheeln-freedom/">
+    <meta property="og:image" content="https://reimertek.com/arcade/four-wheeln-freedom/og-four-wheeln-freedom.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <!-- Arcade rule (2026-08-18): every asset URL carries the version, bumped with each release, so returning players never see last year's toy. -->
+    <link rel="stylesheet" href="TemplateData/style.css?v=0.6.1">
+  </head>
+  <body>
+    <div id="unity-container">
+      <canvas id="unity-canvas" width="960" height="600" tabindex="-1"></canvas>
+      <div id="unity-loading">
+        <img id="unity-wordmark" src="TemplateData/wordmark.png?v=0.6.1" alt="4 Wheel'n Freedom">
+        <div class="bar"><i id="unity-progress"></i></div>
+        <div id="unity-loading-text">loading the playground</div>
+        <div id="unity-loading-note">v0.6.1 · beta · best on a phone, held upright</div>
+      </div>
+      <div id="unity-warning"></div>
+    </div>
+    <script>
+      var canvas = document.querySelector("#unity-canvas");
+      var loading = document.querySelector("#unity-loading");
+      var progressBar = document.querySelector("#unity-progress");
+      var loadingText = document.querySelector("#unity-loading-text");
+
+      function unityShowBanner(msg, type) {
+        var warningBanner = document.querySelector("#unity-warning");
+        function updateBannerVisibility() {
+          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
+        }
+        var div = document.createElement('div');
+        div.innerHTML = msg;
+        div.className = type == 'error' ? 'error' : (type == 'warning' ? 'warning' : '');
+        warningBanner.appendChild(div);
+        if (type != 'error') {
+          setTimeout(function() {
+            warningBanner.removeChild(div);
+            updateBannerVisibility();
+          }, 5000);
+        }
+        updateBannerVisibility();
+      }
+
+      var stamp = "?v=0.6.1";
+      var buildUrl = "Build";
+      var loaderUrl = buildUrl + "/Web.loader.js" + stamp;
+      var config = {
+        arguments: [],
+        dataUrl: buildUrl + "/Web.data.unityweb" + stamp,
+        frameworkUrl: buildUrl + "/Web.framework.js.unityweb" + stamp,
+        codeUrl: buildUrl + "/Web.wasm.unityweb" + stamp,
+        streamingAssetsUrl: "StreamingAssets",
+        fullscreenElementID: "unity-container",
+        companyName: "Reimertek",
+        productName: "4 Wheel'n Freedom",
+        productVersion: "0.6.1",
+        showBanner: unityShowBanner,
+      };
+      // Phones render at two device pixels per CSS pixel at most: a 3x screen is not worth the fill rate for a low-poly game.
+      config.devicePixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+
+      var script = document.createElement("script");
+      script.src = loaderUrl;
+      script.onload = function () {
+        createUnityInstance(canvas, config, function (progress) {
+          progressBar.style.width = Math.round(100 * progress) + "%";
+          if (progress >= 1) {
+            loadingText.textContent = "starting";
+          }
+        }).then(function (unityInstance) {
+          loading.style.opacity = "0";
+          setTimeout(function () { loading.style.display = "none"; }, 450);
+          canvas.focus();
+        }).catch(function (message) {
+          loadingText.textContent = "the playground did not load: " + message;
+          loadingText.className = "error";
+        });
+      };
+      script.onerror = function () {
+        loadingText.textContent = "the playground did not load: the game files are missing";
+        loadingText.className = "error";
+      };
+      document.body.appendChild(script);
+    </script>
+  </body>
+</html>
