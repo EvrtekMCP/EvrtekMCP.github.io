@@ -188,6 +188,22 @@
   window.addEventListener('orientationchange', onResize);
   fit();
 
+  // EVRTEK 2026-09-14: "yes, let's add a saved high score." The run boundary is
+  // watched HERE and nowhere else, because the rules do not know what a device
+  // is and the renderer only reads. Two edges are all it takes:
+  //   over false -> true   the run ended: record it, once
+  //   a live board arrives  a run started: forget the last card's verdict
+  // Recording on the edge rather than in the rules is also what keeps a replay
+  // or the harness from writing to somebody's browser.
+  var wasOver = false, wasPlaying = false;
+  function watchRun() {
+    var playing = (game.screen === 'play' && !game.over);
+    if (game.over && !wasOver) CW_BEST.record(game.diff().id, game.score);
+    else if (playing && !wasPlaying) CW_BEST.clearLast();
+    wasOver = game.over;
+    wasPlaying = playing;
+  }
+
   var last = performance.now();
   function frame(now) {
     var dt = Math.min(0.05, (now - last) / 1000);
@@ -207,6 +223,7 @@
     var c = p1.command(), tc = touch.command();
     if (!sideways) game.apply(merge(c, tc));
     game.update(dt);
+    watchRun();
     kb.endFrame();
 
     // One transform, here, and every coordinate the renderer works in stays
@@ -230,7 +247,14 @@
       to: b.to || a.to || null,
       tap: b.tap || a.tap || null,
       pick: b.pick || a.pick || null,
-      tune: b.tune || a.tune || null
+      tune: b.tune || a.tune || null,
+      // The strip (EVRTEK 2026-09-14). `bin` is folded by VALUE rather than by
+      // truthiness, because BIN 1 is bin ZERO and `0 || x` throws it away —
+      // which is exactly the bug that would leave the first bin unreachable
+      // from a finger while the second one worked perfectly.
+      shred: b.shred || a.shred,
+      bin: (b.bin === 0 || b.bin === 1) ? b.bin
+        : ((a.bin === 0 || a.bin === 1) ? a.bin : null)
     };
   }
 

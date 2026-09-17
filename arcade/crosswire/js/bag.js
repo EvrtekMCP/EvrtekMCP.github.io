@@ -44,8 +44,11 @@ var CW_BAG = (function () {
   // Slight, which is what he asked for — the net is what makes the promise.
   // (His 09-08 reweighting of LINK, RUN, YOKE and JUNCTION — see pieces.js —
   // moved those two figures a little, since the pieces it favours are two- and
-  // three-cell: the same measurement now reads 37.5% and 11.0% at seed 4242.
-  // The shape of the tilt is unchanged, and so is the promise.)
+  // three-cell: the same measurement read 37.5% and 11.0% at seed 4242. His
+  // 09-14 cut of every junction piece to three quarters moved them again, and
+  // the same measurement now reads 37.9% and 9.6% — two of the four junction
+  // pieces are five-cell, so taking a quarter off them takes the big pieces
+  // down with it. The shape of the tilt is unchanged, and so is the promise.)
   var SIZE_TILT = { 1: 1.2, 2: 1.1, 3: 1.0, 4: 0.9, 5: 0.8 };
   function weightOf(p) { return p.weight * (SIZE_TILT[p.size] || 1); }
 
@@ -158,6 +161,23 @@ var CW_BAG = (function () {
     this.queue.push(this._draw());
     this.rot = 0;
     this.discards++;
+    return old;
+  };
+
+  // THE STORAGE BINS, EVRTEK 2026-09-14: "the player can also drag a piece onto
+  // one of the storage bins to hold it for later, if there's a piece in the bin,
+  // the active piece should swap with the one in the bin."
+  //
+  // A swap is NOT A DRAW. Nothing new comes out of the feed, the preview behind
+  // it does not move, and the queue is the same length afterwards — so the
+  // drought bookkeeping is deliberately left alone. sinceSolder and sinceSmall
+  // count what the feed has DEALT; a piece coming back out of a bin was dealt
+  // once already and counting it twice would let a player defer a drought for
+  // ever by parking a junction in a bin.
+  Feed.prototype.swap = function (piece) {
+    var old = this.queue[0];
+    this.queue[0] = piece;
+    this.rot = 0;
     return old;
   };
 

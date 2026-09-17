@@ -6,7 +6,7 @@ effects, the callouts and the three scores — is synthesised with the
 browser's built-in Web Audio API. Nothing is downloaded, hotlinked or sampled.
 The type is whatever monospace the device already has.
 
-Design: Evrtek's own concept and ninety-seven rulings after playing it.
+Design: Evrtek's own concept and a hundred and eleven rulings, most of them made after playing it.
 Build: CLU, with Opus agents on the mechanics and Tron on patrol.
 
 Reference material consulted (techniques studied, no code or assets copied):

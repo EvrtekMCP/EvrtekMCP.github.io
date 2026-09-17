@@ -5,18 +5,27 @@
 // with different board data.
 var CW_GAME = (function () {
 
-  var GRID_W = 10, GRID_H = 20;
+  // EVRTEK 2026-09-14: "let's reduce the board size by 3 rows, those rows should
+  // be replaced by the 'shredder' and two storage bins." So the grid is ten by
+  // SEVENTEEN, and the three rows it gave up are the strip underneath it. The
+  // rules own the shredder and the bins (shred(), stash(), and the two command
+  // fields that reach them); where they are DRAWN is the screen's business.
+  var GRID_W = 10, GRID_H = 17;
   var C = CW_COLOUR;
 
   // EVRTEK'S DIFFICULTY AXES, 2026-09-06: how many sources are on the board,
   // how many demands at once, and how much blending is required. All three
   // primaries are always present, or some demands would be impossible rather
   // than hard. More sources means shorter routes, so more sources is easier.
-  // EVRTEK 2026-09-06: "we should have at least, say, ten of them lit up as
-  // source colours. I just think it's more interesting if there's more
-  // available starting points as opposed to fewer." Agreed, and with mixing
-  // back at valves it also raises the stakes: more sources means more chances
-  // to join two of them by accident, which is now a SHORT.
+  //
+  // HIS 09-06 RULING WAS TEN TO FOURTEEN SOURCES ("I just think it's more
+  // interesting if there's more available starting points"). HE REVERSED IT
+  // 2026-09-14, having played it: "let's half the number of sources and
+  // increase the number of targets by 33% across all modes", under one goal —
+  // "one major goal is to have fewer unused pieces to clutter the board."
+  // Fourteen sources meant most of the left edge was already solved, so a
+  // route was short and the board filled with wire nobody needed. Half as many
+  // sources and a third more demands is the same board asking for longer runs.
   //
   // EVRTEK 2026-09-08, THE LADDER: "let's have each difficulty consist of 3
   // levels, adjust all levers to make the levels within them each feel
@@ -35,67 +44,109 @@ var CW_GAME = (function () {
   //   3  BLEND   colour theory under the tightest clock: demands at their
   //              most, and most of them blends.
   //
+  // EVRTEK 2026-09-14, THE FOUR SETTINGS: "difficulties become Normal, Advanced
+  // and Extreme" — and, separately, "Calm mode is just that, it will be an
+  // opportunity to play around, no pressure, no timed disaster bar that drops
+  // blocks. no timer at all... Calm should be the default on load and basically
+  // represents tutorial mode."
+  //
+  // So there are FOUR rows now. CALM is a SANDBOX — `untimed`, which switches
+  // both clocks off entirely and with them the surge, the slabs and every way
+  // of losing — and the three that follow are the old three, renamed and moved
+  // up: NORMAL inherits the old CALM's clocks, pulse and blend, ADVANCED the
+  // old STEADY's, EXTREME the old SHARP's. What moved on top of that is his
+  // 09-14 pass: half the sources, a third more demands, more slabs on ADVANCED,
+  // a much longer destructor cooldown everywhere, and EXTREME re-dealing its
+  // demands every time the surge fires (`reassign`).
+  //
+  // CALM'S LEVELS ARE NAMED WIRE / JOIN / BLEND. It has no surge, so calling
+  // its second level SURGE would name a thing that cannot happen to it — and
+  // his words for CALM were "3 levels is good with no fail" and "Calm needs to
+  // include blends", which is what JOIN and BLEND are: junctions, then colour.
+  //
   // Every clock here is a WHOLE NUMBER OF SECONDS and is that level's FULL
   // LENGTH. TIME_BASE, SURGE_BASE and timeScale are gone with the old scheme:
   // one scale factor per difficulty could not say "this level is tighter than
   // the one before it inside the same difficulty", which is the whole ruling.
-  // The clocks went UP where he asked — STEADY opens at 3:00 where the flat
-  // number was 2:24, SHARP at 2:20 where it was 1:36 — and only the last level
-  // of each is tighter than what it replaced.
+  // The clocks went UP where he asked — the middle setting opens at 3:00 where
+  // the flat number was 2:24, the hardest at 2:20 where it was 1:36 — and only
+  // the last level of each is tighter than what it replaced. (Those two are
+  // ADVANCED and EXTREME now; they were STEADY and SHARP when he said it.)
   //
-  // `slabs` is how many 2x2 slabs land every time the surge clock empties, and
-  // how many the board drops at the start of a level. Sources DO NOT move on a
-  // surge (his ruling 09-07: "having sources or targets move is too punishing")
-  // — the interruption is obstacles appearing and nothing else.
+  // `slabs` is how many 2x2 slabs the level keeps on the board. They are not
+  // ADDED on a surge any more (EVRTEK 2026-09-14, see _interrupt): the standing
+  // ones rise and the same number falls somewhere else, so this column is a
+  // POPULATION rather than a rate. Sources DO NOT move on a surge (his ruling
+  // 09-07: "having sources or targets move is too punishing") — on EXTREME the
+  // demands are re-dealt instead, which is `reassign`.
   //
   // `demands` are the lit bulbs. They take DISTINCT rows (_freeTargetRow) out
-  // of twenty, so even eight fits with room over, and a finished line RESPAWNS
-  // its own demand rather than adding one, which is what holds the count at the
-  // number on this table for the whole of a level.
+  // of SEVENTEEN, so even eleven fits with six rows over, and a finished line
+  // RESPAWNS its own demand rather than adding one, which is what holds the
+  // count at the number on this table for the whole of a level.
   //
   // `blend` is the share of NEW demands that are a mixed colour. It replaces
   // the flat 0.64 the whole game used to run on and it is the third level's
-  // real teeth. CALM still holds every blend back until five lines are done
-  // (`simpleFirst`), whatever the level says.
+  // real teeth. There is no holding it back any more: `simpleFirst` is gone
+  // with the old CALM, on his 09-14 ruling that "Calm needs to include blends".
   //
-  // `cut` is the destructor's cooldown in seconds — his 09-08 ruling doubled
-  // it, and it now climbs with the level as well. `pulse` is the beat a short
-  // burns away on, and it was the ONLY thing that used to move with the level.
+  // `cut` is the destructor's cooldown in seconds. EVRTEK 2026-09-14: "the
+  // destructor should get a much longer cool down since we're giving more
+  // options to the player" — the shredder and the two bins being the options.
+  // It ran 4 to 9 seconds; it now runs 12 to 27. `shred` is the shredder's own
+  // cooldown, one number for the whole difficulty rather than per level.
+  // `pulse` is the beat a short burns away on.
   var DIFFICULTY = [
     {
-      id: 'CALM', blurb: 'fourteen sources · 3 to 5 demands',
-      sources: 14, quota: 10, simpleFirst: 5,
+      // THE SANDBOX. No clock, no surge, no slab, no way to lose — and blends
+      // from the very first demand, at NORMAL's rate.
+      id: 'CALM', blurb: 'seven sources · 4 to 7 demands · no clock',
+      sources: 7, quota: 10, shred: 3, untimed: true,
       levels: [
-        { name: 'WIRE', demands: 3, slabs: 1, time: 216, surge: 120, blend: 0.35, cut: 4, pulse: 3.4, hint: 'WIRE WHAT IT ASKS FOR' },
-        { name: 'SURGE', demands: 4, slabs: 2, time: 200, surge: 90, blend: 0.55, cut: 4, pulse: 3.0, hint: 'MORE SLABS, A SHORTER SURGE' },
-        { name: 'BLEND', demands: 5, slabs: 3, time: 180, surge: 75, blend: 0.80, cut: 5, pulse: 2.6, hint: 'MOST DEMANDS ARE BLENDS' }
+        { name: 'WIRE', demands: 4, slabs: 0, time: 0, surge: 0, blend: 0.35, cut: 12, pulse: 3.4, hint: 'WIRE WHAT IT ASKS FOR' },
+        { name: 'JOIN', demands: 5, slabs: 0, time: 0, surge: 0, blend: 0.55, cut: 12, pulse: 3.0, hint: 'TWO COLOURS MEET AT A JUNCTION' },
+        { name: 'BLEND', demands: 7, slabs: 0, time: 0, surge: 0, blend: 0.80, cut: 12, pulse: 2.6, hint: 'MOST DEMANDS ARE BLENDS' }
       ]
     },
     {
-      id: 'STEADY', blurb: 'twelve sources · 4 to 7 demands',
-      sources: 12, quota: 10, simpleFirst: 0,
+      id: 'NORMAL', blurb: 'seven sources · 4 to 7 demands',
+      sources: 7, quota: 10, shred: 5,
       levels: [
-        { name: 'WIRE', demands: 4, slabs: 2, time: 180, surge: 90, blend: 0.45, cut: 5, pulse: 3.0, hint: 'WIRE WHAT IT ASKS FOR' },
-        { name: 'SURGE', demands: 6, slabs: 3, time: 160, surge: 65, blend: 0.65, cut: 6, pulse: 2.7, hint: 'MORE SLABS, A SHORTER SURGE' },
-        { name: 'BLEND', demands: 7, slabs: 4, time: 140, surge: 55, blend: 0.85, cut: 7, pulse: 2.4, hint: 'MOST DEMANDS ARE BLENDS' }
+        { name: 'WIRE', demands: 4, slabs: 1, time: 216, surge: 120, blend: 0.35, cut: 12, pulse: 3.4, hint: 'WIRE WHAT IT ASKS FOR' },
+        { name: 'SURGE', demands: 5, slabs: 2, time: 200, surge: 90, blend: 0.55, cut: 15, pulse: 3.0, hint: 'MORE SLABS, A SHORTER SURGE' },
+        { name: 'BLEND', demands: 7, slabs: 3, time: 180, surge: 75, blend: 0.80, cut: 18, pulse: 2.6, hint: 'MOST DEMANDS ARE BLENDS' }
       ]
     },
     {
-      id: 'SHARP', blurb: 'ten sources · 6 to 8 demands',
-      sources: 10, quota: 10, simpleFirst: 0,
+      id: 'ADVANCED', blurb: 'six sources · 5 to 9 demands',
+      sources: 6, quota: 10, shred: 8,
       levels: [
-        { name: 'WIRE', demands: 6, slabs: 3, time: 140, surge: 70, blend: 0.60, cut: 6, pulse: 2.6, hint: 'WIRE WHAT IT ASKS FOR' },
-        { name: 'SURGE', demands: 8, slabs: 5, time: 120, surge: 52, blend: 0.75, cut: 8, pulse: 2.3, hint: 'MORE SLABS, A SHORTER SURGE' },
-        { name: 'BLEND', demands: 8, slabs: 5, time: 105, surge: 45, blend: 0.90, cut: 9, pulse: 2.0, hint: 'MOST DEMANDS ARE BLENDS' }
+        { name: 'WIRE', demands: 5, slabs: 2, time: 180, surge: 90, blend: 0.45, cut: 15, pulse: 3.0, hint: 'WIRE WHAT IT ASKS FOR' },
+        { name: 'SURGE', demands: 8, slabs: 3, time: 160, surge: 65, blend: 0.65, cut: 18, pulse: 2.7, hint: 'MORE SLABS, A SHORTER SURGE' },
+        { name: 'BLEND', demands: 9, slabs: 4, time: 140, surge: 55, blend: 0.85, cut: 21, pulse: 2.4, hint: 'MOST DEMANDS ARE BLENDS' }
+      ]
+    },
+    {
+      // EVRTEK 2026-09-14: "Extreme mode will have blocks fall and have the
+      // targets randomly reassign on the blocker drop countdown trigger."
+      id: 'EXTREME', blurb: 'five sources · 8 to 11 demands',
+      sources: 5, quota: 10, shred: 12, reassign: true,
+      levels: [
+        { name: 'WIRE', demands: 8, slabs: 3, time: 140, surge: 70, blend: 0.60, cut: 18, pulse: 2.6, hint: 'THE SURGE RE-DEALS THE DEMANDS' },
+        { name: 'SURGE', demands: 11, slabs: 4, time: 120, surge: 52, blend: 0.75, cut: 24, pulse: 2.3, hint: 'MORE SLABS, A SHORTER SURGE' },
+        { name: 'BLEND', demands: 11, slabs: 5, time: 105, surge: 45, blend: 0.90, cut: 27, pulse: 2.0, hint: 'MOST DEMANDS ARE BLENDS' }
       ]
     }
   ];
 
-  // Evrtek 09-07: 2x2 slabs, and MORE of them. A standing population of twice
-  // what one surge drops, so the board churns under pressure instead of slowly
-  // filling in — the oldest slab retires to make room for the newest.
+  // Evrtek 09-07: 2x2 slabs, and MORE of them.
+  //
+  // THE STANDING POPULATION RULE OF 09-07 IS GONE (his ruling 2026-09-14): a
+  // surge no longer adds slabs at all, so there is nothing to cap and no oldest
+  // slab to retire. BLOCKER_STANDING went with it. What holds the number now is
+  // that every trigger lifts the whole standing set and drops the level's count
+  // again — see _interrupt and _liftSlabs.
   var BLOCKER_SIZE = 2;
-  var BLOCKER_STANDING = 2;
   var KEYSTONE_BONUS = 500;
 
   // THE DESTRUCTOR, Evrtek 09-07: a cross three wide and three tall, taking
@@ -116,7 +167,12 @@ var CW_GAME = (function () {
   // The SURGE clock is the level's `surge` and does not stop for anything. When
   // it empties the rig interrupts you and it starts again. It is the reason to
   // hurry even when the main clock is comfortable, and it is the lever that
-  // moves hardest between levels: on SHARP it goes 1:10, 0:52, 0:45.
+  // moves hardest between levels: on EXTREME it goes 1:10, 0:52, 0:45.
+  //
+  // NEITHER OF THEM EXISTS ON CALM (EVRTEK 2026-09-14). `untimed` is not a very
+  // long clock; it is no clock, and every rule that hangs off one — the
+  // warnings, the surge, the interruption, the slabs, the loss — is simply not
+  // reached. See untimed() and _clocks().
 
   // EVRTEK 2026-09-07: the gap between finishing a line and the game noticing
   // was up to a whole pulse, which is far too long to sit through and long
@@ -130,6 +186,17 @@ var CW_GAME = (function () {
   // alarm before the surge is a warning you can actually act on.
   var PLUNGE = 1.15;
   var PLUNGE_STAGGER = 0.14;
+
+  // EVRTEK 2026-09-14, the shredder: "the player can drag a piece on to the
+  // shredder and it is disintegrated (an animation would be cool)." The rules
+  // do not animate anything; they leave a RECORD of where the piece was and how
+  // long the animation has, and the renderer flies the fragments off it. Same
+  // contract as `flashes` and `incoming`.
+  var SHRED_FLY = 0.8;
+
+  // And the EXTREME re-deal: how long a demand is marked as freshly shuffled,
+  // so the renderer can show which ones changed under the player.
+  var SHUFFLE_FLASH = 0.9;
 
   // The callouts. His words: crosswire, double crosswire, mega crosswire, in
   // the spirit of Unreal Tournament's kill ladder. The voice comes later; every
@@ -157,9 +224,13 @@ var CW_GAME = (function () {
     { id: 'POLARITY', dur: 9, blurb: 'a source changes colour under you' }
   ];
 
+  // EVRTEK 2026-09-14: "Calm should be the default on load and basically
+  // represents tutorial mode." Which overrides his earlier note that the middle
+  // setting should be the default — CALM is now the tutorial, so it is where
+  // the difficulty screen opens and what a Game with no difficulty asked for is.
   function Game(seed, difficulty, mayhem) {
     this.seed = seed >>> 0;
-    this.diffIndex = difficulty === undefined ? 1 : difficulty;
+    this.diffIndex = difficulty === undefined ? 0 : difficulty;
     this.mayhem = !!mayhem;
     // Front end state. Deliberately NOT touched by reset(), so starting a run
     // does not bounce the player back to the title.
@@ -201,12 +272,25 @@ var CW_GAME = (function () {
     this.cutCdMax = this.lvl().cut;
     this.cutCd = 0;
 
+    // The shredder's cooldown is the DIFFICULTY's, not the level's (EVRTEK
+    // 2026-09-14: "there should be a cool down on the shredder that gets longer
+    // with increasing difficulties"), so it is read once here and never again.
+    this.shredCdMax = d.shred;
+    this.shredCd = 0;
+    this.shreds = [];            // pieces mid-disintegration, for the renderer
+    this.bins = [null, null];    // two storage bins, one piece each
+
     this.pulsePeriod = this.lvl().pulse;
     this.pulseT = this.pulsePeriod;
     this.surge = 0;
 
-    this.cursor = { x: 3, y: 9 };
-    this.junctionHints = 3;    // the "space again tunes it" nudge, first few only
+    // The middle row of the board, which moved up with it when the grid lost
+    // three rows to the shredder strip (EVRTEK 2026-09-14).
+    this.cursor = { x: 3, y: Math.floor(GRID_H / 2) };
+    // `junctionHints` lived here — the "SPACE AGAIN TUNES IT" nudge that went
+    // with his 09-07 snap. RULING 111 took the snap away (see _restCursor), so
+    // the nudge would be advertising a move the game no longer makes. What it
+    // was for is taught on the help screen now, in motion, by ruling 108.
     this.snipMode = false;
     this.dirty = true;
     this.shorts = [];
@@ -223,6 +307,7 @@ var CW_GAME = (function () {
     this.surgeT = this.surgeMax();
     this.deliverT = -1;          // -1 is nothing pending
     this.incoming = [];          // slabs in the air, not yet on the board
+    this.rising = [];            // slabs that just LEFT the board, on their way up
     this.shake = 0;              // screen shake, decays
     this.quitArm = 0;            // seconds left on a first press of QUIT
     this.surgeWarned = 0;        // last whole second the surge alarm sounded on
@@ -241,14 +326,24 @@ var CW_GAME = (function () {
 
   Game.prototype.quota = function () { return this.diff().quota; };
 
+  // EVRTEK 2026-09-14: "no pressure, no timed disaster bar that drops blocks.
+  // no timer at all." One flag on the difficulty, asked here, and every clock
+  // in the game reads zero: no main clock, no surge, no interruption, no slab,
+  // and no way to lose. Everything else — the quota, the three levels, the
+  // blends, the destructor, the shredder, the bins — is the game as it is.
+  Game.prototype.untimed = function () { return !!this.diff().untimed; };
+
   // Every one of these reads the LEVEL's row, not the difficulty's. That is
   // the whole of the 09-08 ladder ruling in six lines.
-  Game.prototype.timeMax = function () { return this.lvl().time; };
-  Game.prototype.surgeMax = function () { return this.lvl().surge; };
+  Game.prototype.timeMax = function () { return this.untimed() ? 0 : this.lvl().time; };
+  Game.prototype.surgeMax = function () { return this.untimed() ? 0 : this.lvl().surge; };
   Game.prototype.timePerDelivery = function () { return this.timeMax() / 2; };
 
-  Game.prototype.blockerCount = function () { return this.lvl().slabs; };
-  Game.prototype.slabCap = function () { return this.lvl().slabs * BLOCKER_STANDING; };
+  Game.prototype.blockerCount = function () { return this.untimed() ? 0 : this.lvl().slabs; };
+  // The cap is what the level holds, because a surge relocates rather than adds
+  // (EVRTEK 2026-09-14). It is kept as a function because the front end and the
+  // harness both ask, and because the two were different things until today.
+  Game.prototype.slabCap = function () { return this.blockerCount(); };
 
   // EVRTEK'S RULING, 2026-09-06: the crunch is GLOBAL, not per demand. Doing a
   // pile of good work and then losing because one demand timed out is a bad
@@ -256,20 +351,26 @@ var CW_GAME = (function () {
   // what runs out.
   Game.prototype._beginLevel = function () {
     this.onLevel = 0;
-    // Old slabs go, new ones land. Whatever wire the player has built stays.
-    for (var i = 0; i < this.board.cells.length; i++) {
-      var c = this.board.cells[i];
-      if (c && c.dead) this.board.removeOrigin(c.origin);
-    }
-    var want = this.blockerCount();
-    for (var b = 0; b < want; b++) this._dropBlocker();
+    // Old slabs RISE and new ones land. Whatever wire the player has built
+    // stays. (They used to be deleted silently; since 09-14 every slab that
+    // leaves the board leaves a record behind it, so a level-up looks like a
+    // surge does — up, then down — rather than like a cheat.)
+    var vacated = this._liftSlabs();
+    // Slabs still plunging count toward the new level's population, exactly
+    // as they do on a surge trigger (_interrupt): a level-up landing while a
+    // volley is in the air used to drop a full set on top of it.
+    var want = Math.max(0, this.blockerCount() - this.incoming.length);
+    for (var b = 0; b < want; b++) this._dropBlocker(0, vacated);
     // The pulse used to be the ONE thing a level changed, on a -0.1s formula
     // that ran forever. It is a column of the ladder now like everything else.
     this.pulsePeriod = this.lvl().pulse;
   };
 
   // Every live slab on the board, oldest first. The origin carries the serial
-  // it was made with, which is the only ordering that survives a save.
+  // it was made with, which is the only ordering that survives a save. Nothing
+  // depends on the ORDER any more (the oldest slab used to retire to make room;
+  // his 09-14 ruling replaced that with relocation), but it costs nothing and
+  // it makes a rising volley come off the board in the order it landed.
   Game.prototype._slabs = function () {
     var seen = {}, out = [], i;
     for (i = 0; i < this.board.cells.length; i++) {
@@ -277,6 +378,46 @@ var CW_GAME = (function () {
       if (c && c.dead && !seen[c.origin]) { seen[c.origin] = true; out.push(c.origin); }
     }
     out.sort(function (a, b) { return (+a.slice(3)) - (+b.slice(3)); });
+    return out;
+  };
+
+  // Where one slab sits, as a box. Read off the board rather than remembered,
+  // so it is right however the slab got there.
+  Game.prototype._slabBox = function (origin) {
+    var x, y, minX = -1, minY = -1, maxX = -1, maxY = -1, c;
+    for (y = 0; y < GRID_H; y++) {
+      for (x = 0; x < GRID_W; x++) {
+        c = this.board.at(x, y);
+        if (!c || !c.dead || c.origin !== origin) continue;
+        if (minX < 0 || x < minX) minX = x;
+        if (minY < 0 || y < minY) minY = y;
+        if (x > maxX) maxX = x;
+        if (y > maxY) maxY = y;
+      }
+    }
+    if (minX < 0) return null;
+    return { x: minX, y: minY, size: Math.max(maxX - minX, maxY - minY) + 1 };
+  };
+
+  // EVRTEK 2026-09-14: "the red blocks will move around when the trigger occurs
+  // instead of ever adding new ones, old ones will rise from the board and new
+  // ones will fall."
+  //
+  // So every standing slab comes OFF at the instant of the trigger. The cells
+  // are free from that moment — the player can build through them while the
+  // next volley is still in the air, which is the whole point of a relocation:
+  // the board opens up before it closes again somewhere else. The record left
+  // behind is the mirror of `incoming`: same shape, same clock, going up.
+  Game.prototype._liftSlabs = function () {
+    var origins = this._slabs(), out = [], i, box;
+    for (i = 0; i < origins.length; i++) {
+      box = this._slabBox(origins[i]);
+      if (!box) continue;
+      out.push(box);
+      this.rising.push({ x: box.x, y: box.y, size: box.size, t: PLUNGE, max: PLUNGE });
+      this.board.removeOrigin(origins[i]);
+    }
+    if (out.length) this.dirty = true;
     return out;
   };
 
@@ -288,22 +429,116 @@ var CW_GAME = (function () {
   //
   // MAYHEM still adds a bug on top, because MAYHEM is the mode where the rig
   // is allowed to bite.
+  //
+  // EVRTEK 2026-09-14 rewrote what it DOES. A surge used to add slabs on top of
+  // the slabs already there, held down only by a standing cap that retired the
+  // oldest. Now the level's slab count is FIXED: the standing set rises, the
+  // same number falls, and it prefers squares the old ones did not have. His
+  // words: "the red blocks cannot be destroyed, they need to be worked around.
+  // The red blocks will move around when the trigger occurs."
+  //
+  // On EXTREME the trigger also RE-DEALS the demands, which is the other half
+  // of his ruling and the reason that setting is called EXTREME.
   Game.prototype._interrupt = function () {
     this.surgeT = this.surgeMax();
     this.surgeWarned = 0;
-    var want = this.blockerCount(), got = 0, i;
-    for (i = 0; i < want; i++) if (this._dropBlocker(i * PLUNGE_STAGGER)) got++;
-    if (got) this.toast('SURGE  ' + got + (got === 1 ? ' SLAB INCOMING' : ' SLABS INCOMING'), C.RED);
+    var vacated = this._liftSlabs();
+    // SLABS IN FLIGHT COUNT (found by CLU verifying 0.19.0 stage 2). `want` is
+    // the level's POPULATION, and a slab already in the air is part of that
+    // population — it is going to land. _liftSlabs takes the STANDING set off
+    // the board and knows nothing about the volley still plunging, so a
+    // trigger arriving during a plunge used to launch a second full set on top
+    // of one already falling and the board landed double. It cannot happen at
+    // normal surge lengths; it can from a level-up or a MAYHEM bug landing
+    // close to a trigger, and it did under a forced test. A population rule
+    // that only holds while the clock is generous is not a population rule.
+    var want = Math.max(0, this.blockerCount() - this.incoming.length), got = 0, i;
+    for (i = 0; i < want; i++) if (this._dropBlocker(i * PLUNGE_STAGGER, vacated)) got++;
+    if (got) this.toast('SURGE  ' + got + (got === 1 ? ' SLAB ON THE MOVE' : ' SLABS ON THE MOVE'), C.RED);
+    if (this.diff().reassign) this._reassignTargets();
     CW_AUDIO.play('surgehit');
     if (this.mayhem) this.fireBug();
     this.dirty = true;
+  };
+
+  // EVRTEK 2026-09-14, asked whether "randomly reassign" meant the colours or
+  // the rows: "agreed, shuffle colours, not locations, player will just need to
+  // rebuild from the sources."
+  //
+  // So the rows never move and the multiset of colours is preserved — the same
+  // demands, redistributed. A demand that is ALREADY WIRED AND READY is left
+  // alone: it is about to pay out on the delivery fuse, and taking that away in
+  // the last tenth of a second would be a swindle rather than a difficulty.
+  //
+  // Every other one has to CHANGE, or a shuffle that happened to land some of
+  // them back where they were would read as a bug. That is a derangement by
+  // COLOUR, and the rotation below is what guarantees it: shuffle the order
+  // (this.rand, so a seed still replays), group same-coloured demands together,
+  // and rotate the whole list by the size of the biggest group. Nothing can
+  // land on its own colour unless one colour holds more than half the pool —
+  // three reds and a blue — and then the rotation leaves as few stuck as
+  // arithmetic allows.
+  Game.prototype._reassignTargets = function () {
+    var ready = this._readyRows(), pool = [], i, t;
+    for (i = 0; i < this.board.targets.length; i++) {
+      t = this.board.targets[i];
+      if (ready.indexOf(t.row) < 0) pool.push(t);
+    }
+    if (!pool.length) return 0;
+
+    if (pool.length === 1) {
+      // A derangement of one is impossible, so the lone demand is re-dealt
+      // instead — rolled again until it differs, where a different one exists.
+      var was = pool[0].colour, next = was;
+      for (i = 0; i < 24 && next === was; i++) next = this._pickTargetColour();
+      pool[0].colour = next;
+    } else {
+      var mixed = this._derangeColours(pool);
+      for (i = 0; i < pool.length; i++) pool[i].colour = mixed[i];
+    }
+    for (i = 0; i < pool.length; i++) pool[i].shuffled = SHUFFLE_FLASH;
+    this.toast('TARGETS RESHUFFLED', C.YELLOW);
+    this.dirty = true;
+    return pool.length;
+  };
+
+  // The permutation itself. Returns the new colour for each entry of `pool`,
+  // in the same order; the caller does the assigning.
+  Game.prototype._derangeColours = function (pool) {
+    var n = pool.length, i, j, tmp;
+    var idx = [], was = [];
+    for (i = 0; i < n; i++) { idx.push(i); was.push(pool[i].colour); }
+    for (i = n - 1; i > 0; i--) {
+      j = Math.floor(this.rand() * (i + 1));
+      tmp = idx[i]; idx[i] = idx[j]; idx[j] = tmp;
+    }
+    var groups = {}, keys = [];
+    for (i = 0; i < n; i++) {
+      var k = String(was[idx[i]]);
+      if (!groups[k]) { groups[k] = []; keys.push(k); }
+      groups[k].push(idx[i]);
+    }
+    keys.sort(function (a, b) { return groups[b].length - groups[a].length; });
+    var order = [];
+    for (i = 0; i < keys.length; i++) order = order.concat(groups[keys[i]]);
+    var big = groups[keys[0]].length, out = [];
+    for (i = 0; i < n; i++) out[order[i]] = was[order[(i + big) % n]];
+    return out;
   };
 
   // A slab does not land; it is LAUNCHED. It appears above the board, hangs
   // there, and plunges — the render draws that — and only when it comes down
   // does the board change. The spot is chosen now and reserved, so a volley
   // of five never stacks two on one square.
-  Game.prototype._dropBlocker = function (delay) {
+  // `avoid` is the set of boxes the slabs just LEFT. A relocation that landed
+  // back on the square it rose from would be a very expensive way of doing
+  // nothing, so those spots are held back and only used if holding them back
+  // leaves nowhere at all to land.
+  Game.prototype._dropBlocker = function (delay, avoid) {
+    // EVRTEK 2026-09-14: "so no blocks falling at all to upset the board, these
+    // are saved for higher difficulties." The sandbox never gets one, from any
+    // road in — a surge, a level, or a MAYHEM bug.
+    if (this.untimed()) return 0;
     var taken = this.incoming, spots = this.board.blockerSpots(BLOCKER_SIZE).filter(function (sp) {
       for (var k = 0; k < taken.length; k++) {
         if (Math.abs(taken[k].x - sp[0]) < BLOCKER_SIZE && Math.abs(taken[k].y - sp[1]) < BLOCKER_SIZE) return false;
@@ -311,16 +546,26 @@ var CW_GAME = (function () {
       return true;
     });
     if (!spots.length) return 0;
-    var sp = spots[Math.floor(this.rand() * spots.length)];
+    var fresh = spots;
+    if (avoid && avoid.length) {
+      fresh = spots.filter(function (sp) {
+        for (var k = 0; k < avoid.length; k++) {
+          if (Math.abs(avoid[k].x - sp[0]) < BLOCKER_SIZE && Math.abs(avoid[k].y - sp[1]) < BLOCKER_SIZE) return false;
+        }
+        return true;
+      });
+      if (!fresh.length) fresh = spots;
+    }
+    var sp = fresh[Math.floor(this.rand() * fresh.length)];
     var dur = PLUNGE + (delay || 0);
     this.incoming.push({ x: sp[0], y: sp[1], size: BLOCKER_SIZE, t: dur, max: dur, delay: delay || 0 });
     return 1;
   };
 
   Game.prototype._landSlab = function (inc) {
-    // Slabs never pile up past the cap: the oldest retires to make room.
-    var live = this._slabs();
-    while (live.length >= this.slabCap()) this.board.removeOrigin(live.shift());
+    // Nothing retires here any more. The population is held by _interrupt,
+    // which takes the standing set off the board before this volley was ever
+    // launched (EVRTEK 2026-09-14).
     this.board.placeBlocker(inc.x, inc.y, inc.size);
     for (var dy = 0; dy < inc.size; dy++) {
       for (var dx = 0; dx < inc.size; dx++) {
@@ -332,8 +577,10 @@ var CW_GAME = (function () {
     this.dirty = true;
   };
 
-  // Distinct rows, spread as evenly as the count allows. With fourteen sources
-  // on twenty rows they have to be packed, so this must never collide.
+  // Distinct rows, spread as evenly as the count allows. Since his 09-14 halving
+  // the most that is ever asked for is seven rows out of seventeen, so they are
+  // no longer packed at all — but this still must never collide, because two
+  // sources on one row would be one source the player cannot see.
   Game.prototype._spread = function (n) {
     var out = [];
     for (var i = 0; i < n; i++) out.push(Math.floor(i * GRID_H / n));
@@ -372,13 +619,13 @@ var CW_GAME = (function () {
   // Primaries and secondaries only. Tertiaries are out of the game on his
   // ruling: "just too complicated."
   Game.prototype._pickTargetColour = function () {
-    // EVRTEK 2026-09-07: CALM opens on single-colour demands only and holds the
-    // first blend back until five lines are done. A new player gets to learn
-    // the shape of the game before the colour theory arrives. (It was two of
-    // them when he said it; his 09-08 ruling doubled the count to four, and the
-    // rule is about the COLOUR, so it holds for however many there are.)
-    var first = this.diff().simpleFirst || 0;
-    if (this.delivered < first) return C.PRIMARIES[Math.floor(this.rand() * 3)];
+    // THE GENTLE OPENING IS RETIRED. Evrtek's 09-07 rule held CALM to single
+    // colours until five lines were done; his 09-14 ruling replaced it — "we'll
+    // add mixes back in with normal frequency", "Calm needs to include blends"
+    // — so `simpleFirst` is gone from the game entirely and CALM blends from
+    // its very first demand at NORMAL's rate. What makes CALM gentle now is
+    // that nothing is chasing you while you work the blend out.
+    //
     // EVRTEK 2026-09-08, the ladder: the flat 0.64 that used to sit here is a
     // COLUMN now. WIRE is mostly single colours, BLEND is mostly blends, and
     // the difficulty sets how far apart those two ends are.
@@ -390,7 +637,8 @@ var CW_GAME = (function () {
     this.board.targets.push({
       row: this._freeTargetRow(),
       colour: this._pickTargetColour(),
-      owner: 0, cooldown: 0
+      owner: 0, cooldown: 0,
+      shuffled: 0              // seconds since EXTREME re-dealt it; see _interrupt
     });
   };
 
@@ -545,6 +793,7 @@ var CW_GAME = (function () {
 
     if (where === 'over') {
       if (what === 'again') { this._startRun(); return; }
+      this._leavePlay();                       // Tron's L1, on every road out
       this.screen = 'title';
       this.over = false;
       this.started = false;
@@ -585,7 +834,10 @@ var CW_GAME = (function () {
     // game over
     // started must drop too, or the next update sees a clock at zero and
     // ends the run again, sound and all (Tron: the ending replayed).
-    if (cmd.destroy) { this.screen = 'title'; this.over = false; this.started = false; return; }
+    if (cmd.destroy) {
+      this._leavePlay();                       // Tron's L1, on every road out
+      this.screen = 'title'; this.over = false; this.started = false; return;
+    }
     if (cmd.commit) this._startRun();
   };
 
@@ -607,8 +859,23 @@ var CW_GAME = (function () {
     if (this.bugActive('INVERT')) cmd = {
       dx: -cmd.dx, dy: cmd.dy, rot: cmd.rot,
       commit: cmd.commit, destroy: cmd.destroy,
-      to: cmd.to, tap: cmd.tap, pick: cmd.pick, tune: cmd.tune
+      to: cmd.to, tap: cmd.tap, pick: cmd.pick, tune: cmd.tune,
+      shred: cmd.shred, bin: cmd.bin
     };
+
+    // EVRTEK 2026-09-14, the strip under the board: the shredder and the two
+    // storage bins. Both are PLACES the player drags a piece onto, so both
+    // arrive as their own command field — optional, because a keyboard, a bot
+    // and a replay may all say nothing about them, and because the screen that
+    // produces them is being built beside this.
+    //
+    // Neither is reachable with the destructor armed: there is no piece in hand
+    // to shred or to stash while the cursor is a cutting cross, and a stray
+    // press should not quietly spend the piece waiting behind it.
+    if (this.started && !this.snipMode) {
+      if (cmd.shred) { this.shred(); return; }
+      if (cmd.bin === 0 || cmd.bin === 1) { this.stash(cmd.bin); return; }
+    }
 
     if (cmd.destroy) { this.snipMode = !this.snipMode; this._clampCursor(); CW_AUDIO.play('menumove'); }
     // Rotating pivots the piece around the handle, so the square you are
@@ -747,13 +1014,28 @@ var CW_GAME = (function () {
     this._tuneAt(this.cursor.x, this.cursor.y);
   };
 
+  // WHAT A RUN LEAVES BEHIND WHEN IT ENDS. TRON 2026-09-14 patrol, L1: the QUIT
+  // toast followed the player out. _quit cleared the screen, the run, the slabs
+  // and the shake but not this.toasts, so "QUIT? PRESS AGAIN TO LEAVE THE RUN"
+  // was still being drawn in yellow at the bottom of the TITLE screen — and
+  // behind the help screen after that — until reset() cleared it on the next
+  // run. A toast is a line about what just happened in a run; when the run is
+  // over it is not about anything.
+  //
+  // Said once, here, because there are three ways off the play screen: QUIT,
+  // and the two ways off the result card (TITLE, and B on a keyboard).
+  Game.prototype._leavePlay = function () {
+    this.toasts.length = 0;
+    this.quitArm = 0;
+  };
+
   // The way out of a run. Tron's patrol found there was none — no pause,
   // no quit — which on a phone is a four-and-a-half-minute trap. Two presses,
   // like placing a piece: the first arms it for two seconds and says so, the
   // second leaves. Escape on a keyboard, the QUIT chip on a phone.
   Game.prototype._quit = function () {
     if (this.quitArm > 0) {
-      this.quitArm = 0;
+      this._leavePlay();
       this.screen = 'title';
       this.started = false;
       this.over = false;
@@ -776,30 +1058,15 @@ var CW_GAME = (function () {
     return out;
   };
 
-  // Where the junctions of a shape land on the board, if it has any.
-  function junctionCellsOf(shape, ox, oy) {
-    var out = [], i, n;
-    for (i = 0; i < shape.cells.length; i++) {
-      for (n = 0; n < shape.wire[i].length; n++) {
-        if (shape.wire[i][n].e.length >= 3) {
-          out.push({ x: ox + shape.cells[i][0], y: oy + shape.cells[i][1] });
-          break;
-        }
-      }
-    }
-    return out;
-  }
-
-  // EVRTEK'S RULING, 2026-09-07, MOBILE ONLY: "the rule where a new piece would
-  // appear over a previous piece that was a junction no longer applies. In fact,
-  // when it does appear there, the new piece can get lost if it's a single
-  // block. New pieces on mobile should start at a legal space that is 1-2
-  // squares away."
+  // EVRTEK'S RULING, 2026-09-07: "the rule where a new piece would appear over
+  // a previous piece that was a junction no longer applies. In fact, when it
+  // does appear there, the new piece can get lost if it's a single block. New
+  // pieces on mobile should start at a legal space that is 1-2 squares away."
   //
-  // The desktop trick below — park the next piece ON the junction just laid, so
-  // a second SPACE tunes it — depends on a cursor you can see moving. A finger
-  // has none, so on a phone the new piece is simply sitting on top of the one
-  // that was just put down, and a one-cell piece vanishes into it entirely.
+  // IT WAS MOBILE ONLY UNTIL RULING 111 (2026-09-14), which put the handle on
+  // the open end of the wire on both cabinets. These rings are what that falls
+  // back to when a placement opens onto nothing at all, so they are no longer a
+  // phone rule — they are the second answer to one question, on both.
   //
   // The order is fixed rather than clever, because the same board has to put
   // the piece in the same square every time (mirror match, replays, and a
@@ -842,11 +1109,143 @@ var CW_GAME = (function () {
         if (this._canHandleAt(x, y) && this.pointAt(x, y)) return true;
       }
     }
-    // Nothing within two squares fits, so the cursor stays where the clamp put
-    // it. Hunting further is worse than not moving: a piece that reappears half
-    // a screen from the thumb that placed the last one is lost in a different
-    // way, and on a board that tight the player is about to cut anyway.
+    // Nothing within two squares fits. The caller decides what that means; on
+    // a board that tight the sweep below is the only thing left.
     return false;
+  };
+
+  // THE LAST RESORT, and it only runs when both rings are full: the nearest
+  // square ANYWHERE the piece in hand can legally be handled on, by the same
+  // measure the rings use and in reading order on a tie. An empty square can
+  // never hold a junction, so this can only ever end somewhere legal — which
+  // is the promise ruling 111 makes and the reason it exists.
+  Game.prototype._parkAnywhere = function () {
+    var best = null, bd = Infinity, x, y, d;
+    for (y = 0; y < GRID_H; y++) {
+      for (x = 0; x < GRID_W; x++) {
+        if (!this._canHandleAt(x, y)) continue;
+        d = Math.max(Math.abs(x - this.cursor.x), Math.abs(y - this.cursor.y));
+        if (d < bd) { bd = d; best = { x: x, y: y }; }
+      }
+    }
+    return best ? this.pointAt(best.x, best.y) : false;
+  };
+
+  // EVRTEK'S RULING 111, 2026-09-14, on two findings of Quorra's that he took
+  // in the same breath — "agreed" to THE JUNCTION TRAP (place a junction and
+  // the next piece points at it, so a fast second press re-tunes the junction
+  // instead of placing the piece in hand) and "sure" to CURSOR TRAVEL (every
+  // move is a key press, and the design map planned a cursor that snaps to the
+  // open end of the wire being built, which was never built).
+  //
+  // One rule answers both, and it replaces his 09-07 snap: after a placement
+  // the handle goes to the square the piece just OPENED ONTO — a way of one of
+  // its nodes leading to a square inside the board with nothing in it and no
+  // slab on it. The preference is TOWARD THE DEMANDS, because east is where
+  // the player is building: largest x first, then the eastward way over south,
+  // north and west. (The y tie-break is not his; it is there so one seed puts
+  // the cursor on the same square on two machines.)
+  var WAY_RANK = { E: 0, S: 1, N: 2, W: 3 };
+
+  Game.prototype._openEnds = function (shape, ox, oy) {
+    var out = [], seen = {}, i, n, w, ways, x, y, nx, ny, key;
+    for (i = 0; i < shape.cells.length; i++) {
+      x = ox + shape.cells[i][0];
+      y = oy + shape.cells[i][1];
+      for (n = 0; n < shape.wire[i].length; n++) {
+        ways = shape.wire[i][n].e;
+        for (w = 0; w < ways.length; w++) {
+          nx = x + CW_BOARD.DX[ways[w]];
+          ny = y + CW_BOARD.DY[ways[w]];
+          if (!this.board.inside(nx, ny)) continue;
+          // A cell with anything in it is not an open end, and that covers a
+          // slab as well as wire: board.at() is only null on a free square.
+          if (this.board.at(nx, ny)) continue;
+          key = nx + ',' + ny + ',' + ways[w];
+          if (seen[key]) continue;
+          seen[key] = true;
+          out.push({ x: nx, y: ny, way: ways[w] });
+        }
+      }
+    }
+    out.sort(function (a, b) {
+      if (a.x !== b.x) return b.x - a.x;
+      if (a.way !== b.way) return WAY_RANK[a.way] - WAY_RANK[b.way];
+      return a.y - b.y;
+    });
+    return out;
+  };
+
+  // TRON 2026-09-14 patrol, M1. THE LAST DITCH, and it answers one question
+  // only: get off the junction. The three roads above all look for a square the
+  // piece in hand could legally be PLACED on, and when the board is jammed
+  // there is no such square anywhere — that is the only way the road below is
+  // ever reached. So this one drops the legality question entirely and asks the
+  // single thing ruling 111 actually promises: not a junction. The nearest such
+  // square by the measure the rings use (Chebyshev), in reading order on a tie,
+  // and the clamp is applied to each candidate before it is judged, because the
+  // clamp is what put the handle on a junction in the first place and it can do
+  // it again on the way out.
+  //
+  // The handle ends up somewhere the piece cannot go, which is not useful — but
+  // NOTHING is useful on a board with no legal square, and the player is about
+  // to shred, stash or cut. Useless is not the same as harmful: standing on the
+  // junction is harmful, because the next press re-tunes it.
+  Game.prototype._stepOffJunction = function () {
+    var home = { x: this.cursor.x, y: this.cursor.y };
+    var far = GRID_W > GRID_H ? GRID_W : GRID_H, r, x, y, d;
+    for (r = 1; r <= far; r++) {
+      for (y = 0; y < GRID_H; y++) {
+        for (x = 0; x < GRID_W; x++) {
+          d = Math.max(Math.abs(x - home.x), Math.abs(y - home.y));
+          if (d !== r) continue;
+          this.cursor = { x: x, y: y };
+          this._clampCursor();
+          if (!this.hoverJunction()) return true;
+        }
+      }
+    }
+    this.cursor = { x: home.x, y: home.y };
+    return false;
+  };
+
+  // Where the handle rests after a placement. The open end first; the park
+  // rings when there is no open end at all; the board-wide sweep when even
+  // those are full; and a step off the junction when the board has no legal
+  // square left at all. THE ONE THING IT MAY NEVER DO is leave the handle
+  // standing on a junction — that is the trap, and a fast second press would
+  // re-tune the junction instead of placing what is now in hand.
+  //
+  // An open end is an EMPTY square, so it can never itself be a junction; the
+  // only way to land on one is for _clampCursor to drag a wide piece's handle
+  // off it, and the loop steps to the next candidate when it does.
+  //
+  // THE FOURTH ROAD HAD NO GUARD until Tron's 0.19.0 patrol (M1): 'stay' put
+  // the cursor back where the clamp had left it, junction and all — 150 times
+  // in 10,274 placements, 31% of the times that road was taken, and the very
+  // next commit flipped the junction just laid from M to S. It is guarded now,
+  // and 'stay' is only returned when the handle was not on a junction to begin
+  // with — or, once, if every square on the board holds one, which would take
+  // 170 junction pieces and no plain wire at all.
+  //
+  // Returns which road it took, for the harness rather than for the game.
+  Game.prototype._restCursor = function (from, shape, ox, oy) {
+    var home = { x: this.cursor.x, y: this.cursor.y };
+    var ends = this._openEnds(shape, ox, oy), i;
+    for (i = 0; i < ends.length; i++) {
+      this.cursor = { x: ends[i].x, y: ends[i].y };
+      this._clampCursor();
+      if (!this.hoverJunction()) return 'open';
+    }
+    // pointAt puts the cursor back when it fails, so a failed park leaves the
+    // handle exactly where the clamp had it — but the open ends above did not
+    // go through pointAt, so home is restored by hand first.
+    this.cursor = { x: home.x, y: home.y };
+    if (this._parkNewPiece(from.x, from.y)) return 'park';
+    if (this._parkAnywhere()) return 'sweep';
+    this.cursor = { x: home.x, y: home.y };
+    if (!this.hoverJunction()) return 'stay';
+    return this._stepOffJunction() ? 'step' : 'stay';
   };
 
   Game.prototype._place = function () {
@@ -856,9 +1255,12 @@ var CW_GAME = (function () {
       CW_AUDIO.play('noroom');
       return;
     }
-    var landed = junctionCellsOf(this.feed.shape(), o.x, o.y);
-    // Where the handle was when this piece went down. The phone's park rule
-    // measures from here, and the clamp below is about to move the cursor.
+    // The shape as it is about to land, kept because the feed is advanced
+    // below and the open-end rule needs the ways of the piece that WENT DOWN,
+    // not of the one that arrives after it.
+    var laid = this.feed.shape();
+    // Where the handle was when this piece went down. The park rings measure
+    // from here, and the clamp below is about to move the cursor.
     var from = { x: this.cursor.x, y: this.cursor.y };
     // The keystone is measured at PLACEMENT, not at the pulse: the question is
     // what this one piece did, and that is only knowable either side of it.
@@ -869,24 +1271,12 @@ var CW_GAME = (function () {
     this._clampCursor();
     CW_AUDIO.play('place');
 
-    // EVRTEK 2026-09-07: "if you just placed a junction, the next piece should
-    // default (if possible) to having its junction modifier piece start on the
-    // previous junction. This allows the player to commit a piece and then
-    // immediately change its mode without having to fiddle with finding the
-    // modifier block." So placing a junction and choosing S or M is one
-    // gesture now — commit, then commit again.
-    //
-    // ON A PHONE IT IS THE OPPOSITE MOVE (his ruling later the same day, see
-    // _parkNewPiece): the new piece steps aside instead of stacking, junction
-    // or not. No nudge toast goes with it, because there is nothing to tap
-    // again onto — a tap on a planted junction already tunes it wherever the
-    // piece in hand happens to be.
-    if (this._mobileUI()) {
-      this._parkNewPiece(from.x, from.y);
-    } else if (landed.length && this.pointAt(landed[0].x, landed[0].y) && this.junctionHints > 0) {
-      this.junctionHints--;
-      this.toast('SPACE AGAIN TUNES IT', C.YELLOW);
-    }
+    // RULING 111. One rule on both layouts now: the handle follows the wire to
+    // its open end. It replaces his 09-07 desktop snap (the next piece parked
+    // ON the junction just laid, so a second SPACE tuned it — the trap Quorra
+    // found) and it subsumes his 09-07 phone rule, because the park rings are
+    // what the open end falls back to. See _restCursor.
+    this._restCursor(from, laid, o.x, o.y);
     CW_POWER.solve(this.board);
     this.dirty = false;
 
@@ -922,13 +1312,22 @@ var CW_GAME = (function () {
     return out;
   };
 
-  // What it would actually take. ONLY what it touches, wire and slab alike:
-  // no more taking the whole run home with it (Evrtek 2026-09-07). Half a
-  // piece may be left standing, and that is the point — the cut is a
-  // correction now, not a penalty.
+  // What it would actually take. ONLY what it touches: no more taking the whole
+  // run home with it (Evrtek 2026-09-07). Half a piece may be left standing,
+  // and that is the point — the cut is a correction now, not a penalty.
+  //
+  // AND IT NEVER TAKES A SLAB (EVRTEK 2026-09-14): "the red blocks cannot be
+  // destroyed, they need to be worked around." Dead cells are filtered out
+  // here, which is one place rather than two — the ghost the renderer draws is
+  // this list, so the player is told before pressing, and a cut aimed at
+  // nothing but slab finds nothing to take, says NOTHING THERE, and costs no
+  // cooldown. The destructor is for your own mistakes; the slabs are the level.
   Game.prototype.destroyPreview = function () {
     var board = this.board;
-    return this.destroyFootprint().filter(function (c) { return !!board.at(c[0], c[1]); });
+    return this.destroyFootprint().filter(function (c) {
+      var cell = board.at(c[0], c[1]);
+      return !!cell && !cell.dead;
+    });
   };
 
   Game.prototype._destroy = function () {
@@ -946,6 +1345,66 @@ var CW_GAME = (function () {
     CW_AUDIO.play('cut');
     this.cutCd = this.cutCdMax;
     this.dirty = true;
+  };
+
+  // ---- the shredder and the two bins -------------------------------------
+  // EVRTEK 2026-09-14: "the player can drag a piece on to the shredder and it
+  // is disintegrated... the player can also drag a piece onto one of the
+  // storage bins to hold it for later, if there's a piece in the bin, the
+  // active piece should swap with the one in the bin. There should be a cool
+  // down on the shredder that gets longer with increasing difficulties."
+  //
+  // Both exist for one goal of his: "fewer unused pieces to clutter the board."
+  // Before them, a piece you could not use had to be PUT SOMEWHERE — and that
+  // somewhere became clutter, which then needed the destructor, which is on a
+  // cooldown of its own. The shredder is the bin for a piece nobody wants; the
+  // two storage bins are for a piece that is wrong NOW and right in a minute.
+  //
+  // The shredder is the feed's `discard`, which has been sitting in bag.js
+  // since 0.1 waiting for a button. The bins are a swap, and a swap is not a
+  // draw — see Feed.prototype.swap.
+
+  Game.prototype.shred = function () {
+    if (this.shredCd > 0) {
+      this.toast('SHREDDER COOLING  ' + this.shredCd.toFixed(1) + 's', C.RED);
+      return;
+    }
+    // Where the piece IS, before it goes, so the fragments can fly from there.
+    var shape = this.feed.shape(), o = this.origin(), cells = [], i;
+    for (i = 0; i < shape.cells.length; i++) {
+      cells.push([o.x + shape.cells[i][0], o.y + shape.cells[i][1]]);
+    }
+    this.feed.discard();
+    this.shredCd = this.shredCdMax;
+    this.shreds.push({ cells: cells, colour: 0, t: SHRED_FLY, max: SHRED_FLY });
+    this.toast('SHREDDED', 0);
+    CW_AUDIO.play('cut');
+    this._clampCursor();
+  };
+
+  // No cooldown and no cost: the bins do not remove a piece from the game, they
+  // only change the order they arrive in, so nothing has to be paid for them.
+  // TRON 2026-09-14 patrol, L11: a stash was silent where a shred toasts. With
+  // the sound off on a phone the only sign a stash had happened was the bin
+  // filling, 64 logical pixels tall at the bottom of the screen — and on a SWAP
+  // the piece in hand changes under the player's thumb, which is the one thing
+  // on this strip that most needs saying out loud. Two lines, because the two
+  // things really are different: one takes the piece away, the other trades it.
+  Game.prototype.stash = function (i) {
+    if (i !== 0 && i !== 1) return;
+    var held = this.feed.piece(), empty = this.bins[i] === null;
+    if (empty) {
+      this.bins[i] = held;
+      this.feed.advance();
+    } else {
+      this.feed.swap(this.bins[i]);
+      this.bins[i] = held;
+    }
+    this._clampCursor();
+    // BIN 1 and BIN 2 as the strip labels them (js/layout.js), not bins[0] and
+    // bins[1]: the toast has to name the thing the player just pressed.
+    this.toast((empty ? 'STASHED IN BIN ' : 'SWAPPED WITH BIN ') + (i + 1), 0);
+    CW_AUDIO.play('menumove');
   };
 
   // ---- the clock ---------------------------------------------------------
@@ -970,6 +1429,21 @@ var CW_GAME = (function () {
       this.flares[i].t -= dt;
       if (this.flares[i].t <= 0) this.flares.splice(i, 1);
     }
+    // Pieces coming apart in the shredder, and slabs on their way off the board.
+    // Both are records the renderer draws and neither touches the board: the
+    // cells a rising slab is drawn over were freed the moment it was lifted.
+    for (i = this.shreds.length - 1; i >= 0; i--) {
+      this.shreds[i].t -= dt;
+      if (this.shreds[i].t <= 0) this.shreds.splice(i, 1);
+    }
+    for (i = this.rising.length - 1; i >= 0; i--) {
+      this.rising[i].t -= dt;
+      if (this.rising[i].t <= 0) this.rising.splice(i, 1);
+    }
+    for (i = 0; i < this.board.targets.length; i++) {
+      var tg = this.board.targets[i];
+      if (tg.shuffled > 0) tg.shuffled = Math.max(0, tg.shuffled - dt);
+    }
     if (this.banner) { this.banner.t -= dt; if (this.banner.t <= 0) this.banner = null; }
     if (this.callout) { this.callout.t -= dt; if (this.callout.t <= 0) this.callout = null; }
     if (this.shake > 0) this.shake = Math.max(0, this.shake - dt * 2.2);
@@ -983,6 +1457,7 @@ var CW_GAME = (function () {
 
     if (this.dirty) { this.shorts = CW_POWER.solve(this.board); this.dirty = false; }
     if (this.cutCd > 0) this.cutCd = Math.max(0, this.cutCd - dt);
+    if (this.shredCd > 0) this.shredCd = Math.max(0, this.shredCd - dt);
 
     // Deliveries run on their own short fuse, armed the moment a demand goes
     // ready. Nothing waits for the pulse any more.
@@ -996,6 +1471,33 @@ var CW_GAME = (function () {
     // ticking and setTension would undo the settle for a frame.
     if (this.over) return;
 
+    // THE SANDBOX HAS NO CLOCKS AT ALL (EVRTEK 2026-09-14: "no timer at all").
+    // Not a clock held at its maximum and not one that ticks somewhere unseen:
+    // neither number moves, so nothing warns, nothing surges, nothing lands and
+    // there is no way to lose. The music is told to relax and left there, since
+    // tension is a function of two clocks that are not running.
+    if (this.untimed()) CW_AUDIO.setTension(0);
+    else if (!this._clocks(dt)) return;      // the clock ran out; the run is over
+
+    // Slabs in the air come down. Nothing on the board changes until they do.
+    // On a sandbox this list is always empty, because _dropBlocker refuses.
+    for (i = this.incoming.length - 1; i >= 0; i--) {
+      var inc = this.incoming[i];
+      inc.t -= dt;
+      if (inc.t <= 0) { this.incoming.splice(i, 1); this._landSlab(inc); }
+    }
+
+    this.surge = Math.max(0, this.surge - dt * 2.6);
+    this.pulseT -= dt;
+    if (this.pulseT <= 0) { this.pulseT += this.pulsePeriod; this._pulse(); }
+  };
+
+  // BOTH CLOCKS, one frame of them, and the warnings and the surge that hang
+  // off them. Split out of update() when CALM stopped having any (EVRTEK
+  // 2026-09-14), because the alternative was the whole of the timed game
+  // indented inside an else. Returns false if the run ENDED in here, which is
+  // the one thing the caller has to know.
+  Game.prototype._clocks = function (dt) {
     this.timeT -= dt;
     if (this.timeT <= 0) {
       // EVRTEK 2026-09-07: he finished a line with a second left and lost
@@ -1005,12 +1507,12 @@ var CW_GAME = (function () {
       if (this._readyRows().length) { this.deliverT = -1; this._deliver(); }
       // ...and if that line COMPLETED the rig, it is a win, not a loss, even
       // though the clock is sitting on zero.
-      if (this.over) return;
+      if (this.over) return false;
       if (this.timeT <= 0) {
         this.timeT = 0;
         this._settle();
         CW_AUDIO.play('gameover');
-        return;
+        return false;
       }
     }
 
@@ -1041,17 +1543,7 @@ var CW_GAME = (function () {
     CW_AUDIO.setTension(Math.max(
       this.timeT < 30 ? (30 - this.timeT) / 30 : 0,
       this.surgeT < 8 ? (8 - this.surgeT) / 8 : 0));
-
-    // Slabs in the air come down. Nothing on the board changes until they do.
-    for (i = this.incoming.length - 1; i >= 0; i--) {
-      var inc = this.incoming[i];
-      inc.t -= dt;
-      if (inc.t <= 0) { this.incoming.splice(i, 1); this._landSlab(inc); }
-    }
-
-    this.surge = Math.max(0, this.surge - dt * 2.6);
-    this.pulseT -= dt;
-    if (this.pulseT <= 0) { this.pulseT += this.pulsePeriod; this._pulse(); }
+    return true;
   };
 
   Game.prototype._pulse = function () {
@@ -1090,8 +1582,12 @@ var CW_GAME = (function () {
     if (!hits.length) return;
 
     // A minute back per demand, capped at the maximum. Two at once therefore
-    // always refills the clock completely, at every difficulty.
-    this.timeT = Math.min(this.timeMax(), this.timeT + hits.length * this.timePerDelivery());
+    // always refills the clock completely, at every difficulty. On a sandbox
+    // there is no clock to credit, and the guard is explicit rather than left
+    // to min(0, 0 + 0) reading as zero by luck.
+    if (!this.untimed()) {
+      this.timeT = Math.min(this.timeMax(), this.timeT + hits.length * this.timePerDelivery());
+    }
 
     var call = calloutFor(hits.length);
     this.callout = { text: call.text, tier: call.tier, t: 1.9, max: 1.9, sub: null };
@@ -1139,6 +1635,7 @@ var CW_GAME = (function () {
 
       h.target.colour = this._pickTargetColour();
       h.target.row = this._freeTargetRow();
+      h.target.shuffled = 0;      // a re-homed demand is new, not reshuffled
     }
 
     // DOUBLE SOURCE / MEGA SOURCE, printed under the crosswire callout.
@@ -1199,13 +1696,13 @@ var CW_GAME = (function () {
     this.timeWarned = 0;
     this.surgeWarned = 0;
 
-    // Dead slabs go, the new level's count lands, onLevel resets, and the
+    // Standing slabs rise, the new level's count lands, onLevel resets, and the
     // pulse period is re-read — all of that is _beginLevel.
     this._beginLevel();
 
     // More demands light up; none is ever taken away. A level that asks for
-    // the same number as the one before it (SHARP 2 and 3, both eight) simply
-    // spawns nothing here.
+    // the same number as the one before it (EXTREME 2 and 3, both eleven)
+    // simply spawns nothing here.
     while (this.board.targets.length < this.lvl().demands) this._spawnTarget();
 
     // A cooldown already running is not cancelled by a level-up; it is only
@@ -1226,7 +1723,8 @@ var CW_GAME = (function () {
     Game: Game, GRID_W: GRID_W, GRID_H: GRID_H,
     DIFFICULTY: DIFFICULTY, BUGS: BUGS, scoreFor: scoreFor,
     KEYSTONE_BONUS: KEYSTONE_BONUS, BLOCKER_SIZE: BLOCKER_SIZE, CUT: CUT,
-    BLOCKER_STANDING: BLOCKER_STANDING, DELIVER_LEAD: DELIVER_LEAD,
-    PLUNGE: PLUNGE, PLUNGE_STAGGER: PLUNGE_STAGGER
+    DELIVER_LEAD: DELIVER_LEAD,
+    PLUNGE: PLUNGE, PLUNGE_STAGGER: PLUNGE_STAGGER,
+    SHRED_FLY: SHRED_FLY, SHUFFLE_FLASH: SHUFFLE_FLASH
   };
 })();

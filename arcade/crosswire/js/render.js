@@ -40,7 +40,7 @@ var CW_RENDER = (function () {
 
   var showSymbols = true;
   var rotatePrompt = false;
-  var helpPages = null;            // paginated lazily, per layout
+  var helpCards = null;            // the lesson panels, built lazily
   var OPP = { N: 'S', E: 'W', S: 'N', W: 'E' };
   var DX = { N: 0, E: 1, S: 0, W: -1 }, DY = { N: -1, E: 0, S: 1, W: 0 };
 
@@ -62,7 +62,7 @@ var CW_RENDER = (function () {
     W = L.W; H = L.H;
     MOBILE = !!L.mobile; LITE = !!L.lite;
     K = CELL / 30;
-    helpPages = null;
+    helpCards = null;
     field = null;                    // the title's field is laid out per canvas size too
   }
   setLayout(CW_LAYOUT.desktop());
@@ -108,6 +108,30 @@ var CW_RENDER = (function () {
     s = Math.max(0, s);
     var m = Math.floor(s / 60), r = Math.floor(s % 60);
     return m + ':' + (r < 10 ? '0' : '') + r;
+  }
+
+  // Trim a line to fit a box, measured rather than counted. Every hand-counted
+  // width in this file is counted against Courier New, which is the monospace
+  // an iPhone actually has; this asks the canvas instead, which is the only way
+  // to be right on a machine that has neither of the fonts named here.
+  function clip(ctx, s, font, maxw) {
+    ctx.font = font || MONO;
+    if (ctx.measureText(s).width <= maxw) return s;
+    var t = String(s);
+    while (t.length > 1 && ctx.measureText(t + '…').width > maxw) t = t.slice(0, -1);
+    return t + '…';
+  }
+
+  // A difficulty's blurb, broken for a narrow card. The rules write it as one
+  // string with middle dots — "seven sources · 4 to 7 demands · no clock" —
+  // which was fine when there were three cards on a 920px screen and is 265px
+  // of 11px Courier New in a card that is now 208. Split at the FIRST dot, so
+  // the head of it (how many sources) sits on its own line and everything else
+  // follows on the second.
+  function blurbLines(s) {
+    var parts = String(s || '').split(' · ');
+    if (parts.length <= 1) return parts;
+    return [parts[0], parts.slice(1).join(' · ')];
   }
 
   // ---- wire ---------------------------------------------------------------
@@ -370,19 +394,34 @@ var CW_RENDER = (function () {
     }
   }
 
+  // EVRTEK 2026-09-14: "the red blocks cannot be destroyed, they need to be
+  // worked around." They were a muddy maroon that read as dead board rather
+  // than as a hazard, and the destructor took them, so the colour did not have
+  // to mean anything. Now it does: a slab is RED — the game's own RED, the one
+  // the surge toast is printed in and the one the destructor's ghost uses — so
+  // "red means you cannot cut this" is one lesson and not three.
+  //
+  // ONE function for standing, airborne and rising slabs. They were drawn by
+  // two pieces of code saying the same thing in different colours until today,
+  // which is how the plunging slab and the landed one came to look like
+  // different objects.
+  var SLAB_FILL = '#3d1218', SLAB_FILL_AIR = '#521a20';
+  var SLAB_EDGE = '#ff3b30', SLAB_EDGE_AIR = '#ff7a70';
+  var SLAB_HATCH = 'rgba(255,59,48,0.42)';
+
   function slabBlock(ctx, px, py, pw, ph, alpha, lift) {
     ctx.save();
     ctx.globalAlpha = alpha;
-    ctx.fillStyle = lift ? '#3a2430' : '#2a1c22';
+    ctx.fillStyle = lift ? SLAB_FILL_AIR : SLAB_FILL;
     roundRect(ctx, px, py, pw, ph, 5);
     ctx.fill();
-    ctx.strokeStyle = lift ? '#9a5060' : '#6b3a44';
+    ctx.strokeStyle = lift ? SLAB_EDGE_AIR : SLAB_EDGE;
     ctx.lineWidth = 2;
     ctx.stroke();
     ctx.beginPath();
     roundRect(ctx, px, py, pw, ph, 5);
     ctx.clip();
-    ctx.strokeStyle = 'rgba(107,58,68,0.55)';
+    ctx.strokeStyle = SLAB_HATCH;
     ctx.lineWidth = 2;
     for (var d = -ph; d < pw; d += 12) {
       ctx.beginPath();
@@ -391,6 +430,39 @@ var CW_RENDER = (function () {
       ctx.stroke();
     }
     ctx.restore();
+  }
+
+  // TRON 2026-09-14 patrol, M3: WHERE A SLAB IS ALLOWED TO BE PAINTED.
+  //
+  // A slab appears above the square it is going to land on and plunges — up to
+  // 66 * K above it, which for a slab bound for row 0 or row 1 is above the top
+  // of the grid entirely. Tron measured it: on portrait such a slab is drawn
+  // from y 78 to y 133 against a preview row that occupies y 64..124, so 46 of
+  // that row's 60 pixels are covered for the 1.1s of the plunge, and NOW /
+  // NEXT / JUNCTIONS are unreadable underneath it. On desktop the same slab
+  // reaches y 12..80 against a grid top of 78 and crosses the version stamp and
+  // the HUD's bottom row. Row 0 is the most common landing row of the
+  // seventeen: 16.7% of launched slabs are bound for row 0 or 1.
+  //
+  // So the flight is clipped to the GRID and four pixels — which is not an
+  // arbitrary margin but the board's OWN FRAME, the rect drawGrid outlines and
+  // vignette shades (GRID_X - 4, GRID_Y - 4). A slab in flight is scaled to
+  // 1.14 while it hangs above its square, so it can overhang its own box by
+  // about four pixels, and the frame is exactly the room that needs.
+  //
+  // It is also all the room there is. On portrait the preview row ends at y 124
+  // and the grid starts at 132; on desktop the TIME and SURGE labels over the
+  // clock bars sit at y 66 and the grid starts at 78. A slab bound for the top
+  // rows now fades in INSIDE the frame and slides down out of its top edge —
+  // the same animation, seen through the window it belongs in. Every other row
+  // is untouched: nothing else ever reached the margin.
+  var SLAB_MARGIN = 4;
+
+  function slabClip(ctx, board) {
+    ctx.beginPath();
+    ctx.rect(GRID_X - SLAB_MARGIN, GRID_Y - SLAB_MARGIN,
+      board.w * CELL + SLAB_MARGIN * 2, board.h * CELL + SLAB_MARGIN * 2);
+    ctx.clip();
   }
 
   // EVRTEK 2026-09-07: "can they fade into view above the board and then
@@ -462,26 +534,45 @@ var CW_RENDER = (function () {
         }
         var px = GRID_X + x1 * CELL + 2, py = GRID_Y + y1 * CELL + 2;
         var pw = (x2 - x1 + 1) * CELL - 4, ph = (y2 - y1 + 1) * CELL - 4;
-        ctx.fillStyle = '#2a1c22';
-        roundRect(ctx, px, py, pw, ph, 5);
-        ctx.fill();
-        ctx.strokeStyle = '#6b3a44';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        ctx.save();
-        ctx.beginPath();
-        roundRect(ctx, px, py, pw, ph, 5);
-        ctx.clip();
-        ctx.strokeStyle = 'rgba(107,58,68,0.55)';
-        ctx.lineWidth = 2;
-        for (var d = -ph; d < pw; d += 12) {
-          ctx.beginPath();
-          ctx.moveTo(px + d, py + ph);
-          ctx.lineTo(px + d + ph, py);
-          ctx.stroke();
-        }
-        ctx.restore();
+        // The same block the airborne ones are drawn with, so a slab looks the
+        // same standing as it did coming down (and going back up).
+        slabBlock(ctx, px, py, pw, ph, 1, false);
       }
+    }
+  }
+
+  // EVRTEK 2026-09-14: "the red blocks will move around when the trigger occurs
+  // instead of ever adding new ones, OLD ONES WILL RISE FROM THE BOARD and new
+  // ones will fall." So this is drawIncoming run backwards, off the same kind
+  // of record: the board cells were freed at the instant of the lift — the
+  // player can already build through them — and what is drawn here is the slab
+  // leaving, so the square opening up is something you watched happen rather
+  // than something you noticed later.
+  function drawRising(ctx, g) {
+    if (!g.rising || !g.rising.length) return;
+    for (var i = 0; i < g.rising.length; i++) {
+      var r = g.rising[i];
+      var tp = 1 - r.t / r.max;                       // 0..1 on the way up
+      var px = GRID_X + r.x * CELL + 2, py = GRID_Y + r.y * CELL + 2;
+      var pw = r.size * CELL - 4, ph = r.size * CELL - 4;
+
+      // Accelerating away and fading with it, which is the exact reverse of the
+      // plunge's cubic ease-in.
+      var lift = -70 * K * tp * tp;
+      var scale = 1 + 0.16 * tp;
+      var alpha = Math.max(0, 1 - tp * tp);
+
+      // the shadow it was casting, shrinking as it goes
+      ctx.save();
+      ctx.globalAlpha = 0.30 * (1 - tp);
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.ellipse(px + pw / 2, py + ph / 2 + 2, pw * (0.5 - 0.25 * tp), ph * (0.36 - 0.2 * tp), 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      var sw = pw * scale, sh = ph * scale;
+      slabBlock(ctx, px + (pw - sw) / 2, py + (ph - sh) / 2 + lift, sw, sh, alpha, true);
     }
   }
 
@@ -495,8 +586,12 @@ var CW_RENDER = (function () {
   // The thresholds are FRACTIONS of each maximum rather than fixed seconds, so
   // both bars read identically at every difficulty even though CALM's clock is
   // more than twice as long as SHARP's.
+  // The bar is exactly as tall as the play space, so its height is the RULES'
+  // grid height and not a number written down here. It was 20 * CELL until the
+  // board came down to seventeen rows (EVRTEK 2026-09-14) and the bars would
+  // have run three cells past the bottom of the grid they belong to.
   function drawBar(ctx, x, w, frac, hex, alpha, marks) {
-    var top = GRID_Y, h = 20 * CELL;
+    var top = GRID_Y, h = CW_GAME.GRID_H * CELL;
     ctx.fillStyle = '#111726';
     roundRect(ctx, x, top, w, h, 5);
     ctx.fill();
@@ -526,7 +621,12 @@ var CW_RENDER = (function () {
   function blink(period) { return 0.45 + 0.55 * Math.abs(Math.sin(Date.now() / period)); }
 
   function drawBars(ctx, g) {
-    var bot = GRID_Y + 20 * CELL + 12;
+    // EVRTEK 2026-09-14, CALM: "no pressure, no timed disaster bar that drops
+    // blocks. no timer at all." An empty bar is still a bar, and a bar that
+    // never moves is a promise the game will do something eventually. So on the
+    // sandbox there is no bar at all, either side, and the HUD says why.
+    if (g.untimed()) return;
+    var bot = GRID_Y + CW_GAME.GRID_H * CELL + 12;
 
     // On a phone the bars are 10px strips wedged against the canvas edges and
     // there is no room to write anything around them, so the labels and the
@@ -701,6 +801,28 @@ var CW_RENDER = (function () {
       ctx.stroke();
 
       drawBulb(ctx, t.colour, BULB_CX, y, lit);
+      // EVRTEK 2026-09-14, EXTREME: "have the targets randomly reassign on the
+      // blocker drop countdown trigger." A demand whose colour changed under
+      // the player has to SAY SO, or the run they had planned simply stops
+      // working for no visible reason. The rules mark it (`shuffled`, decaying
+      // over CW_GAME.SHUFFLE_FLASH) and the bulb spins a dashed ring while the
+      // mark lasts — a rotation rather than a blink, because half the bulbs on
+      // the board are already blinking for other reasons.
+      if (t.shuffled > 0) {
+        var k = Math.max(0, Math.min(1, t.shuffled / CW_GAME.SHUFFLE_FLASH));
+        ctx.save();
+        ctx.globalAlpha = k;
+        ctx.translate(BULB_CX, y);
+        ctx.rotate((1 - k) * 9);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.arc(0, 0, BULB_R + 5 + (1 - k) * 4, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+      }
       if (!MOBILE) {
         text(ctx, st.label, STAT_X, y, MONO_S, STATUS_INK[st.state] || INK_DIM);
       } else if (st.state === 'WRONG' && st.colour) {
@@ -1186,10 +1308,21 @@ var CW_RENDER = (function () {
 
     // The clock is the only crunch: no demand ever times out. It is drawn big
     // beside the play space as well; this is just the number.
-    var low = g.timeT < 30;
-    text(ctx, 'TIME', 540, 20, MONO_S, low ? '#ff3b30' : INK_DIM);
-    text(ctx, clock(g.timeT), 540, 40, MONO_L, low ? '#ff3b30' : INK);
-    text(ctx, '+' + clock(g.timePerDelivery()) + ' A LINE', 600, 40, MONO_S, INK_DIM);
+    //
+    // EVRTEK 2026-09-14, CALM: "no pressure, no timed disaster bar that drops
+    // blocks. no timer at all... basically represents tutorial mode." So there
+    // is no number here and no credit line under it either — "+1:48 A LINE" is
+    // a promise about a clock that does not exist. The box says what the
+    // setting is instead, which is the only honest thing to put in the space.
+    if (g.untimed()) {
+      text(ctx, 'SANDBOX', 540, 20, MONO_S, INK_DIM);
+      text(ctx, 'NO CLOCK', 540, 40, MONO_L, ACCENT);
+    } else {
+      var low = g.timeT < 30;
+      text(ctx, 'TIME', 540, 20, MONO_S, low ? '#ff3b30' : INK_DIM);
+      text(ctx, clock(g.timeT), 540, 40, MONO_L, low ? '#ff3b30' : INK);
+      text(ctx, '+' + clock(g.timePerDelivery()) + ' A LINE', 600, 40, MONO_S, INK_DIM);
+    }
 
     // EVRTEK 2026-09-07: the PULSE dial that used to sit here counted the beat
     // and did nothing else, so it is gone. The beat still exists internally as
@@ -1255,24 +1388,51 @@ var CW_RENDER = (function () {
     // The way out. Tron's patrol found there was none: no pause, no quit, a
     // run you started by accident held you for four and a half minutes. Two
     // presses, like everything else here — the first arms it and says so.
+    //
+    // TRON 2026-09-14 patrol, M2: this was the ONLY tap target in the game
+    // under 44 logical pixels — 72 x 30, which is 67.5 x 28.1 CSS px on a 375
+    // phone — and it is the way out of a run. js/layout.js:fits() holds every
+    // button and every strip target to 44 in both dimensions; this rect escaped
+    // that floor only because it is registered here rather than in the layout.
+    //
+    // THE CHIP IS DRAWN THE SIZE IT ALWAYS WAS. What grew is the rect: 88 x 48,
+    // flush with the right edge, with the chip centred across it and sitting at
+    // the top of it. 48 rather than 44 because these are LOGICAL pixels and the
+    // canvas is scaled to the screen — on a 375-wide phone the ratio is 0.9375,
+    // so 48 is the first even number that is still 44 CSS pixels when it lands.
+    // The room it takes is room nothing else wants: the HUD publishes no other
+    // rect, the wordmark ends at x 206, and the piece row starts at y 64,
+    // sixteen pixels below the bottom of this. The numbers under it (TIME and
+    // SURGE, or SANDBOX on CALM, which does not reach this far) are read, not
+    // pressed, and a stray press only ARMS the quit: it says SURE?, toasts, and
+    // forgets it two seconds later.
     var qa = g.quitArm > 0;
+    var qw = 88, qh = 48, qcx = W - qw / 2;         // the rect, and its centre
     ctx.fillStyle = qa ? '#2a1620' : PANEL;
-    roundRect(ctx, W - 66, 3, 58, 24, 5); ctx.fill();
+    roundRect(ctx, qcx - 29, 2, 58, 24, 5); ctx.fill();
     ctx.strokeStyle = qa ? '#ff3b30' : LINE; ctx.lineWidth = 1; ctx.stroke();
-    text(ctx, qa ? 'SURE?' : 'QUIT', W - 37, 15, MONO_XS, qa ? '#ff3b30' : INK_DIM, 'center');
-    hit('play:quit', W - 72, 0, 72, 30);
+    text(ctx, qa ? 'SURE?' : 'QUIT', qcx, 14, MONO_XS, qa ? '#ff3b30' : INK_DIM, 'center');
+    hit('play:quit', W - qw, 0, qw, qh);
 
     var low = g.timeT < 30, surging = g.surgeT < 8;
     var cols = [
       ['SCORE', String(g.score), INK, INK_DIM],
       ['LEVEL', g.level + ' / ' + g.levelCount(), INK, INK_DIM],
-      ['WIRED', g.onLevel + ' / ' + g.quota(), g.onLevel ? '#3ede72' : INK, INK_DIM],
-      ['TIME', clock(g.timeT), low ? '#ff3b30' : INK, low ? '#ff3b30' : INK_DIM],
-      ['SURGE', clock(g.surgeT), surging ? '#ff8c1a' : INK, surging ? '#ff8c1a' : INK_DIM]
+      ['WIRED', g.onLevel + ' / ' + g.quota(), g.onLevel ? '#3ede72' : INK, INK_DIM]
     ];
     // LEVEL moved left four pixels when it became "2 / 3": five characters of
     // 15px Courier New is 45px, and it has to clear WIRED at 152.
     var xs = [8, 96, 152, 232, 312];
+    // EVRTEK 2026-09-14: on the sandbox the last TWO columns are one, because
+    // neither clock exists. "NO CLOCK" is eight characters of 15px Courier New
+    // — 72px from x 232, well inside a 400px screen — so it takes the TIME
+    // column's place and the SURGE column is simply not there.
+    if (g.untimed()) {
+      cols.push(['SANDBOX', 'NO CLOCK', ACCENT, INK_DIM]);
+    } else {
+      cols.push(['TIME', clock(g.timeT), low ? '#ff3b30' : INK, low ? '#ff3b30' : INK_DIM]);
+      cols.push(['SURGE', clock(g.surgeT), surging ? '#ff8c1a' : INK, surging ? '#ff8c1a' : INK_DIM]);
+    }
     for (var i = 0; i < cols.length; i++) {
       text(ctx, cols[i][0], xs[i], 30, MONO_XS, cols[i][3]);
       text(ctx, cols[i][1], xs[i], 47, MONO_B, cols[i][2]);
@@ -1416,94 +1576,337 @@ var CW_RENDER = (function () {
     }
   }
 
+  // ---- the strip: the shredder and the two bins ---------------------------
+  //
+  // EVRTEK 2026-09-14: "let's reduce the board size by 3 rows, those rows
+  // should be replaced by the 'shredder' and two storage bins. The player can
+  // drag a piece on to the shredder and it is disintegrated (an animation
+  // would be cool). The player can also drag a piece onto one of the storage
+  // bins to hold it for later, if there's a piece in the bin, the active piece
+  // should swap with the one in the bin."
+  //
+  // His reason, in the same pass: "one major goal is to have fewer unused
+  // pieces to clutter the board." The strip is where a piece nobody wants goes
+  // INSTEAD of onto the board, so this row of three is the answer to the
+  // complaint and has to look like somewhere you would put something.
+  //
+  // It is drawn identically on both layouts and on both it publishes its three
+  // rects, because the mouse reaches the game through the touch code and a
+  // desktop player has to be able to click them as well as press X, 1 and 2.
+  function stripTargets() { return (L.strip && L.strip.targets) || []; }
+
+  // One deterministic pseudo-random number per fragment. Deliberately NOT
+  // Math.random: a fragment that re-rolls its scatter every frame does not
+  // fly anywhere, it flickers.
+  function frand(n) {
+    var x = Math.sin(n * 12.9898) * 43758.5453;
+    return x - Math.floor(x);
+  }
+
+  // The freshest shred still running, which is what the shredder animates to.
+  function shredNow(g) {
+    if (!g.shreds || !g.shreds.length) return null;
+    var best = null;
+    for (var i = 0; i < g.shreds.length; i++) {
+      if (!best || g.shreds[i].t > best.t) best = g.shreds[i];
+    }
+    return best;
+  }
+
+  // A little key chip in the corner of a target. Desktop only: a phone has no
+  // keyboard, and the whole point of the target is that it is a place to drag
+  // a piece onto rather than a key to remember.
+  function keyChip(ctx, t, on) {
+    if (MOBILE || !t.key) return;
+    var w = 16, h = 14, x = t.x + t.w - w - 6, y = t.y + 6;
+    ctx.fillStyle = '#0d1220';
+    roundRect(ctx, x, y, w, h, 3);
+    ctx.fill();
+    ctx.strokeStyle = on ? ACCENT : LINE;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    text(ctx, t.key, x + w / 2, y + h / 2 + 0.5, MONO_XS, on ? ACCENT : INK_DIM, 'center');
+  }
+
+  // WHERE THE SLOT IS inside the shredder's card. Centred in whatever room the
+  // label leaves, because the two layouts give it different amounts (74px tall
+  // on the desktop card, 64 on the phone) — and said ONCE, because the
+  // disintegration animation has to fly its fragments into the same hole this
+  // draws, and two copies of the arithmetic is two holes.
+  function shredMouth(t) {
+    var h = Math.min(26, Math.max(12, t.h - 40));
+    return { x: t.x + 12, w: t.w - 24, h: h, y: t.y + Math.round((t.h - 20 - h) / 2) + 2 };
+  }
+
+  // THE SHREDDER. A slot with two rows of teeth that turn while something is
+  // going through them, and a cooldown that fills the bottom edge back up —
+  // EVRTEK 2026-09-14: "there should be a cool down on the shredder that gets
+  // longer with increasing difficulties", which is 3, 5, 8 and 12 seconds.
+  function drawShredder(ctx, g, t) {
+    var ready = g.shredCd <= 0;
+    var live = shredNow(g);
+    var flash = live ? Math.max(0, live.t / live.max) : 0;
+
+    ctx.fillStyle = flash ? '#2a1620' : PANEL;
+    roundRect(ctx, t.x, t.y, t.w, t.h, 8);
+    ctx.fill();
+    ctx.strokeStyle = flash ? '#ffffff' : (ready ? ACCENT : '#3a4358');
+    ctx.lineWidth = flash ? 2 : 1;
+    ctx.stroke();
+
+    var m = shredMouth(t), mx = m.x, my = m.y, mw = m.w, mh = m.h;
+    ctx.fillStyle = '#05080f';
+    roundRect(ctx, mx, my, mw, mh, 3);
+    ctx.fill();
+
+    // the teeth, clipped into the mouth so nothing spills out of the slot.
+    // `phase` slides them sideways, which is what a pair of counter-rotating
+    // blades looks like from the front.
+    ctx.save();
+    ctx.beginPath();
+    roundRect(ctx, mx, my, mw, mh, 3);
+    ctx.clip();
+    var spin = live ? (1 - live.t / live.max) * 7 : 0;
+    var teeth = 7, tw = mw / teeth, phase = (spin - Math.floor(spin)) * tw;
+    // White while something is going through, steel when it is ready, and dim
+    // while it cools. `flash` is asked FIRST, because a shred sets the cooldown
+    // in the same instant it starts the animation — ask `ready` first and the
+    // blades go dark exactly when they are supposed to be turning.
+    ctx.fillStyle = flash ? '#ffffff' : (ready ? '#7ea0c8' : '#3a4358');
+    for (var k = -1; k <= teeth; k++) {
+      var x0 = mx + k * tw + phase;
+      ctx.beginPath();                       // upper row, pointing down
+      ctx.moveTo(x0, my);
+      ctx.lineTo(x0 + tw / 2, my + mh * 0.44);
+      ctx.lineTo(x0 + tw, my);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();                       // lower row, pointing up
+      ctx.moveTo(x0 - tw / 2, my + mh);
+      ctx.lineTo(x0, my + mh - mh * 0.44);
+      ctx.lineTo(x0 + tw / 2, my + mh);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // the label, which carries the cooldown when there is one. One line rather
+    // than two: the destructor's readout taught that a control saying READY in
+    // one place and 3.2s in another reads as two controls.
+    var lab = ready ? t.label : t.label + '  ' + g.shredCd.toFixed(1) + 's';
+    text(ctx, lab, t.x + t.w / 2, t.y + t.h - 11, MONO_XS,
+      ready ? INK : '#ff8c1a', 'center');
+    if (!ready && g.shredCdMax > 0) {
+      ctx.fillStyle = '#1b2233';
+      ctx.fillRect(t.x + 10, t.y + t.h - 6, t.w - 20, 3);
+      ctx.fillStyle = '#ff8c1a';
+      ctx.fillRect(t.x + 10, t.y + t.h - 6, (t.w - 20) * (1 - g.shredCd / g.shredCdMax), 3);
+    }
+    keyChip(ctx, t, ready);
+  }
+
+  // A BIN. A well with whatever is in it drawn small, in the same style the
+  // NEXT boxes use, because it IS the same thing: a piece waiting its turn.
+  // EVRTEK 2026-09-14: "if there's a piece in the bin, the active piece should
+  // swap with the one in the bin", so a full bin is not a locked bin and is
+  // drawn live rather than greyed.
+  function drawBin(ctx, g, t, i) {
+    var held = (g.bins && g.bins[i]) || null;
+
+    ctx.fillStyle = PANEL;
+    roundRect(ctx, t.x, t.y, t.w, t.h, 8);
+    ctx.fill();
+    ctx.strokeStyle = held ? ACCENT : LINE;
+    ctx.lineWidth = held ? 2 : 1;
+    ctx.stroke();
+
+    var ix = t.x + 8, iy = t.y + 7, iw = t.w - 16, ih = t.h - 25;
+    ctx.fillStyle = '#0d1220';
+    roundRect(ctx, ix, iy, iw, ih, 4);
+    ctx.fill();
+    ctx.strokeStyle = LINE;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    if (held) {
+      // Rotation zero, like the NEXT boxes: a stashed piece comes back the way
+      // the feed deals it, so showing it turned would be a lie about what you
+      // get back.
+      var size = Math.max(6, Math.floor(Math.min(iw / 5.4, ih / 5.4)));
+      drawMini(ctx, held, 0, ix, iy, iw, ih, size, held.jumps ? '#ffd60a' : ACCENT);
+    } else {
+      text(ctx, 'EMPTY', ix + iw / 2, iy + ih / 2, MONO_XS, '#3a4358', 'center');
+    }
+
+    text(ctx, t.label, t.x + t.w / 2, t.y + t.h - 11, MONO_XS,
+      held ? INK : INK_DIM, 'center');
+    keyChip(ctx, t, !!held);
+  }
+
+  // TRON 2026-09-14 patrol, L2: the strip looked live while the destructor was
+  // armed and answered with nothing. The rule itself is right — there is no
+  // piece in hand to shred or stash while the cursor is a cutting cross
+  // (js/game.js, _applyNow) — but the guard was SILENT: no toast, and all three
+  // panels kept their normal cyan borders and their live labels. Three buttons
+  // that look pressable and do nothing is a worse lie than three buttons that
+  // look unavailable, so while CUT is armed the whole strip is drawn at 45%,
+  // labels and key chips included. The targets stay in the hit list: a press is
+  // still answered by the rules, which is where the rule about it lives.
+  var STRIP_DIM = 0.45;
+
+  function drawStrip(ctx, g) {
+    var ts = stripTargets(), i, t;
+    if (!ts.length) return;
+    ctx.save();
+    if (g.snipMode) ctx.globalAlpha = STRIP_DIM;
+    for (i = 0; i < ts.length; i++) {
+      t = ts[i];
+      if (t.id === 'shred') drawShredder(ctx, g, t);
+      else drawBin(ctx, g, t, t.id === 'bin1' ? 1 : 0);
+      // Painted and made tappable in the same breath, the way every other
+      // control on this screen is: one set of numbers, never two.
+      hit(t.id, t.x, t.y, t.w, t.h);
+    }
+    // The desktop key line. On a phone the targets ARE the controls, so there
+    // is nothing to say; on a desktop these three keys exist and nothing else
+    // on the screen would tell you so. It sits in the gap the clock digits
+    // leave between the board and the strip.
+    if (!MOBILE) {
+      text(ctx, 'X  SHRED   ·   1  BIN 1   ·   2  BIN 2',
+        ts[0].x, ts[0].y - 10, MONO_S, INK_DIM);
+    }
+    ctx.restore();
+  }
+
+  // THE DISINTEGRATION. "an animation would be cool" — EVRTEK 2026-09-14, and
+  // this is it: the piece comes apart where it stood, the pieces of it scatter
+  // for a moment and are then pulled down into the shredder's mouth, fading as
+  // they go, with sparks thrown back out as they arrive.
+  //
+  // It is driven entirely off g.shreds, which the RULES leave behind — the
+  // board cells in the record are where the piece WAS, and they were freed the
+  // instant it was shredded. Nothing here touches the game.
+  function drawShreds(ctx, g) {
+    if (!g.shreds || !g.shreds.length) return;
+    var ts = stripTargets(), tgt = null, i, j, k;
+    for (i = 0; i < ts.length; i++) if (ts[i].id === 'shred') tgt = ts[i];
+    if (!tgt) return;
+    // The mouth is where the fragments are going, read from the same function
+    // that draws it.
+    var mouth = shredMouth(tgt);
+    var tx = mouth.x + mouth.w / 2, ty = mouth.y + mouth.h / 2;
+    var frags = LITE ? 3 : 5;
+
+    for (i = 0; i < g.shreds.length; i++) {
+      var s = g.shreds[i];
+      var p = Math.max(0, Math.min(1, 1 - s.t / s.max));
+      var pull = p * p;                       // ease IN: it is being sucked down
+      var burst = Math.min(1, p * 5);         // the scatter, over in the first fifth
+      for (j = 0; j < s.cells.length; j++) {
+        var ox = cx(s.cells[j][0]), oy = cy(s.cells[j][1]);
+        for (k = 0; k < frags; k++) {
+          var id = i * 977 + j * 71 + k * 13;
+          var sx = ox + (frand(id) - 0.5) * CELL * 1.5 * burst;
+          var sy = oy + (frand(id + 3) - 0.5) * CELL * 1.1 * burst;
+          var fx = sx + (tx - sx) * pull;
+          var fy = sy + (ty - sy) * pull - Math.sin(p * Math.PI) * 16 * K;
+          var sz = Math.max(1.5, CELL * 0.17 * (1 - p * 0.65));
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, 1 - p * p);
+          ctx.translate(fx, fy);
+          ctx.rotate((frand(id + 9) - 0.5) * 6 + p * 11);
+          ctx.fillStyle = (k % 2) ? '#7ef7f7' : ACCENT;
+          ctx.fillRect(-sz / 2, -sz * 0.3, sz, sz * 0.6);
+          ctx.restore();
+        }
+      }
+      // sparks out of the mouth, once the first fragments have reached it
+      if (p > 0.4) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, 1 - p) * 0.9;
+        ctx.lineCap = 'round';
+        ctx.lineWidth = 1.5;
+        for (k = 0; k < (LITE ? 3 : 5); k++) {
+          var ang = Math.PI + (frand(i * 31 + k * 7 + Math.floor(p * 40)) - 0.5) * 2.4;
+          var len = 4 + frand(k * 17 + Math.floor(p * 40)) * 9;
+          ctx.strokeStyle = (k % 2) ? '#ffd60a' : '#ffffff';
+          ctx.beginPath();
+          ctx.moveTo(tx, ty);
+          ctx.lineTo(tx + Math.cos(ang) * len, ty + Math.sin(ang) * len);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+    }
+  }
+
   // ---- the front end ------------------------------------------------------
   // EVRTEK 2026-09-07: a title screen that picks the mode, a difficulty screen
   // with a tutorial playing on each option, and a help screen that actually
   // explains the game instead of a paragraph nobody reads.
 
+  // THE CONTROLS PANEL, desktop: keys on the left, what they do, the pad
+  // button on the right. Three of these rows are new with the strip under the
+  // board (EVRTEK 2026-09-14) — X shreds, 1 and 2 are the bins, and on a pad
+  // either trigger shreds and the two bumpers are the bins (js/input.js).
+  //
+  // TRON 2026-09-14 patrol, L3: the QUIT row is the eighth, and it was missing.
+  // The phone's list has ended ['QUIT, TWICE', 'leave a run'] since the chip was
+  // built; the desktop's never mentioned Escape — and the desktop draws no QUIT
+  // chip either (that is drawHudMobile), so this panel is the only place a
+  // player at a keyboard can find out the way out of a run. It was in README.md
+  // and nowhere in the game. The key column says the two presses the way the
+  // phone's does, because one press does not leave: it arms.
   var KEYS = [
     ['W A S D', 'move the piece', 'D-PAD'],
-    ['Q  E', 'rotate it', 'X  B'],
-    ['SPACE', 'commit', 'A'],
+    ['Q  E', 'turn it', 'X  B'],
+    ['SPACE', 'put it down, or tune a junction', 'A'],
     ['B', 'arm the destructor', 'Y'],
-    ['M', 'music on or off', '']
+    ['X', 'shred the piece in hand', 'TRIGGER'],
+    ['1  2', 'stash it in a bin', 'LB  RB'],
+    ['ESC, TWICE', 'leave a run', ''],
+    ['M  G', 'music · colourblind marks', '']
   ];
 
-  var RULES = [
-    ['THE JOB', [
-      'Power sources sit on the left. Demands are the bulbs on the',
-      'right: the ring is the colour it wants, the shapes inside are',
-      'the two it is made of. Wire one to the other.',
-      'TEN LINES wire a LEVEL, and three levels — WIRE, SURGE and',
-      'BLEND — complete the rig. Each one is tighter than the last.',
-      'Every line you finish puts half the clock back, so a double',
-      'clear refills it.'
-    ]],
-    ['THE TWO BARS', [
-      'LEFT is the clock. Run it out and the game is over, though a',
-      'line already wired when it empties still pays out first.',
-      'RIGHT is the SURGE. It never stops, and when it empties,',
-      'slabs drop onto the board. You get three pulses of warning.'
-    ]],
-    ['COLOUR', [
-      'Red, yellow and blue. Mixed: orange, green and purple.',
-      'Every demand shows its recipe as pictures, so you never have',
-      'to remember which two make which.'
-    ]],
-    ['JUNCTIONS: S AND M', [
-      'A piece with three or more ways is a junction, and every one',
-      'lands as a SPLITTER. The letter is drawn on it.',
-      'S takes the colour arriving from whichever side is nearest',
-      'the power, and puts it on every other way.',
-      'M takes EVERY colour arriving and puts the BLEND on every',
-      'other way. That is the only way to make a mixed colour.',
-      'One square of the piece you are holding is drawn BRIGHTER.',
-      'That is the square you are pointing with. Put it on a junction',
-      'and SPACE tunes instead of placing, whichever piece you hold.',
-      'Place a junction and the next piece points at it already, so a',
-      'second SPACE sets it. Turn a long piece to reach an edge.',
-      'With one colour arriving, S and M do the same thing.'
-    ]],
-    ['THE ONE MISTAKE', [
-      'Two sources of different colours on ONE run of plain wire is',
-      'a SHORT. It goes dark, sparks red, and burns away a moment',
-      'later. Cut it before then and you keep the wire.',
-      'A junction breaks a run in two, so a line with a junction on',
-      'it can never short. Junctions are where colours are allowed',
-      'to meet.'
-    ]],
-    ['THE REST', [
-      'A SPAN is the only piece that can lie across another wire.',
-      'The DESTRUCTOR cuts a CROSS, three wide and three tall, and',
-      'takes only what it touches. Park it on an edge and a tip hangs',
-      'off doing nothing. It clears slabs too, and runs on a cooldown.',
-      'ZAG and ZIG step down and up a row, for when a run has come',
-      'out one line short of its demand.',
-      'Two or more sources of one colour into one demand pays extra:',
-      'DOUBLE SOURCE, then MEGA SOURCE.'
-    ]]
-  ];
+  // THE WALL OF RULES IS GONE (EVRTEK'S RULING 108, 2026-09-14): "let's use the
+  // 'picture says 1,000 words approach' here, the help screens should include
+  // animated samples of what needs to be done. Simple description in words but
+  // a visual representation of the game in action to show how things work."
+  //
+  // What stood here was six sections and 442 words introducing about two dozen
+  // named ideas before the player had made a single move — Quorra's playtest of
+  // the live beta, which also found that "the first minute is the hardest part
+  // of the game". Every one of those ideas is a LESSON PANEL now: a title, two
+  // plain sentences, and the thing itself happening on a looping board. The
+  // panels are js/demo.js's CW_DEMO.LESSONS; this file lays them out, sizes
+  // them and pages them. The only words left in here are the CONTROLS, which
+  // are the one thing that differs between the two cabinets and so cannot live
+  // in a shared script.
 
-  // The keys a phone has instead of keys. Same list, said in gestures.
-  // Right-aligned at x 150, so the longest label may be 150px: 22 characters
-  // of Courier New at 11px, which is the monospace an iPhone actually has and
-  // the widest of the three this file names. Hence "CUT, THEN THE CROSS" and
-  // not "CUT, THEN TAP THE CROSS", which is 23 and starts off the screen.
-  // The notes run from x 162 and have 238px, or 36 characters at the same
-  // measure; the junction row is the longest at 33.
+  // The keys a phone has instead of keys, said in gestures. Measured and
+  // clipped to the panel now rather than hand-counted against Courier New,
+  // because the panel is a different width on each layout.
+  //
+  // THE TWO STRIP ROWS ARE NEW (ruling 108). The strip arrived on 09-14 with
+  // three ways to reach it — a key, a pad button, and a finger — and the
+  // finger had TWO gestures of which only one was ever written down anywhere:
+  // a tap on the target, and a drag of the piece released over it. The drag
+  // was stated nowhere in the game at all, which is the kind of thing a help
+  // screen exists for.
   var TOUCH_KEYS = [
     // EVRTEK 2026-09-07: the drag is a d-pad, so the label is the rule. His
-    // note ran "move the piece — the screen is a d-pad", 38 characters where
-    // 36 fit; the label right beside it already says what is being dragged, so
-    // "it" says the same thing in 31 and the row stays inside 400.
+    // note ran "move the piece — the screen is a d-pad"; the label right
+    // beside it already says what is being dragged, so "it" says the same.
     ['DRAG ANYWHERE', 'move it — the screen is a d-pad'],
     ['TAP BESIDE IT', 'turn it — right for clockwise'],
-    ['TAP THE PIECE', 'place it'],
-    ['CUT, THEN THE CROSS', 'the destructor'],
+    ['TAP THE PIECE', 'put it down'],
     // EVRTEK 2026-09-07: one tap on a junction flips it, and the piece stays
     // where it is. Said in full rather than as "S ↔ M", because this page is
     // where someone finds out what those two letters mean.
     ['TAP A JUNCTION', 'flip it: S becomes M, M becomes S'],
+    ['CUT, THEN THE CROSS', 'the destructor'],
+    ['TAP SHRED OR A BIN', 'send the piece in hand there'],
+    ['OR DRAG IT ONTO ONE', 'let go over the target'],
     ['QUIT, TWICE', 'leave a run']
   ];
 
@@ -1772,131 +2175,239 @@ var CW_RENDER = (function () {
     text(ctx, 'TAP TO CHOOSE', W / 2, 484, MONO_S, INK_DIM, 'center');
   }
 
-  function drawHelp(ctx, g) {
-    text(ctx, 'HOW TO PLAY', W / 2, 54, MONO_L, ACCENT, 'center');
-    var i, j, y = 92;
-    // The keys in two rows of three. They used to take a row each, and by the
-    // time the ladder's two lines arrived the rules under them had run off the
-    // bottom of the page (the ladder agent's patrol, 2026-09-08). The pad's
-    // buttons go on one line beneath, since a pad player has read the keys.
-    var kx = [W / 2 - 320, W / 2 - 80, W / 2 + 160];
-    for (i = 0; i < KEYS.length; i++) {
-      var kcx = kx[i % 3], kcy = y + Math.floor(i / 3) * 22;
-      text(ctx, KEYS[i][0], kcx + 64, kcy, MONO, INK, 'right');
-      text(ctx, KEYS[i][1], kcx + 76, kcy, MONO, INK_DIM);
+  // ---- the help: LESSON PANELS (EVRTEK'S RULING 108) ----------------------
+  //
+  // A panel is a title, a caption of one or two plain sentences, and a board
+  // with the lesson playing on it — the same CW_DEMO.draw the difficulty cards
+  // run, live. Nine of them come from js/demo.js. The tenth is the CONTROLS,
+  // which is the one panel that cannot live in a shared script because the two
+  // cabinets have nothing in common there: keys and a pad on the desktop,
+  // gestures on a phone.
+  //
+  // Nothing on a panel is hand-counted. The caption is wrapped to a measured
+  // width and the board is given a cell size that fits the room left over, so
+  // a longer caption or a taller board moves the arithmetic instead of running
+  // off the edge — the same principle the old two-column split worked on.
+
+  function helpPanels() {
+    if (helpCards) return helpCards;
+    var out = [], i, l;
+    for (i = 0; i < CW_DEMO.LESSONS.length; i++) {
+      l = CW_DEMO.LESSONS[i];
+      out.push({ title: l.title, caption: l.caption, script: l.script });
     }
-    var pad = [];
-    for (i = 0; i < KEYS.length; i++) if (KEYS[i][2]) pad.push(KEYS[i][2] + '  ' + KEYS[i][1]);
-    y += 2 * 22 + 2;
-    text(ctx, 'PAD   ' + pad.join('   ·   '), W / 2, y, MONO_S, INK_DIM, 'center');
-    // TWO COLUMNS. The rules outgrew one when the surge clock arrived, and a
-    // help screen that runs off the bottom of the page is worse than no help
-    // screen. The split is the one that leaves the taller column shortest,
-    // and the pitch shrinks if the rules ever outgrow the room, so adding a
-    // section later tightens the page instead of overflowing it.
-    var top = y + 30, room = H - 56 - top;
-    var H1 = 19, L1 = 16, G1 = 10;
-    var heights = RULES.map(function (r) { return H1 + r[1].length * L1 + G1; });
-    var split = 1, bestMax = Infinity, s;
-    for (s = 1; s < RULES.length; s++) {
-      var a = 0, b = 0;
-      for (i = 0; i < RULES.length; i++) { if (i < s) a += heights[i]; else b += heights[i]; }
-      if (Math.max(a, b) < bestMax) { bestMax = Math.max(a, b); split = s; }
-    }
-    var k = Math.min(1, room / bestMax);
-    var cols = [{ x: 60, y: top }, { x: W / 2 + 30, y: top }];
-    for (i = 0; i < RULES.length; i++) {
-      var col = cols[i < split ? 0 : 1];
-      text(ctx, RULES[i][0], col.x, col.y, MONO, '#ffd60a');
-      col.y += H1 * k;
-      for (j = 0; j < RULES[i][1].length; j++) {
-        text(ctx, RULES[i][1][j], col.x + 16, col.y, MONO_S, INK_DIM);
-        col.y += L1 * k;
-      }
-      col.y += G1 * k;
-    }
-    text(ctx, 'SPACE or B to go back', W / 2, H - 32, MONO, ACCENT, 'center');
+    out.push({ title: 'CONTROLS', controls: true });
+    helpCards = out;
+    return out;
   }
 
-  // Portrait help is PAGED, not columned. Two columns of ten-pixel type on a
-  // 400px screen is unreadable, and a page that scrolls inside a canvas is
-  // worse than one that turns. Sections are packed greedily and NEVER split
-  // across a break, so adding a rule later moves the break instead of running
-  // off the bottom — the same principle the desktop split works on.
-  var HELP_TOP = 90, HELP_BOTTOM = 690;
-
-  function helpLayout() {
-    if (helpPages) return helpPages;
-    if (!MOBILE) { helpPages = [[]]; return helpPages; }
-    var pages = [[]], y = HELP_TOP + TOUCH_KEYS.length * 20 + 14, i;
-    for (i = 0; i < RULES.length; i++) {
-      var cost = 20 + RULES[i][1].length * 15 + 10;
-      var page = pages[pages.length - 1];
-      if (y + cost > HELP_BOTTOM && page.length) {
-        page = [];
-        pages.push(page);
-        y = HELP_TOP;
-      }
-      page.push(i);
-      y += cost;
-    }
-    helpPages = pages;
-    return pages;
+  // Where the panels sit. Said ONCE, because the page count the rules clamp
+  // paging on (Game._helpPages, through helpPageCount) and the drawing have to
+  // agree exactly or the last page is unreachable or blank.
+  function helpGrid() {
+    if (MOBILE) return { cols: 1, rows: 1, x: 16, y: 64, w: W - 32, h: 624, gx: 0, gy: 0 };
+    return { cols: 2, rows: 2, x: 36, y: 74, w: 414, h: 258, gx: 20, gy: 14 };
   }
 
-  function helpPageCount() { return helpLayout().length; }
+  function helpMetrics() {
+    return MOBILE
+      ? { pad: 14, titleFont: MONO_L, titleH: 30, capFont: MONO_S, capLine: 17,
+          capMax: 5, rowH: 30 }
+      : { pad: 12, titleFont: MONO_B, titleH: 24, capFont: MONO_S, capLine: 15,
+          capMax: 4, rowH: 22 };
+  }
 
-  function drawHelpMobile(ctx, g) {
-    var pages = helpLayout();
-    // The game owns the page number and may be past the end of a layout that
-    // has since changed shape, so it is clamped here rather than trusted.
-    var pg = Math.max(0, Math.min(pages.length - 1, g.helpPage | 0));
-    var i, j, y = HELP_TOP;
+  function helpPerPage() { var gr = helpGrid(); return gr.cols * gr.rows; }
 
-    text(ctx, 'HOW TO PLAY', W / 2, 40, MONO_L, ACCENT, 'center');
+  function helpPageCount() {
+    return Math.max(1, Math.ceil(helpPanels().length / helpPerPage()));
+  }
 
-    if (pg === 0) {
-      for (i = 0; i < TOUCH_KEYS.length; i++) {
-        text(ctx, TOUCH_KEYS[i][0], 150, y + i * 20, MONO_S, INK, 'right');
-        text(ctx, TOUCH_KEYS[i][1], 162, y + i * 20, MONO_S, INK_DIM);
+  // Break a sentence to a width, measured rather than counted: the captions
+  // are written in demo.js with no idea what they will be drawn into, and the
+  // panel is a different width on each layout. Anything past the last line is
+  // folded onto it and clipped, so a caption can be too long for its panel and
+  // still not paint over the next one.
+  function wrapLines(ctx, s, font, maxw, maxLines) {
+    ctx.font = font || MONO;
+    var words = String(s).split(' '), lines = [], cur = '', i, t;
+    for (i = 0; i < words.length; i++) {
+      t = cur ? cur + ' ' + words[i] : words[i];
+      if (cur && ctx.measureText(t).width > maxw) { lines.push(cur); cur = words[i]; }
+      else cur = t;
+    }
+    if (cur) lines.push(cur);
+    if (maxLines && lines.length > maxLines) {
+      var rest = lines.slice(maxLines - 1).join(' ');
+      lines = lines.slice(0, maxLines - 1);
+      lines.push(clip(ctx, rest, font, maxw));
+    }
+    return lines;
+  }
+
+  // ONE CELL SIZE FOR A WHOLE PAGE. Each board could take the biggest cell its
+  // own script fits in, but four boards at four scales on one page reads as
+  // four different games, so the page takes the smallest of them. The panel
+  // with the strip under it is the tall one and usually decides.
+  function helpCell(list, bw, bh) {
+    var c = MOBILE ? 46 : 30, i, sz, ok;
+    while (c > 8) {
+      ok = true;
+      for (i = 0; i < list.length; i++) {
+        if (!list[i].script) continue;
+        sz = CW_DEMO.size(list[i].script, c);
+        if (sz.w > bw || sz.h > bh) { ok = false; break; }
       }
-      y += TOUCH_KEYS.length * 20 + 14;
+      if (ok) return c;
+      c--;
+    }
+    return 8;
+  }
+
+  // The one panel that is not a picture: what the buttons do. Three columns on
+  // a desktop — key, what it does, the pad button — and two on a phone, where
+  // the gesture IS the name of the thing.
+  function drawControlsPanel(ctx, x, y, w, h) {
+    var rows = MOBILE ? TOUCH_KEYS : KEYS;
+    var m = helpMetrics(), pad = m.pad, i;
+    var keyFont = MOBILE ? MONO_S : MONO;
+    var lh = Math.min(m.rowH, Math.floor((h - 22) / rows.length));
+    var lx = x + pad, kw = 0;
+    ctx.font = keyFont;
+    for (i = 0; i < rows.length; i++) kw = Math.max(kw, ctx.measureText(rows[i][0]).width);
+    var nx = lx + kw + 12;
+    var padCol = MOBILE ? 0 : 74;
+    var room = (x + w - pad - padCol) - nx;
+    for (i = 0; i < rows.length; i++) {
+      var ry = y + 6 + i * lh + lh / 2;
+      text(ctx, rows[i][0], lx, ry, keyFont, INK);
+      text(ctx, clip(ctx, rows[i][1], m.capFont, room), nx, ry, m.capFont, INK_DIM);
+      if (!MOBILE && rows[i][2]) {
+        text(ctx, rows[i][2], x + w - pad, ry, MONO_XS, '#4a5674', 'right');
+      }
+    }
+    var foot = MOBILE
+      ? 'a target is a button AND a place to let go of a piece'
+      : 'right-hand column is the gamepad · the mouse works too';
+    text(ctx, clip(ctx, foot, MONO_XS, w - pad * 2),
+      lx, y + 6 + rows.length * lh + 10, MONO_XS, '#4a5674');
+  }
+
+  // How tall a panel actually needs to be. Portrait draws ONE panel on a page
+  // and has no grid to keep, so its box is fitted to its contents and centred:
+  // a fixed 624px card round a 210px board is mostly empty, and empty space on
+  // a phone reads as something missing rather than as room to breathe.
+  function helpNatural(ctx, panel, w, cell) {
+    var m = helpMetrics(), h = m.pad * 2 + m.titleH;
+    if (panel.controls) return h + 6 + (MOBILE ? TOUCH_KEYS : KEYS).length * m.rowH + 22;
+    var lines = wrapLines(ctx, panel.caption, m.capFont, w - m.pad * 2, m.capMax);
+    return h + CW_DEMO.size(panel.script, cell).h + 12 + lines.length * m.capLine;
+  }
+
+  function drawHelpPanel(ctx, panel, x, y, w, h, now, cell) {
+    var m = helpMetrics(), pad = m.pad, i;
+    ctx.fillStyle = PANEL;
+    roundRect(ctx, x, y, w, h, 8);
+    ctx.fill();
+    ctx.strokeStyle = LINE;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    text(ctx, clip(ctx, panel.title, m.titleFont, w - pad * 2),
+      x + pad, y + pad + m.titleH / 2 - 2, m.titleFont, '#ffd60a');
+
+    var top = y + pad + m.titleH;
+    if (panel.controls) {
+      drawControlsPanel(ctx, x, top, w, y + h - pad - top);
+      return;
     }
 
-    // x 14 and 18, not the 20 the buttons use: the longest rule line is 63
-    // characters, which is 378px in Courier New — the monospace an iPhone
-    // actually has, and half a pixel per character wider than Consolas. The
-    // body sits far enough left that the widest line still lands inside 400.
-    var list = pages[pg];
+    var lines = wrapLines(ctx, panel.caption, m.capFont, w - pad * 2, m.capMax);
+    var capH = lines.length * m.capLine;
+    var room = (y + h - pad - capH - 6) - top;
+    var sz = CW_DEMO.size(panel.script, cell);
+    CW_DEMO.draw(ctx, panel.script,
+      x + Math.round((w - sz.w) / 2),
+      top + Math.max(0, Math.round((room - sz.h) / 2)),
+      cell, now, true);
+    for (i = 0; i < lines.length; i++) {
+      text(ctx, clip(ctx, lines[i], m.capFont, w - pad * 2),
+        x + pad, y + h - pad - capH + i * m.capLine + m.capLine / 2, m.capFont, INK_DIM);
+    }
+  }
+
+  // One page of panels, both layouts. The page number is the game's and may be
+  // past the end of a layout that has since changed shape, so it is clamped
+  // here rather than trusted.
+  function drawHelpPage(ctx, g, now) {
+    var panels = helpPanels(), gr = helpGrid(), m = helpMetrics();
+    var per = gr.cols * gr.rows, pages = helpPageCount();
+    var pg = Math.max(0, Math.min(pages - 1, g.helpPage | 0));
+    var list = panels.slice(pg * per, pg * per + per), i;
+    var cell = helpCell(list, gr.w - m.pad * 2,
+      gr.h - m.pad * 2 - m.titleH - m.capMax * m.capLine - 6);
+
+    text(ctx, 'HOW TO PLAY', W / 2, MOBILE ? 38 : 46, MONO_L, ACCENT, 'center');
+
+    // A page that does not fill the grid is CENTRED in it rather than pinned
+    // to the top left corner, so the last page — two panels where four fit —
+    // reads as a short page and not as a page with two panels missing.
+    var used = Math.ceil(list.length / gr.cols);
+    var oy = gr.y + Math.round((gr.rows - used) * (gr.h + gr.gy) / 2);
     for (i = 0; i < list.length; i++) {
-      var r = RULES[list[i]];
-      text(ctx, r[0], 14, y, MONO_S, '#ffd60a');
-      y += 20;
-      for (j = 0; j < r[1].length; j++) {
-        text(ctx, r[1][j], 18, y, MONO_XS, INK_DIM);
-        y += 15;
+      var row = Math.floor(i / gr.cols);
+      var wide = Math.min(gr.cols, list.length - row * gr.cols);
+      var ox = gr.x + Math.round((gr.cols - wide) * (gr.w + gr.gx) / 2);
+      var px = ox + (i % gr.cols) * (gr.w + gr.gx);
+      var py = oy + row * (gr.h + gr.gy);
+      var ph = gr.h;
+      if (MOBILE) {
+        ph = Math.min(gr.h, helpNatural(ctx, list[i], gr.w, cell));
+        py += Math.round((gr.h - ph) / 2);
       }
-      y += 10;
+      drawHelpPanel(ctx, list[i], px, py, gr.w, ph, now, cell);
     }
 
-    var back = pg > 0, fwd = pg < pages.length - 1;
-    tapRow(ctx, 'help:prev', 20, 704, 110, 52, 'PREV', MONO,
-      PANEL, LINE, 1, back ? INK : '#39435c');
-    tapRow(ctx, 'help:next', 145, 704, 110, 52, 'NEXT', MONO,
-      PANEL, LINE, 1, fwd ? INK : '#39435c');
-    tapRow(ctx, 'help:back', 270, 704, 110, 52, 'DONE', MONO, '#16213a', ACCENT, 2, ACCENT);
-    text(ctx, (pg + 1) + ' / ' + pages.length, W / 2, 780, MONO_XS, INK_DIM, 'center');
+    var back = pg > 0, fwd = pg < pages - 1;
+    if (MOBILE) {
+      tapRow(ctx, 'help:prev', 20, 704, 110, 52, 'PREV', MONO,
+        PANEL, LINE, 1, back ? INK : '#39435c');
+      tapRow(ctx, 'help:next', 145, 704, 110, 52, 'NEXT', MONO,
+        PANEL, LINE, 1, fwd ? INK : '#39435c');
+      tapRow(ctx, 'help:back', 270, 704, 110, 52, 'DONE', MONO, '#16213a', ACCENT, 2, ACCENT);
+      text(ctx, (pg + 1) + ' / ' + pages, W / 2, 780, MONO_XS, INK_DIM, 'center');
+    } else {
+      // The desktop gets the same three as buttons, because the mouse is a
+      // supported input here (his ruling 2026-09-08) and a paged help screen
+      // with no way to turn a page but a key is a trap for a mouse.
+      tapRow(ctx, 'help:prev', W / 2 - 176, 616, 104, 34, '< A', MONO,
+        PANEL, LINE, 1, back ? INK : '#39435c');
+      tapRow(ctx, 'help:next', W / 2 - 52, 616, 104, 34, 'D >', MONO,
+        PANEL, LINE, 1, fwd ? INK : '#39435c');
+      tapRow(ctx, 'help:back', W / 2 + 72, 616, 104, 34, 'DONE', MONO,
+        '#16213a', ACCENT, 2, ACCENT);
+      text(ctx, (pg + 1) + ' / ' + pages + '   ·   SPACE or B to go back',
+        W / 2, 668, MONO_S, INK_DIM, 'center');
+    }
   }
 
+  // FOUR CARDS since EVRTEK 2026-09-14 ("difficulties become Normal, Advanced
+  // and Extreme", with CALM promoted to a setting of its own). Three 280px
+  // cards fitted a 920px canvas with room to spare; four do not, so the card is
+  // 208 wide and everything inside it had to be re-measured against that. The
+  // demo survived at its full 24px cell — it is the whole reason this screen
+  // exists — and the prose gave up the room: the blurb is two lines now and
+  // every line is clipped to the card rather than trusted to fit.
   function drawSelect(ctx, g, now) {
     text(ctx, 'CHOOSE A DIFFICULTY', W / 2, 44, MONO_L, ACCENT, 'center');
 
-    var d = CW_GAME.DIFFICULTY, i;
-    var pw = 280, gap = 12;
+    var d = CW_GAME.DIFFICULTY, i, j;
+    var pw = 208, gap = 14, ph = 300, py = 84, pad = 8;
     var x0 = W / 2 - (d.length * pw + (d.length - 1) * gap) / 2;
     for (i = 0; i < d.length; i++) {
-      var px = x0 + i * (pw + gap), py = 84, ph = 300;
+      var px = x0 + i * (pw + gap);
       var on = i === g.diffIndex;
+      var mid = px + pw / 2, room = pw - pad * 2;
       ctx.fillStyle = on ? '#131c30' : PANEL;
       roundRect(ctx, px, py, pw, ph, 8);
       ctx.fill();
@@ -1904,7 +2415,7 @@ var CW_RENDER = (function () {
       ctx.lineWidth = on ? 2 : 1;
       ctx.stroke();
 
-      text(ctx, d[i].id, px + pw / 2, py + 26, MONO_L, on ? '#ffd60a' : INK_DIM, 'center');
+      text(ctx, d[i].id, mid, py + 26, MONO_L, on ? '#ffd60a' : INK_DIM, 'center');
 
       // The tutorial. Only the highlighted one runs.
       var script = CW_DEMO.SCRIPTS[i];
@@ -1912,11 +2423,21 @@ var CW_RENDER = (function () {
       var bw = (script.w + 2) * cell;
       CW_DEMO.draw(ctx, script, px + (pw - bw) / 2, py + 56, cell, now, on);
 
-      text(ctx, script.caption, px + pw / 2, py + 56 + script.h * cell + 26,
-        MONO_S, on ? INK : '#4a5674', 'center');
-      text(ctx, d[i].blurb, px + pw / 2, py + ph - 46, MONO_S, INK_DIM, 'center');
-      text(ctx, d[i].quota + ' lines a level · three levels',
-        px + pw / 2, py + ph - 26, MONO_S, INK_DIM, 'center');
+      text(ctx, clip(ctx, script.caption, MONO_XS, room), mid, py + 200,
+        MONO_XS, on ? INK : '#4a5674', 'center');
+      var bl = blurbLines(d[i].blurb);
+      for (j = 0; j < bl.length && j < 2; j++) {
+        text(ctx, clip(ctx, bl[j], MONO_S, room), mid, py + 226 + j * 16,
+          MONO_S, INK_DIM, 'center');
+      }
+      text(ctx, clip(ctx, d[i].quota + ' lines a level · three levels', MONO_XS, room),
+        mid, py + 262, MONO_XS, INK_DIM, 'center');
+      // EVRTEK 2026-09-14: "yes, let's add a saved high score." One per
+      // setting, on the card for that setting, and nothing at all until there
+      // is one — an empty BEST 0 on four cards is four pieces of furniture
+      // saying the player has never played.
+      var best = CW_BEST.get(d[i].id);
+      if (best) text(ctx, 'BEST ' + best, mid, py + 284, MONO_S, '#3ede72', 'center');
     }
 
     text(ctx, '< A      D >', W / 2, 410, MONO, INK_DIM, 'center');
@@ -1927,17 +2448,22 @@ var CW_RENDER = (function () {
     text(ctx, 'SPACE TO START   ·   B TO GO BACK', W / 2, 472, MONO_L, ACCENT, 'center');
   }
 
-  // Portrait: the three panels stack, and each one turns on its side — the
-  // words on the left, the tutorial playing on the right. The whole point of
-  // this screen is that you can SEE the difference between the settings, so
-  // the demo survives the shrink and the prose gives up the room.
+  // Portrait: the panels stack, and each one turns on its side — the words on
+  // the left, the tutorial playing on the right. The whole point of this
+  // screen is that you can SEE the difference between the settings, so the
+  // demo survives the shrink and the prose gives up the room.
+  //
+  // FOUR of them since EVRTEK 2026-09-14, on a screen that is still 800 tall.
+  // The panel lost twelve pixels (140 to 128) and the gap between them eight,
+  // which buys the fourth slot and still leaves START and BACK where a thumb
+  // expects them, at the bottom of the screen rather than floating.
   function drawSelectMobile(ctx, g, now) {
-    text(ctx, 'CHOOSE A DIFFICULTY', W / 2, 40, MONO_L, ACCENT, 'center');
+    text(ctx, 'CHOOSE A DIFFICULTY', W / 2, 36, MONO_L, ACCENT, 'center');
 
-    var d = CW_GAME.DIFFICULTY, i;
-    var ys = [64, 216, 368], px = 20, pw = 360, ph = 140;
+    var d = CW_GAME.DIFFICULTY, i, j;
+    var px = 20, pw = 360, ph = 128, top = 56, gap = 8;
     for (i = 0; i < d.length; i++) {
-      var py = ys[i], on = i === g.diffIndex;
+      var py = top + i * (ph + gap), on = i === g.diffIndex;
       ctx.fillStyle = on ? '#131c30' : PANEL;
       roundRect(ctx, px, py, pw, ph, 8);
       ctx.fill();
@@ -1945,34 +2471,64 @@ var CW_RENDER = (function () {
       ctx.lineWidth = on ? 2 : 1;
       ctx.stroke();
 
-      text(ctx, d[i].id, px + 16, py + 26, MONO_L, on ? '#ffd60a' : INK_DIM);
-      text(ctx, d[i].blurb, px + 16, py + 54, MONO_S, INK_DIM);
-      text(ctx, d[i].quota + ' lines a level · three levels',
-        px + 16, py + 74, MONO_S, INK_DIM);
+      // Everything on the left of the card has 228px to live in: the demo's
+      // leftmost pixel is its source swatch at x 264, and the words start at
+      // 36. The blurbs grew past that when the four settings arrived, so they
+      // are TWO lines here as well, and every line is measured and clipped
+      // rather than counted and hoped for.
+      var room = 224;
+      text(ctx, d[i].id, px + 16, py + 24, MONO_L, on ? '#ffd60a' : INK_DIM);
+      var bl = blurbLines(d[i].blurb);
+      for (j = 0; j < bl.length && j < 2; j++) {
+        text(ctx, clip(ctx, bl[j], MONO_S, room), px + 16, py + 48 + j * 17, MONO_S, INK_DIM);
+      }
+      text(ctx, clip(ctx, d[i].quota + ' lines a level · three levels', MONO_XS, room),
+        px + 16, py + 88, MONO_XS, INK_DIM);
 
-      // The demo moved 24px right when the blurbs grew for the ladder. The
-      // longest of them is CALM's at 33 characters, which is 218px of 11px
-      // Courier New from x 36 and ends at 254; the demo's leftmost pixel is
-      // its source swatch at bx - 10, so bx had to clear 254 rather than the
-      // 242 it used to sit at. Its right edge lands at 360 inside a 380 card.
       var script = CW_DEMO.SCRIPTS[i];
-      CW_DEMO.draw(ctx, script, px + 244, py + 16, 12, now, on);
+      CW_DEMO.draw(ctx, script, px + 244, py + 14, 12, now, on);
 
-      var cap = script.caption;
-      if (cap.length > 42) cap = cap.slice(0, 41) + '…';
-      text(ctx, cap, px + 16, py + 118, MONO_XS, on ? INK : '#4a5674');
+      text(ctx, clip(ctx, script.caption, MONO_XS, room), px + 16, py + 110,
+        MONO_XS, on ? INK : '#4a5674');
+      // The saved best for this setting (EVRTEK 2026-09-14), right-aligned
+      // under the demo so it never collides with the caption.
+      var best = CW_BEST.get(d[i].id);
+      if (best) text(ctx, 'BEST ' + best, px + pw - 16, py + 110, MONO_XS, '#3ede72', 'right');
 
       hit('select:' + i, px, py, pw, ph);
     }
 
     // No MAYHEM row here either (off the menu, his ruling), so START and BACK
     // sit closer under the panels.
-    tapRow(ctx, 'select:start', 20, 548, 360, 60, 'START', MONO_L,
+    tapRow(ctx, 'select:start', 20, 616, 360, 60, 'START', MONO_L,
       '#16213a', ACCENT, 2, ACCENT);
-    tapRow(ctx, 'select:back', 20, 628, 360, 44, 'BACK', MONO, PANEL, LINE, 1, INK_DIM);
+    tapRow(ctx, 'select:back', 20, 690, 360, 48, 'BACK', MONO, PANEL, LINE, 1, INK_DIM);
+  }
+
+  // What the result card says about the saved best. EVRTEK 2026-09-14: "yes,
+  // let's add a saved high score." NEW BEST only when THIS run set it — the
+  // record is stamped by main.js on the frame the run ended, and it carries
+  // the difficulty it was set on, so a card can never claim a best that was
+  // set on a different setting. Otherwise the standing best, quietly; and
+  // nothing at all on the first run of a device, where a "BEST 0" would be
+  // the card's way of saying nothing twice.
+  function bestLine(g) {
+    var r = CW_BEST.last();
+    if (r && r.diffId === g.diff().id && r.isNew) {
+      return { text: 'NEW BEST   ' + r.best, ink: '#ffd60a' };
+    }
+    var b = CW_BEST.get(g.diff().id);
+    return b ? { text: 'BEST   ' + b, ink: INK_DIM } : null;
   }
 
   function drawGameOver(ctx, g) {
+    // The card owns the screen, so it owns the touch targets too. This used to
+    // be the portrait card's problem alone, because the desktop play screen
+    // registered no rects at all — until the strip arrived (EVRTEK 2026-09-14)
+    // and gave the desktop three, which the mouse reaches through the same
+    // touch code. A live SHRED under a game-over card is exactly the class of
+    // bug Tron's patrol went looking for.
+    hits.length = 0;
     ctx.fillStyle = 'rgba(6,9,16,0.93)';
     ctx.fillRect(0, 0, W, H);
     // EVRTEK 2026-09-08: the rig can be FINISHED now, so this card has two
@@ -1996,10 +2552,12 @@ var CW_RENDER = (function () {
       W / 2, y + 46, MONO_L, INK, 'center');
     text(ctx, g.keystones + ' KEYSTONE' + (g.keystones === 1 ? '' : 'S'),
       W / 2, y + 76, MONO, g.keystones ? '#ffd60a' : INK_DIM, 'center');
+    var bl = bestLine(g);
+    if (bl) text(ctx, bl.text, W / 2, y + 102, MONO_L, bl.ink, 'center');
     text(ctx, g.diff().id + (g.mayhem ? '  ·  MAYHEM' : '') +
       '   ·   SEED ' + g.seed.toString(36).toUpperCase(),
-      W / 2, y + 102, MONO, INK_DIM, 'center');
-    text(ctx, 'SPACE TO GO AGAIN   ·   B FOR THE TITLE', W / 2, y + 148, MONO, ACCENT, 'center');
+      W / 2, y + 128, MONO, INK_DIM, 'center');
+    text(ctx, 'SPACE TO GO AGAIN   ·   B FOR THE TITLE', W / 2, y + 174, MONO, ACCENT, 'center');
   }
 
   function drawGameOverMobile(ctx, g) {
@@ -2020,9 +2578,11 @@ var CW_RENDER = (function () {
     text(ctx, (g.won ? '' : 'LEVEL ' + g.level + '  ·  ' + g.delivered + ' WIRED  ·  ') +
       g.keystones + ' KEYSTONE' + (g.keystones === 1 ? '' : 'S'),
       W / 2, 316, MONO, g.keystones ? '#ffd60a' : INK_DIM, 'center');
+    var blm = bestLine(g);
+    if (blm) text(ctx, blm.text, W / 2, 344, MONO_L, blm.ink, 'center');
     text(ctx, g.diff().id + (g.mayhem ? '  ·  MAYHEM' : '') +
       '   ·   SEED ' + g.seed.toString(36).toUpperCase(),
-      W / 2, 342, MONO_XS, INK_DIM, 'center');
+      W / 2, 374, MONO_XS, INK_DIM, 'center');
     tapRow(ctx, 'over:again', 20, 520, 360, 60, 'AGAIN', MONO_L,
       '#16213a', ACCENT, 2, ACCENT);
     tapRow(ctx, 'over:title', 20, 600, 360, 48, 'TITLE', MONO, PANEL, LINE, 1, INK_DIM);
@@ -2084,8 +2644,23 @@ var CW_RENDER = (function () {
     if (sh > 0) ctx.translate((Math.random() - 0.5) * 7 * sh, (Math.random() - 0.5) * 7 * sh);
     drawInner(ctx, g, pads, false);
     if (g.screen === 'play') {
+      // Slabs leaving before slabs arriving: on a surge both happen at once and
+      // the one going up is the older news.
+      //
+      // BOTH INSIDE THE GRID'S WINDOW (Tron's M3): a slab in flight is the only
+      // thing on this screen drawn outside the square it occupies, and the lift
+      // takes it clean over the chrome above the board. One clip round the pair
+      // of them, because a rising slab leaves by the same door an arriving one
+      // comes in through. See slabClip.
+      ctx.save();
+      slabClip(ctx, g.board);
+      drawRising(ctx, g);
       drawIncoming(ctx, g);
+      ctx.restore();
       vignette(ctx, GRID_X - 4, GRID_Y - 4, g.board.w * CELL + 8, g.board.h * CELL + 8);
+      // Over the vignette, because the fragments leave the board entirely and
+      // half of their flight is across chrome that is not dimmed.
+      drawShreds(ctx, g);
     }
     ctx.restore();
   }
@@ -2101,7 +2676,9 @@ var CW_RENDER = (function () {
       return;
     }
     if (g.screen === 'help') {
-      if (MOBILE) drawHelpMobile(ctx, g); else drawHelp(ctx, g);
+      // One drawing for both cabinets since ruling 108: the lesson panels are
+      // the same panels either way, only laid out and paged differently.
+      drawHelpPage(ctx, g, now);
       return;
     }
     if (g.screen === 'select') {
@@ -2120,6 +2697,9 @@ var CW_RENDER = (function () {
     drawFlares(ctx, g);
     drawBanner(ctx, g);
     drawCallout(ctx, g);
+    // The strip is chrome under the board and belongs to BOTH layouts, which
+    // is why it is drawn here rather than inside either branch below.
+    drawStrip(ctx, g);
     if (MOBILE) {
       drawFeedMobile(ctx, g);
       drawControls(ctx, g);

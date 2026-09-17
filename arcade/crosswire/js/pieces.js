@@ -54,6 +54,28 @@ var CW_PIECES = (function () {
   // number that lands inside his tolerance once the droughts have had their
   // say. The harness re-measures all four at that seed, so a change anywhere in
   // bag.js that quietly moves them fails rather than drifts.
+  //
+  // EVRTEK 2026-09-14: "piece delivery should be adjusted to reduce the number
+  // of valves by 25%" — and, asked whether he meant the VALVE piece or every
+  // piece that can merge two colours, "all junction pieces." So every piece
+  // with `mixes` carries THREE QUARTERS of the weight it had:
+  //
+  //   VALVE      10    -> 7.5
+  //   TEE         8    -> 6
+  //   YOKE        6.85 -> 5.1375
+  //   JUNCTION    4.9  -> 3.675
+  //
+  // YOKE and JUNCTION keep the decimals his 09-08 ruling measured them to, so
+  // both rulings are legible in the number: 6.85 x 0.75, 4.9 x 0.75. This is
+  // the ONLY lever moved — the junction DROUGHT in bag.js is untouched, and it
+  // claws part of the cut back, which is why the measured share falls by less
+  // than a quarter. Measured over 40,000 draws at seed 4242, the same feed the
+  // harness runs: junction pieces were 27.68% of everything dealt and are now
+  // 24.11% — a real cut of 12.9%, about half of what the weights alone say.
+  // The floor under it is DROUGHT: seven draws without a junction and the next
+  // one is a junction whatever the weights want, and that promise (a mix is
+  // always reachable) outranks the reduction. Cutting the weight further would
+  // buy very little, because past a point every junction dealt is a forced one.
 
   // Every definition is written in its home rotation and rotated at runtime.
   var DEFS = [
@@ -69,7 +91,7 @@ var CW_PIECES = (function () {
     },
     {
       // Three ways in one cell, so it mixes and splits. The compact junction.
-      id: 'VALVE', name: 'VALVE', weight: 10,
+      id: 'VALVE', name: 'VALVE', weight: 7.5,
       cells: [[0, 0]],
       wire: [[{ e: ['W', 'E', 'S'] }]]
     },
@@ -90,7 +112,7 @@ var CW_PIECES = (function () {
     },
     {
       // A three-way with a longer body, so the third way starts a cell over.
-      id: 'TEE', name: 'TEE', weight: 8,
+      id: 'TEE', name: 'TEE', weight: 6,
       cells: [[0, 0], [1, 0], [1, 1]],
       wire: [[{ e: ['W', 'E'] }], [{ e: ['W', 'E', 'S'] }], [{ e: ['N', 'S'] }]]
     },
@@ -109,7 +131,7 @@ var CW_PIECES = (function () {
       // U pentomino with a third way out of the closed end. The widest
       // junction: two prongs and an outflow, and it still ducks around whatever
       // is sitting in the notch.
-      id: 'YOKE', name: 'YOKE', weight: 6.85,
+      id: 'YOKE', name: 'YOKE', weight: 5.1375,
       cells: [[0, 0], [1, 0], [1, 1], [1, 2], [0, 2]],
       wire: [[{ e: ['W', 'E'] }], [{ e: ['W', 'S'] }],
              [{ e: ['N', 'S', 'E'] }],
@@ -134,7 +156,7 @@ var CW_PIECES = (function () {
              [{ e: ['S', 'E'] }], [{ e: ['W', 'E'] }]]
     },
     {
-      id: 'JUNCTION', name: 'JUNCTION', weight: 4.9,
+      id: 'JUNCTION', name: 'JUNCTION', weight: 3.675,
       cells: [[1, 0], [0, 1], [1, 1], [2, 1], [1, 2]],
       wire: [[{ e: ['N', 'S'] }], [{ e: ['W', 'E'] }],
              [{ e: ['N', 'E', 'S', 'W'] }],

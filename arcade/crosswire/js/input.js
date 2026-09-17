@@ -53,7 +53,14 @@ var CW_INPUT = (function () {
   };
 
   // Gamepads are polled, never evented. Standard mapping:
-  // 0 A, 1 B, 2 X, 3 Y, 4 LB, 5 RB, 12-15 d-pad up/down/left/right.
+  // 0 A, 1 B, 2 X, 3 Y, 4 LB, 5 RB, 6 LT, 7 RT, 12-15 d-pad up/down/left/right.
+  //
+  // EVRTEK 2026-09-14, the strip: the two BUMPERS are the two bins and either
+  // TRIGGER is the shredder. The bumpers because a bin is a second hand — you
+  // reach for one without leaving the face buttons — and the triggers because
+  // shredding is the one destructive thing on a pad that is not the
+  // destructor, and it should take a deliberate pull rather than a thumb
+  // landing wrong.
   Controller.prototype._padState = function () {
     if (this.padIndex === null) return null;
     if (typeof navigator === 'undefined') return null;   // headless harness
@@ -71,7 +78,10 @@ var CW_INPUT = (function () {
       commit:  b(0),
       rotCW:   b(1),
       rotCCW:  b(2),
-      destroy: b(3)
+      destroy: b(3),
+      bin0:    b(4),
+      bin1:    b(5),
+      shred:   b(6) || b(7)
     };
   };
 
@@ -79,7 +89,7 @@ var CW_INPUT = (function () {
     var pad = this._padState();
     var self = this;
     var actions = ['left', 'right', 'up', 'down', 'commit', 'destroy',
-                   'rotCW', 'rotCCW'];
+                   'rotCW', 'rotCCW', 'shred', 'bin0', 'bin1'];
     actions.forEach(function (a) {
       // `edge` catches a tap that went down and up inside one frame. Without
       // it a fast press is silently dropped, which is the kind of bug that
@@ -105,10 +115,19 @@ var CW_INPUT = (function () {
   //   tap   a finger tapped this cell
   //   pick  a finger tapped this named button on the front end
   //   tune  a finger tapped the junction on this cell (EVRTEK 2026-09-07)
+  //
+  // EVRTEK 2026-09-14 added the strip under the board, and with it two more:
+  //   shred the piece in hand goes in the shredder
+  //   bin   the piece in hand goes in bin 0 or bin 1, swapping with whatever
+  //         is already in there — null when nothing was said
+  // Both are PLACES on the screen and both are reached three ways (a key, a
+  // pad button, a finger on the target), so like every other field they are
+  // said once in this shape and the rules never learn which one said it.
   function blank() {
     return {
       dx: 0, dy: 0, rot: 0, commit: false, destroy: false,
-      to: null, tap: null, pick: null, tune: null
+      to: null, tap: null, pick: null, tune: null,
+      shred: false, bin: null
     };
   }
 
@@ -122,6 +141,13 @@ var CW_INPUT = (function () {
     c.commit = this.pressed('commit');
     c.destroy = this.pressed('destroy');
     c.rot = (this.pressed('rotCW') ? 1 : 0) - (this.pressed('rotCCW') ? 1 : 0);
+    // One-shot on the press, edge-detected exactly like commit: holding X does
+    // not shred the whole feed, and leaning on 1 does not swap the bin back
+    // and forth every frame. `bin` is a FIELD and not two, so if both keys
+    // somehow arrive in one frame the lower-numbered bin wins rather than the
+    // command carrying a contradiction into the rules.
+    c.shred = this.pressed('shred');
+    c.bin = this.pressed('bin0') ? 0 : (this.pressed('bin1') ? 1 : null);
     return c;
   };
 
@@ -129,21 +155,35 @@ var CW_INPUT = (function () {
   // B arms the destructor. Four ideas and eight keys, nothing else, because
   // the piece is presented rather than chosen. (Destroy was on DELETE until he
   // moved it to B, which keeps both hands on the home row.)
+  //
+  // EVRTEK 2026-09-14 added three: 1 and 2 are the two bins and X is the
+  // shredder. All three are left-hand keys within reach of WASD, because every
+  // one of them is something you do INSTEAD of placing the piece — X sits
+  // under the moving hand the way B does, and the two digits are simply the
+  // numbers painted on the two bins.
   var KEYS_P1 = {
     left: ['KeyA'], right: ['KeyD'], up: ['KeyW'], down: ['KeyS'],
     rotCCW: ['KeyQ'], rotCW: ['KeyE'],
-    commit: ['Space'], destroy: ['KeyB']
+    commit: ['Space'], destroy: ['KeyB'],
+    shred: ['KeyX'], bin0: ['Digit1'], bin1: ['Digit2']
   };
 
   // Player two on the same keyboard, parked ready for the mirror match. His
   // layout: the numpad, 4/5/6/8 standing in for WASD, + commits, - destroys.
   // He listed 7 and 8 as the rotates, but 8 is also his "up", so the second
   // rotate is 9. Arrow keys are kept as an alias for a machine with no numpad.
+  //
+  // The strip in numpad terms: Numpad1 and Numpad2 are the bins, which is the
+  // same two digits player one uses, and Numpad0 — the long key nothing else
+  // wants — is the shredder. Parity with P1 is the whole point of keeping this
+  // map alive: a mirror match where one player has the strip and the other
+  // does not is not a mirror.
   var KEYS_P2 = {
     left: ['Numpad4', 'ArrowLeft'], right: ['Numpad6', 'ArrowRight'],
     up: ['Numpad8', 'ArrowUp'], down: ['Numpad5', 'ArrowDown'],
     rotCCW: ['Numpad7'], rotCW: ['Numpad9'],
-    commit: ['NumpadAdd'], destroy: ['NumpadSubtract']
+    commit: ['NumpadAdd'], destroy: ['NumpadSubtract'],
+    shred: ['Numpad0'], bin0: ['Numpad1'], bin1: ['Numpad2']
   };
 
   // A key can be identified by its physical position (e.code) or by what it
@@ -291,6 +331,16 @@ var CW_INPUT = (function () {
     return !!grip && inCells(grip.cells, cell);
   }
 
+  // EVRTEK 2026-09-14, the strip under the board. The three targets are
+  // ordinary hit rects, so they arrive here the way CUT does — by id — and
+  // become the command field the rules already read. Named in ONE table so a
+  // press that starts on a target and a drag that ENDS on one cannot ever
+  // disagree about what the target means.
+  var STRIP = { shred: { shred: true }, bin0: { bin: 0 }, bin1: { bin: 1 } };
+  function stripCmd(rect) {
+    return (rect && Object.prototype.hasOwnProperty.call(STRIP, rect.id)) ? STRIP[rect.id] : null;
+  }
+
   // Is that POINT within TAP_PAD of one of them? Measured against each
   // square's rectangle, in logical pixels, so a press that fell off the piece
   // by less than the pad still counts as a press on it. It takes a point
@@ -381,6 +431,7 @@ var CW_INPUT = (function () {
     this.grip = null;     // the piece as it was when the finger went down
     this.home = null;     // H0: where its handle was at that moment
     this.step = null;     // the last {col,row} a drag reported, in squares
+    this.grabbed = false; // the press landed ON the piece: a GRIP, not a d-pad
     this.downX = 0; this.downY = 0; this.downT = 0;
   };
 
@@ -438,6 +489,16 @@ var CW_INPUT = (function () {
     // cannot have the origin of the drag shift under it.
     this.home = this.grip ? { x: this.grip.handle.x, y: this.grip.handle.y } : null;
     this.step = null;
+    // EVRTEK 2026-09-14: "the player can drag a piece on to the shredder."
+    // A drag can start anywhere on this screen — that is the d-pad ruling of
+    // 09-07 and it has not changed — but dragging a piece ONTO something is a
+    // different sentence, and it has to start by taking hold of the piece. So
+    // the one thing recorded here is whether the press landed on the piece's
+    // own squares (or within the tap pad of them, the same slack a tap gets).
+    // Without it, every d-pad drag that happened to finish low on the screen
+    // would shred the piece, which is the opposite of what the strip is for.
+    this.grabbed = !!this.grip &&
+      (onFootprint(this.grip, this.cell) || nearFootprint(this.grip, this._layout(), lx, ly));
   };
 
   Touch.prototype._move = function (lx, ly, t) {
@@ -473,25 +534,38 @@ var CW_INPUT = (function () {
   Touch.prototype._up = function (lx, ly, t) {
     if (!this.active) return;
     var held = t - this.downT, drag = this.dragging, hit = this.hit, cell = this.cell;
-    var grip = this.grip;
+    var grip = this.grip, grabbed = this.grabbed;
     // The DOWN point, kept for the same reason the CELL is resolved on the way
     // down: that is where the finger landed, and the pad below has to measure
     // against the aim rather than the release.
     var px = this.downX, py = this.downY, L = this._layout();
     this._clear();
-    // A drag already said everything it had to say, one `to` at a time, and a
-    // press held past TAP_TIME was someone thinking rather than tapping.
-    if (drag) return;
+    // THE DRAG HE ASKED FOR (EVRTEK 2026-09-14): take hold of the piece, pull
+    // it down onto the shredder or a bin, let go. This is the one gesture in
+    // the game that cares where the finger ENDS, so the rects are read again
+    // here — at the release point — rather than remembered from the press.
+    // The piece will have wandered around the board on the way, because the
+    // drag is still a d-pad and still emitted its `to`s; that does not matter,
+    // because what happens next removes it from the board's hands entirely.
+    if (drag) {
+      if (grabbed) {
+        var onTarget = stripCmd(hitAt(this.opts.hits ? (this.opts.hits() || []) : [], lx, ly));
+        if (onTarget) this._push(onTarget);
+      }
+      return;
+    }
+    // A press held past TAP_TIME was someone thinking rather than tapping.
     // A button is a button however long it was held — plenty of people press
     // slowly (Tron's patrol). The board keeps the tap window, where a long
     // press is someone thinking.
     if (!hit && held > TAP_TIME) return;
     if (hit) {
-      // CUT is the only play-screen button left, and it becomes the command
-      // the rules already understand, so the game never learns there are
-      // buttons at all. Everything else is a front-end control and travels by
-      // name.
-      if (hit.id === 'cut') this._push({ destroy: true });
+      // CUT and the three strip targets become the commands the rules already
+      // understand, so the game never learns there are buttons at all.
+      // Everything else is a front-end control and travels by name.
+      var tapped = stripCmd(hit);
+      if (tapped) this._push(tapped);
+      else if (hit.id === 'cut') this._push({ destroy: true });
       else this._push({ pick: hit.id });
       return;
     }
