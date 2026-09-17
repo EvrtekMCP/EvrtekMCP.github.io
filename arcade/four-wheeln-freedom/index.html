@@ -20,16 +20,16 @@
     <meta property="og:image" content="https://reimertek.com/arcade/four-wheeln-freedom/og-four-wheeln-freedom.png">
     <meta name="twitter:card" content="summary_large_image">
     <!-- Arcade rule (2026-08-18): every asset URL carries the version, bumped with each release, so returning players never see last year's toy. -->
-    <link rel="stylesheet" href="TemplateData/style.css?v=0.6.1">
+    <link rel="stylesheet" href="TemplateData/style.css?v=0.6.2">
   </head>
   <body>
     <div id="unity-container">
       <canvas id="unity-canvas" width="960" height="600" tabindex="-1"></canvas>
       <div id="unity-loading">
-        <img id="unity-wordmark" src="TemplateData/wordmark.png?v=0.6.1" alt="4 Wheel'n Freedom">
+        <img id="unity-wordmark" src="TemplateData/wordmark.png?v=0.6.2" alt="4 Wheel'n Freedom">
         <div class="bar"><i id="unity-progress"></i></div>
         <div id="unity-loading-text">loading the playground</div>
-        <div id="unity-loading-note">v0.6.1 · beta · best on a phone, held upright</div>
+        <div id="unity-loading-note">v0.6.2 · beta · best on a phone, held upright</div>
       </div>
       <div id="unity-warning"></div>
     </div>
@@ -57,7 +57,7 @@
         updateBannerVisibility();
       }
 
-      var stamp = "?v=0.6.1";
+      var stamp = "?v=0.6.2";
       var buildUrl = "Build";
       var loaderUrl = buildUrl + "/Web.loader.js" + stamp;
       var config = {
@@ -69,7 +69,7 @@
         fullscreenElementID: "unity-container",
         companyName: "Reimertek",
         productName: "4 Wheel'n Freedom",
-        productVersion: "0.6.1",
+        productVersion: "0.6.2",
         showBanner: unityShowBanner,
       };
       // Phones render at two device pixels per CSS pixel at most: a 3x screen is not worth the fill rate for a low-poly game.
