@@ -1,13 +1,15 @@
 # CREDITS
 
-CROSSWIRE ships **no third-party code, no image files and no audio files**.
-Every picture is drawn on the canvas at run time and every sound — the
-effects, the callouts and the three scores — is synthesised with the
-browser's built-in Web Audio API. Nothing is downloaded, hotlinked or sampled.
-The type is whatever monospace the device already has.
+CROSSWIRE ships **no third-party code and no audio files**. Every picture in
+the game is drawn on the canvas at run time and every sound — the effects, the
+callouts and the three scores — is synthesised with the browser's built-in Web
+Audio API. The only image files are the cabinet's icons and its share card,
+which Yori drew. Nothing is downloaded, hotlinked or sampled. The type is
+whatever monospace the device already has.
 
 Design: Evrtek's own concept and a hundred and eleven rulings, most of them made after playing it.
 Build: CLU, with Opus agents on the mechanics and Tron on patrol.
+Cabinet art, the wire wordmark, the icons and the share card: Yori.
 
 Reference material consulted (techniques studied, no code or assets copied):
 
