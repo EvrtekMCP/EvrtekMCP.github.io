@@ -3,6 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Home Screen fullscreen (2026-09-19). iOS 26 asks for nothing — it opens any
+     added site as a web app — but iOS 25 and earlier only drop Safari's toolbars
+     for a page that declares itself one. No status-bar-style and no viewport
+     change on purpose: the defaults keep the bars opaque and the layout clear of
+     the notch, which is how this already looks on 26. -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="8-Bit Gambit">
 <title>8-BIT GAMBIT</title>
 <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABMElEQVR4AcyVTQ4BQRBGi72EEGtWDmDpAuydwAWcxQWcwJ4LWDqAFWshJA5AXuJLpJOKv5YuyUubmu5W35sxU7XCn/gNNOud2zO5hcU1oNS77crgeN4ZqK7xVyPxDCgZqUEJr4etATXABmi+5n06xjGgJKSDV0mwAVgArdf4ar3OxzGgjjTW2j0DHXsjFgBrgA1410R5A+qU7oHUQCrwknt11sBiPjXQ/t788ga8zrq9oYF3Plc9jgGuO7QaXYPTZV8BLMC7iTfrpcF4MjNgD/DWlzdAd1B5fPgOXse56+UNeIn0/+XZAN68X+txDXybrD8YGfAUBJn09otnQB1z3cHrPFc9noFcybgPgPsAZDbdP44Bdch1h7TTfx3HMaCEvPlywhsRtH86/t1A+oPp8R0AAP//YN2WeAAAAAZJREFUAwCt4sb183LYIwAAAABJRU5ErkJggg==">
 <link rel="stylesheet" href="css/font.css">

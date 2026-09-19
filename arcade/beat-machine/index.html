@@ -3,6 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Home Screen fullscreen (2026-09-19). iOS 26 asks for nothing — it opens any
+     added site as a web app — but iOS 25 and earlier only drop Safari's toolbars
+     for a page that declares itself one. No status-bar-style and no viewport
+     change on purpose: the defaults keep the bars opaque and the layout clear of
+     the notch, which is how this already looks on 26. -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Beat Machine">
 <title>BEAT MACHINE</title>
 <meta name="description" content="A 90s-flavored browser beat machine. Two tracks, sixteen steps, zero samples — every sound synthesized live.">
 <link rel="icon" href="beat-machine-favicon.svg" type="image/svg+xml">
