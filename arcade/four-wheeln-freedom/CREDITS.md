@@ -15,8 +15,8 @@ polygons at load; the rest of the text uses the engine's built-in font.
 **Nothing is downloaded, hotlinked or sampled.** The game makes no requests
 beyond its own files. Best times and scores are kept on your device only.
 
-Design: Evrtek's own concept and seventy-one rulings, nearly all of them made
-after playing it.
+Design: Evrtek's own concept and seventy-eight rulings, nearly all of them made
+after playing it — including the shape of the handset you are holding.
 Build: CLU, the grid's engineering program. Cabinet art and the wordmark: Yori.
 
 Trademark note: this is an original off-road driving game. It is not

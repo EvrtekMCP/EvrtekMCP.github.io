@@ -6,8 +6,24 @@
     <title>4 Wheel'n Freedom — beta</title>
     <meta name="theme-color" content="#0b0810">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="4 Wheel'n Freedom">
+    <!-- Added to the Home Screen the game runs with no browser chrome at all, which is the
+         only way to get fullscreen on an iPhone: Safari has no Fullscreen API there, and
+         WebKit closed that request WONTFIX in January 2026. The cost is that the canvas now
+         reaches the physical edges, under the Dynamic Island and the home indicator — hence
+         the probe below, which is the only way the page can tell Unity where they are. -->
+    <style>
+      #safe-probe {
+        position: fixed; top: 0; left: 0; width: 0; height: 0;
+        visibility: hidden; pointer-events: none;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-right: env(safe-area-inset-right, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        padding-left: env(safe-area-inset-left, 0px);
+      }
+    </style>
     <!-- Cabinet icons (Yori, 2026-09-13). Local files, relative paths: the game makes no external requests. -->
     <link rel="icon" href="four-wheeln-freedom-favicon.svg" type="image/svg+xml">
     <link rel="icon" href="four-wheeln-freedom-favicon.ico" sizes="any">
@@ -20,19 +36,20 @@
     <meta property="og:image" content="https://reimertek.com/arcade/four-wheeln-freedom/og-four-wheeln-freedom.png">
     <meta name="twitter:card" content="summary_large_image">
     <!-- Arcade rule (2026-08-18): every asset URL carries the version, bumped with each release, so returning players never see last year's toy. -->
-    <link rel="stylesheet" href="TemplateData/style.css?v=0.6.2">
+    <link rel="stylesheet" href="TemplateData/style.css?v=0.7.0">
   </head>
   <body>
     <div id="unity-container">
       <canvas id="unity-canvas" width="960" height="600" tabindex="-1"></canvas>
       <div id="unity-loading">
-        <img id="unity-wordmark" src="TemplateData/wordmark.png?v=0.6.2" alt="4 Wheel'n Freedom">
+        <img id="unity-wordmark" src="TemplateData/wordmark.png?v=0.7.0" alt="4 Wheel'n Freedom">
         <div class="bar"><i id="unity-progress"></i></div>
         <div id="unity-loading-text">loading the playground</div>
-        <div id="unity-loading-note">v0.6.2 · beta · best on a phone, held upright</div>
+        <div id="unity-loading-note">v0.7.0 · beta · best on a phone, held upright</div>
       </div>
       <div id="unity-warning"></div>
     </div>
+    <div id="safe-probe"></div>
     <script>
       var canvas = document.querySelector("#unity-canvas");
       var loading = document.querySelector("#unity-loading");
@@ -57,7 +74,7 @@
         updateBannerVisibility();
       }
 
-      var stamp = "?v=0.6.2";
+      var stamp = "?v=0.7.0";
       var buildUrl = "Build";
       var loaderUrl = buildUrl + "/Web.loader.js" + stamp;
       var config = {
@@ -69,11 +86,59 @@
         fullscreenElementID: "unity-container",
         companyName: "Reimertek",
         productName: "4 Wheel'n Freedom",
-        productVersion: "0.6.2",
+        productVersion: "0.7.0",
         showBanner: unityShowBanner,
       };
       // Phones render at two device pixels per CSS pixel at most: a 3x screen is not worth the fill rate for a low-poly game.
       config.devicePixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+
+      // ---- the safe area, from the page to the game
+      // Unity's Screen.safeArea is blind in a WebGL build: the browser never tells the player
+      // what hardware it is drawn behind, so it reports the whole screen and the HUD ends up
+      // under the Island. CSS does know, via env(safe-area-inset-*), but only as a style value
+      // — so a zero-sized probe wears them as padding and we read them back off it.
+      function startSafeAreaFeed(unityInstance) {
+        var probe = document.querySelector("#safe-probe");
+        if (!probe) { return; }
+        var last = "";
+
+        function push() {
+          var cs = getComputedStyle(probe);
+          // CSS pixels to the canvas pixels Unity counts in. Measured rather than assumed:
+          // config.devicePixelRatio caps the ratio at 2, so window.devicePixelRatio would be
+          // wrong on a 3x phone.
+          var ratio = (canvas.clientWidth > 0) ? (canvas.width / canvas.clientWidth) : 1;
+          var v = [cs.paddingLeft, cs.paddingTop, cs.paddingRight, cs.paddingBottom].map(function (p) {
+            var n = parseFloat(p);
+            return Math.max(0, Math.round((isNaN(n) ? 0 : n) * ratio));
+          }).join(",");
+          if (v === last) { return; }
+          last = v;
+          try {
+            unityInstance.SendMessage("SafeAreaBridge", "SetInsets", v);
+          } catch (e) {
+            // The bridge object arrives with the first scene. Clearing `last` lets the next
+            // tick try again rather than latching a value the game never received.
+            last = "";
+          }
+        }
+
+        // iOS reports stale insets for a moment after a rotate, and the visual viewport settles
+        // later still, so each trigger is followed up rather than trusted first time.
+        function pushSoon() {
+          push();
+          setTimeout(push, 120);
+          setTimeout(push, 400);
+          setTimeout(push, 900);
+        }
+
+        pushSoon();
+        window.addEventListener("resize", pushSoon);
+        window.addEventListener("orientationchange", pushSoon);
+        if (window.visualViewport) {
+          window.visualViewport.addEventListener("resize", push);
+        }
+      }
 
       var script = document.createElement("script");
       script.src = loaderUrl;
@@ -87,6 +152,7 @@
           loading.style.opacity = "0";
           setTimeout(function () { loading.style.display = "none"; }, 450);
           canvas.focus();
+          startSafeAreaFeed(unityInstance);
         }).catch(function (message) {
           loadingText.textContent = "the playground did not load: " + message;
           loadingText.className = "error";
