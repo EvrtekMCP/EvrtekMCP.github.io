@@ -17,7 +17,7 @@ var GAME_PROMPT = 'PLAYER 1 - START';
 var GAME_PROMPT_TOUCH = 'TOUCH TO START';
 var GAME_MAKER = 'EVRTEK';
 
-var GAME_VERSION = '0.10.0';
+var GAME_VERSION = '0.10.1';
 
 // Deliberately generic, for the same reason.
 var SAVE_KEY_TUNE = 'mailrun.tune.v1';

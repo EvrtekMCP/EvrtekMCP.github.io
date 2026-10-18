@@ -28,7 +28,7 @@
 <meta property="og:url" content="https://reimertek.com/arcade/haines-tales/">
 <meta property="og:image" content="https://reimertek.com/arcade/haines-tales/og-haines-tales.png">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="css/game.css?v=0.10.0">
+<link rel="stylesheet" href="css/game.css?v=0.10.1">
 </head>
 <body>
 
@@ -47,15 +47,15 @@
 
 <!-- Classic scripts, not modules: ES module imports are blocked from a file://
      URL, and every Arcade cabinet has to run straight off disk. -->
-<script src="js/version.js?v=0.10.0"></script>
-<script src="js/audio.js?v=0.10.0"></script>
-<script src="js/tune.js?v=0.10.0"></script>
-<script src="js/input.js?v=0.10.0"></script>
-<script src="js/sprites.js?v=0.10.0"></script>
-<script src="js/touchui.js?v=0.10.0"></script>
-<script src="js/world.js?v=0.10.0"></script>
-<script src="js/levels.js?v=0.10.0"></script>
-<script src="js/enemy.js?v=0.10.0"></script>
+<script src="js/version.js?v=0.10.1"></script>
+<script src="js/audio.js?v=0.10.1"></script>
+<script src="js/tune.js?v=0.10.1"></script>
+<script src="js/input.js?v=0.10.1"></script>
+<script src="js/sprites.js?v=0.10.1"></script>
+<script src="js/touchui.js?v=0.10.1"></script>
+<script src="js/world.js?v=0.10.1"></script>
+<script src="js/levels.js?v=0.10.1"></script>
+<script src="js/enemy.js?v=0.10.1"></script>
 <!-- Levels are DATA. One classic script per level, each a single registerLevel()
      call around pure JSON, because fetch() of a .json fails from a file:// URL
      and every Arcade cabinet has to run off disk. Add a level by adding a line.
@@ -65,7 +65,7 @@
      level the game boots into (BOOT_LEVEL, js/main.js), and tools/bundle.js
      inlines exactly the levels named here, so the single-file build carries
      this one and no other. levels/level1.js and the rest stay in the repo. -->
-<script src="levels/level-1-1.js?v=0.10.0"></script>
+<script src="levels/level-1-1.js?v=0.10.1"></script>
 <!-- ?level=<id> also loads levels/<id>.js, so a level the editor has just saved
      plays without anyone adding a line here. Same id rule as the dev server's:
      lower-case letters, digits, hyphens. Cache-busted, so a fresh save is read. -->
@@ -76,15 +76,15 @@
     document.write("<script src='levels/" + m[1] + ".js?t=" + (+new Date()) + "'><\/script>");
 })();
 </script>
-<script src="js/items.js?v=0.10.0"></script>
-<script src="js/player.js?v=0.10.0"></script>
-<script src="js/stage.js?v=0.10.0"></script>
-<script src="js/render.js?v=0.10.0"></script>
-<script src="js/letterforms.js?v=0.10.0"></script>
-<script src="js/title.js?v=0.10.0"></script>
-<script src="js/tally.js?v=0.10.0"></script>
-<script src="js/hud.js?v=0.10.0"></script>
-<script src="js/menu.js?v=0.10.0"></script>
-<script src="js/main.js?v=0.10.0"></script>
+<script src="js/items.js?v=0.10.1"></script>
+<script src="js/player.js?v=0.10.1"></script>
+<script src="js/stage.js?v=0.10.1"></script>
+<script src="js/render.js?v=0.10.1"></script>
+<script src="js/letterforms.js?v=0.10.1"></script>
+<script src="js/title.js?v=0.10.1"></script>
+<script src="js/tally.js?v=0.10.1"></script>
+<script src="js/hud.js?v=0.10.1"></script>
+<script src="js/menu.js?v=0.10.1"></script>
+<script src="js/main.js?v=0.10.1"></script>
 </body>
 </html>

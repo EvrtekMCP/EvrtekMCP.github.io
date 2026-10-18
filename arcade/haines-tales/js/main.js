@@ -300,7 +300,7 @@ function boot() {
     if (!document.hidden) { lastT = performance.now(); acc = 0; }
   });
 
-  document.title = GAME_TITLE + ' — control sandbox';
+  document.title = GAME_TITLE + ' — demo';
   lastT = performance.now();
   requestAnimationFrame(frame);
 }
