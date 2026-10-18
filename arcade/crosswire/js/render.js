@@ -2,8 +2,8 @@
 // CROSSWIRE — drawing.
 //
 // Everything is drawn from arithmetic. No image files, no font files, no
-// external request: the same house rule the rest of the Arcade ships under,
-// and the reason this runs from a file:// URL with nothing installed.
+// external request: the house rule this cabinet ships under, and the reason
+// it runs from a file:// URL with nothing installed.
 var CW_RENDER = (function () {
 
   var C = CW_COLOUR;

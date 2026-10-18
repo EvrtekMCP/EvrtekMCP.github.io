@@ -1,6 +1,6 @@
 // PADDLER'S PARADISE — SPRITES & PALETTE (2x set, v0.2.0)
 // ---------------------------------------------------------------------------
-// Every sprite is a string map drawn in code (house rule: sprite maps +
+// Every sprite is a string map drawn in code (this game's rule: sprite maps +
 // nearest-neighbour upscale, no outside art). One character = one TEXEL, and
 // as of v0.2.0 there are two texels to a world unit — Evrtek's ruling that
 // the game was "maybe too blocky": same framing, double the detail. The
