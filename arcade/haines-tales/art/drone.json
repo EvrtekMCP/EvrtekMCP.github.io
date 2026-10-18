@@ -1,0 +1,20 @@
+{
+  "sheet": "drone.png",
+  "cell": [
+    64,
+    48
+  ],
+  "ruler": {
+    "area": 178.42,
+    "cap": 30.58,
+    "baseScale": 0.18841
+  },
+  "clips": [
+    "drone.climb",
+    "drone.die",
+    "drone.dive",
+    "drone.hover",
+    "drone.hurt",
+    "drone.lock"
+  ]
+}

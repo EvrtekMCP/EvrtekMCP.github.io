@@ -1,0 +1,21 @@
+{
+  "sheet": "boxbot.png",
+  "cell": [
+    64,
+    88
+  ],
+  "ruler": {
+    "area": 260.37,
+    "cap": 49.71,
+    "baseScale": 0.18975
+  },
+  "clips": [
+    "boxbot.chew",
+    "boxbot.die",
+    "boxbot.eat",
+    "boxbot.hurt",
+    "boxbot.idle",
+    "boxbot.spit",
+    "boxbot.walk"
+  ]
+}

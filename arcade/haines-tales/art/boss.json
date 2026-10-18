@@ -1,0 +1,24 @@
+{
+  "sheet": "boss.png",
+  "cell": [
+    112,
+    144
+  ],
+  "ruler": {
+    "area": 290.77,
+    "cap": 65.02,
+    "baseScale": 0.30069
+  },
+  "clips": [
+    "boss.bomb",
+    "boss.die",
+    "boss.hurt",
+    "boss.idle",
+    "boss.mount",
+    "boss.phase",
+    "boss.ride",
+    "boss.summon",
+    "boss.throw",
+    "boss.walk"
+  ]
+}

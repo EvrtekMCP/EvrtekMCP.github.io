@@ -1,0 +1,33 @@
+{
+  "sheet": "carrier.png",
+  "cell": [
+    96,
+    112
+  ],
+  "ruler": {
+    "area": 288.49,
+    "cap": 101.02,
+    "baseScale": 0.20311
+  },
+  "clips": [
+    "carrier.crawl",
+    "carrier.crouch",
+    "carrier.die",
+    "carrier.doubleJump",
+    "carrier.drink",
+    "carrier.exitTruck",
+    "carrier.fall",
+    "carrier.hurt",
+    "carrier.idle",
+    "carrier.jump",
+    "carrier.land",
+    "carrier.run",
+    "carrier.throw",
+    "carrier.throwDown",
+    "carrier.throwUp",
+    "carrier.victory",
+    "carrier.walk",
+    "carrier.wallKick",
+    "carrier.wallSlide"
+  ]
+}

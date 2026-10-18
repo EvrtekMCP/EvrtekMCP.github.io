@@ -1,0 +1,20 @@
+{
+  "sheet": "gnome.png",
+  "cell": [
+    48,
+    64
+  ],
+  "ruler": {
+    "area": 259.33,
+    "cap": 52.5,
+    "baseScale": 0.11106
+  },
+  "clips": [
+    "gnome.die",
+    "gnome.hop",
+    "gnome.hurt",
+    "gnome.statue",
+    "gnome.wake",
+    "gnome.walk"
+  ]
+}

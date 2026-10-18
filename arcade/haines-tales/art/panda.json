@@ -1,0 +1,21 @@
+{
+  "sheet": "panda.png",
+  "cell": [
+    72,
+    56
+  ],
+  "ruler": {
+    "area": 253.17,
+    "cap": 79.15,
+    "baseScale": 0.1741
+  },
+  "clips": [
+    "panda.die",
+    "panda.grab",
+    "panda.hurt",
+    "panda.lidHit",
+    "panda.lunge",
+    "panda.patrol",
+    "panda.walk"
+  ]
+}

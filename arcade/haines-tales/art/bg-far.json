@@ -1,0 +1,10 @@
+{
+  "sheet": "bg-far.png",
+  "cell": [
+    1024,
+    512
+  ],
+  "clips": [
+    "bg.far"
+  ]
+}

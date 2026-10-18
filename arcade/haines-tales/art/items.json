@@ -1,0 +1,61 @@
+{
+  "sheet": "items.png",
+  "clips": [
+    "item.thick",
+    "item.bag",
+    "item.express",
+    "item.rye",
+    "item.gummy",
+    "item.package"
+  ],
+  "cells": [
+    {
+      "clip": "item.thick",
+      "x": 0,
+      "y": 0,
+      "w": 40,
+      "h": 40,
+      "frames": 4
+    },
+    {
+      "clip": "item.bag",
+      "x": 0,
+      "y": 40,
+      "w": 40,
+      "h": 40,
+      "frames": 4
+    },
+    {
+      "clip": "item.express",
+      "x": 0,
+      "y": 80,
+      "w": 40,
+      "h": 40,
+      "frames": 4
+    },
+    {
+      "clip": "item.rye",
+      "x": 0,
+      "y": 120,
+      "w": 40,
+      "h": 40,
+      "frames": 4
+    },
+    {
+      "clip": "item.gummy",
+      "x": 0,
+      "y": 160,
+      "w": 40,
+      "h": 40,
+      "frames": 4
+    },
+    {
+      "clip": "item.package",
+      "x": 0,
+      "y": 200,
+      "w": 40,
+      "h": 40,
+      "frames": 4
+    }
+  ]
+}

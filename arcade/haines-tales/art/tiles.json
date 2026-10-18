@@ -1,0 +1,19 @@
+{
+  "sheet": "tiles.png",
+  "cell": [
+    32,
+    32
+  ],
+  "clips": [
+    "tile.street",
+    "tile.kerb",
+    "tile.pavement",
+    "tile.grass",
+    "tile.dirt",
+    "tile.brick",
+    "tile.break",
+    "tile.oneway",
+    "tile.hazard",
+    "tile.roof"
+  ]
+}

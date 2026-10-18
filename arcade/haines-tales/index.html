@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- viewport-fit=cover, unlike the four cabinets patched on 2026-09-19: this
+     layout reads env(safe-area-inset-*) and places the controller around the
+     notch itself, so it wants the edge-to-edge viewport rather than avoiding it. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<!-- Home Screen fullscreen. iOS 26 opens any added site as a web app; iOS 25
+     and earlier only drop Safari's toolbars for a page that declares itself one. -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- The name in static tags (2026-10-18, cabinet 06): Haines said yes on 10-17,
+     and a Home Screen icon, a browser tab before boot and a link preview cannot
+     wait for js/version.js. GAME_TITLE still renames everything the game draws. -->
+<title>HAINES TALES — demo</title>
+<meta name="apple-mobile-web-app-title" content="Haines Tales">
+<!-- Cabinet icons and share card (Yori, 2026-10-18). Local files, relative
+     paths: the game still makes no external request and runs from a file. -->
+<link rel="icon" href="haines-tales-favicon.svg" type="image/svg+xml">
+<link rel="icon" href="haines-tales-favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="haines-tales-touch-icon.png">
+<!-- Share card. Meta only: scrapers fetch these, the page never does. -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="HAINES TALES">
+<meta property="og:description" content="A mail carrier against the whole neighbourhood: dogs, a drone, a gnome, a trash panda, a mailbox that bites, and the Postmaster. Demo, level 1-1.">
+<meta property="og:url" content="https://reimertek.com/arcade/haines-tales/">
+<meta property="og:image" content="https://reimertek.com/arcade/haines-tales/og-haines-tales.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="css/game.css?v=0.10.0">
+</head>
+<body>
+
+<!-- A zero-sized element wearing the safe-area insets as padding. Reading them
+     back with getComputedStyle is the only way JS can see the notch. -->
+<div id="safe-probe" aria-hidden="true"></div>
+
+<!-- The game canvas IS the pixel backbuffer, upscaled by the GPU. Its height is
+     a tuning slider (248 by default), so these attributes are only a first frame. -->
+<canvas id="game" width="384" height="216" aria-label="Control sandbox"></canvas>
+
+<!-- The controller and labels, at device resolution so they stay crisp. -->
+<canvas id="ui"></canvas>
+
+<aside id="panel" aria-label="Tuning"></aside>
+
+<!-- Classic scripts, not modules: ES module imports are blocked from a file://
+     URL, and every Arcade cabinet has to run straight off disk. -->
+<script src="js/version.js?v=0.10.0"></script>
+<script src="js/audio.js?v=0.10.0"></script>
+<script src="js/tune.js?v=0.10.0"></script>
+<script src="js/input.js?v=0.10.0"></script>
+<script src="js/sprites.js?v=0.10.0"></script>
+<script src="js/touchui.js?v=0.10.0"></script>
+<script src="js/world.js?v=0.10.0"></script>
+<script src="js/levels.js?v=0.10.0"></script>
+<script src="js/enemy.js?v=0.10.0"></script>
+<!-- Levels are DATA. One classic script per level, each a single registerLevel()
+     call around pure JSON, because fetch() of a .json fails from a file:// URL
+     and every Arcade cabinet has to run off disk. Add a level by adding a line.
+
+     THE DEMO SHIPS ONE (Evrtek, 2026-10-17: "only the one level. Just to let
+     people test it out"): his HAINES AVENUE, made in the editor. It is the
+     level the game boots into (BOOT_LEVEL, js/main.js), and tools/bundle.js
+     inlines exactly the levels named here, so the single-file build carries
+     this one and no other. levels/level1.js and the rest stay in the repo. -->
+<script src="levels/level-1-1.js?v=0.10.0"></script>
+<!-- ?level=<id> also loads levels/<id>.js, so a level the editor has just saved
+     plays without anyone adding a line here. Same id rule as the dev server's:
+     lower-case letters, digits, hyphens. Cache-busted, so a fresh save is read. -->
+<script>
+(function () {
+  var m = /[?&]level=([a-z0-9-]+)(&|$)/.exec(location.search);
+  if (m && m[1] !== 'level-1-1')
+    document.write("<script src='levels/" + m[1] + ".js?t=" + (+new Date()) + "'><\/script>");
+})();
+</script>
+<script src="js/items.js?v=0.10.0"></script>
+<script src="js/player.js?v=0.10.0"></script>
+<script src="js/stage.js?v=0.10.0"></script>
+<script src="js/render.js?v=0.10.0"></script>
+<script src="js/letterforms.js?v=0.10.0"></script>
+<script src="js/title.js?v=0.10.0"></script>
+<script src="js/tally.js?v=0.10.0"></script>
+<script src="js/hud.js?v=0.10.0"></script>
+<script src="js/menu.js?v=0.10.0"></script>
+<script src="js/main.js?v=0.10.0"></script>
+</body>
+</html>

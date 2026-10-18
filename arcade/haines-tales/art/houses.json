@@ -1,0 +1,10 @@
+{
+  "sheet": "houses.png",
+  "cell": [
+    128,
+    216
+  ],
+  "clips": [
+    "prop.house"
+  ]
+}

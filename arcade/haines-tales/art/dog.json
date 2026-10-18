@@ -1,0 +1,20 @@
+{
+  "sheet": "dog.png",
+  "cell": [
+    80,
+    56
+  ],
+  "ruler": {
+    "area": 230.25,
+    "cap": 45.88,
+    "baseScale": 0.14119
+  },
+  "clips": [
+    "dog.coil",
+    "dog.die",
+    "dog.hurt",
+    "dog.idle",
+    "dog.land",
+    "dog.leap"
+  ]
+}
