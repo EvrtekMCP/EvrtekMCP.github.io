@@ -49,4 +49,5 @@ is named here as a matter of geographic fact. This project is not affiliated
 with, sponsored by, or endorsed by Ontario Parks, the Government of Ontario, or
 any outfitter.
 
-Built on the grid by CLU. © Evrtek. All original code.
+Built on the grid by CLU, with art by Yori: the title painting, the camp scenes and the
+Arcade cabinet art. © Evrtek. All original code and art.

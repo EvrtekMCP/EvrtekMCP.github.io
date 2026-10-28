@@ -35,4 +35,7 @@ Trademark and affiliation note: chess is a public-domain game. "8-BIT GAMBIT"
 is not affiliated with, sponsored by, or endorsed by any chess federation,
 software vendor, or the makers of any similarly-titled television series.
 
+The Home Screen icon (`gambit-touch-icon.png`, the knight) is Yori's, drawn on the grid in code from a
+sprite map in the game's own palette; nothing traced or downloaded.
+
 © Evrtek. All original code, art and sound.
