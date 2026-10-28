@@ -173,7 +173,8 @@ var CW_POWER = (function () {
     // old fallback was board order, which reads top to bottom while the game
     // reads left to right. Column order is the direction the player is actually
     // looking. Junctions the power never reaches settle last: they have nothing
-    // to say either way.
+    // to say either way. (0.19.1 adjusts this order in ONE case, after a first
+    // solve — see waiting() in solve().)
     var order = juncs.slice();
     order.sort(function (a, b) {
       var da = hops[a.key] === undefined ? 1e9 : hops[a.key];
@@ -200,7 +201,21 @@ var CW_POWER = (function () {
       if (ds) for (var de in ds) if (ds.hasOwnProperty(de)) jw.wayHops[de] = -1;
     }
 
+    // Which junctions touch each stretch of plain wire, so a mixer can ask who
+    // is on the far side of one of its ways (0.19.1, waiting() in solve()).
+    var touch = {};
+    for (var tq = 0; tq < juncs.length; tq++) {
+      var tj = juncs[tq];
+      for (var tw = 0; tw < tj.node.e.length; tw++) {
+        var tb2 = tj.nb[tj.node.e[tw]];
+        if (!tb2 || !tb2.net) continue;
+        var tr = root(tb2.net);
+        (touch[tr] = touch[tr] || []).push(tj.key);
+      }
+    }
+
     return { root: root, plains: plains, juncs: juncs, juncBy: juncBy, order: order,
+             touch: touch,
              hops: hops, netSources: netSources, juncSources: juncSources, at: at };
   }
 
@@ -218,16 +233,51 @@ var CW_POWER = (function () {
   // it, and everything downstream falls in behind. Deterministic, and with a
   // row of junctions it lands on the reading a player traces with a finger:
   // the trunk feeds the branch, not the other way round.
+  //
+  // 0.19.1, EVRTEK 2026-10-27 ("patch it all", on Quorra's 09-16 replay, option
+  // 3): A MIXER SHORT OF A COLOUR WAITS FOR THE SPLITTER BESIDE IT.
+  //
+  // The replay caught a mixer fed red from the west and yellow from below,
+  // through a valve used as a corner. Both junctions were one hop from a source
+  // and sat in the same column, so the ROW decided who went first: the mixer,
+  // being higher, settled first, saw only red, poured red down the stretch that
+  // was meant to be its second input, and the valve took that stretch as an
+  // input of its own. Bulb: RED. Built the other way up the valve went first
+  // and the bulb lit ORANGE. Same pieces, same distances, opposite answers, and
+  // nothing on the screen to say why.
+  //
+  // So the board is solved once in the order above, and then each MIXER that
+  // came out holding ONE colour is checked: is it pouring that colour into a
+  // stretch where a SPLITTER the SAME distance from the power is waiting with a
+  // DIFFERENT colour, and lost the race to it only on board position? If so the
+  // mixer settles again just after that splitter, the splitter offers its
+  // colour, the mixer takes it in, and the board is solved once more. Where to
+  // stand on the board stops mattering for that pair; nothing else moves.
+  //
+  // WHAT IS LEFT ALONE, on purpose, each measured against the 0.19.0 solver on
+  // 20,000 generated boards (WORKBENCH 0.19.1):
+  //   - a mixer that already mixes two colours. It is not waiting for anything,
+  //     and letting a splitter go first only handed it a third colour and MUD
+  //     (367 burnt mixers in the blunter version of this rule; 1 in this one).
+  //   - a mixer NEARER the power than the splitter. His 09-07 ruling, shortest
+  //     route first, gives the nearer junction the stretch, and overturning that
+  //     is his call, not a patch's. This was the smaller reading of option 3.
+  //   - two mixers, or two splitters: same kind, same rule as before.
   function solve(board) {
     var g = build(board), i, j, k, e;
 
-    var st = {}, rank = {};
-    for (i = 0; i < g.juncs.length; i++) {
-      st[g.juncs[i].key] = { ins: {}, got: {}, blend: 0, bad: false };
+    // The settle state, the settle order, and where each junction sits in it,
+    // so a net fed by two junctions takes the colour of the one the power
+    // reached first. Built by fresh() because 0.19.1 may solve twice.
+    var st = {}, rank = {}, order = g.order;
+    function fresh(ord) {
+      order = ord; st = {}; rank = {};
+      for (var fi = 0; fi < g.juncs.length; fi++) {
+        st[g.juncs[fi].key] = { ins: {}, got: {}, blend: 0, bad: false };
+      }
+      for (fi = 0; fi < order.length; fi++) rank[order[fi].key] = fi + 1;
     }
-    // Where each junction sits in the settle order, so a net fed by two
-    // junctions takes the colour of the one the power reached first.
-    for (i = 0; i < g.order.length; i++) rank[g.order[i].key] = i + 1;
+    fresh(g.order);
     var netColour = {}, netShort = {}, netContrib = {};
 
     function portOut(jkey, edge) {
@@ -351,15 +401,58 @@ var CW_POWER = (function () {
       return !same;
     }
 
-    for (var pass = 0; pass < 24; pass++) {
-      var changed = false;
-      for (i = 0; i < g.order.length; i++) {
-        resolveNets();
-        if (settle(g.order[i])) changed = true;
+    function sweep() {
+      for (var pass = 0; pass < 24; pass++) {
+        var changed = false;
+        for (var si = 0; si < order.length; si++) {
+          resolveNets();
+          if (settle(order[si])) changed = true;
+        }
+        if (!changed) break;
       }
-      if (!changed) break;
+      resolveNets();
     }
-    resolveNets();
+
+    // 0.19.1: the mixers that came out of the first solve holding one colour,
+    // each moved to settle just after the splitter that could have fed it. See
+    // the note above solve(). Returns the new order, or null when nothing has
+    // to move, which is every board without the pattern: those are solved once,
+    // exactly as 0.19.0 solved them.
+    function waiting() {
+      var out = order.slice(), any = false, w, m, ms, d, way, nb, cand, c, x, xs, feeder;
+      for (w = 0; w < order.length; w++) {
+        m = order[w]; ms = st[m.key];
+        if (mode(m.node) !== 'M' || ms.bad || CW_COLOUR.depth(ms.blend) !== 1) continue;
+        feeder = null;
+        for (d = 0; d < m.node.e.length; d++) {
+          way = m.node.e[d];
+          if (ms.ins[way]) continue;            // colour already arrives there
+          nb = m.nb[way];
+          if (!nb) continue;
+          if (nb.junction) cand = [nb.junction];
+          else if (g.netSources[g.root(nb.net)]) continue;
+          else cand = g.touch[g.root(nb.net)] || [];
+          for (c = 0; c < cand.length; c++) {
+            if (cand[c] === m.key) continue;
+            x = g.juncBy[cand[c]]; xs = st[x.key];
+            if (mode(x.node) === 'M') continue;                    // splitters only
+            if (g.hops[x.key] !== g.hops[m.key]) continue;         // the same distance
+            if (rank[x.key] < rank[m.key]) continue;               // it already went first
+            if (!xs.blend || xs.bad || xs.blend === ms.blend) continue;  // nothing new to give
+            if (!feeder || out.indexOf(x) > out.indexOf(feeder)) feeder = x;
+          }
+        }
+        if (!feeder) continue;
+        out.splice(out.indexOf(m), 1);
+        out.splice(out.indexOf(feeder) + 1, 0, m);
+        any = true;
+      }
+      return any ? out : null;
+    }
+
+    sweep();
+    var waited = waiting();
+    if (waited) { fresh(waited); sweep(); }
 
     // --- write back --------------------------------------------------------
     var shorts = [];

@@ -1086,6 +1086,43 @@ var CW_RENDER = (function () {
   // announcer. The voice that goes with it is stubbed in CW_VOICE.
   var CALLOUT_INK = { 1: '#2fe3e3', 2: '#ffd60a', 3: '#ff3b30' };
 
+  // 0.19.1 (Quorra's 09-16 replay, finding 13): THE BANNER AND THE CALLOUT GET
+  // A BAND EACH. A keystone sets the banner (KEYSTONE, and the bonus under it)
+  // and the line it finishes sets the callout (DOUBLE CROSSWIRE) a third of a
+  // second later, and the banner sat at a fixed 190 pixels down the grid while
+  // the callout sat at six and a half cells: on both layouts that is the same
+  // place, so the callout was drawn straight across the bonus line, twice in
+  // her runs. A level-up banner over the tenth line's callout was the same
+  // collision. The callout keeps its place in the middle of the board; the
+  // banner moves up into its own band, both measured in cells so the phone's
+  // smaller grid keeps the gap. announceBands() is the same arithmetic, said
+  // out loud for the harness, so the two can never be moved back together
+  // without a check failing.
+  var CALLOUT_ROW = 6.5;      // the callout's centre, in cells down the grid
+  var BANNER_ROW = 3.2;       // the banner's centre as it appears, in cells
+  var BANNER_RISE = 26;       // how far the banner drifts up over its life, px
+  var BANNER_HALF = 34;       // half the banner box's height, px
+  var CALLOUT_TILT = 0.13;    // radians, anticlockwise
+  var CALLOUT_POP = 1.15;     // the largest the pop-in scale ever gets
+
+  // Where each one can reach, top and bottom, in logical pixels: the banner
+  // over its whole drift, the callout at its biggest (MEGA CROSSWIRE with a
+  // source line under it, at full pop, tilted), with every glyph taken at 0.62
+  // of an em, which is wider than either monospace the page asks for.
+  function announceBands() {
+    var cs = MOBILE ? K * 0.82 : 1, size = 40 * cs, sub = 20 * cs, s = CALLOUT_POP;
+    var py = GRID_Y + CALLOUT_ROW * CELL, tilt = Math.sin(CALLOUT_TILT);
+    var callW = 'MEGA CROSSWIRE'.length * 0.62 * size * s / 2;
+    var subW = 'DOUBLE SOURCE'.length * 0.62 * sub * s / 2;
+    var by = GRID_Y + BANNER_ROW * CELL;
+    return {
+      grid: { top: GRID_Y, bottom: GRID_Y + CW_GAME.GRID_H * CELL },
+      banner: { top: by - BANNER_RISE - BANNER_HALF, bottom: by + BANNER_HALF },
+      callout: { top: py - size * s / 2 - callW * tilt,
+                 bottom: py + s * (size * 0.9 + sub / 2) + subW * tilt }
+    };
+  }
+
   function drawCallout(ctx, g) {
     if (!g.callout) return;
     var c = g.callout;
@@ -1096,11 +1133,11 @@ var CW_RENDER = (function () {
     var pop = k < 0.16 ? k / 0.16 : 1;
     var scale = 0.7 + pop * 0.45 - Math.max(0, k - 0.7) * 0.3;
     var ink = CALLOUT_INK[c.tier] || ACCENT;
-    var px = GRID_X + 5 * CELL, py = GRID_Y + 6.5 * CELL;
+    var px = GRID_X + 5 * CELL, py = GRID_Y + CALLOUT_ROW * CELL;
 
     ctx.save();
     ctx.translate(px, py);
-    ctx.rotate(-0.13);
+    ctx.rotate(-CALLOUT_TILT);
     ctx.scale(scale, scale);
     ctx.globalAlpha = Math.max(0, 1 - Math.max(0, k - 0.75) * 4);
     ctx.textAlign = 'center';
@@ -1140,10 +1177,10 @@ var CW_RENDER = (function () {
   function drawBanner(ctx, g) {
     if (!g.banner) return;
     var k = 1 - Math.max(0, g.banner.t / 2.6);
-    var y = GRID_Y + 190 - k * 26;
+    var y = GRID_Y + BANNER_ROW * CELL - k * BANNER_RISE;
     ctx.globalAlpha = Math.max(0, Math.min(1, (1 - k) * 2.4));
     ctx.fillStyle = 'rgba(8,12,20,0.85)';
-    roundRect(ctx, GRID_X - 4, y - 34, 10 * CELL + 8, 68, 6);
+    roundRect(ctx, GRID_X - 4, y - BANNER_HALF, 10 * CELL + 8, BANNER_HALF * 2, 6);
     ctx.fill();
     ctx.strokeStyle = '#ffd60a';
     ctx.lineWidth = 2;
@@ -2728,6 +2765,7 @@ var CW_RENDER = (function () {
     hits: function () { return hits; },
     setRotatePrompt: setRotatePrompt,
     helpPageCount: helpPageCount,
-    toggleSymbols: toggleSymbols
+    toggleSymbols: toggleSymbols,
+    announceBands: announceBands
   };
 })();

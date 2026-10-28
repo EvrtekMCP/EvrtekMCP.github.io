@@ -152,6 +152,17 @@ var CW_BOARD = (function () {
   // of one you have to route past. Never in the first or last column, because
   // a blocker there can permanently wall off a source or a demand, and that is
   // not difficulty.
+  //
+  // 0.19.1 (Quorra's 09-16 replay, finding 16, "landing slabs remove whole
+  // pieces"): A SLAB TAKES ONLY THE WIRE IT COVERS. It used to remove every
+  // piece it touched, whole, so a corner of a slab clipping the end of a SPAN
+  // took all five cells. Slabs now choose squares with no wire under them
+  // whenever there are any (Game._dropBlocker, wireUnder below), so this only
+  // bites when the board has no clean square left, or when the player lays
+  // wire into the blinking target while a slab is in the air. Either way the
+  // damage is the cells underneath, the same rule the destructor has kept
+  // since 09-07, and the rest of the piece stays as a stub. Another SLAB under
+  // it is still absorbed whole: half a slab is not a thing.
   Board.prototype.placeBlocker = function (x, y, size) {
     size = size || 2;
     if (x < 1 || y < 0 || x + size > this.w - 1 || y + size > this.h) return 0;
@@ -160,11 +171,26 @@ var CW_BOARD = (function () {
       for (var dx = 0; dx < size; dx++) {
         var cx = x + dx, cy = y + dy;
         var existing = this.at(cx, cy);
-        if (existing) took += this.removeAt(cx, cy);
+        if (existing && existing.dead) took += this.removeAt(cx, cy);
+        else if (existing) took += this.clearCell(cx, cy);
         this.cells[this.idx(cx, cy)] = { nodes: [], dead: true, origin: origin };
       }
     }
     return took;
+  };
+
+  // How many cells of wire a slab of this size would cover with its top-left
+  // corner here. 0.19.1: a slab lands where this is zero whenever it can.
+  Board.prototype.wireUnder = function (x, y, size) {
+    size = size || 2;
+    var n = 0, c;
+    for (var dy = 0; dy < size; dy++) {
+      for (var dx = 0; dx < size; dx++) {
+        c = this.at(x + dx, y + dy);
+        if (c && !c.dead) n++;
+      }
+    }
+    return n;
   };
 
   // Where a slab of this size could legally land, top-left corners only.
@@ -172,7 +198,9 @@ var CW_BOARD = (function () {
   // Spots that would land ON an existing slab are held back and only offered
   // if there is nowhere else: a new slab absorbs whatever it covers, so five
   // slabs landing at once could otherwise arrive as three. Wire underneath is
-  // fair game — that is the obstacle doing its job.
+  // still listed here, because this is where a slab CAN land; where it SHOULD
+  // land is the game's choice, and since 0.19.1 the game picks a square with
+  // no wire under it first (Game._dropBlocker).
   Board.prototype.blockerSpots = function (size) {
     size = size || 2;
     var out = [], last = [], x, y, dx, dy, onSlab, c;

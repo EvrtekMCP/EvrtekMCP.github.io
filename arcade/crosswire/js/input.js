@@ -579,10 +579,33 @@ var CW_INPUT = (function () {
     // the finger landed on, and a tap that drifts four pixels over a boundary
     // should not mean a different one.
     //
+    // A JUNCTION ALREADY ON THE BOARD OUTRANKS THE TURN (EVRTEK 2026-09-07:
+    // "on mobile to toggle S vs M can we just make that a single tap... it
+    // would not turn the active piece, instead only the toggle would occur").
+    // Checked before the column comparison on purpose, so a junction straight
+    // above or below the handle — which the turn rule ignores — still flips.
+    // An EXACT junction cell also outranks the PAD, so a junction sitting in
+    // the square right beside the piece is still tappable: the pad is there to
+    // catch a miss, and a finger on a junction did not miss.
+    //
+    // 0.19.1 (Quorra's 09-16 replay, finding 15): IT OUTRANKS THE PIECE'S OWN
+    // FOOTPRINT TOO. Holding a ZIG against the top edge, the ghost covers the
+    // junction the player is reaching for, and this check used to come after
+    // the footprint one, so the tap read as PLACE and failed NO ROOM. A piece
+    // can never be placed over a junction (every junction has at least three
+    // of the four ways, so even a SPAN shares an edge with it), so a finger on
+    // a junction under the ghost can only mean TUNE. The destructor keeps its
+    // tap: there it is a cut, and the guard leaves it to the rules below. So
+    // does the HANDLE: a tap there is still a commit, which the rules already
+    // read as a tune when the handle stands on a junction.
+    var onHandle = cell && cell.x === grip.handle.x && cell.y === grip.handle.y;
+    if (!grip.snip && !onHandle && inCells(grip.junctions, cell)) {
+      this._push({ tune: { x: cell.x, y: cell.y } });
+      return;
+    }
     // ON the piece is PLACE, wherever on it the finger landed: it is reported
     // as the HANDLE, because a tap on the handle is what the rules already
-    // read as commit. Tuning comes free with it — handle on a junction, tap
-    // the piece, and commit tunes. In the destructor the same tap is the cut.
+    // read as commit. In the destructor the same tap is the cut.
     if (onFootprint(grip, cell)) { this._push({ tap: { x: grip.handle.x, y: grip.handle.y } }); return; }
     // BESIDE it, in the destructor: NOTHING. The cross used to jump to the tap,
     // and a jump is precisely what EVRTEK 2026-09-07 ruled out — "I don't want
@@ -598,18 +621,7 @@ var CW_INPUT = (function () {
       }
       return;
     }
-    // A JUNCTION ALREADY ON THE BOARD OUTRANKS THE TURN (EVRTEK 2026-09-07:
-    // "on mobile to toggle S vs M can we just make that a single tap... it
-    // would not turn the active piece, instead only the toggle would occur").
-    // Checked before the column comparison on purpose, so a junction straight
-    // above or below the handle — which the turn rule ignores — still flips.
-    // An EXACT junction cell also outranks the PAD, so a junction sitting in
-    // the square right beside the piece is still tappable: the pad is there to
-    // catch a miss, and a finger on a junction did not miss.
-    if (inCells(grip.junctions, cell)) {
-      this._push({ tune: { x: cell.x, y: cell.y } });
-      return;
-    }
+    // (The junction check that sat here moved above the footprint in 0.19.1.)
     // NEAR the piece is ON it (EVRTEK 2026-09-08). Measured from the point
     // rather than the cell, so this can fire with no cell at all — a press
     // just off the edge of the grid, beside a piece in the edge column.

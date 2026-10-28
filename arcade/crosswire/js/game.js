@@ -546,6 +546,18 @@ var CW_GAME = (function () {
       return true;
     });
     if (!spots.length) return 0;
+    // 0.19.1 (Quorra's 09-16 replay, finding 16): A SLAB LANDS WHERE THERE IS
+    // NO WIRE whenever such a square exists. Spots were chosen avoiding other
+    // slabs but not wire, and his 09-14 ruling had slabs move on every surge,
+    // so a working line could be crushed by a slab it had no way to dodge. Only
+    // the squares with the least wire under them are kept, which is none on any
+    // board with a free 2x2 left, and only after the squares other slabs in the
+    // air have taken, so a volley still lands its full count. Avoiding the
+    // squares just vacated (below) comes second: landing back where a slab rose
+    // from is a wasted move, but landing on a line is a lost one.
+    var board = this.board, least = Infinity, s2;
+    for (s2 = 0; s2 < spots.length; s2++) least = Math.min(least, board.wireUnder(spots[s2][0], spots[s2][1], BLOCKER_SIZE));
+    spots = spots.filter(function (sp) { return board.wireUnder(sp[0], sp[1], BLOCKER_SIZE) === least; });
     var fresh = spots;
     if (avoid && avoid.length) {
       fresh = spots.filter(function (sp) {
@@ -979,8 +991,25 @@ var CW_GAME = (function () {
       return;
     }
     var shape = this.feed.shape(), t = this.handle();
+    var want = { x: this.cursor.x, y: this.cursor.y };
     this.cursor.x = Math.max(t[0], Math.min(GRID_W - shape.w + t[0], this.cursor.x));
     this.cursor.y = Math.max(t[1], Math.min(GRID_H - shape.h + t[1], this.cursor.y));
+    // 0.19.1 (Quorra's 09-16 replay, finding 15, "a tune press can miss"):
+    // A JUNCTION IS ALWAYS REACHABLE. The clamp above keeps the whole piece on
+    // the board, which is right for a PLACE and wrong for a TUNE: holding a ZIG,
+    // whose handle is its lower middle square, the handle could never reach the
+    // top row, so a junction up there could not be pointed at and the press
+    // never took. A one-cell piece reached it at once. On a junction commit
+    // tunes and places nothing, so the piece is allowed to hang off the board
+    // while its handle stands there; the ghost already leaves off-board cells
+    // undrawn. Every other square is clamped exactly as before. The square
+    // asked for is held to the board first, so pressing on into the edge from
+    // that junction stays on it rather than bouncing the handle back a row.
+    var bx = Math.max(0, Math.min(GRID_W - 1, want.x));
+    var by = Math.max(0, Math.min(GRID_H - 1, want.y));
+    if ((this.cursor.x !== bx || this.cursor.y !== by) && this.junctionsAt(bx, by).length) {
+      this.cursor = { x: bx, y: by };
+    }
   };
 
   // The junction the cursor is sitting on, if any. This is the whole of the
@@ -1603,11 +1632,22 @@ var CW_GAME = (function () {
       // still ONE crosswire, but it is worth more and it gets said out loud.
       // Counted exactly: a source only feeds this line if the node it pushes
       // into is part of this line.
+      //
+      // 0.19.1 (Quorra's 09-16 replay, finding 14): AND ONLY IF ITS COLOUR IS
+      // IN WHAT THE LINE DELIVERED. "Part of this line" is everything joined to
+      // it, through junctions in every direction, so a yellow line joined by a
+      // splitter to a BLUE source counted the blue one and paid DOUBLE SOURCE,
+      // 200 for a 100 line. His 09-07 rule was sources of the line's own colour.
+      // A source counts now when its primary is one the delivered colour is
+      // made of: yellow for a yellow line, red or yellow for an orange one. How
+      // a blend fed by one red and one yellow source is counted is unchanged
+      // from 0.19.0 (both count); that question is in the dossier.
       var inComp = {}, si;
       for (var q = 0; q < comp.length; q++) inComp[comp[q].x + ':' + comp[q].y + ':' + comp[q].i] = true;
       var feeds = 0;
       for (si = 0; si < this.board.sources.length; si++) {
         var fs = this.board.sources[si];
+        if (!(fs.colour & h.target.colour)) continue;
         var fi = this.board.nodeOnEdge(0, fs.row, 'W');
         if (fi >= 0 && inComp['0:' + fs.row + ':' + fi]) feeds++;
       }
