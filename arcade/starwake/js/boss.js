@@ -7,10 +7,10 @@
 //  - each phase starts with a tell (a call-out, a shake, and whatever the boss's enter() does);
 //  - if it is not beaten in escapeAfter seconds it retreats, so a fight can never hang (rule 26).
 // While a boss is up the course holds (no new course events), the scenery keeps streaming and its own music plays.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.2.0';
-import { clamp } from './util.js?v=0.2.0';
-import { defineEnemy, defineWeakPoint } from './registry.js?v=0.2.0';
-import { SPAWN_D } from './space.js?v=0.2.0';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.3.0';
+import { clamp } from './util.js?v=0.3.0';
+import { defineEnemy, defineWeakPoint } from './registry.js?v=0.3.0';
+import { SPAWN_D } from './space.js?v=0.3.0';
 
 const tmpV = new THREE.Vector3();
 // ---- attack helpers: (b, api, o) with o = the pattern step. `from` = a muzzle index (default 0).

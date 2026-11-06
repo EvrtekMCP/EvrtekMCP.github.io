@@ -6,7 +6,7 @@
 // 0.2.0: one track per level (and per boss), named by path stem under audio/ (e.g. 'music' for level 1,
 // 'levels/level2/music', 'bosses/warden'), each with its .json of loop points and beat grid beside it. Only
 // the playing level's tracks stay decoded (a decoded take is ~55 MB). A boss track cuts in on a bar line.
-import { V, store } from './util.js?v=0.2.0';
+import { V, store } from './util.js?v=0.3.0';
 
 const SFX_GAIN = { ring: 0.55, combo: 0.6, roll: 0.55, deflect: 0.7, hit: 0.8, fire: 0.35, boom: 0.75, over: 0.8 };
 const MUSIC_LEVEL = 0.62;

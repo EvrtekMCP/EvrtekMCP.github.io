@@ -4,8 +4,8 @@
 // beacon cradle of three amber hoops on the spine. Geometry: her wake() in scene3d.js, via js/meshes.js.
 // Nothing on the Wake is red. The rest of the game only ever sees what buildShip() returns, so a new ship is a
 // change to this one function.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.2.0';
-import { buildModel } from './models.js?v=0.2.0';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.3.0';
+import { buildModel } from './models.js?v=0.3.0';
 
 export function buildShip(glowTex) {
   const root = new THREE.Group();       // position and yaw/pitch

@@ -11,8 +11,8 @@
 // The beam's sides and the wall's gaps run in a fixed order, so the third time round you know what comes next.
 // Rule 26: it gives up only on a ship that stops hurting it. escapeAfter is 105 s, and every hit buys 4.5 s more
 // (24 hits, up to 108 s), so a never-roll bot sees it tear itself apart at 105 s while a slow fighter keeps going.
-import { THREE, defineBoss, buildModel, clamp } from '../../api.js?v=0.2.0';
-import { MESH } from './mesh.js?v=0.2.0';
+import { THREE, defineBoss, buildModel, clamp } from '../../api.js?v=0.3.0';
+import { MESH } from './mesh.js?v=0.3.0';
 
 const SCALE = 2.2, N = 8, PLATE_R = 11.5, EYE_R = 9;
 const BAR = 1.6, BEAT = 0.4;

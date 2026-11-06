@@ -1,8 +1,8 @@
 // STARWAKE: three.js meshes from Yori's vertex lists (js/meshes.js, generated from her scene3d.js).
 // One mesh per colour group. Lit colours take her material spec (design sheet, revision 2); glowing colours are
 // unlit. Materials are shared per colour unless `own` asks for private copies (for parts that flash).
-import * as THREE from '../vendor/three/three.module.min.js?v=0.2.0';
-import { MESHES } from './meshes.js?v=0.2.0';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.3.0';
+import { MESHES } from './meshes.js?v=0.3.0';
 
 // metalness / roughness per lit colour, from the sheet
 const SPEC = {

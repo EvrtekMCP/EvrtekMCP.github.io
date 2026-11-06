@@ -4,8 +4,8 @@
 // the size tell it from a plain ring (rule 8).
 //   add(d, 'boost-ring', { nx, ny, chain: 'c1', idx: 0, of: 4 })     (layout: L.line(d, x0, y0, x1, y1, n, step,
 //   'boost-ring', (i, n) => ({ chain: 'c1', idx: i, of: n })) lays a whole chain)
-import { THREE, definePickup, buildModel } from '../../api.js?v=0.2.0';
-import { MESH } from './mesh.js?v=0.2.0';
+import { THREE, definePickup, buildModel } from '../../api.js?v=0.3.0';
+import { MESH } from './mesh.js?v=0.3.0';
 
 const R_COLLECT = 2.1;              // a touch more generous than a plain ring (rule 14): it is bigger
 export const BOOST = { secs: 3.0, mul: 1.4, bonus: 1000, greed: 20 };
@@ -45,7 +45,7 @@ export default definePickup({
       u.amber.opacity = u.chev.opacity = fade; u.glow.material.opacity = (0.45 + 0.2 * Math.sin(e.t * 9)) * fade;
       if (e.crossed) {
         const c = chains.get(ev.chain) || { got: 0, missed: true };
-        if (Math.hypot(api.ship.x - e.x, api.ship.y - e.y) < R_COLLECT) {
+        if (Math.hypot(api.ship.x - e.x, api.ship.y - e.y) < R_COLLECT * api.ease.ring) { // 0.3.0: the level's ease.ring
           e.anim = 0.001; api.game.ring(e);
           if (!c.missed) {
             c.got++;

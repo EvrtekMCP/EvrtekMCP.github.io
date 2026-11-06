@@ -1,8 +1,9 @@
-// STARWAKE 0.2.0: the screens around the flying: the loading screen, the launcher (NEW GAME, CONTINUE, LEVEL
+// STARWAKE 0.3.0: the screens around the flying: the loading screen, the launcher (NEW GAME, CONTINUE, LEVEL
 // SELECT, OPTIONS), the level select with stars, the end card's stars, pause, and the hidden dev menu.
 // Every level shares them; nothing here knows any one level.
-import { fmt, store, V } from './util.js?v=0.2.0';
-import { loadLevel, RANK_ORDER } from './levels.js?v=0.2.0';
+import { fmt, store, V } from './util.js?v=0.3.0';
+import { loadLevel, RANK_ORDER, MAX_STARS } from './levels.js?v=0.3.0';
+import { keyLabel, codeOf } from './input.js?v=0.3.0';
 
 const $ = (id) => document.getElementById(id);
 const SCREENS = ['title', 'select', 'options', 'confirm', 'dev', 'paused', 'end'];
@@ -10,14 +11,17 @@ const STAR = '★', NOSTAR = '☆';
 
 export class UI {
   constructor(o) {
-    this.o = o; this.G = o.G; this.audio = o.audio; this.Progress = o.Progress; this.CATALOGUE = o.CATALOGUE; this.level = o.level;
+    this.o = o; this.G = o.G; this.audio = o.audio; this.Progress = o.Progress; this.CATALOGUE = o.CATALOGUE; this.level = o.level; this.input = o.input;
     this.fpsOn = false; this.fpsT = 0; this.fpsN = 0; this.back = 'title';
     this.devOn = o.params.has('dev') || !!store('starwake.dev');
     this.nodes = null; fetch('art/ui/map-nodes.json' + V).then((r) => r.json()).then((j) => { this.nodes = j; if (!$('select').hidden) this.select(); }, () => {});
     window.addEventListener('resize', () => { if (!$('select').hidden) this.layoutMap(); });
     this.G.dev = this.devOn;
     $('ver').textContent = 'v' + o.version;
-    document.body.classList.toggle('touch', !!o.touch);
+    // the control texts follow how the player is playing right now (input.mode), not the device; main.js keeps it live
+    document.body.classList.toggle('touch', this.input.mode === 'touch');
+    this.keysUI();
+    this.controlsChanged();
     const on = (id, fn) => $(id).addEventListener('click', (e) => { this.audio.unlock(); fn(e); });
     on('start-btn', () => (this.Progress.any() ? this.show('confirm') : this.start(1)));
     on('confirm-yes', () => { this.Progress.wipe(); this.start(1); });
@@ -48,11 +52,65 @@ export class UI {
     $('dev-god').addEventListener('click', () => { this.G.devGod = !this.G.devGod; this.syncDev(); });
     $('dev-speed').addEventListener('click', () => { const s = [0.5, 1, 2, 4]; this.G.devSpeed = s[(s.indexOf(this.G.devSpeed) + 1) % s.length]; this.syncDev(); });
     $('dev-fps-btn').addEventListener('click', () => { this.fpsOn = !this.fpsOn; this.syncDev(); });
+    // the roll lesson (0.3.0) shows until the first shot sent back; this brings it back for the next level 1
+    $('dev-tip').addEventListener('click', () => { this.Progress.setTip('roll', !this.Progress.tip('roll')); this.syncDev(); });
     $('dev-off').addEventListener('click', () => { this.toggleDev(); this.launcher(); });
     this.syncDev();
   }
   start(n, opts = {}) { this.lastOpts = opts; return this.o.start(n, opts); }
-  hideAll() { for (const s of SCREENS) $(s).hidden = true; }
+  hideAll() { this.endCapture(); for (const s of SCREENS) $(s).hidden = true; }
+
+  // ---- the PC keys (0.3.0, Evrtek 11-06): Options rebinds Roll, GREED and Pause (a primary and a secondary key
+  // each), switches the mouse buttons, and resets to the defaults. Click a key, then press the new one: Esc cancels,
+  // Backspace clears the slot. A key another action has swaps over; a key that steers (or M) is refused; CTRL and CMD
+  // are allowed with a warning. Hidden while playing by touch (css, body.touch).
+  keysUI() {
+    for (const row of document.querySelectorAll('#opt-keys .k-row')) for (const b of row.querySelectorAll('.k-cap')) {
+      b.addEventListener('click', () => this.capture(row.dataset.act, Number(b.dataset.slot), b));
+    }
+    $('k-mouse').addEventListener('click', () => { this.endCapture(); this.input.setMouse(!this.input.binds.mouse); this.keyNote(this.input.binds.mouse ? 'Left-click rolls and right-click fires GREED, on the play field only.' : 'The mouse only steers now.'); });
+    $('k-reset').addEventListener('click', () => { this.endCapture(); this.input.resetBinds(); this.keyNote('Back to the defaults.'); });
+    this._cap = null;
+    this._capKey = (e) => {
+      if (!this._cap) return;
+      e.preventDefault(); e.stopPropagation();
+      if (e.repeat) return;
+      const { act, slot } = this._cap;
+      if (e.key === 'Escape') { this.endCapture(); this.keyNote('Left as it was.'); return; }
+      const r = this.input.bind(act, slot, e.key === 'Backspace' || e.key === 'Delete' ? '' : codeOf(e));
+      this.endCapture();
+      if (!r.ok) this.keyNote(r.why + '. Pick another key.');
+      else if (r.warn) this.keyNote(r.warn + '.');
+      else if (r.swapped && r.swapped !== act) this.keyNote('Swapped: ' + r.swapped.toUpperCase() + ' took the old key.');
+      else this.keyNote('');
+    };
+    window.addEventListener('keydown', this._capKey, true);
+    this.renderKeys();
+  }
+  capture(act, slot, btn) {
+    this.endCapture();
+    this._cap = { act, slot, btn }; this.input.capturing = true;
+    btn.classList.add('wait'); btn.textContent = 'PRESS A KEY';
+    this.keyNote('Press the key for ' + act.toUpperCase() + '. Esc cancels, Backspace clears it.');
+  }
+  endCapture() { if (!this._cap) return; this._cap.btn.classList.remove('wait'); this._cap = null; if (this.input) this.input.capturing = false; this.renderKeys(); }
+  keyNote(t) { $('k-note').textContent = t || 'Click a key to change it. Steer with the mouse, WASD or the arrows.'; $('k-note').classList.toggle('warn', /^CAREFUL/.test(t || '')); }
+  renderKeys() {
+    const B = this.input.binds;
+    for (const row of document.querySelectorAll('#opt-keys .k-row')) for (const b of row.querySelectorAll('.k-cap')) {
+      if (this._cap && this._cap.btn === b) continue;
+      const code = B[row.dataset.act][Number(b.dataset.slot)];
+      b.textContent = code ? keyLabel(code) : '—'; b.classList.toggle('empty', !code);
+      b.setAttribute('aria-label', row.dataset.act + (b.dataset.slot === '0' ? ' key: ' : ' second key: ') + (code ? keyLabel(code) : 'none'));
+    }
+    $('k-mouse').textContent = 'MOUSE BUTTONS: ' + (B.mouse ? 'ON' : 'OFF'); $('k-mouse').classList.toggle('off', !B.mouse);
+  }
+  // the bindings or the mode changed: the launcher's PC line says what the keys are now
+  controlsChanged() {
+    const low = (a) => this.input.say(a).replace(/ OR /g, ' or ').replace('LEFT-CLICK', 'left-click').replace('RIGHT-CLICK', 'right-click');
+    $('hint-pc').textContent = 'Mouse or WASD to steer · ' + low('roll') + ' to roll · ' + low('greed') + ' for GREED · ' + this.input.labels('pause').join(' or ') + ' to pause';
+    this.renderKeys();
+  }
   show(id) { this.hideAll(); $(id).hidden = false; }
   toast(text) { const t = $('toast'); t.textContent = text; t.animate([{ opacity: 0 }, { opacity: 1, offset: 0.1 }, { opacity: 1, offset: 0.8 }, { opacity: 0 }], { duration: 1800, fill: 'forwards' }); }
 
@@ -87,7 +145,7 @@ export class UI {
     if (any) $('continue-cap').textContent = 'LEVEL ' + this.Progress.furthest();
     $('dev-btn').hidden = !this.devOn;
     const stars = this.Progress.totalStars();
-    $('best-line').textContent = any ? STAR + ' ' + stars + ' / ' + this.CATALOGUE.length * 3 + '   TOTAL ' + fmt(this.Progress.totalScore()) : '';
+    $('best-line').textContent = any ? STAR + ' ' + stars + ' / ' + this.CATALOGUE.length * MAX_STARS + '   TOTAL ' + fmt(this.Progress.totalScore()) : '';
   }
   // ---- the level select (Yori's sector map): cleared levels to replay, the next one open, the rest locked
   select() {
@@ -96,11 +154,12 @@ export class UI {
     for (const c of this.CATALOGUE) {
       const p = this.Progress.get(c.n), open = this.Progress.unlocked(c.n), nn = String(c.n).padStart(2, '0');
       const t = document.createElement('button'); t.className = 'mtile ' + (p.cleared ? 'cleared' : open ? 'open' : 'locked'); t.dataset.n = c.n;
-      t.disabled = !open; t.setAttribute('aria-label', 'Level ' + c.n + ' ' + c.name + (open ? '' : ', locked') + ', ' + p.stars + ' stars');
+      t.disabled = !open; t.setAttribute('aria-label', 'Level ' + c.n + ' ' + c.name + (open ? '' : ', locked') + ', ' + p.stars + ' of ' + MAX_STARS + ' stars');
       t.append(img('ui/num-' + nn + '.png', 'n'), img('ui/name-' + (c.art || nn) + '.png', 'nm'));
       if (open) {
         const st = document.createElement('div'); st.className = 'st';
-        for (let i = 0; i < 3; i++) st.appendChild(img(i < p.stars ? 'ui/star-on.png' : 'ui/star-off.png'));
+        // five stars (Evrtek 11-06): Yori's star, smaller, five across where three were (css .mtile .st)
+        for (let i = 0; i < MAX_STARS; i++) st.appendChild(img(i < p.stars ? 'ui/star-on.png' : 'ui/star-off.png'));
         t.appendChild(st);
         const bs = document.createElement('div'); bs.className = 'bs';
         if (p.rank) bs.appendChild(img('rank-' + p.rank.toLowerCase() + '-glow.png'));
@@ -110,7 +169,7 @@ export class UI {
       }
       box.appendChild(t);
     }
-    $('totals').textContent = STAR + ' ' + this.Progress.totalStars() + ' / ' + this.CATALOGUE.length * 3 + '   TOTAL ' + fmt(this.Progress.totalScore());
+    $('totals').textContent = STAR + ' ' + this.Progress.totalStars() + ' / ' + this.CATALOGUE.length * MAX_STARS + '   TOTAL ' + fmt(this.Progress.totalScore());
     this.show('select');
     this.layoutMap();
   }
@@ -135,10 +194,11 @@ export class UI {
     const el = $('end-stars'); el.textContent = '';
     const row = document.createElement('div'); row.className = 'row';
     // Yori's stars, as on the sector map
-    for (let i = 0; i < 3; i++) { const im = new Image(); im.src = 'art/ui/star-' + (st.have[i] ? 'on' : 'off') + '.png' + V; im.alt = st.have[i] ? STAR : NOSTAR; if (st.have[i]) im.className = 'got'; row.appendChild(im); }
+    for (let i = 0; i < MAX_STARS; i++) { const im = new Image(); im.src = 'art/ui/star-' + (st.have[i] ? 'on' : 'off') + '.png' + V; im.alt = st.have[i] ? STAR : NOSTAR; if (st.have[i]) im.className = 'got'; row.appendChild(im); }
     el.appendChild(row);
+    // the next star, in plain words: what this run was missing for it (levels.js grade())
     const n = document.createElement('div'); n.className = 'need';
-    n.textContent = dev ? 'DEV RUN: NOTHING SAVED' : st.next ? st.next : 'ALL THREE STARS' + (saved.after.rank === 'DEGENERATE' ? '' : '. DEGENERATE NEXT?');
+    n.textContent = dev ? 'DEV RUN: NOTHING SAVED. ' + st.next : st.next;
     el.appendChild(n);
   }
   endScreen(L, cleared) {
@@ -171,6 +231,7 @@ export class UI {
     $('dev-god').textContent = 'GOD: ' + (G.devGod ? 'ON' : 'OFF');
     $('dev-speed').textContent = 'SPEED: ' + G.devSpeed + 'x';
     $('dev-fps-btn').textContent = 'FPS: ' + (this.fpsOn ? 'ON' : 'OFF');
+    $('dev-tip').textContent = 'ROLL LESSON: ' + (this.Progress.tip('roll') ? 'DONE' : 'WILL SHOW');
     $('dev-badge').hidden = !this.devOn;
     $('dev-fps').textContent = '';
   }
@@ -179,7 +240,7 @@ export class UI {
     const box = $('dev-levels'); box.textContent = '';
     for (const c of this.CATALOGUE) {
       const row = document.createElement('div'); row.className = 'dev-row';
-      const head = document.createElement('button'); head.className = 'tog dev-head'; head.textContent = String(c.n).padStart(2, '0') + ' ' + c.name;
+      const head = document.createElement('button'); head.className = 'tog dev-head'; head.textContent = String(c.n).padStart(2, '0') + ' ' + c.name + '   ' + STAR + ' ' + this.Progress.get(c.n).stars + '/' + MAX_STARS;
       const body = document.createElement('div'); body.className = 'dev-secs';
       head.addEventListener('click', async () => {
         this.audio.unlock();

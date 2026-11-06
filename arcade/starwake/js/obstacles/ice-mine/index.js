@@ -6,8 +6,8 @@
 // they all go home (a MULTI-DEFLECT). Drift half-way and you meet one. Steer wide and it never arms.
 // A sent-back shard homes on the next live mine down the canyon (or on whoever owns the mine: the Leviathan sends
 // them to its lit lens), which shatters harmlessly.
-import { THREE, defineEnemy, material, clamp, SHIP_R } from '../../api.js?v=0.2.0';
-import { MESH } from './mesh.js?v=0.2.0';
+import { THREE, defineEnemy, material, clamp, SHIP_R } from '../../api.js?v=0.3.0';
+import { MESH } from './mesh.js?v=0.3.0';
 const ICE_MINE = MESH.mine;
 
 export const MINE = {

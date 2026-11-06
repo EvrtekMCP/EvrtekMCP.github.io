@@ -1,16 +1,16 @@
 // LEVEL 1: NEBULA RUN. 0.1.0's one level as the first module. The course is laid out by 0.1.0's own code from
 // the same seed, so it is the same course, event for event (tools/check-levels.js compares it to 0.1.0's).
 // 0.2.0 changes only what you see: nothing pops in, and every stretch has scenery (ruling 5).
-import { defineLevel, clamp } from '../api.js?v=0.2.0';
-import ring from '../pickups/ring/index.js?v=0.2.0';
-import gate from '../pickups/gate/index.js?v=0.2.0';
-import rock from '../obstacles/rock/index.js?v=0.2.0';
-import crystal from '../obstacles/crystal/index.js?v=0.2.0';
-import mines from '../obstacles/mines/index.js?v=0.2.0';
-import { girder, pylon, rib } from '../obstacles/structure/index.js?v=0.2.0';
-import pod from '../enemies/pod/index.js?v=0.2.0';
-import shrike from '../enemies/shrike/index.js?v=0.2.0';
-import { gasGiant, derelictFloor, derelictSkyline, crystalDrift, rockDrift, hullTowers, beaconField, hullTower, beacon } from './level1/scenery.js?v=0.2.0';
+import { defineLevel, clamp } from '../api.js?v=0.3.0';
+import ring from '../pickups/ring/index.js?v=0.3.0';
+import gate from '../pickups/gate/index.js?v=0.3.0';
+import rock from '../obstacles/rock/index.js?v=0.3.0';
+import crystal from '../obstacles/crystal/index.js?v=0.3.0';
+import mines from '../obstacles/mines/index.js?v=0.3.0';
+import { girder, pylon, rib } from '../obstacles/structure/index.js?v=0.3.0';
+import pod from '../enemies/pod/index.js?v=0.3.0';
+import shrike from '../enemies/shrike/index.js?v=0.3.0';
+import { gasGiant, derelictFloor, derelictSkyline, crystalDrift, rockDrift, hullTowers, beaconField, hullTower, beacon } from './level1/scenery.js?v=0.3.0';
 
 const LEVEL_END = 15000;
 export default defineLevel({
@@ -22,7 +22,6 @@ export default defineLevel({
   // The speed keeps building: 62 at the start, 142 at the end (~2.5 minutes at this curve).
   speed: (d) => 62 + 80 * Math.pow(clamp(d / LEVEL_END, 0, 1), 0.85),
   music: { track: 'music' },
-  ranks: [['DEGENERATE', 320000], ['S', 220000], ['A', 140000], ['B', 70000], ['C', 0]], // the autopilot makes ~360k
   sections: [
     { id: 'nebula', name: 'THE HALCYON DRIFT', sub: 'SECTOR 1', d0: 0, d1: 3200, scenery: { 'gas-giant': 1, 'crystal-drift': 1 } },
     { id: 'rocks', name: 'THE SHATTER BELT', sub: 'SECTOR 2', d0: 3200, d1: 6800, scenery: { 'gas-giant': 1, 'crystal-drift': 0.25, 'rock-drift': 0.5, 'derelict-skyline': (t) => (t > 0.8 ? 1 : 0) } },

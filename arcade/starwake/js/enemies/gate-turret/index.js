@@ -5,9 +5,9 @@
 // Event: { gx, gy (its gate's hub, normalised), mount (clock angle of the seat, degrees; -90 = six o'clock),
 //          volleys: [beats before its gate reaches you, ...], shots (per volley), miss (metres it aims wide: the
 //          first one only grazes if you do nothing, rule 18) }
-import { THREE, defineEnemy, buildModel, clamp } from '../../api.js?v=0.2.0';
-import { beatClock } from '../../levels/level3/beat.js?v=0.2.0';
-import { MOUNT_R, GATE_S } from '../../levels/level3/gate.js?v=0.2.0';
+import { THREE, defineEnemy, buildModel, clamp } from '../../api.js?v=0.3.0';
+import { beatClock } from '../../levels/level3/beat.js?v=0.3.0';
+import { MOUNT_R, GATE_S } from '../../levels/level3/gate.js?v=0.3.0';
 
 const TEL = 2, FLIGHT = 3;                 // beats of telegraph, beats of flight
 let bracketGeo, bracketMat;

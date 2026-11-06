@@ -51,7 +51,9 @@ export const allKinds = () => [...KINDS.values()];
 // ---- levels
 // defineLevel checks the shape now, so a missing field fails on load instead of mid-run. The engine builds
 // the event list (levels.js) when the level is played.
-const LEVEL_KEYS = ['n', 'id', 'name', 'idea', 'length', 'sections', 'looks', 'kinds', 'build', 'speed', 'ranks', 'beats', 'acts', 'music'];
+// (0.3.0: no 'ranks'. Stars and ranks come from the rings caught and the style shown, the same rule on every level:
+// levels.js GATES and STYLE. A score threshold no longer decides anything.)
+const LEVEL_KEYS = ['n', 'id', 'name', 'idea', 'length', 'sections', 'looks', 'kinds', 'build', 'speed', 'beats', 'acts', 'music'];
 export function defineLevel(L) {
   for (const k of LEVEL_KEYS) if (L[k] === undefined) throw new Error('level ' + (L.n || L.id || '?') + ': missing "' + k + '"');
   if (typeof L.speed !== 'function') throw new Error('level ' + L.n + ': speed must be a function of distance');

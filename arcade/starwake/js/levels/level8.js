@@ -13,13 +13,13 @@
 //         the bow into open space and the finish.
 // Stealth pays a little (UNSEEN per lamp, GHOST per act on the tally); being caught pays more if you can take what
 // it calls (deflects and kills). Pick one.
-import { defineLevel, clamp, ranksFrom } from '../api.js?v=0.2.0';
-import ring from '../pickups/ring/index.js?v=0.2.0';
-import pod from '../enemies/pod/index.js?v=0.2.0';
-import shrike from '../enemies/shrike/index.js?v=0.2.0';
-import sentry, { beamR, CATCH_K, SHIP_CORE, LAMP_IN, beamDir, reach } from '../enemies/searchlight-sentry/index.js?v=0.2.0';
-import { spar, ghost } from './level8/kinds.js?v=0.2.0';
-import { hull, rib, debris, tombPlate, hullDrift, ribDrift, ribArches, debrisField, tombRibs, tombPlating, ash, mausoleum } from './level8/scenery.js?v=0.2.0';
+import { defineLevel, clamp } from '../api.js?v=0.3.0';
+import ring from '../pickups/ring/index.js?v=0.3.0';
+import pod from '../enemies/pod/index.js?v=0.3.0';
+import shrike from '../enemies/shrike/index.js?v=0.3.0';
+import sentry, { beamR, CATCH_K, SHIP_CORE, LAMP_IN, beamDir, reach } from '../enemies/searchlight-sentry/index.js?v=0.3.0';
+import { spar, ghost } from './level8/kinds.js?v=0.3.0';
+import { hull, rib, debris, tombPlate, hullDrift, ribDrift, ribArches, debrisField, tombRibs, tombPlating, ash, mausoleum } from './level8/scenery.js?v=0.3.0';
 
 // ---- one schedule (rule 30). The track's bar grid (audio/levels/level8/music.json, take l8-t1: 137.982 bpm, first
 // beat 0.154 s; intro 1-8, groove 9-24, build 25-32, drop 33-48, breakdown 49-56, build 57-64, drop 65-80, drive
@@ -112,7 +112,6 @@ export default defineLevel({
   speed: speedAt,
   music: { track: 'levels/level8/music' },
   sfx: [{ id: 'searchlight-alarm', gain: 0.25 }],   // the manifest's suggested gain
-  ranks: ranksFrom(372000),      // a real (non-god) autopilot run on merged main, 11-05: 246 of 253 rings, 3 hits (CLU A at merge)
   mausoleumD: D(73),
   sections: [
     { id: 'dead', name: 'THE OUTER DEAD', sub: 'SECTOR 1', d0: 0, d1: D(25), look: 'dead',

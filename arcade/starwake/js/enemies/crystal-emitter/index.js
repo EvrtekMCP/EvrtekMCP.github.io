@@ -18,10 +18,10 @@
 //   wide  how far wide the miss goes, metres (lie / truth)
 //   T     the real bolt's time to your plane (default 1.3; 'bait' 1.45)
 //   aim   'true' (default) or 'graze': aimed 1.6 m off you, so a first try costs a graze at worst
-import { THREE, defineEnemy, clamp, SHIP_R } from '../../api.js?v=0.2.0';
-import { EMITTER } from './mesh.js?v=0.2.0';
-import { buildParts, geometryOf } from './parts.js?v=0.2.0';
-import { Ghosts } from './ghosts.js?v=0.2.0';
+import { THREE, defineEnemy, clamp, SHIP_R } from '../../api.js?v=0.3.0';
+import { EMITTER } from './mesh.js?v=0.3.0';
+import { buildParts, geometryOf } from './parts.js?v=0.3.0';
+import { Ghosts } from './ghosts.js?v=0.3.0';
 
 const CHARGE = 0.8, THREAD = 0.5, CARRY = 0.22, SPLIT = 0.16;
 const WHITE = new THREE.Color(0xffffff), BLACK = new THREE.Color(0x000000);

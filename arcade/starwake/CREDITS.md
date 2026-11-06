@@ -1,6 +1,6 @@
 # CREDITS
 
-**STARWAKE**, an arcade space-runner by **REIMERTEK STUDIOS**. Version 0.2.0: ten levels and four bosses.
+**STARWAKE**, an arcade space-runner by **REIMERTEK STUDIOS**. Version 0.3.0: ten levels and four bosses.
 
 **Design:** Evrtek's concept and rulings, among them:
 - the double-tap roll and its cooldown;

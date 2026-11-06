@@ -2,7 +2,7 @@
 // flight box (nx, ny in -1..1; beyond 1 is outside it), so a course fits a wide screen and a narrow portrait one
 // alike. d is distance down the track, in metres. These are 0.1.0's helpers, unchanged, so level 1 lays out the
 // same course from the same seed.
-import { clamp } from './util.js?v=0.2.0';
+import { clamp } from './util.js?v=0.3.0';
 
 export function layout() {
   const events = [], rings = [];
@@ -18,9 +18,4 @@ export function layout() {
   return { events, rings, add, ring, line, sine, clearOfRings };
 }
 
-// Rank thresholds from a near-perfect autopilot total, in level 1's proportions (DEGENERATE sits just under a
-// flawless run: 320k of the autopilot's ~360k). Round to the nearest 5,000.
-export function ranksFrom(autopilotTotal) {
-  const r = (f) => Math.round(autopilotTotal * f / 5000) * 5000;
-  return [['DEGENERATE', r(0.89)], ['S', r(0.61)], ['A', r(0.39)], ['B', r(0.19)], ['C', 0]];
-}
+// (0.3.0: ranksFrom() is gone. Ranks are no longer a share of a score: levels.js GATES, the rings caught and the style.)

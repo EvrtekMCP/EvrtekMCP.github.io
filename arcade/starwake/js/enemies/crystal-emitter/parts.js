@@ -1,7 +1,7 @@
 // LEVEL 9 helpers shared by the crystal emitter, the Twins and the Mirror Field's scenery: Yori's vertex lists
 // (exported per part by tools/levels/level9/export-meshes.cjs into each folder's mesh.js) made into three.js
 // objects, with her colours through the game's own material spec (api.material), so they light like level 1's.
-import { THREE, material } from '../../api.js?v=0.2.0';
+import { THREE, material } from '../../api.js?v=0.3.0';
 
 const geoCache = new Map();
 // one BufferGeometry per exported group (flat triangles, so every face keeps its own normal)

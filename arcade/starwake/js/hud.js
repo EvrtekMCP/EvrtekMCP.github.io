@@ -1,5 +1,5 @@
 // STARWAKE: the DOM layer over the canvas: numbers, bars, pop-ups and call-outs. Loud and generous (ruling 4).
-import { fmt, V } from './util.js?v=0.2.0';
+import { fmt, V } from './util.js?v=0.3.0';
 
 // Yori's call-out sprites (art/, glow baked in). Preloaded so the first GRAZE never waits on a decode.
 export const ART = ['graze', 'multi-deflect', 'greed', 'perfect', 'no-hit', 'level-clear', 'rank-c', 'rank-b', 'rank-a', 'rank-s', 'rank-degenerate', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7', 'x8'];
@@ -14,6 +14,7 @@ const PUNCH = [{ opacity: 0, transform: 'scale(2.2)' }, { opacity: 1, transform:
   { opacity: 1, transform: 'scale(1)', offset: 0.75 }, { opacity: 0, transform: 'scale(1.1)' }];
 const SHAKE = [{ translate: '0 0' }, { translate: '-3px 1px' }, { translate: '3px -2px' }, { translate: '-2px 2px' }, { translate: '2px -1px' }, { translate: '0 0' }];
 const run = (el, kf, ms, easing = 'ease-out') => el.animate(kf, { duration: ms, easing, fill: 'forwards' });
+const BANNER_MS = 4000; // a section's name stays about four seconds (0.3.0; it was 2.6)
 
 export class Hud {
   constructor() {
@@ -26,15 +27,20 @@ export class Hud {
     for (const n of ART) { const i = new Image(); i.src = artUrl(n); i.alt = ''; i.decoding = 'async'; this.imgs[n] = i; }
     this.comboKey = '';
     this.warnL = $('warn-l'); this.warnR = $('warn-r');
+    // 0.3.0: markers on the screen's edge for shots coming at you from off the screen (main.js threats())
+    this.thEl = $('threats'); this.th = [];
+    for (let i = 0; i < 6; i++) { const d = document.createElement('div'); d.className = 'th'; this.thEl.appendChild(d); this.th.push(d); }
+    this.thShown = 0; this.thT = 0;
+    this.tutorEl = $('tutor'); this.tutorKey = $('tutor-key'); this.tutorSay = $('tutor-say'); this.tutorSkip = $('tutor-skip');
     this.popsEl = $('pops');
     this.pops = []; this.popI = 0;
     for (let i = 0; i < 18; i++) { const d = document.createElement('div'); d.className = 'p'; this.popsEl.appendChild(d); this.pops.push(d); }
-    this.shown = 0; this.lastMult = 1; this.bannerT = 0; this.warnT = [0, 0];
+    this.shown = 0; this.lastMult = 1; this.warnT = [0, 0];
     this.last = {};
   }
   // hidden by visibility, not display, so its layout is done on the title screen and not in the run's first frame
   show(on) { this.el.classList.toggle('off', !on); }
-  reset() { this.shown = 0; this.lastMult = 1; this.last = {}; this.banner.classList.remove('on'); for (const p of this.pops) p.getAnimations().forEach((a) => a.cancel()); }
+  reset() { this.shown = 0; this.lastMult = 1; this.last = {}; this.banner.getAnimations().forEach((a) => a.cancel()); this.banner.style.opacity = 0; for (const p of this.pops) p.getAnimations().forEach((a) => a.cancel()); this.threats([], 0); this.tutor(null); }
   // a number that rolls up to the real score instead of jumping
   update(dt, g) {
     const target = g.score;
@@ -65,16 +71,57 @@ export class Hud {
     const rk = g.rollCool > 0 ? 1 - g.rollCool / g.rollCoolMax : 1;
     this._style('rw', this.rollFill, 'width', Math.round(rk * 100) + '%');
     this.roll.classList.toggle('cool', g.rollCool > 0 || g.rolling);
-    if (this.bannerT > 0) { this.bannerT -= dt; if (this.bannerT <= 0) this.banner.classList.remove('on'); }
     for (const s of [0, 1]) if (this.warnT[s] > 0) { this.warnT[s] -= dt; if (this.warnT[s] <= 0) (s ? this.warnR : this.warnL).classList.remove('on'); }
   }
   _set(k, v) { if (this.last[k] !== v) { this.last[k] = v; this[k].textContent = v; } }
   _style(k, el, prop, v) { if (this.last[k] !== v) { this.last[k] = v; el.style[prop] = v; } }
-  showBanner(name, sub) {
-    this.banner.innerHTML = '';
-    const a = document.createElement('span'); a.textContent = name;
+  // A section's name (0.3.0, Evrtek 11-06: "Zone names are hard to read and flash up only for a moment"): about four
+  // seconds, faded in and out, big, on a solid plate high on the screen, clear of the flight path's middle. The
+  // opening one carries the level's name in Yori's lettering (art/ui/name-NN.png) above it.
+  showBanner(name, sub, art) {
+    const B = this.banner; B.textContent = '';
+    if (art) { const i = new Image(); i.src = 'art/' + art + '.png' + V; i.alt = ''; i.className = 'lvl'; B.appendChild(i); }
+    const a = document.createElement('span'); a.className = 'zone'; a.textContent = name;
     const b = document.createElement('span'); b.className = 'sub'; b.textContent = sub;
-    this.banner.append(a, b); this.banner.classList.add('on'); this.bannerT = 2.6;
+    B.append(a, b);
+    B.getAnimations().forEach((x) => x.cancel());
+    B.animate([{ opacity: 0, scale: '0.94' }, { opacity: 1, scale: '1', offset: 0.09 }, { opacity: 1, scale: '1', offset: 0.85 }, { opacity: 0, scale: '1' }],
+      { duration: BANNER_MS, easing: 'ease-out', fill: 'forwards' });
+  }
+  // the edge markers: { nx, ny } in normalised screen space (off the edge, or mirrored if behind), t = seconds to arrive
+  threats(list, dt) {
+    this.thT += dt;
+    const W = window.innerWidth, H = window.innerHeight, m = 30;
+    for (let i = 0; i < this.th.length; i++) {
+      const d = this.th[i], q = list[i];
+      if (!q) { if (i < this.thShown) d.style.opacity = '0'; continue; }
+      const dx = q.nx * W / 2, dy = -q.ny * H / 2, a = Math.atan2(dy, dx);
+      const c = Math.cos(a), s = Math.sin(a), k = Math.min((W / 2 - m) / Math.max(1e-6, Math.abs(c)), (H / 2 - m) / Math.max(1e-6, Math.abs(s)));
+      const urgent = q.t < 0.8, pulse = urgent ? 0.75 + 0.25 * Math.sin(this.thT * 30) : 1;
+      d.style.transform = 'translate(' + (W / 2 + c * k).toFixed(1) + 'px,' + (H / 2 + s * k).toFixed(1) + 'px) rotate(' + a.toFixed(3) + 'rad) scale(' + (urgent ? 1.25 : 1) + ')';
+      d.style.opacity = ((0.55 + 0.45 * Math.max(0, 1 - q.t / 2.2)) * pulse).toFixed(2);
+    }
+    this.thShown = list.length;
+  }
+  // the roll lesson's panel: { key, say, skip } or null to hide it
+  tutor(o) {
+    if (!this.tutorEl) return;
+    if (!o) { this.tutorEl.hidden = true; return; }
+    this.tutorKey.textContent = ''; this.tutorKey.hidden = !o.key;
+    const K = this.tutorKey, el = (tag, cls, text) => { const d = document.createElement(tag); if (cls) d.className = cls; if (text) d.textContent = text; K.appendChild(d); return d; };
+    if (typeof o.key === 'string') el('span', 't-line', o.key);
+    else if (o.key && o.key.tap) { el('span', 't-tap'); el('span', 't-line', o.key.text); }        // two rings pulsing, as a double tap
+    else if (o.key) {                                                                                // PRESS [SPACE] OR (mouse) LEFT-CLICK TO ROLL
+      el('span', 't-line', 'PRESS');
+      o.key.keys.forEach((k, i) => { if (i) el('span', 't-line', 'OR'); el('kbd', 't-cap', k); });
+      if (o.key.mouse) { el('span', 't-line', 'OR'); el('span', 't-mouse'); el('span', 't-line', 'LEFT-CLICK'); }
+      el('span', 't-line', 'TO ROLL');
+    }
+    // the whole line in words, for screen readers and the tests: PRESS SPACE OR LEFT-CLICK TO ROLL
+    K.setAttribute('aria-label', typeof o.key === 'string' ? o.key : !o.key ? '' : o.key.tap ? o.key.text : 'PRESS ' + o.key.keys.join(' OR ') + (o.key.mouse ? ' OR LEFT-CLICK' : '') + ' TO ROLL');
+    this.tutorSay.textContent = o.say || ''; this.tutorSay.hidden = !o.say;
+    this.tutorSkip.hidden = !o.skip;
+    this.tutorEl.hidden = !(o.key || o.say);
   }
   pop(text, x, y, cls = '') {
     const d = this.pops[this.popI++ % this.pops.length];

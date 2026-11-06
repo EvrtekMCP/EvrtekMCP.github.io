@@ -1,22 +1,22 @@
-// STARWAKE 0.2.0: the game. Flight, the roll, the rules of scoring (ruling 4), the run of a level, the screens.
+// STARWAKE 0.3.0: the game. Flight, the roll, the rules of scoring (ruling 4), the run of a level, the screens.
 // Levels, kinds, scenery and bosses are modules (js/levels, js/pickups, js/obstacles, js/enemies, js/bosses);
 // this file runs whichever level is loaded and owns every rule that scores.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.2.0';
-import { VERSION, clamp, damp, lerp, isTouch, fmt, store } from './util.js?v=0.2.0';
-import { Input } from './input.js?v=0.2.0';
-import { Audio } from './audio.js?v=0.2.0';
-import { buildShip } from './ship.js?v=0.2.0';
-import { Backdrop } from './backdrop.js?v=0.2.0';
-import { Course } from './course.js?v=0.2.0';
-import { Scenery } from './scenery.js?v=0.2.0';
-import { Particles } from './fx.js?v=0.2.0';
-import { Hud, artUrl } from './hud.js?v=0.2.0';
-import { CATALOGUE, loadLevel, isMarker, Progress, starsFor, RANK_ORDER } from './levels.js?v=0.2.0';
-import { appear } from './space.js?v=0.2.0';
-import { bossKind, weakPointKind } from './boss.js?v=0.2.0';
-import { Quality } from './quality.js?v=0.2.0';
-import { Post } from './post.js?v=0.2.0';
-import { UI } from './ui.js?v=0.2.0';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.3.0';
+import { VERSION, clamp, damp, lerp, isTouch, fmt, store } from './util.js?v=0.3.0';
+import { Input } from './input.js?v=0.3.0';
+import { Audio } from './audio.js?v=0.3.0';
+import { buildShip } from './ship.js?v=0.3.0';
+import { Backdrop } from './backdrop.js?v=0.3.0';
+import { Course } from './course.js?v=0.3.0';
+import { Scenery } from './scenery.js?v=0.3.0';
+import { Particles } from './fx.js?v=0.3.0';
+import { Hud, artUrl } from './hud.js?v=0.3.0';
+import { CATALOGUE, loadLevel, isMarker, Progress, grade, easeOf } from './levels.js?v=0.3.0';
+import { appear } from './space.js?v=0.3.0';
+import { bossKind, weakPointKind } from './boss.js?v=0.3.0';
+import { Quality } from './quality.js?v=0.3.0';
+import { Post } from './post.js?v=0.3.0';
+import { UI } from './ui.js?v=0.3.0';
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -24,7 +24,9 @@ const TOUCH = isTouch();
 
 // ---------------------------------------------------------------- tuning (first guesses, his to tune by playing)
 const T = {
-  rollTime: 0.45, rollCool: 0.65, rollDash: 10, // cooldown 0.85 -> 0.65 (Evrtek 11-05): a roll every 1.10 s
+  // cooldown 0.85 -> 0.65 (Evrtek 11-05) -> 0.50 (Evrtek 11-06, the human pass: "Go to a .5 delay on a new barrel
+  // roll"): a roll can start every 0.95 s. Level 9's bait still bites: its ghosts lead the real shots by 0.62 s.
+  rollTime: 0.45, rollCool: 0.50, rollDash: 10,
   steerK: 60,                     // spring stiffness toward the steering target
   shotDmg: 16, ringShield: 4, gateShield: 2,
   greedTime: 8, greedSpeed: 1.28, greedAuto: 4,
@@ -45,7 +47,7 @@ const backdrop = new Backdrop(scene, quality.tier);
 const fx = new Particles(scene, quality.tier === 0 ? 700 : 1600, backdrop.glowTex);
 const post = new Post(renderer);
 const audio = new Audio();
-const input = new Input(canvas);
+const input = new Input(canvas, TOUCH);
 const hud = new Hud();
 
 const ship = { x: 0, y: 0, vx: 0, vy: 0, rolling: false, invuln: 0 };
@@ -99,7 +101,7 @@ function addGreed(n) {
   if (G.greedOn) return;
   const was = G.greed;
   G.greed = Math.min(100, G.greed + n);
-  if (was < 100 && G.greed >= 100) { G.greedReadyT = 0; hud.call(TOUCH ? 'GREED READY: TAP IT' : 'GREED READY: SPACE', ''); }
+  if (was < 100 && G.greed >= 100) { G.greedReadyT = 0; hud.call(input.mode === 'touch' ? 'GREED READY: TAP IT' : 'GREED READY: ' + input.say('greed'), ''); }
 }
 function heal(n) { if (!G.greedOn) G.shield = Math.min(100, G.shield + n); }
 function onRing(e) {
@@ -108,7 +110,7 @@ function onRing(e) {
   const roll = G.rolling;
   gain(T.ringPts * G.mult * (roll ? 2 : 1), e.x, e.y + 1.2, 0, roll ? 'cyan' : '', roll ? 'ROLL-RING' : '');
   if (roll) addGreed(5);
-  heal(T.ringShield);
+  heal(T.ringShield * level.ease.heal);
   audio.play('ring', { rate: 1 + Math.min(G.chain, 24) * 0.012, pan: e.x / box.x * 0.5 });
   fx.burst(e.x, e.y, 0, Math.round(26 * quality.particleScale), { speed: 9, life: 0.5, s0: 0.9, r: 1, g: 0.8, b: 0.25, carry: 1, flatZ: 0.3 });
 }
@@ -126,11 +128,12 @@ function onGate(e, pass) {
   if (!pass) return;
   G.gates++;
   gain(T.gatePts * G.mult, e.x, e.y + 2.6, 0, 'cyan', 'GATE');
-  heal(T.gateShield);
+  heal(T.gateShield * level.ease.heal);
   audio.play('ring', { rate: 0.75 });
   fx.burst(e.x, e.y, 0, Math.round(30 * quality.particleScale), { speed: 14, life: 0.5, s0: 1, r: 0.3, g: 0.9, b: 1, carry: 1, flatZ: 0.1 });
 }
 function damage(dmg, big) {
+  dmg *= level.ease.dmg; // the human pass: early levels hit softer (EASE, levels.js)
   if (G.god) dmg = 0;
   G.shield -= dmg; G.hits++;
   ship.invuln = big ? 0.8 : 0.6;
@@ -140,6 +143,7 @@ function damage(dmg, big) {
   if (G.shield <= 0) die();
 }
 function onShot(s) {
+  if (s.tutor) return; // the lesson's shot never hurts
   if (ship.invuln > 0) return;
   damage(s.dmg ?? T.shotDmg, false);
   fx.burst(ship.x, ship.y, 0, Math.round(18 * quality.particleScale), { speed: 8, life: 0.35, s0: 1, r: 1, g: 0.3, b: 0.2, carry: 0.2 });
@@ -153,14 +157,16 @@ function onCrash(e, dmg, small) {
   return 'stay';
 }
 function onGraze(s, d, a, b) {
+  if (s.tutor) return;
   const c = clamp(1 - (d - a) / (b - a), 0, 1);
   G.grazes++;
   gain((50 + 250 * c * c) * G.mult, ship.x + (s.x - ship.x) * 0.5, ship.y + 1, 0, c > 0.7 ? 'mag big' : 'mag', 'GRAZE');
   addGreed(6 + 14 * c);
   if (c > 0.75) { hud.callArt(['graze']); G.hitstop = Math.max(G.hitstop, 0.04); }
 }
-function onDeflect() {
+function onDeflect(s) {
   G.deflects++; G.rollDeflects++;
+  if (!Progress.tip('roll')) Progress.setTip('roll'); // any shot sent back means the roll is learned: no lesson again
   const n = G.rollDeflects;
   G.multiMax = Math.max(G.multiMax, n);
   gain(T.deflectPts * G.mult * n, ship.x, ship.y + 1.4, 0, 'cyan', n > 1 ? 'DEFLECT x' + n : 'DEFLECT');
@@ -184,6 +190,9 @@ function onKill(e, byShot) {
 function onFired(s) {
   const far = clamp(1 - (-s.z) / 400, 0.25, 1);
   audio.play('fire', { vol: far, pan: s.x / box.x * 0.6, rate: 0.95 + Math.random() * 0.1 });
+  // the human pass (Evrtek 11-06: "more of a visual warning when incoming weapons fire is coming"): every shot leaves
+  // its shooter with a red flash at the muzzle, whoever fired it, on top of each shooter's own charge-up glow
+  fx.burst(s.x, s.y, s.z, Math.round(9 * quality.particleScale), { speed: 3.5, life: 0.26, s0: 2.8, r: 1, g: 0.3, b: 0.38, carry: s.carry ? 1 : 0.5, drag: 2 });
 }
 function greedGo() {
   if (G.greed < 100 || G.greedOn || G.state !== 'play') return;
@@ -199,6 +208,7 @@ const GAME = {
   ring: onRing, missRing: onMiss, crash: onCrash, scrape: onScrape, gate: onGate, gateFrame: (e) => onCrash(e, 14, true),
   shot: onShot, graze: onGraze, deflect: onDeflect, kill: onKill, fired: onFired,
   telegraph: () => {}, mineArm: () => {},
+  tutorWants: (name) => tutorWants(name), tutorReady: (e) => tutorReady(e),
   minePop: (m, z) => { audio.play('fire', { rate: 0.7, vol: 0.8, pan: m.x / box.x * 0.6 }); fx.burst(m.x, m.y, z, 14, { speed: 8, life: 0.4, s0: 1.4, r: 1, g: 0.3, b: 0.3, carry: 1 }); },
   warn: (side, t) => hud.warn(side, t),
   // generic
@@ -223,6 +233,8 @@ const api = {
   THREE, scene, glowTex: backdrop.glowTex, box, ship, G, game: GAME, v: 0, dt: 0, time: 0, focalPx: 600, level: null,
   music: audio.view, // read-only: position() (seconds into the file), toNextBar(), meta (bpm, firstBeat, barSec, sections), track
   get tier() { return quality.tier; },
+  // the level's ease (levels.js EASE): kinds read ring (catch radius) and course.fire reads shot
+  get ease() { return level ? level.ease : easeOf(0); },
   appear,
   // place e.obj at (e.x, e.y, e.z), sized (e.sx, e.sy, e.sz) x e.appear: call it every frame in update()
   pose(e) { const o = e.obj, a = e.appear; o.position.set(e.x, e.y, e.z); o.scale.set(e.sx * a, e.sy * a, e.sz * a); },
@@ -244,6 +256,7 @@ window.addEventListener('resize', resize);
 async function prepare(n, progress = () => {}) {
   const L = await loadLevel(n);
   progress(0.1, 'COURSE');
+  const art = levelArt(L.n); if (art) { const im = new Image(); im.src = 'art/' + art + '.png?v=' + VERSION; im.decode?.().catch(() => {}); } // its opening banner's lettering, fetched now
   if (level !== L) {
     await backdrop.prepare(L, renderer, (k) => progress(0.1 + 0.5 * k, 'SKIES'));
     course.use(L.kinds.concat([bossKind, weakPointKind]));
@@ -295,7 +308,7 @@ function newRun(opts = {}, fromTitle = false) {
   // every start opens out of a short fade from black onto its opening already in place (the launcher is opaque, so
   // even a start from it is a cut; and nothing ever grows in as play begins)
   document.getElementById('cut').animate([{ opacity: 1 }, { opacity: 1, offset: 0.25 }, { opacity: 0 }], { duration: 450, easing: 'ease-out', fill: 'forwards' });
-  course.reset(seamless); fx.clear(); hud.reset(); input.reset(); hud.boss({ show: false });
+  course.reset(seamless); fx.clear(); hud.reset(); input.reset(); hud.boss({ show: false }); tutorOff();
   if (!seamless) scenery.setLevel(L, sec, true);
   backdrop.setLook(sec.look || sec.id, true);
   quality.resetWindow();
@@ -342,8 +355,6 @@ function finish(cleared) {
   hud.callArt(['level-clear']);
   audio.play('over', { rate: 1.25, vol: 0.8 }); audio.stopMusic(2.5);
 }
-function rankOf(total) { for (const [r, n] of level.ranks) if (total >= n) return r; return 'C'; }
-function nextRank(total) { const rs = level.ranks.slice().reverse(); for (const [r, n] of rs) if (total < n) return [r, n]; return null; }
 function tally() {
   const rows = [], bonus = [];
   let total = G.score;
@@ -354,16 +365,18 @@ function tally() {
   for (const [a, b] of G.bonuses) { total += b; bonus.push([a, b]); }
   if (G.cleared && G.hits === 0) { total += T.noHitBonus; bonus.push(['NO-HIT RUN', T.noHitBonus]); }
   if (G.cleared) { const b = Math.round(Math.max(0, G.shield) * T.shieldBonus); total += b; bonus.push(['SHIELD LEFT', b]); }
-  const rank = rankOf(total);
-  const run = { score: G.score, total, rank, rings: G.ringsGot, ringTotal: level.ringTotal, grazes: G.grazes, deflects: G.deflects, kills: G.kills,
+  // stars and rank come from the rings caught and the style shown, never from the score (Evrtek 11-06; levels.js)
+  const run = { score: G.score, total, rings: G.ringsGot, ringTotal: level.ringTotal, grazes: G.grazes, scrapes: G.scrapes, deflects: G.deflects, kills: G.kills,
     hits: G.hits, dist: Math.round(G.dist), time: Math.round(G.time * 10) / 10, cleared: G.cleared, bestMult: G.bestMult, multiMax: G.multiMax, level: level.n, dev: G.devRun || G.jumped };
-  const st = starsFor(run);
+  const st = grade(run, level.n), rank = st.rank;
+  run.rank = rank;
   // dev runs and jumped-in runs never write anything
   const best0 = Progress.get(level.n);
   const saved = run.dev ? { isNew: false, after: best0, newStars: false } : Progress.save(level.n, run, st.stars);
   rows.push(['SCORE', fmt(G.score)]);
   rows.push(['RINGS', G.ringsGot + ' / ' + level.ringTotal]);
   rows.push(['GRAZES', G.grazes]);
+  rows.push(['CLOSE CALLS', G.scrapes]);
   rows.push(['DEFLECTS', G.deflects + (G.multiMax > 1 ? '  (best x' + G.multiMax + ')' : '')]);
   rows.push(['KILLS', G.kills]);
   rows.push(['BEST COMBO', 'x' + G.bestMult + '  (' + G.bestChain + ' chain)']);
@@ -373,18 +386,18 @@ function tally() {
   for (const [a, b] of rows) tr(a, b);
   for (const [a, b] of bonus) tr(a, '+' + fmt(b), 'bonus');
   tr('TOTAL', fmt(total), 'total');
-  const nr = nextRank(total);
-  if (nr) tr('NEXT: RANK ' + nr[0], fmt(nr[1]) + '  (+' + fmt(nr[1] - total) + ')', 'next'); // rule 34
+  // rule 34: the next rank's need is the line under the stars (ui.showStars), in words: what this run lacked for it
   tr('BEST', fmt(Math.max(total, saved.after.score)) + (saved.after.rank && !saved.isNew ? '  ' + saved.after.rank : ''), '');
   $('end-head').textContent = G.cleared ? 'SECTOR CLEAR' : 'SHIELD DOWN';
   $('end-head').classList.toggle('clear', G.cleared);
-  const rk = $('end-rank'); rk.className = 'rank r-' + rank;
-  const ri = $('end-rank-img'); ri.src = artUrl('rank-' + rank.toLowerCase()); ri.alt = 'RANK ' + rank;
+  // Yori's rank letters; a clear with one star (or no clear) has no letter
+  const rk = $('end-rank'); rk.className = 'rank r-' + (rank || 'none'); rk.hidden = !rank;
+  const ri = $('end-rank-img'); if (rank) { ri.src = artUrl('rank-' + rank.toLowerCase()); ri.alt = 'RANK ' + rank; }
   $('end-nohit').hidden = !(G.cleared && G.hits === 0);
   $('end-new').hidden = !saved.isNew;
   ui.showStars(st, saved, run.dev);
   G.total = total; G.rank = rank;
-  window.__sw.lastRun = Object.assign(run, { stars: st.stars, saved: !run.dev });
+  window.__sw.lastRun = Object.assign(run, { stars: st.stars, hint: st.next, saved: !run.dev });
 }
 function showEnd() {
   tally();
@@ -392,6 +405,111 @@ function showEnd() {
   ui.endScreen(level, G.cleared);
   menuMusic();
 }
+
+// ---------------------------------------------------------------- the roll lesson
+// 0.3.0 (Evrtek 11-06: "The barrel roll needs a tutorial moment"). Once, early on level 1, until the player has sent a
+// shot back with a roll: any deflect anywhere counts, and so does SKIP. Its pod (js/levels/level2/tutor.js) is born at
+// the spawn line like anything else and asks for the lesson as it comes into range. Then the world stops and the
+// lesson says how to roll; the pod charges and fires ONE slow shot in slow motion that cannot hurt and always arrives
+// (it steers onto the ship); roll into it and it goes home, and the lesson says so. A miss gets one more go; a second
+// miss lets you carry on (the lesson comes back next time). The music dips while it runs.
+const LESSON = {
+  intro: 'A slow shot is on its way. Roll right as it reaches you and it flies straight back.',
+  again: 'Not quite. Roll just as it gets to you.',
+  done: "That's the move. Roll into any red shot to send it back.",
+  later: "No worries. You'll get another go next time.",
+  freeze: 1.8, charge: 0.9, slow: 0.35, shotT: 1.1, tries: 2,
+};
+const TUTOR = { on: false, phase: '', t: 0, tries: 0, pod: null, shot: null, scale: 1, say: '' };
+window.__sw.tutor = TUTOR;
+// the key line follows how the player is playing right now (input.mode) and the keys they have bound: a double tap
+// drawn on the screen, or PRESS [SPACE] OR (mouse) LEFT-CLICK TO ROLL
+function lessonKey() { return input.mode === 'touch' ? { tap: true, text: 'DOUBLE-TAP TO ROLL' } : { keys: input.labels('roll'), mouse: input.binds.mouse }; }
+function lessonSay(say, skip) { TUTOR.say = say; hud.tutor({ key: lessonKey(), say, skip }); }
+function tutorWants(name) { return name === 'roll' && !Progress.tip('roll') && G.state === 'play'; }
+function tutorReady(pod) {
+  if (TUTOR.on || !tutorWants('roll')) return false;
+  Object.assign(TUTOR, { on: true, phase: 'freeze', t: 0, tries: 0, pod, shot: null, scale: 0 });
+  pod.hold = pod.z;
+  lessonSay(LESSON.intro, true);
+  audio.musicLevel(0.5, 0.3);
+  return true;
+}
+function tutorFire() {
+  const p = TUTOR.pod;
+  TUTOR.shot = course.fire(p, ship.x, ship.y, { T: LESSON.shotT, owner: p, dmg: 0, noEase: true });
+  TUTOR.shot.tutor = true; TUTOR.shot.home = true;
+  TUTOR.phase = 'shot'; TUTOR.t = 0; p.chargeK = 0;
+}
+// the lesson is over: say the last thing for a moment while the world comes back up to speed
+function tutorEnd(say, key) {
+  if (TUTOR.pod) { TUTOR.pod.hold = undefined; TUTOR.pod.chargeK = 0; TUTOR.pod.leave = true; } // if its shot did not come home, it climbs away
+  TUTOR.phase = 'out'; TUTOR.t = 0;
+  hud.tutor({ key, say, skip: false });
+  audio.musicLevel(G.greedOn ? 1.12 : 1, 0.6);
+}
+function tutorSkip() { if (!TUTOR.on || TUTOR.phase === 'out') return; Progress.setTip('roll'); tutorEnd('', ''); TUTOR.t = 1.6; }
+function tutorOff() { if (TUTOR.on && TUTOR.phase !== 'out') audio.musicLevel(1, 0.3); if (TUTOR.pod) { TUTOR.pod.hold = undefined; TUTOR.pod.chargeK = 0; } Object.assign(TUTOR, { on: false, phase: '', pod: null, shot: null, scale: 1 }); hud.tutor(null); }
+// real seconds in; the time scale for this frame out
+function tutorTick(dt) {
+  TUTOR.t += dt;
+  const p = TUTOR.pod;
+  if (TUTOR.phase === 'freeze') {
+    input.take('roll'); // a roll pressed while it explains would only be wasted
+    TUTOR.scale = 0;
+    if (TUTOR.t >= LESSON.freeze) { TUTOR.phase = 'charge'; TUTOR.t = 0; }
+  } else if (TUTOR.phase === 'charge') {
+    TUTOR.scale = LESSON.slow;
+    p.chargeK = Math.min(1, TUTOR.t / LESSON.charge);
+    if (TUTOR.t >= LESSON.charge) tutorFire();
+  } else if (TUTOR.phase === 'shot') {
+    TUTOR.scale = LESSON.slow;
+    const s = TUTOR.shot;
+    if (s.reflected) { Progress.setTip('roll'); tutorEnd(LESSON.done, 'NICE ROLL!'); }
+    else if (s.z >= 0 || !course.shots.includes(s)) {
+      TUTOR.tries++;
+      if (TUTOR.tries < LESSON.tries) { TUTOR.phase = 'charge'; TUTOR.t = 0; lessonSay(LESSON.again, true); }
+      else tutorEnd(LESSON.later, '');
+    }
+  } else if (TUTOR.phase === 'out') {
+    TUTOR.scale = Math.min(1, LESSON.slow + TUTOR.t / 0.6);
+    if (TUTOR.t >= 2.4) tutorOff();
+  }
+  return TUTOR.scale;
+}
+window.addEventListener('keydown', (e) => { if (TUTOR.on && e.key === 'Enter') { e.preventDefault(); tutorSkip(); } });
+// the player changed how they play (a touch, or a key or the mouse): every control text follows, the lesson too
+input.onMode = (m) => {
+  document.body.classList.toggle('touch', m === 'touch');
+  if (TUTOR.on && TUTOR.phase !== 'out') lessonSay(TUTOR.say, true);
+  if (ui) ui.controlsChanged();
+};
+input.onBinds = () => { if (TUTOR.on && TUTOR.phase !== 'out') lessonSay(TUTOR.say, true); if (ui) ui.controlsChanged(); };
+$('tutor-skip').addEventListener('click', (e) => { e.preventDefault(); tutorSkip(); });
+
+// ---------------------------------------------------------------- incoming fire, off the screen
+// 0.3.0 (Evrtek 11-06): a shot that will cross your plane close to you and that you cannot see (off the edge of the
+// screen, or behind the camera) gets a red marker on the screen's edge, pointing at it, brighter as it gets close.
+// Shots on screen speak for themselves (their shooter's charge, the muzzle flash, the bigger shot and its trail).
+const tmpT = new THREE.Vector3();
+function threats() {
+  const out = [];
+  for (const s of course.shots) {
+    if (s.reflected) continue;
+    const vz = s.vz + (s.carry ? G.v : 0); if (vz <= 0) continue;
+    const t = -s.z / vz; if (!(t > 0 && t < 2.2)) continue;
+    if (Math.hypot(s.x + s.vx * t - ship.x, s.y + s.vy * t - ship.y) > 3.2) continue;
+    tmpT.set(s.x, s.y, s.z).project(camera);
+    const behind = tmpT.z > 1;
+    let nx = tmpT.x, ny = tmpT.y; if (behind) { nx = -nx; ny = -ny; }
+    if (!behind && Math.abs(nx) < 0.97 && Math.abs(ny) < 0.97) continue;
+    out.push({ nx, ny, t });
+  }
+  out.sort((a, b) => a.t - b.t);
+  return out.slice(0, 6);
+}
+// Yori's lettering of a level's name (the level select's), for its opening banner
+function levelArt(n) { const c = CATALOGUE.find((q) => q.n === n); return c ? 'ui/name-' + (c.art || String(c.n).padStart(2, '0')) : null; }
 
 // ---------------------------------------------------------------- the frame
 function sectionT() { const s = level.sectionAt(G.courseD); return clamp((G.courseD - s.d0) / (s.d1 - s.d0), 0, 1); }
@@ -419,7 +537,7 @@ function step(dt) {
   while (G.evL < line.length && line[G.evL].d - D <= level.spawnD) { const e = line[G.evL++]; course.spawn(e, -(e.d - D)); }
   while (G.evN < now.length && (now[G.evN].at ?? now[G.evN].d) <= D && G.state === 'play') {
     const e = now[G.evN++];
-    if (e.type === 'banner') { const s = level.sections.find((q) => q.id === e.section); hud.showBanner(s.name, s.sub); }
+    if (e.type === 'banner') { const s = level.sections.find((q) => q.id === e.section); hud.showBanner(s.name, s.sub, s.d0 === 0 ? levelArt(level.n) : null); }
     else if (e.type === 'end') finish(true);
     else if (e.type === 'boss') bossStart();
     else if (e.type === 'music') audio.switchTrack(e.track, { from: e.from, loop: e.loop });
@@ -516,15 +634,19 @@ function frame(now) {
   if (G.state === 'play') {
     quality.sample(dt);
     let sdt = dt;
+    // the roll lesson stops the world, then runs it in slow motion (its own clock is real time)
+    if (TUTOR.on) sdt *= tutorTick(dt);
+    const k = sdt / dt; // how fast the world runs this frame, for the parts that move by real time
     if (G.hitstop > 0) { G.hitstop -= dt; sdt = 0; }
     const p0 = performance.now();
     // dev speed: whole extra steps (stable), or a half step
     const reps = G.dev ? G.devSpeed : 1;
     if (sdt > 0) { if (reps < 1) step(sdt * reps); else for (let i = 0; i < reps && G.state === 'play'; i++) step(sdt); }
     const p1 = performance.now();
-    backdrop.update(dt, sdt > 0 ? G.v : 0, G.dist, G.greedOn ? 1 : 0, camera, G.boostK);
+    backdrop.update(dt, sdt > 0 ? G.v * k : 0, G.dist, G.greedOn ? 1 : 0, camera, G.boostK);
     const p2 = performance.now();
     fx.update(sdt, sdt > 0 ? G.v : 0);
+    hud.threats(G.state === 'play' ? threats() : [], dt);
     const p3 = performance.now();
     hud.update(dt, G);
     PROF.t = [p1 - p0, p2 - p1, p3 - p2, performance.now() - p3];
@@ -538,6 +660,7 @@ function frame(now) {
     scenery.update(dt, v, level.sectionAt(G.courseD), sectionT());
     backdrop.update(dt, v, G.dist, 0, camera);
     fx.update(dt * slow, v);
+    hud.threats([], dt);
     hud.update(dt, G);
     const hold = G.state === 'dying' ? 1.8 : (level.outro ? level.outro.time : 2.4);
     if (G.endT > hold) showEnd();
@@ -604,7 +727,7 @@ async function start(n = 1, opts = {}) {
   else { audio.stopMusic(0.01); audio.startMusic(spec); }
 }
 function toTitle() {
-  G.state = 'title'; hud.show(false); input.enabled = false; hud.boss({ show: false });
+  G.state = 'title'; hud.show(false); input.enabled = false; hud.boss({ show: false }); tutorOff();
   course.reset(false); if (level) scenery.setLevel(level, level.sections[0], true); if (level) backdrop.setLook(level.sections[0].look || level.sections[0].id);
   S.root.visible = true;
   ui.launcher();
@@ -631,7 +754,7 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('blur', () => { if (TOUCH) pause(); });
 
-const ui = new UI({ G, audio, hud, Progress, CATALOGUE, start, toTitle, pause, resume, greedGo, menuMusic, touch: TOUCH, version: VERSION, params, level: () => level });
+const ui = new UI({ G, audio, hud, input, Progress, CATALOGUE, start, toTitle, pause, resume, greedGo, menuMusic, touch: TOUCH, version: VERSION, params, level: () => level });
 window.__sw.ui = ui;
 window.__sw.backdrop = backdrop; window.__sw.prof = PROF; window.__sw.start = start; window.__sw.toTitle = toTitle; window.__sw.greedGo = greedGo; window.__sw.tryRoll = tryRoll; window.__sw.camera = camera; window.__sw.box = box;
 window.__sw.prepare = prepare; window.__sw.newRun = newRun; window.__sw.THREE = THREE;
@@ -646,7 +769,7 @@ window.__sw.prepare = prepare; window.__sw.newRun = newRun; window.__sw.THREE = 
   await prepare(1, (k, what) => ui.progress(0.3 + k * 0.7, what));
   await sound; // the prompt never shows before the menu track is decoded, so the press always has music to start
   window.__sw.warm = true;
-  if (params.has('test')) import('./testhooks.js?v=0.2.0').then((m) => m.install(window.__sw));
+  if (params.has('test')) import('./testhooks.js?v=0.3.0').then((m) => m.install(window.__sw));
   if (G.state !== 'boot') return; // a test or a dev link already started a run
   ui.pressToStart(() => {
     audio.unlock();

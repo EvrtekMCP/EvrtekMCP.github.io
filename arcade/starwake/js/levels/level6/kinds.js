@@ -2,9 +2,9 @@
 // rest is the canyon's furniture, all "space" pieces with red-lit edges where they hurt (rule 9 and 11): SPURS of
 // ice from the left or right wall, CURTAINS of ice from the top or the floor, and the FORK, a glacier spire that
 // splits the canyon into a left and a right channel for a while (the twist).
-import { THREE, defineObstacle, clamp, smoothstep, SHIP_R, SPAWN_D } from '../../api.js?v=0.2.0';
-import { Serpent } from '../../bosses/leviathan/serpent.js?v=0.2.0';
-import { RIFT } from './scenery.js?v=0.2.0';
+import { THREE, defineObstacle, clamp, smoothstep, SHIP_R, SPAWN_D } from '../../api.js?v=0.3.0';
+import { Serpent } from '../../bosses/leviathan/serpent.js?v=0.3.0';
+import { RIFT } from './scenery.js?v=0.3.0';
 
 // ------------------------------------------------------------------ shared ice
 let ice = null, crack = null, clearIce = null;

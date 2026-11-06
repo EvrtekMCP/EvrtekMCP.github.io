@@ -1,5 +1,5 @@
 // THE RING (level 1 on): amber, the collect hue (rule 9). Fly through its middle for points, combo and shield.
-import { THREE, definePickup, RING_R } from '../../api.js?v=0.2.0';
+import { THREE, definePickup, RING_R } from '../../api.js?v=0.3.0';
 
 let geo, mat, glow;
 export default definePickup({
@@ -28,7 +28,8 @@ export default definePickup({
     } else {
       ring.opacity = fade; halo.opacity = 0.55 * fade;
       if (e.crossed) {
-        if (Math.hypot(api.ship.x - e.x, api.ship.y - e.y) < RING_R) { e.anim = 0.001; api.game.ring(e); }
+        // 0.3.0: the early levels count a ring from further out (the level's ease.ring, levels.js EASE)
+        if (Math.hypot(api.ship.x - e.x, api.ship.y - e.y) < RING_R * api.ease.ring) { e.anim = 0.001; api.game.ring(e); }
         else api.game.missRing(e);
       }
     }

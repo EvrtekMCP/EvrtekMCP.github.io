@@ -2,9 +2,12 @@
 // the haze and off to its side, and swoops in over 2.5 s, braking onto the start of its pass (0.2.0: it used to blink
 // into being 150 m out, and Evrtek saw it); a side arrow warns 1 s before the pass, as before. It crosses the lane
 // firing shots with a red nose flash before each, then climbs away ahead and back into the fog. Two make a pair.
-import { THREE, defineEnemy, buildModel, clamp, SPAWN_D } from '../../api.js?v=0.2.0';
+import { THREE, defineEnemy, buildModel, clamp, SPAWN_D } from '../../api.js?v=0.3.0';
 
 const qA = new THREE.Quaternion(), qB = new THREE.Quaternion(), eul = new THREE.Euler();
+// 0.3.0, the human pass (Evrtek 11-06: "more of a visual warning when incoming weapons fire is coming"): the red nose
+// flash before each shot lasts 0.45 s (it was 0.3) and swells to three times the size
+const TEL = 0.45;
 function make(api) {
   const g = new THREE.Group();
   g.add(buildModel('strafer').group);
@@ -18,7 +21,7 @@ function make(api) {
 export default defineEnemy({
   name: 'shrike',
   motion: 'own', spawnAt: 'now', lead: 1.5,
-  hazard: { cls: 'shot', introduced: 1, shotT: 1.15, tel: 0.3 },
+  hazard: { cls: 'shot', introduced: 1, shotT: 1.15, tel: TEL },
   targetable: (e) => e.phase === 1,
   spawn(e, ev, api) {
     e.obj = api.course.get('shrike', () => make(api));
@@ -59,8 +62,8 @@ export default defineEnemy({
       const next = slots[e.fired];
       if (next !== undefined && k > next - 0.12 && e.tel < 0) { e.tel = 0; api.game.telegraph(e); }
       if (e.tel >= 0) {
-        e.tel += dt; ud.nose.material.opacity = 0.3 + 0.7 * Math.min(1, e.tel / 0.3); ud.nose.scale.setScalar(1.5 + 2 * Math.min(1, e.tel / 0.3));
-        if (e.tel > 0.3) { e.tel = -1; e.fired++; api.fire(e, clamp(ship.x + ship.vx * 0.3, -box.x, box.x), clamp(ship.y + ship.vy * 0.3, -box.y, box.y), { T: 1.15 }); ud.nose.material.opacity = 0.3; ud.nose.scale.setScalar(1.5); }
+        e.tel += dt; const kt = Math.min(1, e.tel / TEL); ud.nose.material.opacity = 0.3 + 0.7 * kt * (0.8 + 0.2 * Math.sin(e.tel * 50)); ud.nose.scale.setScalar(1.5 + 3.5 * kt);
+        if (e.tel > TEL) { e.tel = -1; e.fired++; api.fire(e, clamp(ship.x + ship.vx * 0.3, -box.x, box.x), clamp(ship.y + ship.vy * 0.3, -box.y, box.y), { T: 1.15 }); ud.nose.material.opacity = 0.3; ud.nose.scale.setScalar(1.5); }
       }
       if (k >= 1) { e.phase = 2; e.t = 0; }
       return;

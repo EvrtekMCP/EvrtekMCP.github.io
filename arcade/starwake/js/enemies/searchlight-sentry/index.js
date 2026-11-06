@@ -18,8 +18,8 @@
 //            plane, and which way it is swinging then (+1 toward larger angles)
 //     hunt:  { slew }    metres per second the pool closes at (the ship crosses the box in about half a second)
 //     wave:  { shrikes, pods, shots }  what being caught calls
-import { THREE, defineEnemy, buildModel, clamp, smoothstep, SPAWN_D, READ_D, HUES } from '../../api.js?v=0.2.0';
-import { SENTRY, PIVOT } from './mesh.js?v=0.2.0';
+import { THREE, defineEnemy, buildModel, clamp, smoothstep, SPAWN_D, READ_D, HUES } from '../../api.js?v=0.3.0';
+import { SENTRY, PIVOT } from './mesh.js?v=0.3.0';
 
 export const SCALE = 1.7;            // Yori's 3.0-tall sentry, drawn 5.1 tall so it reads beside a 3.3 ship
 export const BEAM_R = 2.3;           // the beam is this wide (radius, metres) 20 m out; it spreads at a fixed angle (see beamR)

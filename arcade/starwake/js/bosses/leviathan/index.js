@@ -10,11 +10,17 @@
 //                  maw keeps firing. Shorter than phase 2.
 // It always fires on a two- or three-bar loop at 135 bpm (rules 26 and 28), and if it is not beaten it dives into
 // the ice and is gone (escapeAfter): the level still ends, without its bonus.
-import { THREE, defineBoss, clamp, damp, smoothstep, SPAWN_D } from '../../api.js?v=0.2.0';
-import { Serpent, LEV } from './serpent.js?v=0.2.0';
+// 0.3.0, the human pass (Evrtek 11-06, "make them easier"): it was the steepest step on the curve, pressure with no let-up
+// (one calm moment in a 66 s fight). Now every loop ends in a BREATHER, one whole bar (1.78 s) with nothing fired, so
+// its rhythm stays on the bar lines; THE SHARDS throws one beat earlier so its ice has landed before the breather; the
+// maw's fan, its harshest volley, flies 15% slower; and each lens takes LENS_HP hits (was 8), so the fight, with fewer
+// volleys to send back, is no longer than it was.
+import { THREE, defineBoss, clamp, damp, smoothstep, SPAWN_D } from '../../api.js?v=0.3.0';
+import { Serpent, LEV } from './serpent.js?v=0.3.0';
 
-const BAR = 4 * 60 / 135;
-const SEGS = 6, LENS_HP = 8;
+const BAR = 4 * 60 / 135, BEAT = BAR / 4;
+const BREATHER = 1; // bars of calm at the end of every loop (0.3.0)
+const SEGS = 6, LENS_HP = 4;
 const tmpV = new THREE.Vector3();
 
 // ---- its attacks
@@ -23,7 +29,7 @@ function maw(b, api, o) {
   b.jawSnap = 1;
   const m = muzzle(b), tx = clamp(api.ship.x + api.ship.vx * 0.15, -api.box.x, api.box.x), ty = clamp(api.ship.y + api.ship.vy * 0.15, -api.box.y, api.box.y);
   const n = o.n || 5, w = o.spread || 4.4;
-  for (let i = 0; i < n; i++) { const k = i / (n - 1) - 0.5; api.fire(m, clamp(tx + k * w, -api.box.x, api.box.x), ty + Math.abs(k) * 0.6, { T: o.T || 1.3, owner: b }); }
+  for (let i = 0; i < n; i++) { const k = i / (n - 1) - 0.5; api.fire(m, clamp(tx + k * w, -api.box.x, api.box.x), ty + Math.abs(k) * 0.6, { T: o.T || 1.5, owner: b }); } // 0.3.0: 1.5 s (was 1.3)
   api.game.sfx('fire', { rate: 0.55, vol: 1 });
 }
 // THE SHARD DROP: three ice mines flung from the tail, down the canyon, onto your line one after another
@@ -91,11 +97,11 @@ export default defineBoss({
   // rule 25: only the first live lens, front to back, is lit and hittable
   exposed(b, w) { return w.i === b.litIndex; },
   phases: [
-    { name: 'THE MAW', until: 0.67, loop: 2 * BAR,
+    { name: 'THE MAW', until: 0.67, loop: (2 + BREATHER) * BAR,
       pattern: [{ at: 1.0, attack: maw, tel: 0.7, n: 5 }, { at: 2.75, attack: 'aimed', n: 3, gap: 0.2, T: 1.3, tel: 0.8 }] },
-    { name: 'THE SHARDS', until: 0.34, loop: 3 * BAR,
-      pattern: [{ at: 1.0, attack: maw, tel: 0.7, n: 5 }, { at: 2.4, attack: shardDrop, tel: 0.6 }, { at: 4.4, attack: 'aimed', n: 2, gap: 0.25, T: 1.3, tel: 0.8 }] },
-    { name: 'THE WALL SLAM', loop: 2 * BAR,
+    { name: 'THE SHARDS', until: 0.34, loop: (3 + BREATHER) * BAR,
+      pattern: [{ at: 1.0, attack: maw, tel: 0.7, n: 5 }, { at: 2.4 - BEAT, attack: shardDrop, tel: 0.6 }, { at: 4.4 - BEAT, attack: 'aimed', n: 2, gap: 0.25, T: 1.3, tel: 0.8 }] },
+    { name: 'THE WALL SLAM', loop: (2 + BREATHER) * BAR,
       pattern: [{ at: 0.5, attack: wallSlam, tel: 0.8 }, { at: 2.2, attack: maw, tel: 0.7, n: 5 }] },
   ],
   enter(b, api) { b.litIndex = 0; b.sway = 0; b.jawSnap = 0; b.tipsT = 0; b.slamT = 9; b.slamTo = 0; b.thrash = 0; b.headX = 0; },

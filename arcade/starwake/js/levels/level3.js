@@ -2,13 +2,13 @@
 // fields open and close on the beat, then stop where you will pass. Everything is written in BARS of the level's
 // track (level3/time.js turns bars into metres), so the gates, the speed steps, the arches and the Warden's entrance
 // all land on bar lines (rule 30). The beat sheet and the four acts are below; the boss is THE WARDEN.
-import { defineLevel, ranksFrom } from '../api.js?v=0.2.0';
-import ring from '../pickups/ring/index.js?v=0.2.0';
-import gate from './level3/gate.js?v=0.2.0';
-import gateTurret from '../enemies/gate-turret/index.js?v=0.2.0';
-import { ringDecor, shard, gateRows, shards, horizon } from './level3/scenery.js?v=0.2.0';
-import { barD as B, speed } from './level3/time.js?v=0.2.0';
-import warden from '../bosses/warden/index.js?v=0.2.0';
+import { defineLevel } from '../api.js?v=0.3.0';
+import ring from '../pickups/ring/index.js?v=0.3.0';
+import gate from './level3/gate.js?v=0.3.0';
+import gateTurret from '../enemies/gate-turret/index.js?v=0.3.0';
+import { ringDecor, shard, gateRows, shards, horizon } from './level3/scenery.js?v=0.3.0';
+import { barD as B, speed } from './level3/time.js?v=0.3.0';
+import warden from '../bosses/warden/index.js?v=0.3.0';
 
 const BOSS_AT = B(84.75);          // a beat before bar 85: the Warden's track cuts in on bar 85's line
 const LENGTH = Math.round(BOSS_AT + 900);
@@ -33,7 +33,6 @@ export default defineLevel({
   music: { track: 'levels/level3/music' },
   bossMusic: 'bosses/warden',
   sfx: [{ id: 'boss-warning', gain: 0.61 }, { id: 'boss-hit', gain: 1 }, { id: 'boss-phase', gain: 0.65 }, { id: 'boss-defeat', gain: 1 }],
-  ranks: ranksFrom(775000),         // a real (non-god) autopilot run on merged main, 11-05: 204 of 206 rings, 0 hits (CLU A at merge)
   sections: [
     { id: 'outer', name: 'THE OUTER RINGS', sub: 'SECTOR 1', d0: 0, d1: B(25), scenery: { 'l3-gate-rows': 1, 'l3-shards': 0.6, 'l3-horizon': 1 } },
     { id: 'metronome', name: 'THE METRONOME', sub: 'SECTOR 2', d0: B(25), d1: B(49), scenery: { 'l3-gate-rows': 1, 'l3-shards': 1, 'l3-horizon': 1 } },

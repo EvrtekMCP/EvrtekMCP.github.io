@@ -7,13 +7,13 @@
 //   Act 3 TWIST      bars 41-56  the Breakdown       fire rains from ABOVE: the shade flips under the plates
 //   Act 4 MASTER     bars 57-88  Build two, Drop two, Drive: the Great Flare on the drop, the mix, the escape
 // Ending: off the limb into night (Drive), the star falling away beneath you.
-import { defineLevel, clamp } from '../api.js?v=0.2.0';
-import ringKind from '../pickups/ring/index.js?v=0.2.0';
-import seeker from '../enemies/seeker-drone/index.js?v=0.2.0';
-import flareKind from './level4/flare.js?v=0.2.0';
-import raftKind, { RAFT_LOW, RAFT_HIGH } from './level4/raft.js?v=0.2.0';
-import { surface, prominence, prominences, plateDrift, plateDrifts, greatLoop } from './level4/scenery.js?v=0.2.0';
-import { at, speed, LENGTH, BAR, BEAT } from './level4/timeline.js?v=0.2.0';
+import { defineLevel, clamp } from '../api.js?v=0.3.0';
+import ringKind from '../pickups/ring/index.js?v=0.3.0';
+import seeker from '../enemies/seeker-drone/index.js?v=0.3.0';
+import flareKind from './level4/flare.js?v=0.3.0';
+import raftKind, { RAFT_LOW, RAFT_HIGH } from './level4/raft.js?v=0.3.0';
+import { surface, prominence, prominences, plateDrift, plateDrifts, greatLoop } from './level4/scenery.js?v=0.3.0';
+import { at, speed, LENGTH, BAR, BEAT } from './level4/timeline.js?v=0.3.0';
 
 const LEAD1 = 3 * BEAT, LEAD = 2.5 * BEAT;   // eruption lead: 1.25 s while the idea is new (rule 12: 1.2 s+), 1.04 s after
 
@@ -26,8 +26,7 @@ export default defineLevel({
   music: { track: 'levels/level4/music' }, // l4-t1: 144.002 bpm, first beat 0.2013 s, its sections on the bars above
   bossMusic: null,
   sfx: [{ id: 'flare-roar', gain: 0.48 }],
-  // ranksFrom(490243): a NON-god autopilot run (NOGOD=1 tools/test/run.js popin - 4): 332 of 335 rings, 1 hit, 8 kills
-  ranks: [['DEGENERATE', 435000], ['S', 300000], ['A', 190000], ['B', 95000], ['C', 0]],
+  // 0.2.0 ranked by score from a NON-god autopilot run (490,243) (NOGOD=1 tools/test/run.js popin - 4): 332 of 335 rings, 1 hit, 8 kills
   sections: [
     { id: 'shore', name: 'THE BRIGHT SHORE', sub: 'SECTOR 1', d0: 0, d1: at(17), look: 'shore',
       scenery: { 'l4-surface': 1, 'l4-prominences': 0.55, 'l4-plate-drifts': 0.7, 'l4-great-loop': 1 } },

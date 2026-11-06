@@ -8,9 +8,9 @@
 //    its running lights say which way: pink, it is going LEFT; teal, RIGHT (Yori's port and starboard). Its sideways
 //    position is a straight line in depth, so where it is when you reach it is fixed by the course, not by luck.
 // Positions are in the normalised flight box, so the cells and gaps are the same on a wide screen and a tall one.
-import { THREE, defineObstacle, Instanced, GlowPoints, modelGroups, clamp, smoothstep, SHIP_R, READ_D } from '../../api.js?v=0.2.0';
-import { MESH } from './mesh.js?v=0.2.0';
-import { zones, courseAt } from './scenery.js?v=0.2.0';
+import { THREE, defineObstacle, Instanced, GlowPoints, modelGroups, clamp, smoothstep, SHIP_R, READ_D } from '../../api.js?v=0.3.0';
+import { MESH } from './mesh.js?v=0.3.0';
+import { zones, courseAt } from './scenery.js?v=0.3.0';
 
 // the lane grid (normalised): three columns, two decks
 export const COL_X = [-0.67, 0, 0.67], DECK_Y = [-0.5, 0.5];

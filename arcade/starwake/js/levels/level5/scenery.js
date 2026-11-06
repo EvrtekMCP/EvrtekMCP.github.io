@@ -6,9 +6,9 @@
 //   l5-sky     the storm's far lightning: big bolts deep in the haze on the bar lines, and the flash behind them
 //   l5-crown   the landmark: the STORMCROWN, a turning column of storm cloud on the horizon, lit from inside;
 //              it rises in the quiet cell and stands over the lightning wall at the end
-import { THREE, TX, defineScenery, GlowPoints, clamp } from '../../api.js?v=0.2.0';
-import { ArcLayer } from './arcs.js?v=0.2.0';
-import { beatAt } from './track.js?v=0.2.0';
+import { THREE, TX, defineScenery, GlowPoints, clamp } from '../../api.js?v=0.3.0';
+import { ArcLayer } from './arcs.js?v=0.3.0';
+import { beatAt } from './track.js?v=0.3.0';
 
 const side = (R, lo, hi) => R.sign() * R.range(lo, hi);
 // ---- the pylon stream (l5-pylon and l5-pair are course decor, in storm.js)

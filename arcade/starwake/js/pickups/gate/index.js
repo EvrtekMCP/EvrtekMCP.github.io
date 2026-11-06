@@ -1,6 +1,6 @@
 // THE LIGHTGATE (level 1, sector 4): a hexagonal hoop. Through the middle pays; the frame hurts.
 // 0.2.0 (Evrtek, rule 9 ruling): white-violet, not cyan, so it reads as structure and never as your own shot.
-import { THREE, definePickup, SHIP_R } from '../../api.js?v=0.2.0';
+import { THREE, definePickup, SHIP_R } from '../../api.js?v=0.3.0';
 
 const GATE_R = 2.9, GATE_T = 0.32;
 let geo, disc, mat, fill;
@@ -20,10 +20,13 @@ export default definePickup({
   update(e, dt, api) {
     e.obj.rotation.z += dt * 0.6;
     api.pose(e);
+    // 0.3.0, the human pass (Evrtek 11-06; the human bot's newcomer took six of its thirteen hits on these): the frame
+    // only costs a hit when the ship's middle all but meets the bar, so the clear hole is the gate's inside edge (it
+    // was the inside edge less most of a wing) and a near miss outside the frame is a near miss (rule 14)
     if (e.crossed) {
       const d = Math.hypot(api.ship.x - e.x, api.ship.y - e.y);
-      if (d < GATE_R - GATE_T - SHIP_R * 0.7) api.game.gate(e, true);
-      else if (d < GATE_R + GATE_T + SHIP_R * 0.7) api.game.gateFrame(e);
+      if (d < GATE_R - GATE_T) api.game.gate(e, true);
+      else if (d < GATE_R + GATE_T + SHIP_R * 0.25) api.game.gateFrame(e);
       else api.game.gate(e, false);
     }
     if (e.z > 16) e.alive = false;

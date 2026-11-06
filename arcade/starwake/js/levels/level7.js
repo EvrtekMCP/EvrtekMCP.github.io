@@ -9,11 +9,11 @@
 // arrangement Intro 8 bars, Groove 16, Build 8, Drop 16, Breakdown 8, Build 8, Drop 16, Drive 8. Speed steps and
 // the set piece sit on bar lines (rule 30): the speed is a function of time stepped on bars, integrated once into
 // distance, so B(bar) is where bar `bar` starts on the course at the nominal speed.
-import { defineLevel, clamp, smooth, ranksFrom } from '../api.js?v=0.2.0';
-import ring from '../pickups/ring/index.js?v=0.2.0';
-import swarm from '../enemies/swarm-unit/index.js?v=0.2.0';
-import { freighter, COL_X, DECK_Y } from './level7/traffic.js?v=0.2.0';
-import { tower, sign, tunnelRing, blast, towers, signs, traffic, trafficHigh, lanes, spindle, zones } from './level7/scenery.js?v=0.2.0';
+import { defineLevel, clamp, smooth } from '../api.js?v=0.3.0';
+import ring from '../pickups/ring/index.js?v=0.3.0';
+import swarm from '../enemies/swarm-unit/index.js?v=0.3.0';
+import { freighter, COL_X, DECK_Y } from './level7/traffic.js?v=0.3.0';
+import { tower, sign, tunnelRing, blast, towers, signs, traffic, trafficHigh, lanes, spindle, zones } from './level7/scenery.js?v=0.3.0';
 
 // ---------------------------------------------------------------- the music's clock, and the speed on it
 const BPM = 142.017, FIRST = 0.0996, BAR = 240 / BPM;   // l7 take 1's measured grid (audio-src/music-takes-levels.json)
@@ -45,7 +45,6 @@ export default defineLevel({
   length: LENGTH,
   speed: (d) => vAt(tOfD(d)),
   music: { track: 'levels/level7/music' }, // CLU (S)'s take l7-t1: 142.017 bpm, first beat 0.0996 s (its .json)
-  ranks: ranksFrom(715000), // a real (non-god) autopilot run on merged main, 11-05: 274 of 275 rings, 0 hits (CLU A at merge)
   sections: [
     { id: 'lanes', name: 'THE NIGHT LANES', sub: 'SECTOR 1', d0: 0, d1: B(33), look: 'night',
       scenery: { 'l7-towers': 1, 'l7-signs': 0.7, 'l7-traffic': 1, 'l7-lanes': 1, 'l7-spindle': 0.8 } },

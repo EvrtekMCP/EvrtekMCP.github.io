@@ -16,12 +16,12 @@
 //                                                   SET PIECE THE GALLERY on drop two's first four bars (64-68)
 //   ACT 4  THE KALEIDOSCOPE    bars 80-92  136 m/s  the drive: every volley, a step less dense than the Hall's peak
 //          THE STILL WATER     bars 92-95  142 m/s  the calm before THE TWINS (boss on bar 95)
-import { defineLevel, clamp } from '../api.js?v=0.2.0';
-import ring from '../pickups/ring/index.js?v=0.2.0';
-import emitter from '../enemies/crystal-emitter/index.js?v=0.2.0';
-import twins, { hull as twinsHull } from '../bosses/twins/index.js?v=0.2.0';
-import { mirrorGate } from './level9/mirror.js?v=0.2.0';
-import { mirrorCrystal, crystalArch, mirrorPane, mirrorShard, crystalBanks, crystalFloorField, archStream, hallPanes, glassFloor, thePrism, glints } from './level9/scenery.js?v=0.2.0';
+import { defineLevel, clamp } from '../api.js?v=0.3.0';
+import ring from '../pickups/ring/index.js?v=0.3.0';
+import emitter from '../enemies/crystal-emitter/index.js?v=0.3.0';
+import twins, { hull as twinsHull } from '../bosses/twins/index.js?v=0.3.0';
+import { mirrorGate } from './level9/mirror.js?v=0.3.0';
+import { mirrorCrystal, crystalArch, mirrorPane, mirrorShard, crystalBanks, crystalFloorField, archStream, hallPanes, glassFloor, thePrism, glints } from './level9/scenery.js?v=0.3.0';
 
 // ---- the music grid and the speed curve, one schedule (rule 30). From audio/levels/level9/music.json (take 3).
 const BAR_S = 1.76484, FIRST_BEAT = 0.1023;
@@ -52,8 +52,7 @@ export default defineLevel({
   music: { track: 'levels/level9/music' },  // take 3 (Evrtek: "Music is all great!!")
   bossMusic: 'bosses/twins',                // same tempo and key; cuts in on a bar line
   sfx: [],
-  // ranksFrom(568000): the autopilot's NON-god total (325 of 376 rings, 0 hits, the Twins down, 3 stars), 11-05
-  ranks: [['DEGENERATE', 505000], ['S', 345000], ['A', 220000], ['B', 110000], ['C', 0]],
+  // 0.2.0 ranked by score from the autopilot's NON-god total (568,000) (325 of 376 rings, 0 hits, the Twins down, 3 stars), 11-05
   sections: [
     { id: 'shallows', name: 'THE GLASS SHALLOWS', sub: 'SECTOR 1', d0: 0, d1: A1, look: 'shallows',
       scenery: { 'l9-banks': 1, 'l9-floorfield': 0.8, 'l9-arches': 1, 'l9-floor': 1, 'l9-prism': 1, 'l9-glints': 1 } },

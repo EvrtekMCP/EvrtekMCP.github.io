@@ -1,7 +1,7 @@
 // LEVEL 1 scenery: the gas giant, the derelict's hull floor and its far skyline (0.1.0's backdrop pieces, now
 // set pieces that fade by weight instead of switching on and off in a frame), and the streams that keep every
 // stretch full (0.2.0, ruling 5).
-import { THREE, TX, rng, defineScenery, defineDecor, Instanced, clamp } from '../../api.js?v=0.2.0';
+import { THREE, TX, rng, defineScenery, defineDecor, Instanced, clamp } from '../../api.js?v=0.3.0';
 
 // ---- the gas giant: hangs far off, drifts back very slowly
 export const gasGiant = defineScenery({

@@ -7,12 +7,12 @@
 // Leviathan's key) is laid out in bars: intro 8, groove 16, build 8, DROP 16, breakdown 8, build 8, DROP 16, drive.
 // Each pass is timed so its head reaches you ON a bar line; the speed steps, the forks, the set pieces and the boss
 // sit on bar lines; the four acts follow the track's sections (bars below count from 0 at the first beat).
-import { defineLevel, clamp, smoothstep, ranksFrom } from '../api.js?v=0.2.0';
-import ring from '../pickups/ring/index.js?v=0.2.0';
-import iceMine from '../obstacles/ice-mine/index.js?v=0.2.0';
-import { spur, curtain, fork, pass, icefall } from './level6/kinds.js?v=0.2.0';
-import { RIFT, SCENERY, DECOR, mouthGap } from './level6/scenery.js?v=0.2.0';
-import leviathan from '../bosses/leviathan/index.js?v=0.2.0';
+import { defineLevel, clamp, smoothstep } from '../api.js?v=0.3.0';
+import ring from '../pickups/ring/index.js?v=0.3.0';
+import iceMine from '../obstacles/ice-mine/index.js?v=0.3.0';
+import { spur, curtain, fork, pass, icefall } from './level6/kinds.js?v=0.3.0';
+import { RIFT, SCENERY, DECOR, mouthGap } from './level6/scenery.js?v=0.3.0';
+import leviathan from '../bosses/leviathan/index.js?v=0.3.0';
 
 // ---- the clock: the track's kick grid (music.json: bpm 134.999, firstBeat 0.0054 s)
 const BAR = 1.77779, FIRST_BEAT = 0.0054;
@@ -51,7 +51,6 @@ export default defineLevel({
   bossMusic: 'bosses/leviathan',
   sfx: [{ id: 'ice-crack', gain: 1 }],
   // the autopilot's total (god mode, every shot rolled, GREED taken): ~583k on 11-05 (score 512.8k + the boss 60k + shield 10k)
-  ranks: ranksFrom(591000), // a real (non-god) autopilot run on merged main, 11-05: 215 of 231 rings, 8 hits (CLU A at merge)
   sections: [
     { id: 'mouth', name: 'THE RIFT MOUTH', sub: 'SECTOR 1', d0: 0, d1: STEPS[0], scenery: { 'l6-walls': 1, 'l6-shards': 1, 'l6-spray': 1, 'l6-ribs': 1, 'l6-floor': 1 } },
     { id: 'narrows', name: 'THE NARROWS', sub: 'SECTOR 2', d0: STEPS[0], d1: STEPS[1], scenery: { 'l6-walls': 1, 'l6-shards': 1, 'l6-spray': 1, 'l6-ribs': 0.6, 'l6-floor': 1 } },

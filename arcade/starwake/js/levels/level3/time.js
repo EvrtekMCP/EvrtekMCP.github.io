@@ -2,8 +2,8 @@
 // the level's track and turned into metres here, from the track's own beat grid and a speed that steps up only on
 // bar lines (rule 6). While the track plays, the speed leans (at most 6 %) toward wherever the music says the ship
 // should be, so hit-pauses and the odd stall never leave the gates crossing off the beat.
-import { clamp, smooth } from '../../api.js?v=0.2.0';
-import { beatClock, boundApi } from './beat.js?v=0.2.0';
+import { clamp, smooth } from '../../api.js?v=0.3.0';
+import { beatClock, boundApi } from './beat.js?v=0.3.0';
 
 // audio/levels/level3/music.json (take l3-t2): the kick grid fitted to the take
 export const TRACK = { name: 'levels/level3/music', firstBeat: 0.1473, beatSec: 0.42858, barSec: 1.71432 };

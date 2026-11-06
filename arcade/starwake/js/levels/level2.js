@@ -4,13 +4,14 @@
 // through the moon's core, where the crack slabs close in to walls.
 // Authored in MUSIC TIME (rule 30): the sections and the peak sit on bar lines of the level's track (138 bpm,
 // 1.739 s a bar), converted to metres through the speed curve at base speed.
-import { defineLevel, clamp, ranksFrom } from '../api.js?v=0.2.0';
-import ring from '../pickups/ring/index.js?v=0.2.0';
-import boostRing from '../pickups/boost-ring/index.js?v=0.2.0';
-import boulder from '../obstacles/boulder/index.js?v=0.2.0';
-import pod from '../enemies/pod/index.js?v=0.2.0';
-import shrike from '../enemies/shrike/index.js?v=0.2.0';
-import { chunk, slab, dust, chunks, slabs, canyon, dustRivers, brokenMoon, sunShafts } from './level2/scenery.js?v=0.2.0';
+import { defineLevel, clamp } from '../api.js?v=0.3.0';
+import ring from '../pickups/ring/index.js?v=0.3.0';
+import boostRing from '../pickups/boost-ring/index.js?v=0.3.0';
+import boulder from '../obstacles/boulder/index.js?v=0.3.0';
+import pod from '../enemies/pod/index.js?v=0.3.0';
+import shrike from '../enemies/shrike/index.js?v=0.3.0';
+import { chunk, slab, dust, chunks, slabs, canyon, dustRivers, brokenMoon, sunShafts } from './level2/scenery.js?v=0.3.0';
+import { tutorPod } from './level2/tutor.js?v=0.3.0';
 
 const LEN = 16400, V0 = 64, V1 = 150;
 const speed = (d) => V0 + (V1 - V0) * Math.pow(clamp(d / LEN, 0, 1), 0.85);
@@ -28,9 +29,6 @@ export default defineLevel({
   speed,
   boostMul: 1.4, // the worst case for the warning check: GREED and a boost together
   music: { track: 'levels/level2/music' },
-  // as the OPENER (Evrtek's swap, 11-05: "keep level 1's thresholds forgiving"): 0.85 of a real run's total
-  // (460k: 164 of 187 rings, 3 hits), so A and its second star come within a newcomer's reach
-  ranks: ranksFrom(390000),
   sections: [
     { id: 'breaking', name: 'THE BREAKING', sub: 'SECTOR 1', d0: S1, d1: S2, scenery: { 'l2-moon': 1, 'l2-chunks': 1, 'l2-slabs': 0.3 } },
     { id: 'dust', name: 'THE DUST RIVERS', sub: 'SECTOR 2', d0: S2, d1: S3, scenery: { 'l2-moon': 1, 'l2-chunks': 0.8, 'l2-dust-rivers': 1, 'l2-slabs': 0.3 } },
@@ -44,7 +42,7 @@ export default defineLevel({
     cracks: { seed: 203, sky: ['#0a080c', 'rgba(90,62,40,A)', 'rgba(42,58,106,A)', 'rgba(216,184,144,A)'], fog: 0x1e140e, hemiSky: 0x2a3a6a, hemiGround: 0x120c08, sun: 0xffe0b0, sunDir: [0.9, 0.7, 0.2], sunPower: 3.2, hemiPower: 1.0, band: 0.55, gas: 0.5, cloud: 0x4a3a30, clouds: 0.08 },
     core: { seed: 204, sky: ['#08070c', 'rgba(42,58,106,A)', 'rgba(58,30,22,A)', 'rgba(216,160,112,A)'], fog: 0x14100e, hemiSky: 0x34488a, hemiGround: 0x0e0a08, sun: 0xffc890, sunDir: [0.5, 1, 0.1], sunPower: 2.4, hemiPower: 1.4, band: 0.5, gas: 0.55, cloud: 0x2a3a6a, clouds: 0.12 },
   },
-  kinds: [ring, boostRing, boulder, pod, shrike, chunk, slab, dust],
+  kinds: [ring, boostRing, boulder, pod, shrike, chunk, slab, dust, tutorPod],
   scenery: [brokenMoon, chunks, slabs, canyon, dustRivers, sunShafts],
   beats: [
     { d: 0, tag: 'calm', what: 'the moon breaks open ahead; rings in the open' },
@@ -74,10 +72,13 @@ export default defineLevel({
       add(D(7), 'call', { text: 'FLY THE AMBER CHAIN: BOOST!', cls: '' }); // the opener teaches (Evrtek's swap, 11-05)
       chain(D(9), 0, -0.2, 0, 0.3, 4, 34);                 // the first chain: straight down the middle, nothing else
       line(D(14), 0.6, 0.4, -0.6, 0.4);
+      // the roll lesson (0.3.0, Evrtek 11-06): its pod, low and left, clear of the rings; asks for the lesson about 12 s
+      // in, after the first chain. Only there until the player has sent a shot back once (main.js, the roll lesson).
+      add(D(15.2), 'l2-tutor-pod', { nx: -0.35, ny: -0.5 });
       chain(D(18), -0.6, 0, 0.6, 0, 4, 34);
       rock(D(22), 1, 0.85, -0.3, 2.4, 380);                // alone and slow, crossing at the edge; rings sit opposite
       line(D(21.4), -0.6, 0.2, -0.5, -0.2, 4, 22);
-      sine(D(26), 8, 24, 0.55, 0.45);
+      sine(D(26), 8, 28, 0.45, 0.38);                      // 0.3.0: a turn the ship can follow (was 24 m apart, 0.55 x 0.45)
       chain(D(31), 0.5, 0.5, -0.5, -0.4, 5, 32);
       add(D(30.5), 'call', { text: 'ROLL INTO ITS FIRE TO SEND IT HOME', cls: 'c-cyan' });
       add(D(33), 'pod', { nx: -0.5, ny: 0.6, drift: 1, bursts: 1, shots: 1 });
@@ -90,7 +91,7 @@ export default defineLevel({
       while (t < 82) {
         const k = R.int(0, 2);
         if (k === 0) { const y = R.range(-0.5, 0.5); chain(D(t), R.range(-0.7, -0.2), y, R.range(0.2, 0.7), -y, 4, 34); rock(D(t + 5), R.sign(), R.range(-0.7, 0.7), R.range(-0.6, 0.6), R.range(2.2, 3.2)); }
-        else if (k === 1) { sine(D(t), 6, 24, R.range(0.35, 0.6), R.range(0.3, 0.5), R() * 6); rock(D(t + 3), R.sign(), R.range(-0.5, 0.5), R.range(-0.5, 0.5), R.range(2.4, 3.4)); }
+        else if (k === 1) { sine(D(t), 6, 32, R.range(0.3, 0.45), R.range(0.25, 0.38), R() * 6); rock(D(t + 3), R.sign(), R.range(-0.5, 0.5), R.range(-0.5, 0.5), R.range(2.4, 3.4)); }
         else { line(D(t), R.range(-0.7, 0.7), R.range(-0.6, 0.6), R.range(-0.7, 0.7), R.range(-0.6, 0.6)); add(D(t + 2.5), 'pod', { nx: R.range(-0.7, 0.7), ny: R.range(0.2, 0.8), drift: R.range(-2, 2), bursts: 2, shots: 2 }); }
         t += R.range(5, 7);
       }
@@ -103,7 +104,7 @@ export default defineLevel({
     //      a boulder volley: speed is the reward and the risk. The peak sits on drop two, about two thirds in.
     {
       let t = 85;
-      while (t < 97) { sine(D(t), 6, 26, 0.45, 0.4, R() * 6); t += 4.5; }
+      while (t < 97) { sine(D(t), 6, 36, 0.32, 0.28, R() * 6); t += 4.5; } // 0.3.0: was 26 m apart, 0.45 x 0.4
       t = 98;
       while (t < 120) {
         const y = R.range(-0.4, 0.4);
@@ -123,11 +124,12 @@ export default defineLevel({
     //      longest chains at full speed, boulders rolling through; spectacle more than difficulty (rule 5)
     {
       let t = 128;
-      sine(D(126), 8, 26, 0.4, 0.35);
+      sine(D(126), 8, 36, 0.3, 0.26);                     // 0.3.0: was 26 m apart, 0.4 x 0.35
       while (D(t) < LEN - 500) {
         chain(D(t), R.range(-0.6, 0.6), R.range(-0.4, 0.4), R.range(-0.6, 0.6), R.range(-0.4, 0.4), 6, 36);
         if (R() < 0.7) rock(D(t + 3.5), R.sign(), R.range(-0.6, 0.6), R.range(-0.5, 0.5), R.range(2.6, 3.6), 280);
-        sine(D(t + 4.2), 6, 30, 0.5, 0.4, R() * 6);
+        // 0.3.0: flown under a boost (x1.4), so eight rings 46 m apart (was six, 30 m apart, 0.5 x 0.4)
+        sine(D(t + 4.2), 8, 46, 0.3, 0.24, R() * 6);
         t += 7;
       }
     }

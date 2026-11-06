@@ -1,11 +1,11 @@
-// STARWAKE 0.2.0: the course engine. It owns the live entities (every kind's instances), spawns them from the
+// STARWAKE 0.3.0: the course engine. It owns the live entities (every kind's instances), spawns them from the
 // level's events at the spawn line, streams them down the track, and runs every shot in flight: aimed fire, the
 // graze, the hit and the deflect. What each thing looks like and does lives in its kind (js/pickups, js/obstacles,
 // js/enemies, js/levels/*); what it scores lives in the game (main.js), reached through api.game.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.2.0';
-import { GlowPoints } from './fx.js?v=0.2.0';
-import { getKind } from './registry.js?v=0.2.0';
-import { appear, Instanced, HIT_R, GRAZE_R, DEFLECT_R, SHOT_T, LEGACY_LINE } from './space.js?v=0.2.0';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.3.0';
+import { GlowPoints } from './fx.js?v=0.3.0';
+import { getKind } from './registry.js?v=0.3.0';
+import { appear, Instanced, HIT_R, GRAZE_R, DEFLECT_R, SHOT_T, LEGACY_LINE } from './space.js?v=0.3.0';
 
 // While a level warms up (shaders compiling on a loading screen) its kinds run against this: every game call
 // does nothing, so a sample shrike does not flash a warning and a sample ring does not score.
@@ -17,7 +17,7 @@ export class Course {
     this.list = []; this.shots = []; this.pool = {};
     this.inited = new Set(); this.active = [];
     this.nextId = 1;
-    this.shotLayer = new GlowPoints(api.scene, 900, api.glowTex);
+    this.shotLayer = new GlowPoints(api.scene, 1800, api.glowTex); // 0.3.0: nine glows a shot (head, trail, core)
     this.onSpawn = null; // test hook
   }
   // A level's kinds: each is built (init) the first time any level uses it. Kinds of the previous level that are
@@ -125,8 +125,10 @@ export class Course {
   // opts: T, vel [vx, vy, vz] (then it flies free), carry (1 = also streams with the track), owner (who a roll
   // sends it back to, when not `from`: a boss fires from a muzzle point but owns the shot), noReflect (a roll
   // does not send it back: it must be dodged; drawn white-hot), dmg (shield damage on a hit).
+  // 0.3.0, the human pass: on the early levels every shot takes longer to arrive (the level's ease.shot), so it is
+  // seen for longer and there is more time to roll; noEase keeps a flight time exact (the roll lesson's own shot).
   fire(from, tx, ty, opts = {}) {
-    const T = opts.T || SHOT_T;
+    const T = (opts.T || SHOT_T) * (opts.noEase || !this.api.ease ? 1 : this.api.ease.shot);
     const s = { x: from.x, y: from.y, z: from.z, vx: (tx - from.x) / T, vy: (ty - from.y) / T, vz: -from.z / T, owner: opts.owner || from, reflected: false, grazed: false,
       alive: true, age: 0, carry: 0, noReflect: !!opts.noReflect, dmg: opts.dmg };
     if (opts.vel) { s.vx = opts.vel[0]; s.vy = opts.vel[1]; s.vz = opts.vel[2]; s.carry = opts.carry || 0; }
@@ -162,6 +164,8 @@ export class Course {
         s.x += s.vx * dt; s.y += s.vy * dt; s.z += s.vz * dt;
         if (s.z < -900 || s.age > 4) s.alive = false;
       } else {
+        // the roll lesson's shot steers onto the ship, so it always arrives where the roll has to meet it
+        if (s.home) { const tr = -s.z / Math.max(1, s.vz + (s.carry ? v : 0)); if (tr > 0.05) { s.vx = (ship.x - s.x) / tr; s.vy = (ship.y - s.y) / tr; } }
         s.x += s.vx * dt; s.y += s.vy * dt; s.z += (s.vz + (s.carry ? v : 0)) * dt;
         if (pz < 0 && s.z >= 0) {
           // where it crossed the ship's plane
@@ -184,11 +188,14 @@ export class Course {
       }
       if (!s.alive) { this.shots[i] = this.shots[this.shots.length - 1]; this.shots.pop(); continue; }
       const pulse = 0.85 + 0.15 * Math.sin(s.age * 30);
-      // a capsule: three glows strung back along the line of flight, a pale core at the head
-      const sp = Math.hypot(s.vx, s.vy, s.vz) || 1, bx = s.vx / sp * 0.7, by = s.vy / sp * 0.7, bz = s.vz / sp * 0.7;
-      if (s.reflected) { for (let k = 0; k < 3; k++) L.push(s.x - bx * k, s.y - by * k, s.z - bz * k, 2.2 - k * 0.4, 0.33, 0.9, 1, 0.75); L.push(s.x, s.y, s.z, 0.9, 1, 1, 1, 1); }
-      else if (s.noReflect) { for (let k = 0; k < 3; k++) L.push(s.x - bx * k, s.y - by * k, s.z - bz * k, (3.2 - k * 0.5) * pulse, 1, 0.45, 0.2, 0.8); L.push(s.x, s.y, s.z, 1.4, 1, 1, 1, 1); }
-      else { for (let k = 0; k < 3; k++) L.push(s.x - bx * k, s.y - by * k, s.z - bz * k, (2.5 - k * 0.45) * pulse, 1, 0.2, 0.33, 0.7); L.push(s.x, s.y, s.z, 0.95, 1, 0.9, 0.9, 1); }
+      // 0.3.0, the human pass (Evrtek 11-06: "more of a visual warning when incoming weapons fire is coming"): a bigger,
+      // brighter head with a white-hot core, and a TRAIL strung back along its line of flight (as it moves through the
+      // track) that points at whoever fired it. Red hurts, cyan is yours (rule 9); the great beam stays white-hot.
+      const rz = s.vz + (!s.reflected && s.carry ? v : 0), sp = Math.hypot(s.vx, s.vy, rz) || 1;
+      const len = Math.min(10, Math.max(2.4, sp * 0.06)), n = 7, bx = s.vx / sp * len / n, by = s.vy / sp * len / n, bz = rz / sp * len / n;
+      if (s.reflected) { for (let k = 0; k < n; k++) L.push(s.x - bx * k, s.y - by * k, s.z - bz * k, 2.6 * (1 - k / n * 0.7), 0.33, 0.9, 1, 0.8 * (1 - k / n)); L.push(s.x, s.y, s.z, 1.1, 1, 1, 1, 1); }
+      else if (s.noReflect) { for (let k = 0; k < n; k++) L.push(s.x - bx * k, s.y - by * k, s.z - bz * k, 3.6 * (1 - k / n * 0.6) * pulse, 1, 0.45, 0.2, 0.85 * (1 - k / n)); L.push(s.x, s.y, s.z, 1.6, 1, 1, 1, 1); }
+      else { L.push(s.x, s.y, s.z, 4.2 * pulse, 1, 0.16, 0.3, 0.55); for (let k = 0; k < n; k++) L.push(s.x - bx * k, s.y - by * k, s.z - bz * k, 3.0 * (1 - k / n * 0.7) * pulse, 1, 0.2, 0.33, 0.85 * (1 - k / n * 0.85)); L.push(s.x, s.y, s.z, 1.35, 1, 0.92, 0.92, 1); }
     }
     L.end();
   }
