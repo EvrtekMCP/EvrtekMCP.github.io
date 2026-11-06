@@ -1,0 +1,83 @@
+{
+ "track": "boss-leviathan",
+ "label": "Boss, the Leviathan (level 6): dark aggressive chase techno, same tempo and key as level 6",
+ "take": "leviathan-t1",
+ "rate": 48000,
+ "duration": 145.682,
+ "bpm": 134.993,
+ "firstBeat": 0.2022,
+ "beatSec": 0.44447,
+ "barSec": 1.77787,
+ "loopStart": 7.31175,
+ "loopEnd": 135.31835,
+ "loopBars": 72,
+ "introBars": 4,
+ "lufs": -11.1,
+ "sections": [
+  {
+   "name": "Impact",
+   "kind": "intro",
+   "startBar": 1,
+   "bars": 4,
+   "start": 0.202,
+   "end": 7.314
+  },
+  {
+   "name": "Phase one",
+   "kind": "groove",
+   "startBar": 5,
+   "bars": 16,
+   "start": 7.314,
+   "end": 35.76
+  },
+  {
+   "name": "Phase two",
+   "kind": "groove",
+   "startBar": 21,
+   "bars": 16,
+   "start": 35.76,
+   "end": 64.206
+  },
+  {
+   "name": "Pause",
+   "kind": "break",
+   "startBar": 37,
+   "bars": 4,
+   "start": 64.206,
+   "end": 71.317
+  },
+  {
+   "name": "Build",
+   "kind": "build",
+   "startBar": 41,
+   "bars": 4,
+   "start": 71.317,
+   "end": 78.428
+  },
+  {
+   "name": "Phase three",
+   "kind": "drop",
+   "startBar": 45,
+   "bars": 16,
+   "start": 78.428,
+   "end": 106.874
+  },
+  {
+   "name": "Phase four",
+   "kind": "drop",
+   "startBar": 61,
+   "bars": 16,
+   "start": 106.874,
+   "end": 135.32
+  },
+  {
+   "name": "Outro",
+   "kind": "outro",
+   "startBar": 77,
+   "bars": 6,
+   "start": 135.32,
+   "end": 145.682
+  }
+ ],
+ "note": "The whole take plays from the top once, then loops from loopStart (the first bar after the intro) to loopEnd (the end of the last real bar). bpm and firstBeat are the kick grid fitted to the take: beat n sits at firstBeat + n * beatSec, so effects can be timed to it. An AAC decode can carry a few ms of priming: shift the points by (decoded length - duration), as audio.js does for level 1."
+}

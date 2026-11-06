@@ -1,0 +1,251 @@
+{
+ "note": "normalised x,y of the ten level nodes on the sector map, per layout; kind: level | boss | final; accent: the level colour",
+ "landscape": [
+  {
+   "level": 1,
+   "x": 0.08,
+   "y": 0.74,
+   "kind": "level",
+   "accent": "#d8a070"
+  },
+  {
+   "level": 2,
+   "x": 0.17,
+   "y": 0.56,
+   "kind": "level",
+   "accent": "#9a7cff"
+  },
+  {
+   "level": 3,
+   "x": 0.27,
+   "y": 0.68,
+   "kind": "boss",
+   "accent": "#9fffe0"
+  },
+  {
+   "level": 4,
+   "x": 0.36,
+   "y": 0.44,
+   "kind": "level",
+   "accent": "#ff8a5a"
+  },
+  {
+   "level": 5,
+   "x": 0.46,
+   "y": 0.6,
+   "kind": "level",
+   "accent": "#c0a8ff"
+  },
+  {
+   "level": 6,
+   "x": 0.55,
+   "y": 0.38,
+   "kind": "boss",
+   "accent": "#a8e8ff"
+  },
+  {
+   "level": 7,
+   "x": 0.64,
+   "y": 0.54,
+   "kind": "level",
+   "accent": "#ff2fa0"
+  },
+  {
+   "level": 8,
+   "x": 0.73,
+   "y": 0.32,
+   "kind": "level",
+   "accent": "#fff0d0"
+  },
+  {
+   "level": 9,
+   "x": 0.82,
+   "y": 0.48,
+   "kind": "boss",
+   "accent": "#e0d0ff"
+  },
+  {
+   "level": 10,
+   "x": 0.92,
+   "y": 0.3,
+   "kind": "final",
+   "accent": "#ff3355"
+  }
+ ],
+ "portrait": [
+  {
+   "level": 1,
+   "x": 0.3,
+   "y": 0.9,
+   "kind": "level",
+   "accent": "#d8a070"
+  },
+  {
+   "level": 2,
+   "x": 0.68,
+   "y": 0.83,
+   "kind": "level",
+   "accent": "#9a7cff"
+  },
+  {
+   "level": 3,
+   "x": 0.34,
+   "y": 0.75,
+   "kind": "boss",
+   "accent": "#9fffe0"
+  },
+  {
+   "level": 4,
+   "x": 0.7,
+   "y": 0.67,
+   "kind": "level",
+   "accent": "#ff8a5a"
+  },
+  {
+   "level": 5,
+   "x": 0.32,
+   "y": 0.6,
+   "kind": "level",
+   "accent": "#c0a8ff"
+  },
+  {
+   "level": 6,
+   "x": 0.66,
+   "y": 0.52,
+   "kind": "boss",
+   "accent": "#a8e8ff"
+  },
+  {
+   "level": 7,
+   "x": 0.36,
+   "y": 0.44,
+   "kind": "level",
+   "accent": "#ff2fa0"
+  },
+  {
+   "level": 8,
+   "x": 0.68,
+   "y": 0.36,
+   "kind": "level",
+   "accent": "#fff0d0"
+  },
+  {
+   "level": 9,
+   "x": 0.34,
+   "y": 0.28,
+   "kind": "boss",
+   "accent": "#e0d0ff"
+  },
+  {
+   "level": 10,
+   "x": 0.6,
+   "y": 0.19,
+   "kind": "final",
+   "accent": "#ff3355"
+  }
+ ],
+ "launcherLandscape": [
+  {
+   "level": 1,
+   "x": 0.446,
+   "y": 0.679
+  },
+  {
+   "level": 2,
+   "x": 0.497,
+   "y": 0.567
+  },
+  {
+   "level": 3,
+   "x": 0.554,
+   "y": 0.642
+  },
+  {
+   "level": 4,
+   "x": 0.605,
+   "y": 0.493
+  },
+  {
+   "level": 5,
+   "x": 0.662,
+   "y": 0.592
+  },
+  {
+   "level": 6,
+   "x": 0.714,
+   "y": 0.456
+  },
+  {
+   "level": 7,
+   "x": 0.765,
+   "y": 0.555
+  },
+  {
+   "level": 8,
+   "x": 0.816,
+   "y": 0.418
+  },
+  {
+   "level": 9,
+   "x": 0.867,
+   "y": 0.518
+  },
+  {
+   "level": 10,
+   "x": 0.924,
+   "y": 0.406
+  }
+ ],
+ "launcherPortrait": [
+  {
+   "level": 1,
+   "x": 0.348,
+   "y": 0.497
+  },
+  {
+   "level": 2,
+   "x": 0.637,
+   "y": 0.464
+  },
+  {
+   "level": 3,
+   "x": 0.378,
+   "y": 0.428
+  },
+  {
+   "level": 4,
+   "x": 0.652,
+   "y": 0.391
+  },
+  {
+   "level": 5,
+   "x": 0.363,
+   "y": 0.359
+  },
+  {
+   "level": 6,
+   "x": 0.622,
+   "y": 0.322
+  },
+  {
+   "level": 7,
+   "x": 0.394,
+   "y": 0.285
+  },
+  {
+   "level": 8,
+   "x": 0.637,
+   "y": 0.248
+  },
+  {
+   "level": 9,
+   "x": 0.378,
+   "y": 0.211
+  },
+  {
+   "level": 10,
+   "x": 0.576,
+   "y": 0.17
+  }
+ ]
+}

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="STARWAKE">
+<meta name="theme-color" content="#05040f">
+<title>STARWAKE</title>
+<!-- Every URL here is relative and stamped (orders/arcade-releases.md): the folder runs as-is from the Arcade,
+     from a preview page, or from tools/serve.js on 127.0.0.1. ES modules, so it needs a server, not a file://. -->
+<!-- Cabinet icons and share card: Yori, 2026-11-05. Local files, relative paths. -->
+<link rel="icon" href="starwake-favicon.svg?v=0.2.0" type="image/svg+xml">
+<link rel="icon" href="starwake-favicon.ico?v=0.2.0" sizes="any">
+<link rel="apple-touch-icon" href="starwake-touch-icon.png?v=0.2.0">
+<!-- Share card. Meta only: scrapers fetch these, the page never does. -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="STARWAKE">
+<meta property="og:description" content="No guns, just nerve. Fly the rings, roll into enemy fire and send it home. An arcade space-runner from REIMERTEK STUDIOS.">
+<meta property="og:url" content="https://reimertek.com/arcade/starwake/">
+<meta property="og:image" content="https://reimertek.com/arcade/starwake/og-starwake.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="css/starwake.css?v=0.2.0">
+</head>
+<body>
+<canvas id="view" aria-label="STARWAKE play field"></canvas>
+
+<div id="hud" class="off">
+  <div class="hud-left">
+    <div id="score" class="big">0</div>
+    <div id="combo" class="combo">x1</div>
+    <div id="rings" class="small">RINGS 0</div>
+  </div>
+  <div class="hud-right">
+    <div class="shield-label">SHIELD</div>
+    <div class="shield"><div id="shield-fill"></div></div>
+    <div class="shield-label greed-label">GREED</div>
+    <div class="greed"><div id="greed-fill"></div></div>
+    <button id="pause-btn" class="icon-btn" aria-label="Pause">II</button>
+  </div>
+  <div id="roll" class="roll" aria-label="Barrel roll ready"><div id="roll-fill"></div><span>ROLL</span></div>
+  <!-- GREED gets its own button so a double tap only ever means roll (MCP 11-05: they must not collide) -->
+  <button id="greed-btn" class="greed-btn" hidden>GREED!</button>
+  <div id="banner" class="banner"></div>
+  <div id="callout" class="callout"></div>
+  <div id="callout-art" class="callout-art"></div>
+  <div id="pops"></div>
+  <div id="warn-l" class="warn left">&#9664;</div>
+  <div id="warn-r" class="warn right">&#9654;</div>
+  <div id="flash" class="flash"></div>
+</div>
+
+<div id="boss" class="bossbar" hidden><div class="boss-name" id="boss-name"></div><div class="boss-track"><div id="boss-fill"></div></div><div class="boss-pips" id="boss-pips"></div></div>
+<div id="dev-badge" class="dev-badge" hidden>DEV <span id="dev-fps"></span></div>
+<div id="toast" class="toast"></div>
+<div id="cut" class="cut"></div>
+
+<!-- the launcher (Evrtek 11-05; Yori's art, art/ui): its first press is also the audio gate -->
+<div id="title" class="screen ui-screen launcher" hidden>
+  <div class="ui-bg bg-launcher"></div>
+  <div class="ui-bg constellation"></div>
+  <img class="launcher-wake" src="art/ui/launcher-wake.png?v=0.2.0" width="456" height="312" alt="">
+  <div class="launcher-body">
+    <h1 class="wordmark"><img src="art/starwake-wordmark.png?v=0.2.0" srcset="art/starwake-wordmark.png?v=0.2.0 1x, art/starwake-wordmark@2x.png?v=0.2.0 2x" width="1065" height="215" alt="STARWAKE"></h1>
+    <div class="menu">
+      <button id="start-btn" class="img-btn b-new-game"><span class="sr">NEW GAME</span></button>
+      <button id="continue-btn" class="img-btn b-continue" hidden><span class="sr">CONTINUE</span><span class="cap" id="continue-cap"></span></button>
+      <button id="select-btn" class="img-btn b-level-select"><span class="sr">LEVEL SELECT</span></button>
+      <button id="options-btn" class="img-btn b-options"><span class="sr">OPTIONS</span></button>
+    </div>
+  </div>
+  <button id="dev-btn" class="ghost-btn dev" hidden>DEV MENU</button>
+  <div class="foot">
+    <div id="best-line" class="best"></div>
+    <div class="hint">
+      <span class="pc">PC: mouse or WASD to steer &middot; Q / E or Shift to roll &middot; Space for GREED &middot; Esc to pause</span>
+      <span class="phone">PHONE: drag anywhere to steer &middot; double-tap to roll &middot; GREED has its own button</span>
+    </div>
+    <div class="credits-line">Code CLU &middot; Art Yori &middot; Sound ElevenLabs &middot; &copy; Evrtek &middot; <span id="ver"></span></div>
+  </div>
+  <div class="studio" id="studio">REIMERTEK STUDIOS</div>
+</div>
+
+<!-- the level select: Yori's sector map; tiles sit under their nodes (art/ui/map-nodes.json) -->
+<div id="select" class="screen ui-screen" hidden>
+  <div class="ui-bg bg-select"></div>
+  <div class="map" id="map"><div class="map-route"></div><div class="map-tiles" id="tiles"></div></div>
+  <img class="select-title" src="art/ui/title-select-sector.png?v=0.2.0" width="508" height="78" alt="SELECT SECTOR">
+  <button class="img-btn b-back select-back" data-back><span class="sr">BACK</span></button>
+  <div class="totals" id="totals"></div>
+</div>
+
+<div id="options" class="screen" hidden>
+  <div class="title-card small-card opt-card">
+    <h2>OPTIONS</h2>
+    <button class="opt-row img-tog" data-tog="music"><img src="art/ui/icon-music.png?v=0.2.0" alt=""><img src="art/ui/label-music.png?v=0.2.0" alt="MUSIC"><img class="sw" src="art/ui/toggle-on.png?v=0.2.0" alt=""></button>
+    <button class="opt-row img-tog" data-tog="sfx"><img src="art/ui/icon-sfx.png?v=0.2.0" alt=""><img src="art/ui/label-sfx.png?v=0.2.0" alt="SOUND"><img class="sw" src="art/ui/toggle-on.png?v=0.2.0" alt=""></button>
+    <button class="img-btn b-back small" data-back><span class="sr">BACK</span></button>
+  </div>
+</div>
+
+<div id="confirm" class="screen" hidden>
+  <div class="title-card small-card">
+    <h2>NEW GAME?</h2>
+    <div class="rules">This clears your stars, unlocks and best scores on this device.</div>
+    <button id="confirm-yes" class="go">ERASE AND START</button>
+    <button class="ghost-btn" data-back>CANCEL</button>
+  </div>
+</div>
+
+<!-- the hidden dev menu (Evrtek 11-05): ?dev, typing "dev" on the launcher, or five taps on the studio name -->
+<div id="dev" class="screen" hidden>
+  <div class="select-card dev-card">
+    <div class="select-head"><span class="h">DEV MENU</span><span class="totals">runs here never save</span></div>
+    <div class="dev-toggles">
+      <button class="tog" id="dev-god">GOD: OFF</button>
+      <button class="tog" id="dev-speed">SPEED: 1x</button>
+      <button class="tog" id="dev-fps-btn">FPS: OFF</button>
+      <button class="tog" id="dev-off">DEV MODE: ON</button>
+    </div>
+    <div class="dev-levels" id="dev-levels"></div>
+    <button class="ghost-btn" data-back>BACK</button>
+  </div>
+</div>
+
+<div id="paused" class="screen" hidden>
+  <div class="title-card small-card">
+    <h2>PAUSED</h2>
+    <button id="resume-btn" class="go">RESUME</button>
+    <div class="toggles">
+      <button class="tog" data-tog="music">MUSIC: ON</button>
+      <button class="tog" data-tog="sfx">SOUND: ON</button>
+    </div>
+    <button id="quit-btn" class="ghost-btn">QUIT TO MENU</button>
+  </div>
+</div>
+
+<div id="end" class="screen" hidden>
+  <div class="title-card small-card">
+    <div id="end-head" class="end-head">SHIELD DOWN</div>
+    <div id="end-rank" class="rank"><img id="end-rank-img" alt=""></div>
+    <div id="end-stars" class="end-stars"></div>
+    <div id="end-nohit" class="end-nohit" hidden><img src="art/no-hit-glow.png?v=0.2.0" alt="NO HIT"></div>
+    <table class="tally" id="tally"></table>
+    <div id="end-new" class="newbest" hidden>NEW BEST</div>
+    <button id="again-btn" class="go">FLY AGAIN</button>
+    <button id="next-btn" class="go" hidden>NEXT LEVEL</button>
+    <button id="levels-btn" class="ghost-btn">LEVELS</button>
+    <button id="title-btn" class="ghost-btn">MENU</button>
+  </div>
+</div>
+
+<!-- the loading screen (Yori's art): the Wake in warp; the ring is real progress (sound, skies, shaders); when
+     it is full the Wake drops out of warp -->
+<div id="loading" class="loader">
+  <div class="ui-bg bg-loading"></div>
+  <div class="ui-bg streaks"></div>
+  <img class="ld-wake" src="art/ui/loading-wake.png?v=0.2.0" width="760" height="520" alt="">
+  <img class="ld-mark" src="art/starwake-wordmark.png?v=0.2.0" width="1065" height="215" alt="STARWAKE">
+  <div class="ld-label" id="loader-label"></div>
+  <div class="ld-ring" id="loader-ring"><img src="art/ui/loading-ring-track.png?v=0.2.0" width="240" height="240" alt=""><img class="fill" src="art/ui/loading-ring-fill.png?v=0.2.0" width="240" height="240" alt=""></div>
+  <div class="loader-what" id="loader-what">LOADING</div>
+  <div class="loader-prompt" id="loader-prompt"></div>
+</div>
+
+<script type="module" src="js/main.js?v=0.2.0"></script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+{
+ "track": "level2",
+ "label": "Level 2, Shattered Moon: darker acid techno",
+ "take": "l2-t1",
+ "rate": 48000,
+ "duration": 154.83067,
+ "bpm": 137.998,
+ "firstBeat": 0.2049,
+ "beatSec": 0.43479,
+ "barSec": 1.73916,
+ "loopStart": 14.11502,
+ "loopEnd": 153.24777,
+ "loopBars": 80,
+ "introBars": 8,
+ "lufs": -11.1,
+ "sections": [
+  {
+   "name": "Intro",
+   "kind": "intro",
+   "startBar": 1,
+   "bars": 8,
+   "start": 0.205,
+   "end": 14.118
+  },
+  {
+   "name": "Groove",
+   "kind": "groove",
+   "startBar": 9,
+   "bars": 16,
+   "start": 14.118,
+   "end": 41.945
+  },
+  {
+   "name": "Build one",
+   "kind": "build",
+   "startBar": 25,
+   "bars": 8,
+   "start": 41.945,
+   "end": 55.858
+  },
+  {
+   "name": "Drop one",
+   "kind": "drop",
+   "startBar": 33,
+   "bars": 16,
+   "start": 55.858,
+   "end": 83.685
+  },
+  {
+   "name": "Breakdown",
+   "kind": "break",
+   "startBar": 49,
+   "bars": 8,
+   "start": 83.685,
+   "end": 97.598
+  },
+  {
+   "name": "Build two",
+   "kind": "build",
+   "startBar": 57,
+   "bars": 8,
+   "start": 97.598,
+   "end": 111.511
+  },
+  {
+   "name": "Drop two",
+   "kind": "drop",
+   "startBar": 65,
+   "bars": 16,
+   "start": 111.511,
+   "end": 139.338
+  },
+  {
+   "name": "Drive",
+   "kind": "groove",
+   "startBar": 81,
+   "bars": 8,
+   "start": 139.338,
+   "end": 153.251
+  }
+ ],
+ "note": "The whole take plays from the top once, then loops from loopStart (the first bar after the intro) to loopEnd (the end of the last real bar). bpm and firstBeat are the kick grid fitted to the take: beat n sits at firstBeat + n * beatSec, so effects can be timed to it. An AAC decode can carry a few ms of priming: shift the points by (decoded length - duration), as audio.js does for level 1."
+}

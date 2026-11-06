@@ -1,0 +1,92 @@
+{
+ "track": "level10-approach",
+ "label": "Level 10, part 1, the approach: epic driving techno",
+ "take": "act1-t1",
+ "rate": 48000,
+ "duration": 161.10004,
+ "bpm": 139.985,
+ "firstBeat": 0.1474,
+ "beatSec": 0.42862,
+ "barSec": 1.71447,
+ "loopStart": 27.57717,
+ "loopEnd": 151.01896,
+ "loopBars": 72,
+ "wrapMismatch": 1.29,
+ "introBars": 16,
+ "lufs": -10.4,
+ "sections": [
+  {
+   "name": "Intro",
+   "kind": "intro",
+   "startBar": 1,
+   "bars": 8,
+   "start": 0.147,
+   "end": 13.863
+  },
+  {
+   "name": "Groove",
+   "kind": "groove",
+   "startBar": 9,
+   "bars": 16,
+   "start": 13.863,
+   "end": 41.295
+  },
+  {
+   "name": "Build one",
+   "kind": "build",
+   "startBar": 25,
+   "bars": 8,
+   "start": 41.295,
+   "end": 55.01
+  },
+  {
+   "name": "Drop one",
+   "kind": "drop",
+   "startBar": 33,
+   "bars": 16,
+   "start": 55.01,
+   "end": 82.442
+  },
+  {
+   "name": "Breakdown",
+   "kind": "break",
+   "startBar": 49,
+   "bars": 8,
+   "start": 82.442,
+   "end": 96.158
+  },
+  {
+   "name": "Build two",
+   "kind": "build",
+   "startBar": 57,
+   "bars": 8,
+   "start": 96.158,
+   "end": 109.873
+  },
+  {
+   "name": "Drop two",
+   "kind": "drop",
+   "startBar": 65,
+   "bars": 16,
+   "start": 109.873,
+   "end": 137.305
+  },
+  {
+   "name": "Drive",
+   "kind": "groove",
+   "startBar": 81,
+   "bars": 8,
+   "start": 137.305,
+   "end": 151.021
+  },
+  {
+   "name": "Outro",
+   "kind": "outro",
+   "startBar": 89,
+   "bars": 6,
+   "start": 151.021,
+   "end": 161.1
+  }
+ ],
+ "note": "The whole take plays from the top once, then loops from loopStart (the first bar after the intro) to loopEnd (the end of the last real bar). bpm and firstBeat are the kick grid fitted to the take: beat n sits at firstBeat + n * beatSec, so effects can be timed to it. An AAC decode can carry a few ms of priming: shift the points by (decoded length - duration), as audio.js does for level 1."
+}

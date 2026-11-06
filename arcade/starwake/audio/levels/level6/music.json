@@ -1,0 +1,91 @@
+{
+ "track": "level6",
+ "label": "Level 6, Frozen Rift: cold minimal techno",
+ "take": "l6-t2",
+ "rate": 48000,
+ "duration": 166.99792,
+ "bpm": 134.999,
+ "firstBeat": 0.0054,
+ "beatSec": 0.44445,
+ "barSec": 1.77779,
+ "loopStart": 14.23258,
+ "loopEnd": 156.45546,
+ "loopBars": 80,
+ "introBars": 8,
+ "lufs": -11.5,
+ "sections": [
+  {
+   "name": "Intro",
+   "kind": "intro",
+   "startBar": 1,
+   "bars": 8,
+   "start": 0.005,
+   "end": 14.228
+  },
+  {
+   "name": "Groove",
+   "kind": "groove",
+   "startBar": 9,
+   "bars": 16,
+   "start": 14.228,
+   "end": 42.672
+  },
+  {
+   "name": "Build one",
+   "kind": "build",
+   "startBar": 25,
+   "bars": 8,
+   "start": 42.672,
+   "end": 56.895
+  },
+  {
+   "name": "Drop one",
+   "kind": "drop",
+   "startBar": 33,
+   "bars": 16,
+   "start": 56.895,
+   "end": 85.339
+  },
+  {
+   "name": "Breakdown",
+   "kind": "break",
+   "startBar": 49,
+   "bars": 8,
+   "start": 85.339,
+   "end": 99.561
+  },
+  {
+   "name": "Build two",
+   "kind": "build",
+   "startBar": 57,
+   "bars": 8,
+   "start": 99.561,
+   "end": 113.784
+  },
+  {
+   "name": "Drop two",
+   "kind": "drop",
+   "startBar": 65,
+   "bars": 16,
+   "start": 113.784,
+   "end": 142.228
+  },
+  {
+   "name": "Drive",
+   "kind": "groove",
+   "startBar": 81,
+   "bars": 8,
+   "start": 142.228,
+   "end": 156.451
+  },
+  {
+   "name": "Outro",
+   "kind": "outro",
+   "startBar": 89,
+   "bars": 6,
+   "start": 156.451,
+   "end": 166.998
+  }
+ ],
+ "note": "The whole take plays from the top once, then loops from loopStart (the first bar after the intro) to loopEnd (the end of the last real bar). bpm and firstBeat are the kick grid fitted to the take: beat n sits at firstBeat + n * beatSec, so effects can be timed to it. An AAC decode can carry a few ms of priming: shift the points by (decoded length - duration), as audio.js does for level 1."
+}

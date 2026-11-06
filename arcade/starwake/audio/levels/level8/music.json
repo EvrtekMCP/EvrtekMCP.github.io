@@ -1,0 +1,92 @@
+{
+ "track": "level8",
+ "label": "Level 8, Graveyard of Giants: dark industrial techno",
+ "take": "l8-t1",
+ "rate": 48000,
+ "duration": 163.56135,
+ "bpm": 137.982,
+ "firstBeat": 0.154,
+ "beatSec": 0.43484,
+ "barSec": 1.73936,
+ "loopStart": 21.02015,
+ "loopEnd": 146.25387,
+ "loopBars": 72,
+ "wrapMismatch": 1.22,
+ "introBars": 12,
+ "lufs": -11,
+ "sections": [
+  {
+   "name": "Intro",
+   "kind": "intro",
+   "startBar": 1,
+   "bars": 8,
+   "start": 0.154,
+   "end": 14.069
+  },
+  {
+   "name": "Groove",
+   "kind": "groove",
+   "startBar": 9,
+   "bars": 16,
+   "start": 14.069,
+   "end": 41.899
+  },
+  {
+   "name": "Build one",
+   "kind": "build",
+   "startBar": 25,
+   "bars": 8,
+   "start": 41.899,
+   "end": 55.814
+  },
+  {
+   "name": "Drop one",
+   "kind": "drop",
+   "startBar": 33,
+   "bars": 16,
+   "start": 55.814,
+   "end": 83.643
+  },
+  {
+   "name": "Breakdown",
+   "kind": "break",
+   "startBar": 49,
+   "bars": 8,
+   "start": 83.643,
+   "end": 97.558
+  },
+  {
+   "name": "Build two",
+   "kind": "build",
+   "startBar": 57,
+   "bars": 8,
+   "start": 97.558,
+   "end": 111.473
+  },
+  {
+   "name": "Drop two",
+   "kind": "drop",
+   "startBar": 65,
+   "bars": 16,
+   "start": 111.473,
+   "end": 139.303
+  },
+  {
+   "name": "Drive",
+   "kind": "groove",
+   "startBar": 81,
+   "bars": 8,
+   "start": 139.303,
+   "end": 153.218
+  },
+  {
+   "name": "Outro",
+   "kind": "outro",
+   "startBar": 89,
+   "bars": 6,
+   "start": 153.218,
+   "end": 163.561
+  }
+ ],
+ "note": "The whole take plays from the top once, then loops from loopStart (the first bar after the intro) to loopEnd (the end of the last real bar). bpm and firstBeat are the kick grid fitted to the take: beat n sits at firstBeat + n * beatSec, so effects can be timed to it. An AAC decode can carry a few ms of priming: shift the points by (decoded length - duration), as audio.js does for level 1."
+}
