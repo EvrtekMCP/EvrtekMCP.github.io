@@ -1,6 +1,6 @@
 // THE LANTERN POD (level 1 on): Yori's turret pod. An octahedral node, a truss ring that spins, one barrel that
 // tracks you, a red core that charges white-hot for 0.75 s before each burst. Fires at 3.4 s and 2.2 s out.
-import { THREE, defineEnemy, buildModel, clamp, SHIP_R, LEGACY_LINE, NET_T } from '../../api.js?v=0.4.0';
+import { THREE, defineEnemy, buildModel, clamp, SHIP_R, LEGACY_LINE, NET_T } from '../../api.js?v=0.4.1';
 
 function make(api) {
   // Her barrel points down -Z; the inner group turns it to +Z so lookAt() aims it at the ship.

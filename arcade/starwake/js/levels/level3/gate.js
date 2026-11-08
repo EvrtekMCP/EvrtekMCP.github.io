@@ -14,9 +14,9 @@
 // and a tall phone alike; in metres a boundary is the line through the hub along (cos a * box.x, sin a * box.y).
 // Event: { nx, ny (the hub), n (sectors), rot (in sectors; 0 puts a boundary on the +x axis), closed: [indices],
 //          mode, pattern 'spin' | 'flip', dir (+1 anticlockwise), step (sectors a beat), hold (beats), dmg }
-import { THREE, defineObstacle, buildModel, clamp, READ_D, SHIP_R } from '../../api.js?v=0.4.0';
-import { MESH } from './mesh.js?v=0.4.0';
-import { beatClock, pulse } from './beat.js?v=0.4.0';
+import { THREE, defineObstacle, buildModel, clamp, READ_D, SHIP_R } from '../../api.js?v=0.4.1';
+import { MESH } from './mesh.js?v=0.4.1';
+import { beatClock, pulse } from './beat.js?v=0.4.1';
 
 export const GATE_S = 0.7;                    // Yori's gate is 44 across in Wake units; at 0.7 it is ~31 m
 export const FIELD_R = 18.4 * GATE_S;         // the field fills the ring's inner face

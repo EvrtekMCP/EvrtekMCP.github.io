@@ -3,8 +3,8 @@
 // both sides (two layers, the outer one taller, for depth), her ice-shard clusters sit on the ledges, ice ribs span
 // the canyon high overhead (the level's landmark, rule 22), and mint glints drift in the air. Nothing here enters
 // the flight box (rule 15/16) and nothing uses the reserved hues (rule 9).
-import { THREE, defineScenery, defineDecor, Instanced, SPAWN_D, clamp, smoothstep } from '../../api.js?v=0.4.0';
-import { MESH } from './mesh.js?v=0.4.0';
+import { THREE, defineScenery, defineDecor, Instanced, SPAWN_D, clamp, smoothstep } from '../../api.js?v=0.4.1';
+import { MESH } from './mesh.js?v=0.4.1';
 
 // ---- the canyon's width: how far the inner wall face stands outside the flight box, by course distance. The
 // level sets it (gapAt), the streams read it at the spawn line, so a narrowing arrives from the haze like anything.

@@ -2,7 +2,7 @@
 // through."): at its moment it brings your GREED meter up to `to` (never down, and never while GREED is lit) and says
 // why, so the first vault teaches the door and the cash-in before you have to fill the meter yourself.
 //   Event: { to: 100, say: 'CASH IN AND THE DOOR OPENS' }
-import { defineDecor } from '../../../api.js?v=0.4.0';
+import { defineDecor } from '../../../api.js?v=0.4.1';
 
 export const primer = defineDecor({
   name: 'g3-l9-primer', hazard: null,

@@ -4,7 +4,7 @@
 // run, so bar k (1-based) is at FIRST + (k - 1) * BAR seconds. The speed is written per bar, integrated once, and
 // every set piece, speed step and flare eruption is placed by bar: `at(65)` is the metre where Drop two lands.
 // When the take is measured (audio/levels/level4/music.json), FIRST and BPM come from it.
-import { clamp } from '../../api.js?v=0.4.0';
+import { clamp } from '../../api.js?v=0.4.1';
 
 export const BPM = 144;
 export const BEAT = 60 / BPM, BAR = 4 * BEAT;   // 0.4167 s, 1.6667 s

@@ -13,14 +13,14 @@
 //                                                   a deep angler with a SHIELD CELL between its teeth; OVERCLOCK
 //   ACT 4  THE ABYSSAL GARDEN  bars 64-80  144 m/s  SET PIECE: a field of lures, each a choice, bloomers on both slopes
 //          THE LANTERN LIGHT   bars 80-92  162 m/s  the last anglers, then calm, and out toward the Murmuration's light
-import { defineLevel, clamp } from '../../api.js?v=0.4.0';
-import ring from '../../pickups/ring/index.js?v=0.4.0';
-import { phase, shieldCell, overclock } from '../../pickups/powerups/index.js?v=0.4.0';
-import pod from '../../enemies/pod/index.js?v=0.4.0';
-import seeker from '../../enemies/seeker-drone/index.js?v=0.4.0';
-import bloomer from '../../enemies/g2-bloomer/index.js?v=0.4.0';
-import angler, { LURE_LEAD, KZ, lurePoint } from '../../enemies/g2-angler/index.js?v=0.4.0';
-import { abyssSlope, lureStalk, slopes, motes, greatLantern } from './level8/scenery.js?v=0.4.0';
+import { defineLevel, clamp } from '../../api.js?v=0.4.1';
+import ring from '../../pickups/ring/index.js?v=0.4.1';
+import { phase, shieldCell, overclock } from '../../pickups/powerups/index.js?v=0.4.1';
+import pod from '../../enemies/pod/index.js?v=0.4.1';
+import seeker from '../../enemies/seeker-drone/index.js?v=0.4.1';
+import bloomer from '../../enemies/g2-bloomer/index.js?v=0.4.1';
+import angler, { LURE_LEAD, KZ, lurePoint } from '../../enemies/g2-angler/index.js?v=0.4.1';
+import { abyssSlope, lureStalk, slopes, motes, greatLantern } from './level8/scenery.js?v=0.4.1';
 
 const BPM = 144, FIRST_BEAT = 0, BAR_S = 240 / BPM;
 const STEPS = [[0, 86], [24, 108], [48, 126], [64, 144], [80, 162]];

@@ -11,9 +11,9 @@
 //   orbit: { r, w, a0 } (decor fish only): it circles the lane, r box-widths out (the Bait Ball).
 //   free: true (spawned by the Whirlmaw's gulp): it pours out of the boss's mouth; catching it gives shield and points, and
 //   it is never a ring (no total, no miss).
-import { THREE, definePickup, modelGroups, Instanced, GlowPoints, RING_R, SPAWN_D, clamp, smoothstep } from '../../api.js?v=0.4.0';
-import { MESH } from './mesh.js?v=0.4.0';
-import { pathAt } from '../../obstacles/g2-current/index.js?v=0.4.0';
+import { THREE, definePickup, modelGroups, Instanced, GlowPoints, RING_R, SPAWN_D, clamp, smoothstep } from '../../api.js?v=0.4.1';
+import { MESH } from './mesh.js?v=0.4.1';
+import { pathAt } from '../../obstacles/g2-current/index.js?v=0.4.1';
 
 const SCALE = 1.6;                         // her ring is 1.0 across the middle; the game's ring flies at 1.6
 const schools = new Map();                 // shoal id -> { got, missed, of }

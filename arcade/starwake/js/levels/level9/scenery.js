@@ -5,10 +5,10 @@
 // panes of the Hall; and the mirror-shard, the one obstacle this level adds (a known thing, the level-1 crystal's
 // cousin, with the red spine that says it hurts).
 // Rule 9: nothing here is red, amber or cyan as a large flat colour; the shard's spine is the only red, and it hurts.
-import { THREE, defineScenery, defineDecor, defineObstacle, Instanced, GlowPoints, rng, clamp, SHIP_R } from '../../api.js?v=0.4.0';
-import { SCENERY } from './mesh.js?v=0.4.0';
-import { geometryOf } from '../../enemies/crystal-emitter/parts.js?v=0.4.0';
-import { glassTex } from './mirror.js?v=0.4.0';
+import { THREE, defineScenery, defineDecor, defineObstacle, Instanced, GlowPoints, rng, clamp, SHIP_R } from '../../api.js?v=0.4.1';
+import { SCENERY } from './mesh.js?v=0.4.1';
+import { geometryOf } from '../../enemies/crystal-emitter/parts.js?v=0.4.1';
+import { glassTex } from './mirror.js?v=0.4.1';
 
 const tmpQ = new THREE.Quaternion(), eul = new THREE.Euler();
 const side = (R, lo, hi) => R.sign() * R.range(lo, hi);

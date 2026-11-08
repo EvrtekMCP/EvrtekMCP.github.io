@@ -7,12 +7,12 @@
 // Leviathan's key) is laid out in bars: intro 8, groove 16, build 8, DROP 16, breakdown 8, build 8, DROP 16, drive.
 // Each pass is timed so its head reaches you ON a bar line; the speed steps, the forks, the set pieces and the boss
 // sit on bar lines; the four acts follow the track's sections (bars below count from 0 at the first beat).
-import { defineLevel, clamp, smoothstep } from '../api.js?v=0.4.0';
-import ring from '../pickups/ring/index.js?v=0.4.0';
-import iceMine from '../obstacles/ice-mine/index.js?v=0.4.0';
-import { spur, curtain, fork, pass, icefall } from './level6/kinds.js?v=0.4.0';
-import { RIFT, SCENERY, DECOR, mouthGap } from './level6/scenery.js?v=0.4.0';
-import leviathan from '../bosses/leviathan/index.js?v=0.4.0';
+import { defineLevel, clamp, smoothstep } from '../api.js?v=0.4.1';
+import ring from '../pickups/ring/index.js?v=0.4.1';
+import iceMine from '../obstacles/ice-mine/index.js?v=0.4.1';
+import { spur, curtain, fork, pass, icefall } from './level6/kinds.js?v=0.4.1';
+import { RIFT, SCENERY, DECOR, mouthGap } from './level6/scenery.js?v=0.4.1';
+import leviathan from '../bosses/leviathan/index.js?v=0.4.1';
 
 // ---- the clock: the track's kick grid (music.json: bpm 134.999, firstBeat 0.0054 s)
 const BAR = 1.77779, FIRST_BEAT = 0.0054;

@@ -21,10 +21,10 @@
 //                       lands while its ring refills)
 // Defeat: its paint burns off, leaving a hollow white frame (the plan it was copied from) that peels away and breaks up.
 // Safety net (rule 26): not beaten in 120 s, it wins the race and flies off, with no bonus.
-import { THREE, defineBoss, buildModel, clamp, SPAWN_D } from '../../api.js?v=0.4.0';
-import { buildParts } from '../../enemies/crystal-emitter/parts.js?v=0.4.0';
-import { MESH } from './mesh.js?v=0.4.0';
-import { raceRing, take } from './rings.js?v=0.4.0';
+import { THREE, defineBoss, buildModel, clamp, SPAWN_D } from '../../api.js?v=0.4.1';
+import { buildParts } from '../../enemies/crystal-emitter/parts.js?v=0.4.1';
+import { MESH } from './mesh.js?v=0.4.1';
+import { raceRing, take } from './rings.js?v=0.4.1';
 
 export { raceRing };
 export const BPM = 146.092, BAR = 240 / BPM;

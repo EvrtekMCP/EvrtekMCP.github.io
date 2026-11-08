@@ -1,12 +1,12 @@
 // THE POWER-UPS (0.4.0; Evrtek's set, ruled 11-06). Fly into one and it fires at once: no button, no inventory, never
 // stored. Each is a solid shape, turning and gently bobbing inside a thin white halo, in its own colour (none of them
 // red, amber or cyan: rule 9). Missing one is never a fail. What each does is the engine's (js/powerups.js, main.js).
-//   import { shieldCell, overclock } from '../pickups/powerups/index.js?v=0.4.0';   (or POWERUP_KINDS, all six)
+//   import { shieldCell, overclock } from '../pickups/powerups/index.js?v=0.4.1';   (or POWERUP_KINDS, all six)
 //   add(d, 'shield-cell', { nx, ny })     add(d, 'overclock', { nx: 0.2, ny: 0.1 })     ...
 // Kind names: shield-cell, overclock, mirror-shell, phase, ring-magnet, slipstream. Each counts toward no ring total.
-import { THREE, definePickup } from '../../api.js?v=0.4.0';
-import { POWERUPS, PICK_R } from '../../powerups.js?v=0.4.0';
-import { SHAPES, HALO } from './shapes.js?v=0.4.0';
+import { THREE, definePickup } from '../../api.js?v=0.4.1';
+import { POWERUPS, PICK_R } from '../../powerups.js?v=0.4.1';
+import { SHAPES, HALO } from './shapes.js?v=0.4.1';
 
 let glowMat = null;
 function make(api, id) {

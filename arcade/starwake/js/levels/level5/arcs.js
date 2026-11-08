@@ -2,7 +2,7 @@
 // switches them (patterns locked to the music's beat). Arcs are white-hot cores in a red fringe: white is
 // Yori's storm, the red fringe is rule 9 (red hurts). Only an arc that can hurt you has the fringe; the
 // storm's own far lightning (scenery.js) is violet-white with none.
-import { THREE } from '../../api.js?v=0.4.0';
+import { THREE } from '../../api.js?v=0.4.1';
 
 // ---------------------------------------------------------------- the patterns
 // One character per beat: X live (it hurts), . dark. The FOUR beats before every live run are its CHARGE: both

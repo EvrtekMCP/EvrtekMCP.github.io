@@ -4,7 +4,7 @@
 // lies a little: its engine burns ghost-pink and it moves a tenth of a second behind you. Cracks run across the
 // glass as it closes, and it shatters into glitter before it can reach you. Scenery, not a hazard: it never touches
 // you. Two in the level: the Hall of Mirrors opens with one (the breakdown), and the Twins come out of the second.
-import { THREE, defineDecor, buildModel, clamp } from '../../api.js?v=0.4.0';
+import { THREE, defineDecor, buildModel, clamp } from '../../api.js?v=0.4.1';
 
 // R_GATE: corner radius (its flat sides are 0.87 of it). It stands turned TILT about Y: straight on, your reflection
 // would sit dead behind your own ship from the chase camera; turned, it flies in from one side, clear of the lane.

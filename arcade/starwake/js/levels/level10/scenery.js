@@ -7,8 +7,8 @@
 //  ACT 3  l10-chamber (the core chamber's wall) and l10-motes (floating plates and sparks)
 //  OUT    l10-breach (the white way out ahead, and the shockwave's light behind you), l10-shaft (the white shaft)
 //  HOME   l10-sunrise (a sunrise over a quiet blue planet) and l10-wisps (high cloud and the last of the debris)
-import { THREE, defineScenery, defineDecor, Instanced, modelGroups, clamp, smoothstep, rng } from '../../api.js?v=0.4.0';
-import { MESH } from './mesh.js?v=0.4.0';
+import { THREE, defineScenery, defineDecor, Instanced, modelGroups, clamp, smoothstep, rng } from '../../api.js?v=0.4.1';
+import { MESH } from './mesh.js?v=0.4.1';
 
 const tmpQ = new THREE.Quaternion(), tmpE = new THREE.Euler(), tmpC = new THREE.Color();
 const canvas = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };

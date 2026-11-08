@@ -2,7 +2,7 @@
 // flight box (nx, ny in -1..1; beyond 1 is outside it), so a course fits a wide screen and a narrow portrait one
 // alike. d is distance down the track, in metres. These are 0.1.0's helpers, unchanged, so level 1 lays out the
 // same course from the same seed.
-import { clamp } from './util.js?v=0.4.0';
+import { clamp } from './util.js?v=0.4.1';
 
 export function layout() {
   const events = [], rings = [];

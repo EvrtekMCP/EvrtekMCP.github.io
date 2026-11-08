@@ -10,22 +10,22 @@
 // B minor, the Snare's key; galaxy 1's bar map). Until it lands a galaxy 1 take stands in. The bar grid here is the
 // plan's 140 bpm with a first beat of 0.2 s: re-check FIRST_BEAT against the take's .json when it lands (check-levels
 // reports the section starts in bars of the real grid).
-import { defineLevel } from '../../api.js?v=0.4.0';
-import ring from '../../pickups/ring/index.js?v=0.4.0';
-import pod from '../../enemies/pod/index.js?v=0.4.0';
-import seeker from '../../enemies/seeker-drone/index.js?v=0.4.0';
-import { shieldCell, overclock, phase } from '../../pickups/powerups/index.js?v=0.4.0';
-import leech, { LEECH } from '../../enemies/g2-leech/index.js?v=0.4.0';
-import hound from '../../enemies/g2-hound/index.js?v=0.4.0';
-import well from '../../obstacles/g2-gravity-well/index.js?v=0.4.0';
-import whale from '../../allies/g2-whale/index.js?v=0.4.0';
-import current from '../../obstacles/g2-current/index.js?v=0.4.0';
-import thrummer, { pulse } from '../../enemies/g2-thrummer/index.js?v=0.4.0';
-import snare from '../../bosses/g2-snare/index.js?v=0.4.0';
-import tether from '../../bosses/g2-snare/tether.js?v=0.4.0';
-import { clock } from './level4/clock.js?v=0.4.0';
-import { SCENERY, DECOR, wall } from './level6/scenery.js?v=0.4.0';
-import { herd, swimmer } from './level4/scenery.js?v=0.4.0';
+import { defineLevel } from '../../api.js?v=0.4.1';
+import ring from '../../pickups/ring/index.js?v=0.4.1';
+import pod from '../../enemies/pod/index.js?v=0.4.1';
+import seeker from '../../enemies/seeker-drone/index.js?v=0.4.1';
+import { shieldCell, overclock, phase } from '../../pickups/powerups/index.js?v=0.4.1';
+import leech, { LEECH } from '../../enemies/g2-leech/index.js?v=0.4.1';
+import hound from '../../enemies/g2-hound/index.js?v=0.4.1';
+import well from '../../obstacles/g2-gravity-well/index.js?v=0.4.1';
+import whale from '../../allies/g2-whale/index.js?v=0.4.1';
+import current from '../../obstacles/g2-current/index.js?v=0.4.1';
+import thrummer, { pulse } from '../../enemies/g2-thrummer/index.js?v=0.4.1';
+import snare from '../../bosses/g2-snare/index.js?v=0.4.1';
+import tether from '../../bosses/g2-snare/tether.js?v=0.4.1';
+import { clock } from './level4/clock.js?v=0.4.1';
+import { SCENERY, DECOR, wall } from './level6/scenery.js?v=0.4.1';
+import { herd, swimmer } from './level4/scenery.js?v=0.4.1';
 
 const FIRST_BEAT = 0.2;
 const C = clock({ bpm: 140, firstBeat: FIRST_BEAT, v0: 80, steps: [[24, 19], [48, 19], [64, 19], [70, 19]] });

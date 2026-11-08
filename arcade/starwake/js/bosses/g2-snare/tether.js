@@ -5,7 +5,7 @@
 //  - on you: it drains your shield and drags you toward it, like a leech's, until you roll to snap it.
 // It lets go when the Snare breaks off (the boss calls release) or after `hold` seconds.
 //   api.spawn({ type: 'g2-snare-tether', boss: b, to: 'mother' | 'ship', dy: 0, hold: 4.5 }, 0)
-import { THREE, defineDecor, clamp } from '../../api.js?v=0.4.0';
+import { THREE, defineDecor, clamp } from '../../api.js?v=0.4.1';
 
 export const TETHER = { reach: 0.55, feed: 3, hold: 4.5, snapR: 2.4, drain: 4, drag: 4 };
 const UP = new THREE.Vector3(0, 1, 0), dir = new THREE.Vector3();

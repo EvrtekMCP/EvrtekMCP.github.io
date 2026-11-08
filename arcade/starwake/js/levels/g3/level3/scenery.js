@@ -5,9 +5,9 @@
 //  - g3-l3-frame   a square bulkhead frame round the lane (the lane runs down a corridor of them)
 //  - g3-l3-pipe    a run of her duct beside, above or under the lane: the works' pipework
 //  - g3-l3-crane   a set piece: the Foreman's crane on the horizon, the landmark, there from the first second
-import { THREE, defineScenery, defineDecor, Instanced, material } from '../../../api.js?v=0.4.0';
-import { MESH } from './mesh.js?v=0.4.0';
-import { MESH as DUCT } from '../../../obstacles/g3-lockgate/duct.js?v=0.4.0';
+import { THREE, defineScenery, defineDecor, Instanced, material } from '../../../api.js?v=0.4.1';
+import { MESH } from './mesh.js?v=0.4.1';
+import { MESH as DUCT } from '../../../obstacles/g3-lockgate/duct.js?v=0.4.1';
 
 const tmpQ = new THREE.Quaternion(), eul = new THREE.Euler();
 const geoOf = (g) => { const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(g.p, 3)); geo.computeVertexNormals(); geo.computeBoundingSphere(); return geo; };

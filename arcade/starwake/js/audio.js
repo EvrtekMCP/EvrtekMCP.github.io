@@ -6,8 +6,8 @@
 // 0.2.0: one track per level (and per boss), named by path stem under audio/ (e.g. 'music' for level 1,
 // 'levels/level2/music', 'bosses/warden'), each with its .json of loop points and beat grid beside it. Only
 // the playing level's tracks stay decoded (a decoded take is ~55 MB). A boss track cuts in on a bar line.
-import { V, store } from './util.js?v=0.4.0';
-import { param } from './params.js?v=0.4.0';
+import { V, store } from './util.js?v=0.4.1';
+import { param } from './params.js?v=0.4.1';
 
 // 0.3.1: bytes of a track at which its first stretches are decoded, before the whole (about 15 s, then a minute)
 const STEPS = [512 * 1024, 2 * 1024 * 1024];

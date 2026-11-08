@@ -14,8 +14,8 @@
 //     orbit  it circles (cx, cy) in the normalised box, radii rx, ry, at w rad/s from phase ph (THE BINARY: two wells,
 //            phases half a turn apart). Without it the well sits at (nx, ny).
 //     k      strength of its pull and its bend (1)
-import { THREE, defineObstacle, buildModel, clamp, smoothstep } from '../../api.js?v=0.4.0';
-import { MESH } from './mesh.js?v=0.4.0';
+import { THREE, defineObstacle, buildModel, clamp, smoothstep } from '../../api.js?v=0.4.1';
+import { MESH } from './mesh.js?v=0.4.1';
 
 export const WELL = { r: 3.5, rim: 1.9, pullZ: 45, bendZ: 28, bend: 1300, pull: 2.4, pullCore: 9 };
 const MOTE = '#9affc0*';

@@ -3,24 +3,24 @@
 // 2 and 3 need (a push on the ship, a roll that answers things that are not shots, GREED lit by a boss).
 // Levels, kinds, scenery and bosses are modules (js/levels, js/pickups, js/obstacles, js/enemies, js/bosses);
 // this file runs whichever level is loaded and owns every rule that scores.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.4.0';
-import { VERSION, clamp, damp, lerp, isTouch, fmt, store } from './util.js?v=0.4.0';
-import { Input } from './input.js?v=0.4.0';
-import { Audio, canonTrack, multRate } from './audio.js?v=0.4.0';
-import { buildShip } from './ship.js?v=0.4.0';
-import { Backdrop } from './backdrop.js?v=0.4.0';
-import { Course } from './course.js?v=0.4.0';
-import { Scenery } from './scenery.js?v=0.4.0';
-import { Particles } from './fx.js?v=0.4.0';
-import { Hud, artUrl } from './hud.js?v=0.4.0';
-import { CATALOGUE, GALAXIES, galaxy, entryOf, catalogueOf, gn, levelLabel, loadLevel, isMarker, Progress, grade, easeOf } from './levels.js?v=0.4.0';
-import { POWERUPS, POWERUP_IDS } from './powerups.js?v=0.4.0';
-import { appear, DEFLECT_R } from './space.js?v=0.4.0';
-import { bossKind, weakPointKind } from './boss.js?v=0.4.0';
-import { Quality } from './quality.js?v=0.4.0';
-import { Post } from './post.js?v=0.4.0';
-import { UI } from './ui.js?v=0.4.0';
-import { Tips } from './tutorials.js?v=0.4.0';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.4.1';
+import { VERSION, clamp, damp, lerp, isTouch, fmt, store } from './util.js?v=0.4.1';
+import { Input } from './input.js?v=0.4.1';
+import { Audio, canonTrack, multRate } from './audio.js?v=0.4.1';
+import { buildShip } from './ship.js?v=0.4.1';
+import { Backdrop } from './backdrop.js?v=0.4.1';
+import { Course } from './course.js?v=0.4.1';
+import { Scenery } from './scenery.js?v=0.4.1';
+import { Particles } from './fx.js?v=0.4.1';
+import { Hud, artUrl } from './hud.js?v=0.4.1';
+import { CATALOGUE, GALAXIES, galaxy, entryOf, catalogueOf, gn, levelLabel, loadLevel, isMarker, Progress, grade, easeOf } from './levels.js?v=0.4.1';
+import { POWERUPS, POWERUP_IDS } from './powerups.js?v=0.4.1';
+import { appear, DEFLECT_R } from './space.js?v=0.4.1';
+import { bossKind, weakPointKind } from './boss.js?v=0.4.1';
+import { Quality } from './quality.js?v=0.4.1';
+import { Post } from './post.js?v=0.4.1';
+import { UI } from './ui.js?v=0.4.1';
+import { Tips } from './tutorials.js?v=0.4.1';
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -1088,7 +1088,7 @@ window.__sw.prepare = prepare; window.__sw.finish = finish; window.__sw.newRun =
   const art = () => hud.preloadArt().then(() => { audio.held = 0; });
   audio.loadTrack(openingOf(level).track).then(art, art);
   window.__sw.warm = true;
-  if (params.has('test')) import('./testhooks.js?v=0.4.0').then((m) => m.install(window.__sw));
+  if (params.has('test')) import('./testhooks.js?v=0.4.1').then((m) => m.install(window.__sw));
   if (G.state !== 'boot') return; // a test or a dev link already started a run
   if (!BOOT_OLD) { openMenu(); return; }
   ui.pressToStart(() => {

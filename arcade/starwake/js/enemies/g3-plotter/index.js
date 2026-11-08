@@ -16,10 +16,10 @@
 //          pop: 0 (mines of this line that may pop), guide: 1.25 }
 // Warning (rule 12): from the guide reaching a spot to that spot's mine hardening is guide + 0.35 s = 1.6 s at the
 // course's own speed (1.25 s at GREED); the sheet itself, and the plotter on it, are in view from 640 m.
-import { THREE, defineEnemy, buildModel, Instanced, GlowPoints, clamp, SHIP_R } from '../../api.js?v=0.4.0';
-import { MESH } from './mesh.js?v=0.4.0';
-import { SightLines } from '../sniper/sight.js?v=0.4.0';
-import { geometryOf } from '../crystal-emitter/parts.js?v=0.4.0';
+import { THREE, defineEnemy, buildModel, Instanced, GlowPoints, clamp, SHIP_R } from '../../api.js?v=0.4.1';
+import { MESH } from './mesh.js?v=0.4.1';
+import { SightLines } from '../sniper/sight.js?v=0.4.1';
+import { geometryOf } from '../crystal-emitter/parts.js?v=0.4.1';
 
 export const GUIDE = 1.25, HARD = 0.35, MINE_R = 0.6, MINE_S = 1.4;
 const SCALE = 2.4, NIB = [0, -0.72, -1.4];

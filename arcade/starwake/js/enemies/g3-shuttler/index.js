@@ -13,8 +13,8 @@
 //            where you are, about 1.7 m apart; this shuttle takes the cells of its parity, the hole [dc, dr] (-1..1, not
 //            the middle) gets none; two shuttles of opposite parity, one across and one up-and-down, weave a mesh with
 //            one hole: slip into it, or roll where you are and send the crossing home) }
-import { THREE, defineEnemy, buildModel, GlowPoints, clamp, damp, smoothstep, SPAWN_D } from '../../api.js?v=0.4.0';
-import { MESH } from './mesh.js?v=0.4.0';
+import { THREE, defineEnemy, buildModel, GlowPoints, clamp, damp, smoothstep, SPAWN_D } from '../../api.js?v=0.4.1';
+import { MESH } from './mesh.js?v=0.4.1';
 
 export const SHOT_T = 1.36, TEL = 0.6, TEL_FIRST = 0.9;
 const IN_T = 2.6;                 // the race in along the rail, out of the haze

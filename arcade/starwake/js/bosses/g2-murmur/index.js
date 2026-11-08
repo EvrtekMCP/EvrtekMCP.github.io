@@ -13,10 +13,10 @@
 // FREED: her graft burns out and she is a white moth again; the flock scatters into a sky of drifting lights (the stars
 // of the finale's approach). If she is not freed in about 110 s, the flock disperses with no bonus (rule 26).
 // Music: g2/bosses/murmur (145.03 bpm, C minor, the level's key; a stand-in plays until the sound branch's switch).
-import { THREE, defineBoss, clamp, rng } from '../../api.js?v=0.4.0';
-import { MESH } from './mesh.js?v=0.4.0';
-import { morphModel, setMorph, setLook } from '../../enemies/g2-bloomer/morph.js?v=0.4.0';
-import { moth, outline, MOTH } from '../../enemies/g2-flock/index.js?v=0.4.0';
+import { THREE, defineBoss, clamp, rng } from '../../api.js?v=0.4.1';
+import { MESH } from './mesh.js?v=0.4.1';
+import { morphModel, setMorph, setLook } from '../../enemies/g2-bloomer/morph.js?v=0.4.1';
+import { moth, outline, MOTH } from '../../enemies/g2-flock/index.js?v=0.4.1';
 
 const QSCALE = 1.6, WALL_N = 300, HOLE = 3.6, WALL_FLY = 1.5, FUNNEL_R = 7.4, DENT_R = 3.0, DENT_W = 0.75;
 const lerpTo = (a, b, k) => a + (b - a) * k;

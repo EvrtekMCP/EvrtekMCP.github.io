@@ -4,7 +4,7 @@
 // both poses gets the second pose as a morph target, so a tell is a smooth tween (setMorph(model, 0..1)), never a swap.
 // freedLook is the Verdant Deep's grammar (the plan, section 1): a sent-back shot burns the graft out, the red falls
 // away and the creature goes silver (Yori's FREED colour #c0d0dc) as it darts off whole.
-import { THREE } from '../../api.js?v=0.4.0';
+import { THREE } from '../../api.js?v=0.4.1';
 
 const geoCache = new Map();
 function geoOf(g, g2) {

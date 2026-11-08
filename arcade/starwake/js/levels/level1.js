@@ -9,15 +9,15 @@
 // complexity"): solid structures in the lane, so the lightgates (a second new thing) are gone and their sector is the
 // structures' last act, THE BEACON FIELD. The roll is level 1's now, practised here. The speed, the music and both
 // power-ups are where they were; check-levels now reports how far the course is from 0.1.0's.
-import { defineLevel, clamp } from '../api.js?v=0.4.0';
-import ring from '../pickups/ring/index.js?v=0.4.0';
-import rock from '../obstacles/rock/index.js?v=0.4.0';
-import crystal from '../obstacles/crystal/index.js?v=0.4.0';
-import mines from '../obstacles/mines/index.js?v=0.4.0';
-import { girder, pylon, rib } from '../obstacles/structure/index.js?v=0.4.0';
-import pod from '../enemies/pod/index.js?v=0.4.0';
-import shrike from '../enemies/shrike/index.js?v=0.4.0';
-import { gasGiant, derelictFloor, derelictSkyline, crystalDrift, rockDrift, hullTowers, beaconField, hullTower, beacon } from './level1/scenery.js?v=0.4.0';
+import { defineLevel, clamp } from '../api.js?v=0.4.1';
+import ring from '../pickups/ring/index.js?v=0.4.1';
+import rock from '../obstacles/rock/index.js?v=0.4.1';
+import crystal from '../obstacles/crystal/index.js?v=0.4.1';
+import mines from '../obstacles/mines/index.js?v=0.4.1';
+import { girder, pylon, rib } from '../obstacles/structure/index.js?v=0.4.1';
+import pod from '../enemies/pod/index.js?v=0.4.1';
+import shrike from '../enemies/shrike/index.js?v=0.4.1';
+import { gasGiant, derelictFloor, derelictSkyline, crystalDrift, rockDrift, hullTowers, beaconField, hullTower, beacon } from './level1/scenery.js?v=0.4.1';
 
 const LEVEL_END = 15000;
 export default defineLevel({

@@ -3,8 +3,8 @@
 // lies), then the solid girder (Yori's: art-incoming/yori/g3/g3-bosses.js foremanCrane, the panel it carries) swings
 // into the plan from the side and comes down the lane at you. Fly over it or under it.
 //   api.spawn({ type: 'g3-foreman-girder', ny, side, boss }, z)    (only the Foreman spawns it)
-import { THREE, defineObstacle, buildModel, clamp, smoothstep } from '../../api.js?v=0.4.0';
-import { MESH as P } from './parts.js?v=0.4.0';
+import { THREE, defineObstacle, buildModel, clamp, smoothstep } from '../../api.js?v=0.4.1';
+import { MESH as P } from './parts.js?v=0.4.1';
 
 export const PLAN_T = 1.2;              // seconds the plan shows before the girder is swung in
 const SWING_T = 0.3;                     // the swing into the plan

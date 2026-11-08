@@ -14,9 +14,9 @@
 // the player's timers, GREED and every power-up hold still too) and hud.js draws the card.
 // The roll lesson (main.js, level 1) is never stacked with a card: no card starts while it runs, and a lesson that asks
 // while a card is up waits for the card (its pod holds station) and starts the moment the card is skipped.
-import { store } from './util.js?v=0.4.0';
-import { param } from './params.js?v=0.4.0';
-import { POWERUPS } from './powerups.js?v=0.4.0';
+import { store } from './util.js?v=0.4.1';
+import { param } from './params.js?v=0.4.1';
+import { POWERUPS } from './powerups.js?v=0.4.1';
 
 export const TIP = {
   ease: 0.3,   // seconds into the slow motion, and back out of it

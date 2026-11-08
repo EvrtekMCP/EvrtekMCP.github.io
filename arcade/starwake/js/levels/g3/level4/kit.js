@@ -1,8 +1,8 @@
 // Galaxy 3, levels 4-6 (CLU g3-b): the scenery kit. Yori's pieces (her vertex lists, exported to each level's mesh.js)
 // drawn as instanced decor that streams down the track, or as one persistent set piece that fades by its weight.
 // Lit colours take a milled-metal spec (the Unmade is "precise, cold, unfinished"); glowing ones are unlit.
-import { THREE, defineDecor, Instanced } from '../../../api.js?v=0.4.0';
-import { geometryOf } from '../../../enemies/crystal-emitter/parts.js?v=0.4.0';
+import { THREE, defineDecor, Instanced } from '../../../api.js?v=0.4.1';
+import { geometryOf } from '../../../enemies/crystal-emitter/parts.js?v=0.4.1';
 
 const tmpQ = new THREE.Quaternion(), eul = new THREE.Euler();
 export function matFor(g, o = {}) {

@@ -11,9 +11,9 @@
 <!-- Every URL here is relative and stamped (orders/arcade-releases.md): the folder runs as-is from the Arcade,
      from a preview page, or from tools/serve.js on 127.0.0.1. ES modules, so it needs a server, not a file://. -->
 <!-- Cabinet icons and share card: Yori, 2026-11-05. Local files, relative paths. -->
-<link rel="icon" href="starwake-favicon.svg?v=0.4.0" type="image/svg+xml">
-<link rel="icon" href="starwake-favicon.ico?v=0.4.0" sizes="any">
-<link rel="apple-touch-icon" href="starwake-touch-icon.png?v=0.4.0">
+<link rel="icon" href="starwake-favicon.svg?v=0.4.1" type="image/svg+xml">
+<link rel="icon" href="starwake-favicon.ico?v=0.4.1" sizes="any">
+<link rel="apple-touch-icon" href="starwake-touch-icon.png?v=0.4.1">
 <!-- Share card. Meta only: scrapers fetch these, the page never does. -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="STARWAKE">
@@ -59,12 +59,12 @@
     document.documentElement.classList.add('boot-old');
     ['landscape', 'portrait'].forEach(function (o) {
       var l = document.createElement('link'); l.rel = 'preload'; l.as = 'image'; l.media = '(orientation: ' + o + ')';
-      l.setAttribute('fetchpriority', 'high'); l.href = 'art/ui/loading-bg-' + o + '.png?v=0.4.0'; document.head.appendChild(l);
+      l.setAttribute('fetchpriority', 'high'); l.href = 'art/ui/loading-bg-' + o + '.png?v=0.4.1'; document.head.appendChild(l);
     });
   } catch (e) { /* the new boot, then */ }
 })();
 </script>
-<link rel="stylesheet" href="css/starwake.css?v=0.4.0">
+<link rel="stylesheet" href="css/starwake.css?v=0.4.1">
 </head>
 <body>
 <!-- 0.4.0, the studio splash (Evrtek 11-07): black; REIMERTEK STUDIOS fades in, holds, fades out; then the loading screen
@@ -72,7 +72,7 @@
      screen, the horizontal one on a landscape screen. Once a page load; it takes no input. The boot (Evrtek 11-07): the
      logo holds through the whole load, its LOADING bar below, and lifts onto the main menu (#boot-old: as above). -->
 <div id="splash">
-  <picture><source media="(orientation: portrait)" srcset="art/studio/lockup-stacked.svg?v=0.4.0"><img class="sp-logo" id="splash-logo" src="art/studio/lockup-horizontal.svg?v=0.4.0" alt="REIMERTEK STUDIOS" fetchpriority="high"></picture>
+  <picture><source media="(orientation: portrait)" srcset="art/studio/lockup-stacked.svg?v=0.4.1"><img class="sp-logo" id="splash-logo" src="art/studio/lockup-horizontal.svg?v=0.4.1" alt="REIMERTEK STUDIOS" fetchpriority="high"></picture>
   <div class="sp-load" id="splash-load" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="sp-row"><span class="w">LOADING</span><span class="n" id="splash-pct">0%</span></div><div class="sp-bar"><div class="sp-fill" id="splash-fill"></div></div></div>
 </div>
 <canvas id="view" aria-label="STARWAKE play field"></canvas>
@@ -127,8 +127,8 @@
   <canvas class="menu-vignette" id="menu-vignette" aria-hidden="true"></canvas>
   <div class="ui-bg constellation"></div>
   <div class="launcher-body">
-    <h1 class="wordmark"><img src="art/starwake-wordmark.png?v=0.4.0" srcset="art/starwake-wordmark.png?v=0.4.0 1x, art/starwake-wordmark@2x.png?v=0.4.0 2x" width="1065" height="215" alt="STARWAKE"></h1>
-    <div class="launcher-mid"><template id="launcher-wake-tpl"><img class="launcher-wake" src="art/ui/launcher-wake.png?v=0.4.0" width="456" height="312" alt=""></template></div>
+    <h1 class="wordmark"><img src="art/starwake-wordmark.png?v=0.4.1" srcset="art/starwake-wordmark.png?v=0.4.1 1x, art/starwake-wordmark@2x.png?v=0.4.1 2x" width="1065" height="215" alt="STARWAKE"></h1>
+    <div class="launcher-mid"><template id="launcher-wake-tpl"><img class="launcher-wake" src="art/ui/launcher-wake.png?v=0.4.1" width="456" height="312" alt=""></template></div>
     <div class="menu">
       <button id="start-btn" class="img-btn b-new-game"><span class="sr">NEW GAME</span></button>
       <button id="continue-btn" class="img-btn b-continue" hidden><span class="sr">CONTINUE</span><span class="cap" id="continue-cap"></span></button>
@@ -152,7 +152,7 @@
 <div id="galaxies" class="screen ui-screen" hidden>
   <div class="ui-bg bg-chart"></div>
   <div class="chart-title">SELECT GALAXY</div>
-  <img class="chart-title-img" src="art/ui/chart/title-select-galaxy.png?v=0.4.0" width="517" height="78" alt="SELECT GALAXY">
+  <img class="chart-title-img" src="art/ui/chart/title-select-galaxy.png?v=0.4.1" width="517" height="78" alt="SELECT GALAXY">
   <div class="chart" id="chart"></div>
   <button class="img-btn b-back select-back" data-back><span class="sr">BACK</span></button>
   <div class="totals" id="chart-totals"></div>
@@ -163,7 +163,7 @@
 <div id="select" class="screen ui-screen" hidden>
   <div class="ui-bg bg-select"></div>
   <div class="map" id="map"><div class="map-route"></div><div class="map-tiles" id="tiles"></div></div>
-  <img class="select-title" src="art/ui/title-select-sector.png?v=0.4.0" width="508" height="78" alt="SELECT SECTOR">
+  <img class="select-title" src="art/ui/title-select-sector.png?v=0.4.1" width="508" height="78" alt="SELECT SECTOR">
   <div class="select-galaxy" id="select-galaxy"></div>
   <button class="gal-arrow prev" id="gal-prev" aria-label="Previous galaxy">&#9664;</button>
   <button class="gal-arrow next" id="gal-next" aria-label="Next galaxy">&#9654;</button>
@@ -181,10 +181,10 @@
 <div id="options" class="screen" hidden>
   <div class="title-card small-card opt-card">
     <h2>OPTIONS</h2>
-    <button class="opt-row img-tog" data-tog="music"><img src="art/ui/icon-music.png?v=0.4.0" alt=""><img src="art/ui/label-music.png?v=0.4.0" alt="MUSIC"><img class="sw" src="art/ui/toggle-on.png?v=0.4.0" alt=""></button>
-    <button class="opt-row img-tog" data-tog="sfx"><img src="art/ui/icon-sfx.png?v=0.4.0" alt=""><img src="art/ui/label-sfx.png?v=0.4.0" alt="SOUND"><img class="sw" src="art/ui/toggle-on.png?v=0.4.0" alt=""></button>
+    <button class="opt-row img-tog" data-tog="music"><img src="art/ui/icon-music.png?v=0.4.1" alt=""><img src="art/ui/label-music.png?v=0.4.1" alt="MUSIC"><img class="sw" src="art/ui/toggle-on.png?v=0.4.1" alt=""></button>
+    <button class="opt-row img-tog" data-tog="sfx"><img src="art/ui/icon-sfx.png?v=0.4.1" alt=""><img src="art/ui/label-sfx.png?v=0.4.1" alt="SOUND"><img class="sw" src="art/ui/toggle-on.png?v=0.4.1" alt=""></button>
     <!-- 0.4.0: the first-time tips on or off (js/tutorials.js); Yori's icon and lettered label, as the rows above -->
-    <button class="opt-row img-tog" id="tips-tog"><img src="art/ui/icon-tips.png?v=0.4.0" alt=""><img src="art/ui/label-tips.png?v=0.4.0" alt="TIPS"><img class="sw" src="art/ui/toggle-on.png?v=0.4.0" alt=""></button>
+    <button class="opt-row img-tog" id="tips-tog"><img src="art/ui/icon-tips.png?v=0.4.1" alt=""><img src="art/ui/label-tips.png?v=0.4.1" alt="TIPS"><img class="sw" src="art/ui/toggle-on.png?v=0.4.1" alt=""></button>
     <!-- 0.3.0 (Evrtek 11-06): the PC keys, rebindable; hidden while playing by touch -->
     <div class="opt-keys" id="opt-keys">
       <div class="k-head">CONTROLS</div>
@@ -244,7 +244,7 @@
     <div id="end-galaxy" class="end-galaxy" hidden></div>
     <div id="end-rank" class="rank"><img id="end-rank-img" alt=""></div>
     <div id="end-stars" class="end-stars"></div>
-    <div id="end-nohit" class="end-nohit" hidden><img src="art/no-hit-glow.png?v=0.4.0" alt="NO HIT"></div>
+    <div id="end-nohit" class="end-nohit" hidden><img src="art/no-hit-glow.png?v=0.4.1" alt="NO HIT"></div>
     <table class="tally" id="tally"></table>
     <div id="end-new" class="newbest" hidden>NEW BEST</div>
     <button id="again-btn" class="go">FLY AGAIN</button>
@@ -263,18 +263,18 @@
 <div id="loading" class="loader">
   <div class="ui-bg bg-loading"></div>
   <canvas class="ld-vignette" id="loader-vignette" aria-hidden="true"></canvas>
-  <template id="loader-streaks"><div class="ui-bg streaks"></div><img class="ld-wake" src="art/ui/loading-wake.png?v=0.4.0" width="760" height="520" alt="" fetchpriority="high"></template>
-  <img class="ld-mark" src="art/starwake-wordmark.png?v=0.4.0" width="1065" height="215" alt="STARWAKE" fetchpriority="high">
+  <template id="loader-streaks"><div class="ui-bg streaks"></div><img class="ld-wake" src="art/ui/loading-wake.png?v=0.4.1" width="760" height="520" alt="" fetchpriority="high"></template>
+  <img class="ld-mark" src="art/starwake-wordmark.png?v=0.4.1" width="1065" height="215" alt="STARWAKE" fetchpriority="high">
   <div class="ld-label" id="loader-label"></div>
-  <div class="ld-ring" id="loader-ring"><img src="art/ui/loading-ring-track.png?v=0.4.0" width="240" height="240" alt="" fetchpriority="high"><img class="fill" src="art/ui/loading-ring-fill.png?v=0.4.0" width="240" height="240" alt="" fetchpriority="high"></div>
+  <div class="ld-ring" id="loader-ring"><img src="art/ui/loading-ring-track.png?v=0.4.1" width="240" height="240" alt="" fetchpriority="high"><img class="fill" src="art/ui/loading-ring-fill.png?v=0.4.1" width="240" height="240" alt="" fetchpriority="high"></div>
   <div class="loader-what" id="loader-what">LOADING</div>
   <div class="loader-prompt" id="loader-prompt"></div>
 </div>
 <!-- the loader vignette: its lane and sprite sheet (Yori's render-vignette.js), then its player. Deferred: they run as soon
      as the page is parsed, just after the splash's script below (which waits for the vignette), and never hold it up (as
      plain scripts they kept the logo back half a second on slow 4G) -->
-<script src="art/ui/loader/vignette-data.js?v=0.4.0" defer fetchpriority="high"></script>
-<script src="art/ui/loader/vignette.js?v=0.4.0" id="vignette-js" defer fetchpriority="high"></script>
+<script src="art/ui/loader/vignette-data.js?v=0.4.1" defer fetchpriority="high"></script>
+<script src="art/ui/loader/vignette.js?v=0.4.1" id="vignette-js" defer fetchpriority="high"></script>
 
 <!-- 0.4.0, the studio splash's script. A plain script, so it runs as soon as the page and its stylesheet are in.
      THE BOOT (boot-menu, Evrtek 11-07: "While the game is loading, we should have the reimertek studios fade in. Once the
@@ -325,7 +325,7 @@
   var mark = function (k) { t[k] = Math.round(performance.now()); };
   function boot() {
     if (booted) return; booted = true; mark('boot');
-    var m = document.createElement('script'); m.type = 'module'; m.src = 'js/main.js?v=0.4.0'; document.body.appendChild(m);
+    var m = document.createElement('script'); m.type = 'module'; m.src = 'js/main.js?v=0.4.1'; document.body.appendChild(m);
   }
   function end() {
     if (phase === 'gone') return;

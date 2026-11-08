@@ -16,9 +16,9 @@
 //   JACKPOT             beaten: the wheel bursts into a shower of bonus rings.
 //   CASHES OUT          not beaten in about 120 s: it spins down and leaves, with no bonus (rule 26).
 // Everything fires on the beat of its own track (audio/g3/bosses/high-roller, 150 bpm), counted from its bar lines.
-import { THREE, defineBoss, buildModel, material, clamp, damp } from '../../api.js?v=0.4.0';
-import { MESH } from './mesh.js?v=0.4.0';
-import { CURTAIN_T, lineOfBolts } from '../../enemies/g3-riveter/index.js?v=0.4.0';
+import { THREE, defineBoss, buildModel, material, clamp, damp } from '../../api.js?v=0.4.1';
+import { MESH } from './mesh.js?v=0.4.1';
+import { CURTAIN_T, lineOfBolts } from '../../enemies/g3-riveter/index.js?v=0.4.1';
 
 const SCALE = 2.2, HOLD = 140, HP = 18, BEATS_IN = 16;   // it flies in over the four bars of its track's Impact
 const SEGS = 12, MUZZLE_R = 12.8, TAU = Math.PI * 2;

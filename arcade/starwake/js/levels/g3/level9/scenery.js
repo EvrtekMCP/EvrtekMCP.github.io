@@ -4,10 +4,10 @@
 // landmark: built from the boss's own parts, so it is the same wheel that flies in at the end. It lights up in the calm
 // before the fight and goes as the real one comes out of the haze. Warm white bulbs, never amber: only the rings are.
 // Nothing here collides; everything stays outside the box.
-import { THREE, defineScenery, defineDecor, clamp } from '../../../api.js?v=0.4.0';
-import { MESH } from './mesh.js?v=0.4.0';
-import { MESH as WHEEL } from '../../../bosses/g3-high-roller/mesh.js?v=0.4.0';
-import { layersOf, begin, end, farModel } from '../level7/layers.js?v=0.4.0';
+import { THREE, defineScenery, defineDecor, clamp } from '../../../api.js?v=0.4.1';
+import { MESH } from './mesh.js?v=0.4.1';
+import { MESH as WHEEL } from '../../../bosses/g3-high-roller/mesh.js?v=0.4.1';
+import { layersOf, begin, end, farModel } from '../level7/layers.js?v=0.4.1';
 
 const tmpQ = new THREE.Quaternion(), eul = new THREE.Euler();
 

@@ -1,11 +1,11 @@
 // STARWAKE 0.4.0: three galaxies of levels: the catalogues, loading a level module, laying out its course, and the
 // player's progress (unlocks, stars, best score and rank per level). All progress is in localStorage on the
 // device; dev runs never write any of it.
-import { V, rng, store } from './util.js?v=0.4.0';
-import { getKind } from './registry.js?v=0.4.0';
-import { layout } from './layout.js?v=0.4.0';
-import { SPAWN_D, LEGACY_LINE } from './space.js?v=0.4.0';
-import { POWERUP_KINDS } from './pickups/powerups/index.js?v=0.4.0'; // 0.4.0: a level's `powerups` field (the galaxy 1 retrofit)
+import { V, rng, store } from './util.js?v=0.4.1';
+import { getKind } from './registry.js?v=0.4.1';
+import { layout } from './layout.js?v=0.4.1';
+import { SPAWN_D, LEGACY_LINE } from './space.js?v=0.4.1';
+import { POWERUP_KINDS } from './pickups/powerups/index.js?v=0.4.1'; // 0.4.0: a level's `powerups` field (the galaxy 1 retrofit)
 
 // The PLAY ORDER (n is the number a player sees). `file` is the module, js/levels/level<file>.js, when it differs;
 // `art` is Yori's name lettering (art/ui/name-<art>.png) when it differs. Evrtek, 11-05: "let's swap level one and

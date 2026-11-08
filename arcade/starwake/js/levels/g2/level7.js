@@ -15,12 +15,12 @@
 //   ACT 3  THE MEADOW           bars 48-64  124 m/s  breakdown + build two: coral walls, a corridor; MIRROR SHELL
 //   ACT 4  THE FULL BLOOM       bars 64-80  142 m/s  drop two: SET PIECE, ten seeds in a rhythm; OVERCLOCK before it
 //          THE FLOWER NEBULA    bars 80-92  160 m/s  the drive, a step less dense, then the outro to the finish
-import { defineLevel, clamp } from '../../api.js?v=0.4.0';
-import ring from '../../pickups/ring/index.js?v=0.4.0';
-import { overclock, mirrorShell } from '../../pickups/powerups/index.js?v=0.4.0';
-import seeker from '../../enemies/seeker-drone/index.js?v=0.4.0';
-import bloomer from '../../enemies/g2-bloomer/index.js?v=0.4.0';
-import { petalCluster, meadowBank, meadowWall, petals, banks, flowerNebula } from './level7/scenery.js?v=0.4.0';
+import { defineLevel, clamp } from '../../api.js?v=0.4.1';
+import ring from '../../pickups/ring/index.js?v=0.4.1';
+import { overclock, mirrorShell } from '../../pickups/powerups/index.js?v=0.4.1';
+import seeker from '../../enemies/seeker-drone/index.js?v=0.4.1';
+import bloomer from '../../enemies/g2-bloomer/index.js?v=0.4.1';
+import { petalCluster, meadowBank, meadowWall, petals, banks, flowerNebula } from './level7/scenery.js?v=0.4.1';
 
 // ---- the music grid and the speed curve, one schedule (rule 30). The plan's tempo until the take's .json lands.
 const BPM = 142, FIRST_BEAT = 0, BAR_S = 240 / BPM;

@@ -7,8 +7,8 @@
 //       spread (0, or metres either side of you for a fan of three), T (1.25 s of flight), tel (1.3 s of swell),
 //       s (size, 1.6), lead (0: the bolts arrive as the knot passes you)
 // Timed by its time to arrival (-z / speed), so its bolts land where the course was laid out to have them, at any speed.
-import { THREE, defineEnemy, buildModel, clamp } from '../../api.js?v=0.4.0';
-import { MESH } from './mesh.js?v=0.4.0';
+import { THREE, defineEnemy, buildModel, clamp } from '../../api.js?v=0.4.1';
+import { MESH } from './mesh.js?v=0.4.1';
 
 const SEAM = new THREE.Color(0xff3355), HOT = new THREE.Color(0xfff0f2), GAP = 0.08;
 function make(api) {

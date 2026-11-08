@@ -3,10 +3,10 @@
 // colours (levels/levelN.js, `looks`); its landmarks and its streams of scenery are its own (scenery.js).
 // 0.2.0 (ruling 5): the stars and the clouds used to wrap round to the far end at full brightness, a pop on
 // every wrap. Both now condense out of the far haze.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.4.0';
-import * as TX from './textures.js?v=0.4.0';
-import { rng, lerp, clamp, smoothstep } from './util.js?v=0.4.0';
-import { FOG_NEAR, FOG_FAR } from './space.js?v=0.4.0';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.4.1';
+import * as TX from './textures.js?v=0.4.1';
+import { rng, lerp, clamp, smoothstep } from './util.js?v=0.4.1';
+import { FOG_NEAR, FOG_FAR } from './space.js?v=0.4.1';
 
 const tmpCol = new THREE.Color();
 export class Backdrop {

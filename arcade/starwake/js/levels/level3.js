@@ -6,13 +6,13 @@
 // than levels 1 and 2 and still a beginner level): five turrets in acts 2 and 3 (bars 26, 30, 44, 62, 69) fire a second
 // volley three beats after the first, as bar 21's already did. Act 1's lessons, the gates, the Cascade and the Warden
 // are as they were.
-import { defineLevel } from '../api.js?v=0.4.0';
-import ring from '../pickups/ring/index.js?v=0.4.0';
-import gate from './level3/gate.js?v=0.4.0';
-import gateTurret from '../enemies/gate-turret/index.js?v=0.4.0';
-import { ringDecor, shard, gateRows, shards, horizon } from './level3/scenery.js?v=0.4.0';
-import { barD as B, speed } from './level3/time.js?v=0.4.0';
-import warden from '../bosses/warden/index.js?v=0.4.0';
+import { defineLevel } from '../api.js?v=0.4.1';
+import ring from '../pickups/ring/index.js?v=0.4.1';
+import gate from './level3/gate.js?v=0.4.1';
+import gateTurret from '../enemies/gate-turret/index.js?v=0.4.1';
+import { ringDecor, shard, gateRows, shards, horizon } from './level3/scenery.js?v=0.4.1';
+import { barD as B, speed } from './level3/time.js?v=0.4.1';
+import warden from '../bosses/warden/index.js?v=0.4.1';
 
 const BOSS_AT = B(84.75);          // a beat before bar 85: the Warden's track cuts in on bar 85's line
 const LENGTH = Math.round(BOSS_AT + 900);

@@ -5,8 +5,8 @@
 // while the lesson runs, shows the charge the lesson asks for, and never fires on its own. When the lesson is over
 // without its shot coming home (missed twice, or skipped) it climbs away out of the lane, so it never rams anyone.
 // Once the lesson is done it is never born at all (it dies at the spawn line, at zero size, before it is ever drawn).
-import { defineEnemy } from '../../api.js?v=0.4.0';
-import pod from '../../enemies/pod/index.js?v=0.4.0';
+import { defineEnemy } from '../../api.js?v=0.4.1';
+import pod from '../../enemies/pod/index.js?v=0.4.1';
 
 const ASK = 3.6; // seconds out when it asks for the lesson (a pod's first burst is at 3.4)
 export const tutorPod = defineEnemy({

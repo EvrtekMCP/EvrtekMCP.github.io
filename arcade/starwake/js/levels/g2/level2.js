@@ -9,20 +9,20 @@
 // Evrtek 11-08, after playing it: the gulpers glow red over the last second before they cross you (enemies/g2-gulper,
 // ev.glow), and THE BAIT BALL ("just mayhem and doesn't feel good") gives way to THE SPAWNING RUN, one great shoal ridden
 // home with one thing moving at a time. #g2l2-old (or ?g2l2=old; params.js) brings back the Bait Ball and no glow.
-import { defineLevel, defineScenery } from '../../api.js?v=0.4.0';
-import { param } from '../../params.js?v=0.4.0';
-import ring from '../../pickups/ring/index.js?v=0.4.0';
-import pod from '../../enemies/pod/index.js?v=0.4.0';
-import shrike from '../../enemies/shrike/index.js?v=0.4.0';
-import seeker from '../../enemies/seeker-drone/index.js?v=0.4.0';
-import { shieldCell, phase } from '../../pickups/powerups/index.js?v=0.4.0';
-import current, { simulateDrift } from '../../obstacles/g2-current/index.js?v=0.4.0';
-import drifter from '../../enemies/g2-drifter/index.js?v=0.4.0';
-import shoalFish from '../../pickups/g2-shoal/index.js?v=0.4.0';
-import gulper from '../../enemies/g2-gulper/index.js?v=0.4.0';
-import { coral, kelp, motes, reef, kelpBanks, plankton } from './level1/scenery.js?v=0.4.0';
-import { shafts, wall, tree } from './level2/scenery.js?v=0.4.0';
-import { musicTime, GRID } from './level1/clock.js?v=0.4.0';
+import { defineLevel, defineScenery } from '../../api.js?v=0.4.1';
+import { param } from '../../params.js?v=0.4.1';
+import ring from '../../pickups/ring/index.js?v=0.4.1';
+import pod from '../../enemies/pod/index.js?v=0.4.1';
+import shrike from '../../enemies/shrike/index.js?v=0.4.1';
+import seeker from '../../enemies/seeker-drone/index.js?v=0.4.1';
+import { shieldCell, phase } from '../../pickups/powerups/index.js?v=0.4.1';
+import current, { simulateDrift } from '../../obstacles/g2-current/index.js?v=0.4.1';
+import drifter from '../../enemies/g2-drifter/index.js?v=0.4.1';
+import shoalFish from '../../pickups/g2-shoal/index.js?v=0.4.1';
+import gulper from '../../enemies/g2-gulper/index.js?v=0.4.1';
+import { coral, kelp, motes, reef, kelpBanks, plankton } from './level1/scenery.js?v=0.4.1';
+import { shafts, wall, tree } from './level2/scenery.js?v=0.4.1';
+import { musicTime, GRID } from './level1/clock.js?v=0.4.1';
 
 const CLK = musicTime(Object.assign({ speeds: [[1, 70], [9, 78], [25, 88], [33, 100], [49, 94], [57, 108], [65, 124], [69, 136], [73, 148]] }, GRID[2]));
 const B = CLK.barD;

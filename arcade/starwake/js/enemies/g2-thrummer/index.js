@@ -11,8 +11,8 @@
 //     bars); tell: metres of its one-bar swell; hole.a: the hole's angle (radians, 0 = right, PI/2 = up), hole.w: its
 //     width, one of HOLES (Yori's three pulse rings). d is where the drum stands: past the meet, so it is seen ahead.
 // The Whirlmaw's heartbeat uses the same pulse in time mode (api.spawn a 'g2-thrummer-pulse' with mode: 'time').
-import { THREE, defineEnemy, buildModel, clamp, smoothstep } from '../../api.js?v=0.4.0';
-import { MESH } from './mesh.js?v=0.4.0';
+import { THREE, defineEnemy, buildModel, clamp, smoothstep } from '../../api.js?v=0.4.1';
+import { MESH } from './mesh.js?v=0.4.1';
 
 export const HOLES = { 1.2: 'hole12', 1.7: 'hole17', 2.3: 'hole23' };
 const RED = new THREE.Color(0xff3355), HOT = new THREE.Color(0xffffff), tmpC = new THREE.Color();
