@@ -13,7 +13,7 @@
 // HUD or any menu never rolls. No pointer lock: the steering is the pointer's own position, so a click moves nothing.
 // THE MODE (0.3.0): what the player is using right now, not what the device is. Any touch means 'touch'; a key or a
 // real mouse move means 'pc'. It switches live (a laptop with a touch screen), and every control text follows it.
-import { clamp, store } from './util.js?v=0.3.0';
+import { clamp, store } from './util.js?v=0.4.0';
 
 const DT_MS = 280, DT_PX = 40, TAP_MS = 250, TAP_PX = 14;
 export const DEFAULT_KEYS = { roll: ['Space', ''], greed: ['Shift', ''], pause: ['Escape', 'KeyP'], mouse: true };
@@ -49,7 +49,8 @@ export class Input {
     this.keys = new Set();
     this.mouseActive = false; this.mx = 0; this.my = 0;
     this.req = { roll: null, greed: false, pause: false, music: false, any: false };
-    this.touch = { id: null, x: 0, y: 0, down: null, lastTap: null };
+    // live: every finger down on the field (not on a button), id -> its last spot (11-07: steering hands over among them)
+    this.touch = { id: null, x: 0, y: 0, down: null, lastTap: null, live: new Map() };
     this.lastKind = 'none';
     this.mode = touchDevice ? 'touch' : 'pc'; this.onMode = null; this.onBinds = null;
     this.capturing = false; // Options is waiting for a key to bind: the play keys stand down
@@ -106,8 +107,13 @@ export class Input {
         } else {
           this.touch.down = { id: t.identifier, x: t.clientX, y: t.clientY, t: now, moved: 0 };
         }
-        // steering follows the newest finger, from where it landed: no jump
-        this.touch.id = t.identifier; this.touch.x = t.clientX; this.touch.y = t.clientY;
+        // 0.4.0 (Tron, field fixes 11-07; a playtester "lost the ability to maneuver every time he did a barrel roll"):
+        // steering STAYS with the finger already steering. It used to follow the newest finger, so a two-thumb player's
+        // double tap took the steering, and when that thumb lifted nothing steered until the first thumb was put down
+        // again. A new finger steers only when none is (or the one we think is has vanished without a touchend).
+        this.touch.live.set(t.identifier, { x: t.clientX, y: t.clientY });
+        const held = this.touch.id !== null && [...e.touches].some((q) => q.identifier === this.touch.id);
+        if (!held) { this.touch.id = t.identifier; this.touch.x = t.clientX; this.touch.y = t.clientY; } // from where it landed: no jump
       }
     }, { passive: false });
     on(document, 'touchmove', (e) => {
@@ -115,6 +121,7 @@ export class Input {
       for (const t of e.changedTouches) {
         const d = this.touch.down;
         if (d && d.id === t.identifier) d.moved = Math.max(d.moved, Math.hypot(t.clientX - d.x, t.clientY - d.y));
+        const lv = this.touch.live.get(t.identifier); if (lv) { lv.x = t.clientX; lv.y = t.clientY; }
         if (t.identifier !== this.touch.id) continue;
         const dx = t.clientX - this.touch.x, dy = t.clientY - this.touch.y;
         this.touch.x = t.clientX; this.touch.y = t.clientY;
@@ -135,8 +142,14 @@ export class Input {
           else this.touch.lastTap = null;
           this.touch.down = null;
         }
-        if (t.identifier === this.touch.id) this.touch.id = null;
+        this.touch.live.delete(t.identifier);
+        if (t.identifier === this.touch.id) {
+          // (11-07) the steering finger lifted: a finger still down on the field takes over, from where it is now (no jump)
+          this.touch.id = null;
+          for (const [id, p] of this.touch.live) if ([...e.touches].some((q) => q.identifier === id)) { this.touch.id = id; this.touch.x = p.x; this.touch.y = p.y; break; }
+        }
       }
+      for (const id of [...this.touch.live.keys()]) if (![...e.touches].some((q) => q.identifier === id)) this.touch.live.delete(id); // (none left behind)
     };
     on(document, 'touchend', end);
     on(document, 'touchcancel', end);

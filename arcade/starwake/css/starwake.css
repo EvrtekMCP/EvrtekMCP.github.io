@@ -106,6 +106,47 @@ body { position: fixed; inset: 0; }
 .tutor .t-skip { pointer-events: auto; font: 700 12px var(--mono); letter-spacing: 0.25em; color: var(--dim); background: rgba(10, 8, 30, 0.7);
   border: 1px solid rgba(143, 163, 196, 0.5); border-radius: 8px; padding: 7px 16px; cursor: pointer; }
 @media (max-width: 700px) { .tutor { top: calc(env(safe-area-inset-top) + 128px); } }
+/* 0.4.0, the first-time tips (js/tutorials.js): the roll lesson's plate, high on the screen and clear of the flight path's
+   middle; the icon beside the name and two short lines; SKIP under it, big enough for a thumb, its bar the auto-resume.
+   A section banner in the same spot waits behind it (hidden while the card is up). */
+.tip { position: absolute; left: 50%; top: calc(env(safe-area-inset-top) + max(56px, 8vh)); translate: -50% 0; width: min(540px, calc(100vw - 32px));
+  display: flex; flex-direction: column; align-items: center; gap: 10px; pointer-events: none; }
+.tip[hidden] { display: none; }
+#hud.tip-on .banner { visibility: hidden; }
+.tip-plate { width: 100%; display: flex; align-items: center; gap: 16px; padding: 14px 18px 15px; background: linear-gradient(180deg, rgba(14, 16, 44, 0.95), rgba(6, 7, 22, 0.95));
+  border: 2px solid rgba(208, 220, 255, 0.6); border-radius: 8px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55); }
+.tip-icon { flex: none; width: 60px; height: 60px; border-radius: 50%; display: grid; place-items: center; position: relative;
+  background: rgba(6, 6, 18, 0.9); box-shadow: 0 0 0 2px var(--c, #dfe8ff), 0 0 16px var(--c, transparent); }
+.tip-icon img { width: 40px; height: 40px; filter: drop-shadow(0 0 5px var(--c)); }
+/* placeholder glyphs until Yori draws card icons: an amber ring (collect), a red warning (hurts), a soft blue disc (ally) */
+.tip-icon.g-collect { --c: var(--amber); }
+.tip-icon.g-collect::before { content: ''; width: 28px; height: 28px; border-radius: 50%; border: 5px solid var(--amber); box-shadow: 0 0 10px rgba(255, 204, 51, 0.8); }
+.tip-icon.g-hurt { --c: var(--red); }
+.tip-icon.g-hurt::before { content: '!'; font: 900 34px/1 var(--mono); color: var(--red); text-shadow: 0 0 10px rgba(255, 51, 85, 0.9); }
+.tip-icon.g-ally { --c: #9fd8ff; }
+.tip-icon.g-ally::before { content: ''; width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle, #eaf6ff 0%, #9fd8ff 60%, rgba(159, 216, 255, 0) 72%); }
+.tip-body { flex: 1; min-width: 0; text-align: left; }
+.tip-name img { display: block; height: clamp(28px, 5.6vmin, 44px); width: auto; max-width: 100%; margin: -4px 0 2px -6px; }
+.tip-name span { display: block; font-size: clamp(20px, 4.6vmin, 34px); font-weight: 800; font-style: italic; letter-spacing: 0.05em; line-height: 1.15;
+  color: #f2f6ff; background: linear-gradient(180deg, #ffffff 0%, #dfe8ff 45%, #9fb0d8 58%, #eef4ff 100%); -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; filter: drop-shadow(0 2px 0 #0a0c26); margin-bottom: 4px; }
+.tip-say { font-size: clamp(14px, 2.8vmin, 19px); line-height: 1.38; color: var(--ink); letter-spacing: 0.01em; }
+.tip-say div + div { margin-top: 3px; color: #c9d8f2; }
+.tip-skip { pointer-events: auto; position: relative; overflow: hidden; min-width: 148px; min-height: 52px; padding: 0 26px; display: inline-flex; align-items: center; justify-content: center; gap: 12px;
+  font: 800 16px var(--mono); letter-spacing: 0.25em; color: var(--ink); background: rgba(10, 8, 30, 0.85); border: 2px solid rgba(208, 220, 255, 0.6);
+  border-radius: 10px; cursor: pointer; touch-action: manipulation; }
+.tip-skip:hover { border-color: #fff; }
+.tip-skip:active { transform: scale(0.97); }
+.tip-skip::after { content: ''; position: absolute; left: 0; bottom: 0; height: 3px; width: calc(var(--k, 1) * 100%); background: rgba(208, 220, 255, 0.55); }
+.tip-key { font: 700 11px var(--mono); letter-spacing: 0.1em; color: #0b0a1c; background: linear-gradient(180deg, #f4f7ff, #c4cfe8); border-radius: 5px; padding: 3px 7px 4px; box-shadow: 0 2px 0 #6d7aa0; }
+body.touch .tip-key { display: none; }
+/* a phone held upright: below the shield, GREED and pause column (on a tall phone), clear of the horizon */
+@media (max-width: 700px) { .tip { top: calc(env(safe-area-inset-top) + min(166px, 20vh)); } .tip-plate { gap: 12px; padding: 12px 14px 13px; } .tip-icon { width: 52px; height: 52px; } .tip-icon img { width: 34px; height: 34px; } }
+/* a wide screen: one row, SKIP beside the plate, so the card is shallow and stays above the horizon, where new things
+   come into view; narrow enough to clear the HUD's corners */
+@media (orientation: landscape) and (min-width: 701px) { .tip { flex-direction: row; align-items: stretch; width: min(780px, calc(100vw - 320px)); } .tip-skip { min-width: 132px; padding: 0 18px; flex-direction: column; gap: 6px; } }
+/* a short landscape phone: the whole width, as high as it goes */
+@media (max-height: 500px) and (orientation: landscape) { .tip { flex-direction: row; align-items: stretch; top: calc(env(safe-area-inset-top) + 48px); width: calc(100vw - 128px); } .tip-plate { padding: 10px 14px; } .tip-skip { min-width: 112px; padding: 0 16px; } }
 .warn { position: absolute; top: 45%; font-size: clamp(22px, 6vmin, 44px); color: var(--red); text-shadow: 0 0 12px rgba(255, 51, 85, 0.9); opacity: 0; }
 .warn.left { left: calc(10px + env(safe-area-inset-left)); }
 .warn.right { right: calc(10px + env(safe-area-inset-right)); }
@@ -273,6 +314,9 @@ body.hot #view { filter: saturate(1.35) contrast(1.06); }
 /* the loading screen: streaks rushing outward (the warp), the wordmark, a real progress bar */
 .loader { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; background: var(--bg); overflow: hidden; transition: opacity 0.5s; }
 .loader.done { opacity: 0; pointer-events: none; }
+/* 0.4.0 boot-menu: no loading screen at boot; parked out of the page until the menu is up, so its background (fetched for
+   any element on the page, even at opacity 0) does not share the boot's line */
+.loader.parked { display: none; }
 .warp { position: absolute; inset: -50%; background:
   repeating-conic-gradient(from 0deg, rgba(83, 230, 255, 0.0) 0deg 4deg, rgba(83, 230, 255, 0.16) 4.3deg, rgba(83, 230, 255, 0) 4.8deg 9deg),
   repeating-conic-gradient(from 3deg, rgba(255, 79, 216, 0.0) 0deg 7deg, rgba(255, 79, 216, 0.12) 7.2deg, rgba(255, 79, 216, 0) 7.6deg 13deg);
@@ -289,17 +333,17 @@ body.hot #view { filter: saturate(1.35) contrast(1.06); }
 /* ---------- Yori's screens (art/ui, 2026-11-05): launcher, sector map, loading ---------- */
 .ui-screen { padding: 0; background: #0b0a1c; display: block; overflow: hidden; }
 .ui-bg { position: absolute; inset: 0; background-size: cover; background-position: center; pointer-events: none; }
-.bg-launcher { background-image: url('../art/ui/launcher-bg-landscape.png?v=0.3.0'); }
-.constellation { background-image: url('../art/ui/constellation-landscape.png?v=0.3.0'); }
-.bg-select { background-image: url('../art/ui/levelselect-bg-landscape.png?v=0.3.0'); }
-.bg-loading { background-image: url('../art/ui/loading-bg-landscape.png?v=0.3.0'); }
-.streaks { background-image: url('../art/ui/loading-streaks-landscape.png?v=0.3.0'); mix-blend-mode: screen; animation: streak 1.1s linear infinite; }
+.bg-launcher { background-image: url('../art/ui/launcher-bg-landscape.png?v=0.4.0'); }
+.constellation { background-image: url('../art/ui/constellation-landscape.png?v=0.4.0'); }
+.bg-select { background-image: url('../art/ui/levelselect-bg-landscape.png?v=0.4.0'); }
+.bg-loading { background-image: url('../art/ui/loading-bg-landscape.png?v=0.4.0'); }
+.streaks { background-image: url('../art/ui/loading-streaks-landscape.png?v=0.4.0'); mix-blend-mode: screen; animation: streak 1.1s linear infinite; }
 @media (orientation: portrait) {
-  .bg-launcher { background-image: url('../art/ui/launcher-bg-portrait.png?v=0.3.0'); }
-  .constellation { background-image: url('../art/ui/constellation-portrait.png?v=0.3.0'); }
-  .bg-select { background-image: url('../art/ui/levelselect-bg-portrait.png?v=0.3.0'); }
-  .bg-loading { background-image: url('../art/ui/loading-bg-portrait.png?v=0.3.0'); }
-  .streaks { background-image: url('../art/ui/loading-streaks-portrait.png?v=0.3.0'); }
+  .bg-launcher { background-image: url('../art/ui/launcher-bg-portrait.png?v=0.4.0'); }
+  .constellation { background-image: url('../art/ui/constellation-portrait.png?v=0.4.0'); }
+  .bg-select { background-image: url('../art/ui/levelselect-bg-portrait.png?v=0.4.0'); }
+  .bg-loading { background-image: url('../art/ui/loading-bg-portrait.png?v=0.4.0'); }
+  .streaks { background-image: url('../art/ui/loading-streaks-portrait.png?v=0.4.0'); }
 }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 /* her buttons: 600 x 140, the plate inside; hover lights it, pressed sits 4 px lower and fills cyan */
@@ -307,21 +351,21 @@ body.hot #view { filter: saturate(1.35) contrast(1.06); }
   width: clamp(220px, 30vw, 520px); aspect-ratio: 600 / 140; filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.4)); }
 .img-btn[hidden] { display: none; }
 .img-btn.small { width: clamp(160px, 22vw, 300px); margin: 12px auto 0; }
-.b-new-game { background-image: url('../art/ui/btn-new-game-normal.png?v=0.3.0'); }
-.b-new-game:hover, .b-new-game:focus-visible { background-image: url('../art/ui/btn-new-game-hover.png?v=0.3.0'); }
-.b-new-game:active { background-image: url('../art/ui/btn-new-game-pressed.png?v=0.3.0'); }
-.b-continue { background-image: url('../art/ui/btn-continue-normal.png?v=0.3.0'); }
-.b-continue:hover, .b-continue:focus-visible { background-image: url('../art/ui/btn-continue-hover.png?v=0.3.0'); }
-.b-continue:active { background-image: url('../art/ui/btn-continue-pressed.png?v=0.3.0'); }
-.b-level-select { background-image: url('../art/ui/btn-level-select-normal.png?v=0.3.0'); }
-.b-level-select:hover, .b-level-select:focus-visible { background-image: url('../art/ui/btn-level-select-hover.png?v=0.3.0'); }
-.b-level-select:active { background-image: url('../art/ui/btn-level-select-pressed.png?v=0.3.0'); }
-.b-options { background-image: url('../art/ui/btn-options-normal.png?v=0.3.0'); }
-.b-options:hover, .b-options:focus-visible { background-image: url('../art/ui/btn-options-hover.png?v=0.3.0'); }
-.b-options:active { background-image: url('../art/ui/btn-options-pressed.png?v=0.3.0'); }
-.b-back { background-image: url('../art/ui/btn-back-normal.png?v=0.3.0'); }
-.b-back:hover, .b-back:focus-visible { background-image: url('../art/ui/btn-back-hover.png?v=0.3.0'); }
-.b-back:active { background-image: url('../art/ui/btn-back-pressed.png?v=0.3.0'); }
+.b-new-game { background-image: url('../art/ui/btn-new-game-normal.png?v=0.4.0'); }
+.b-new-game:hover, .b-new-game:focus-visible { background-image: url('../art/ui/btn-new-game-hover.png?v=0.4.0'); }
+.b-new-game:active { background-image: url('../art/ui/btn-new-game-pressed.png?v=0.4.0'); }
+.b-continue { background-image: url('../art/ui/btn-continue-normal.png?v=0.4.0'); }
+.b-continue:hover, .b-continue:focus-visible { background-image: url('../art/ui/btn-continue-hover.png?v=0.4.0'); }
+.b-continue:active { background-image: url('../art/ui/btn-continue-pressed.png?v=0.4.0'); }
+.b-level-select { background-image: url('../art/ui/btn-level-select-normal.png?v=0.4.0'); }
+.b-level-select:hover, .b-level-select:focus-visible { background-image: url('../art/ui/btn-level-select-hover.png?v=0.4.0'); }
+.b-level-select:active { background-image: url('../art/ui/btn-level-select-pressed.png?v=0.4.0'); }
+.b-options { background-image: url('../art/ui/btn-options-normal.png?v=0.4.0'); }
+.b-options:hover, .b-options:focus-visible { background-image: url('../art/ui/btn-options-hover.png?v=0.4.0'); }
+.b-options:active { background-image: url('../art/ui/btn-options-pressed.png?v=0.4.0'); }
+.b-back { background-image: url('../art/ui/btn-back-normal.png?v=0.4.0'); }
+.b-back:hover, .b-back:focus-visible { background-image: url('../art/ui/btn-back-hover.png?v=0.4.0'); }
+.b-back:active { background-image: url('../art/ui/btn-back-pressed.png?v=0.4.0'); }
 .img-btn .cap { position: absolute; left: 0; right: 0; bottom: 6%; font: 700 clamp(8px, 0.9vw, 12px) var(--mono); letter-spacing: 0.3em; color: var(--cyan); text-align: center; }
 /* the launcher (0.3.0; Evrtek's iPhone, 11-06: in Safari the foot sat on the buttons and OPTIONS fell off the screen).
    0.2.0 placed the foot absolutely and sized things in vh, which iOS Safari measures with its toolbars hidden, so on the
@@ -330,6 +374,10 @@ body.hot #view { filter: saturate(1.35) contrast(1.06); }
    the room the route shows through (it shrinks to nothing on a short screen), the four buttons, the foot. */
 .launcher { --vh: 1vh; }
 @supports (height: 1svh) { .launcher { --vh: 1svh; } }
+/* 0.4.0 boot-menu (Evrtek 11-07): Yori's vignette loop behind the menu instead of the route and its levels; the ship sits
+   in the open space beside the buttons (art/ui/loader/vignette.js places it). The constellation is #boot-old's. */
+.launcher .menu-vignette { position: absolute; inset: 0; display: block; pointer-events: none; }
+html:not(.boot-old) .launcher .constellation { display: none; }
 .launcher-body { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: flex-start; gap: calc(1.4 * var(--vh));
   padding: calc(env(safe-area-inset-top) + 7 * var(--vh)) calc(env(safe-area-inset-right) + 3vw) calc(env(safe-area-inset-bottom) + 2 * var(--vh)) calc(env(safe-area-inset-left) + 6vw); }
 .launcher .wordmark { flex: none; }
@@ -366,8 +414,8 @@ body.touch .launcher .foot .hint .pc { display: none; }
 }
 /* the sector map: one box at the art's aspect, contained, so every node lands where Yori drew it */
 .map { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
-.map-route { position: absolute; inset: 0; background: url('../art/ui/levelselect-route-landscape.png?v=0.3.0') center / 100% 100% no-repeat; }
-.map.portrait .map-route { background-image: url('../art/ui/levelselect-route-portrait.png?v=0.3.0'); }
+.map-route { position: absolute; inset: 0; background: url('../art/ui/levelselect-route-landscape.png?v=0.4.0') center / 100% 100% no-repeat; }
+.map.portrait .map-route { background-image: url('../art/ui/levelselect-route-portrait.png?v=0.4.0'); }
 .map-tiles { position: absolute; inset: 0; }
 .select-title { position: absolute; left: 4vw; top: 4vh; width: clamp(200px, 26vw, 508px); height: auto; }
 .select-back { position: absolute; right: 3vw; top: 4vh; width: clamp(140px, 15vw, 290px); }
@@ -375,9 +423,9 @@ body.touch .launcher .foot .hint .pc { display: none; }
 @media (orientation: portrait) { .totals { top: auto; bottom: 2vh; } }
 /* a tile is laid out at its native 350 x 230 and scaled to the map */
 .mtile { position: absolute; width: 350px; height: 230px; transform-origin: 50% 0; border: 0; padding: 0; background: center / 100% 100% no-repeat; cursor: pointer; }
-.mtile.locked { background-image: url('../art/ui/tile-locked.png?v=0.3.0'); cursor: default; }
-.mtile.open { background-image: url('../art/ui/tile-unlocked.png?v=0.3.0'); }
-.mtile.cleared { background-image: url('../art/ui/tile-cleared.png?v=0.3.0'); }
+.mtile.locked { background-image: url('../art/ui/tile-locked.png?v=0.4.0'); cursor: default; }
+.mtile.open { background-image: url('../art/ui/tile-unlocked.png?v=0.4.0'); }
+.mtile.cleared { background-image: url('../art/ui/tile-cleared.png?v=0.4.0'); }
 .mtile .n { position: absolute; left: 30px; top: 18px; height: 44px; }
 .mtile .nm { position: absolute; left: 96px; top: 22px; height: 38px; }
 .mtile.locked .n, .mtile.locked .nm { opacity: 0.55; }
@@ -391,8 +439,18 @@ body.touch .launcher .foot .hint .pc { display: none; }
 .opt-row { display: flex; align-items: center; gap: 14px; background: rgba(10, 8, 30, 0.6); border: 1px solid rgba(143, 163, 196, 0.35); border-radius: 12px; padding: 8px 16px; cursor: pointer; }
 .opt-row img { height: 34px; width: auto; }
 .opt-row img.sw { height: 40px; margin-left: 18px; }
+/* 0.4.0: TIPS's stand-ins for Yori's icon and lettered label (her icon-*.png and label-*.png sizes) */
+.opt-icon-ph { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font: 900 20px/1 var(--mono); color: #0d1030; background: linear-gradient(180deg, #e6ecfb, #a9b6d6); }
+.opt-label-ph { font: italic 800 26px/34px var(--mono); letter-spacing: 0.04em; color: #e6ecfb; background: linear-gradient(180deg, #ffffff 0%, #dfe8ff 45%, #9fb0d8 58%, #eef4ff 100%);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 2px 0 #0a0c26); }
+/* the third switch made the card ~68 px taller: on a laptop-height window the rows sit closer so it still fits unscrolled */
+@media (max-height: 800px) { .opt-card { gap: 6px; } .opt-row { padding: 5px 16px; } }
+@media (max-height: 690px) { #options .small-card { padding: 12px 18px; } #options .small-card h2 { margin-bottom: 4px; } .opt-row img { height: 28px; } .opt-row img.sw { height: 32px; } .opt-icon-ph { width: 28px; height: 28px; font-size: 17px; } .opt-label-ph { font-size: 22px; line-height: 28px; } }
 /* the loading screen */
 .loader { background: #0b0a1c; }
+/* 0.4.0: Yori's loader vignette, one canvas over the whole screen (art/ui/loader/vignette.js draws the Wake, its float and
+   its exit). The streaks and .ld-wake are #loader-old's now, the revert switch. */
+.ld-vignette { position: absolute; inset: 0; display: block; pointer-events: none; }
 .ld-wake { position: absolute; left: 50%; top: 52%; width: clamp(240px, 40vw, 760px); height: auto; transform: translate(-50%, -50%); animation: warpfloat 2.4s ease-in-out infinite; transition: transform 0.55s cubic-bezier(.5, 0, .9, .4), opacity 0.55s; }
 @keyframes warpfloat { 0%, 100% { translate: 0 0; } 50% { translate: 0 -1.2vh; } }
 @keyframes streak { from { transform: scale(1); opacity: 0.85; } to { transform: scale(1.08); opacity: 1; } }
@@ -447,3 +505,146 @@ body.touch .opt-keys { display: none; }
 .opt-keys .k-note { font-size: 11px; line-height: 1.4; color: var(--dim); text-align: center; min-height: 2.8em; }
 .opt-keys .k-note.warn { color: var(--amber); }
 .opt-keys .k-reset { margin: 0 auto; }
+
+/* 0.4.0: the power-ups. The strip above the shield bar: an icon each, a ring round it draining (--k, 1 to 0) in its
+   colour; in its last second it flashes. The roll meter glows hot under OVERCLOCK. Slipstream puts blue on the edges. */
+.pu-strip { display: flex; gap: 6px; justify-content: flex-end; min-height: 34px; margin-bottom: 4px; }
+.pu { width: 34px; height: 34px; border-radius: 50%; position: relative; display: grid; place-items: center;
+  background: conic-gradient(var(--c) calc(var(--k, 1) * 360deg), rgba(255, 255, 255, 0.08) 0); }
+.pu::before { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: rgba(6, 6, 18, 0.88); }
+.pu canvas, .pu img { position: relative; width: 22px; height: 22px; filter: drop-shadow(0 0 4px var(--c)); }
+.pu.end { animation: pu-end 0.33s steps(2) infinite; }
+@keyframes pu-end { 50% { opacity: 0.35; } }
+.roll.oc #roll-fill { background: #ff8ae6; box-shadow: 0 0 14px #ff4fd8, 0 0 28px rgba(255, 79, 216, 0.7); }
+.roll.oc span { color: #ffd0f6; text-shadow: 0 0 10px #ff4fd8; }
+.slip-edge { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.25s;
+  box-shadow: inset 0 0 90px 18px rgba(74, 100, 255, 0.55); }
+body.slip .slip-edge { opacity: 1; }
+.p.phase { color: #c9b4ff; text-shadow: 0 0 10px #9b6bff; }
+.callout.c-pu { letter-spacing: 0.08em; }
+.callout.c-pu-shield { color: #4dff8a; text-shadow: 0 0 12px #4dff8a; }
+.callout.c-pu-overclock { color: #ff4fd8; text-shadow: 0 0 12px #ff4fd8; }
+.callout.c-pu-mirror { color: #eef2ff; text-shadow: 0 0 12px #aab8ff; }
+.callout.c-pu-phase { color: #b99bff; text-shadow: 0 0 12px #9b6bff; }
+.callout.c-pu-magnet { color: #b8ff40; text-shadow: 0 0 12px #b8ff40; }
+.callout.c-pu-slip { color: #8a9cff; text-shadow: 0 0 12px #4a64ff; }
+
+/* 0.4.0: the galaxy chart. PLACEHOLDERS (the integrator's) until Yori's chart, emblems and lettering land: a deep-space
+   gradient, a spiral in each galaxy's tint, its name in plain type. Three across in landscape, stacked in portrait. */
+.bg-chart { background: radial-gradient(ellipse at 30% 40%, rgba(80, 60, 160, 0.35), transparent 60%), radial-gradient(ellipse at 75% 65%, rgba(40, 130, 100, 0.25), transparent 55%), #04040c; }
+.chart-title { position: absolute; top: calc(18px + env(safe-area-inset-top)); left: 0; right: 0; text-align: center; font-weight: 800; letter-spacing: 0.3em;
+  font-size: clamp(18px, 4vmin, 34px); color: var(--ink); text-shadow: 0 0 14px rgba(160, 140, 255, 0.8); }
+.chart { position: absolute; inset: 12% 4% 14% 4%; display: flex; align-items: center; justify-content: center; }
+.chart.portrait { flex-direction: column; inset: 10% 6% 12% 6%; }
+.gal-route { flex: 0 1 8%; min-width: 24px; align-self: center; border-top: 3px dashed rgba(200, 200, 255, 0.25); height: 0; }
+.chart.portrait .gal-route { border-top: 0; border-left: 3px dashed rgba(200, 200, 255, 0.25); width: 0; height: auto; min-height: 18px; flex-basis: 5%; }
+.gal-route.lit { border-color: rgba(220, 220, 255, 0.85); filter: drop-shadow(0 0 6px #b9b0ff); }
+.gal { flex: 1 1 0; max-width: 360px; display: flex; flex-direction: column; align-items: center; gap: 8px; background: none; border: 0; color: var(--ink);
+  cursor: pointer; font: inherit; padding: 6px; }
+.chart.portrait .gal { flex-direction: row; max-width: none; width: 100%; justify-content: flex-start; gap: 14px; flex-wrap: wrap; }
+.gal .emblem { width: min(26vmin, 220px); aspect-ratio: 1; display: grid; place-items: center; }
+.chart.portrait .gal .emblem { width: min(20vh, 34vw); }
+.gal .emblem img { width: 100%; height: auto; }
+.gal .emblem.ph { border-radius: 50%; opacity: 0.85; animation: gal-spin 40s linear infinite;
+  background: conic-gradient(from 0deg, transparent, var(--tint) 18%, transparent 32%, var(--tint) 50%, transparent 66%, var(--tint) 84%, transparent),
+    radial-gradient(circle, #fff 0 4%, var(--tint) 10%, transparent 62%);
+  -webkit-mask: radial-gradient(circle, #000 52%, transparent 70%); mask: radial-gradient(circle, #000 52%, transparent 70%); }
+@keyframes gal-spin { to { transform: rotate(360deg); } }
+.gal .gname { font-weight: 800; letter-spacing: 0.16em; font-size: clamp(13px, 2.6vmin, 22px); color: var(--tint); text-shadow: 0 0 10px var(--tint); text-align: center; }
+.gal .gname img { max-width: 100%; height: auto; }
+.gal .gstars { font-weight: 700; letter-spacing: 0.12em; color: var(--ink); font-size: clamp(12px, 2.2vmin, 18px); }
+.gal .pips { display: flex; gap: 5px; }
+.gal .pips span { width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--tint); opacity: 0.6; }
+.gal .pips span.on { background: var(--tint); opacity: 1; box-shadow: 0 0 6px var(--tint); }
+.gal.locked { cursor: default; filter: grayscale(0.85) brightness(0.45); }
+.gal .glock { font-size: clamp(10px, 1.8vmin, 14px); letter-spacing: 0.2em; color: var(--dim); }
+.gal.new { animation: gal-new 1.6s ease-out 2; }
+@keyframes gal-new { 0% { filter: brightness(2.2); transform: scale(1.06); } 100% { filter: none; transform: none; } }
+.gal.open:hover .emblem, .gal.open:focus-visible .emblem { filter: brightness(1.3); }
+/* each galaxy's sector map: its name over the map, arrows to its neighbours; galaxies 2 and 3 tinted until hers land */
+.select-galaxy { position: absolute; top: calc(70px + env(safe-area-inset-top)); left: 0; right: 0; text-align: center; font-weight: 800; letter-spacing: 0.2em;
+  font-size: clamp(12px, 2.4vmin, 20px); color: var(--tint, var(--ink)); text-shadow: 0 0 10px var(--tint, #8a7cff); pointer-events: none; }
+.select-galaxy img { max-height: 40px; width: auto; }
+.gal-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 48px; height: 72px; border: 1px solid rgba(200, 200, 255, 0.35); border-radius: 10px;
+  background: rgba(8, 8, 24, 0.6); color: var(--ink); font-size: 26px; cursor: pointer; z-index: 3; }
+.gal-arrow.prev { left: calc(10px + env(safe-area-inset-left)); }
+.gal-arrow.next { right: calc(10px + env(safe-area-inset-right)); }
+.gal-arrow:disabled { opacity: 0.3; cursor: default; }
+#select[data-g="2"].ph .bg-select { background: radial-gradient(ellipse at 40% 40%, rgba(42, 154, 106, 0.28), transparent 60%), radial-gradient(ellipse at 70% 70%, rgba(90, 58, 160, 0.22), transparent 55%), #070b18; }
+#select[data-g="3"].ph .bg-select { background: linear-gradient(rgba(232, 238, 255, 0.05) 1px, transparent 1px) 0 0 / 48px 48px, linear-gradient(90deg, rgba(232, 238, 255, 0.05) 1px, transparent 1px) 0 0 / 48px 48px,
+  radial-gradient(ellipse at 50% 50%, rgba(106, 58, 255, 0.2), transparent 60%), #08080c; }
+#select.ph .map-route { display: none; }
+.mtile .nm.ph { display: block; font-weight: 800; letter-spacing: 0.12em; font-size: 26px; color: var(--ink); text-shadow: 0 0 8px var(--tint, #8a7cff); margin: 4px 0; }
+.end-galaxy { font-weight: 800; letter-spacing: 0.22em; color: #c9ffe0; text-shadow: 0 0 12px #3fd08a; font-size: clamp(13px, 2.6vmin, 20px); margin: 2px 0 6px; }
+.dev-tabs { display: flex; gap: 6px; justify-content: center; margin: 6px 0; }
+.dev-tabs .tog.on { border-color: var(--cyan); color: var(--cyan); }
+.gal .ginfo { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.chart.portrait .gal { flex-wrap: nowrap; }
+.chart.portrait .gal .ginfo { align-items: flex-start; }
+#chart-totals { top: auto; bottom: calc(14px + env(safe-area-inset-bottom)); }
+
+/* 0.4.0: the GALAXY SELECT chart with Yori's art (art/ui/chart/): her starfield and route, her emblems on her nodes
+   (galaxy-nodes.json), her lettering for each name and lock line, her pips. Contained at her aspect like the sector map. */
+.bg-chart { background: #05040f url('../art/ui/chart/galaxychart-bg-landscape.png?v=0.4.0') center / cover no-repeat; }
+@media (orientation: portrait) { .bg-chart { background-image: url('../art/ui/chart/galaxychart-bg-portrait.png?v=0.4.0'); } }
+.chart-title { display: none; }
+.chart-title-img { position: absolute; left: 4vw; top: 4vh; width: clamp(200px, 26vw, 517px); height: auto; z-index: 2; }
+.chart, .chart.portrait { position: absolute; inset: auto; left: 50%; top: 50%; transform: translate(-50%, -50%); display: block; }
+.chart-route { position: absolute; inset: 0; background: url('../art/ui/chart/galaxychart-route-landscape.png?v=0.4.0') center / 100% 100% no-repeat; }
+.chart.portrait .chart-route { background-image: url('../art/ui/chart/galaxychart-route-portrait.png?v=0.4.0'); }
+.chart .gal { position: absolute; left: 0; top: 0; width: 0; height: 0; max-width: none; padding: 0; display: block; }
+.chart .gal .emblem { position: absolute; left: calc(var(--x) * var(--w)); top: calc(var(--y) * var(--h)); width: calc(var(--h) * 0.4); transform: translate(-50%, -50%); }
+.chart.portrait .gal .emblem { width: calc(var(--w) * 0.5); }
+.chart .gal .ginfo { position: absolute; left: calc(var(--tx) * var(--w)); top: calc(var(--y) * var(--h) + var(--h) * 0.19); transform: translateX(-50%); gap: calc(var(--h) * 0.012); width: max-content; }
+.chart.portrait .gal .ginfo { top: calc(var(--y) * var(--h)); transform: translate(-50%, -50%); align-items: center; }
+.chart .gal .gname img { height: calc(var(--h) * 0.055); width: auto; display: block; }
+.chart.portrait .gal .gname img { height: auto; width: calc(var(--w) * 0.5); }
+.chart .gal .gstars { font-size: calc(var(--h) * 0.03); color: var(--amber); text-shadow: var(--glow-a); }
+.chart .gal .pips { gap: calc(var(--h) * 0.004); }
+.chart .gal .pips img { height: calc(var(--h) * 0.03); width: auto; }
+.chart.portrait .gal .pips img { height: calc(var(--w) * 0.04); }
+.chart .gal img.glock { height: calc(var(--h) * 0.024); width: auto; }
+.chart.portrait .gal img.glock { height: auto; width: calc(var(--w) * 0.42); }
+.chart .gal.locked { filter: none; }
+.chart .gal.new .emblem { animation: gal-new 1.6s ease-out 2; }
+/* each sector map's galaxy title (her lettering) under SELECT SECTOR; her arrow plates in the bottom corners */
+.select-galaxy { left: 4vw; right: auto; top: calc(4vh + clamp(200px, 26vw, 508px) * 78 / 508 + 1vh); text-align: left; }
+.select-galaxy img { height: auto; width: clamp(150px, 21vw, 420px); max-height: none; }
+.gal-arrow { top: auto; transform: none; bottom: calc(3vh + env(safe-area-inset-bottom)); width: clamp(56px, 6.5vw, 120px); height: auto; aspect-ratio: 1; border: 0; border-radius: 0;
+  background: center / contain no-repeat; font-size: 0; }
+.gal-arrow.prev { background-image: url('../art/ui/chart/arrow-prev-normal.png?v=0.4.0'); left: calc(2vw + env(safe-area-inset-left)); }
+.gal-arrow.prev:hover, .gal-arrow.prev:focus-visible { background-image: url('../art/ui/chart/arrow-prev-hover.png?v=0.4.0'); }
+.gal-arrow.prev:active { background-image: url('../art/ui/chart/arrow-prev-pressed.png?v=0.4.0'); }
+.gal-arrow.next { background-image: url('../art/ui/chart/arrow-next-normal.png?v=0.4.0'); right: calc(2vw + env(safe-area-inset-right)); }
+.gal-arrow.next:hover, .gal-arrow.next:focus-visible { background-image: url('../art/ui/chart/arrow-next-hover.png?v=0.4.0'); }
+.gal-arrow.next:active { background-image: url('../art/ui/chart/arrow-next-pressed.png?v=0.4.0'); }
+/* galaxies 2 and 3's sector maps: her starfield and route for each (galaxy 1's stays exactly as approved) */
+#select[data-g="2"] .bg-select { background-image: url('../art/ui/g2/levelselect-bg-landscape.png?v=0.4.0'); }
+#select[data-g="3"] .bg-select { background-image: url('../art/ui/g3/levelselect-bg-landscape.png?v=0.4.0'); }
+#select[data-g="2"] .map-route { background-image: url('../art/ui/g2/levelselect-route-landscape.png?v=0.4.0'); }
+#select[data-g="3"] .map-route { background-image: url('../art/ui/g3/levelselect-route-landscape.png?v=0.4.0'); }
+#select[data-g="2"] .map.portrait .map-route { background-image: url('../art/ui/g2/levelselect-route-portrait.png?v=0.4.0'); }
+#select[data-g="3"] .map.portrait .map-route { background-image: url('../art/ui/g3/levelselect-route-portrait.png?v=0.4.0'); }
+@media (orientation: portrait) {
+  #select[data-g="2"] .bg-select { background-image: url('../art/ui/g2/levelselect-bg-portrait.png?v=0.4.0'); }
+  #select[data-g="3"] .bg-select { background-image: url('../art/ui/g3/levelselect-bg-portrait.png?v=0.4.0'); }
+}
+/* the end card: her GALAXY CLEAR stamp, and the IS OPEN card under it */
+.end-head img.stamp { height: clamp(40px, 8vmin, 84px); width: auto; display: block; margin: 0 auto; }
+.end-galaxy img { height: clamp(46px, 9vmin, 96px); width: auto; display: block; margin: 0 auto; }
+.pu[hidden] { display: none; }
+
+/* 0.4.0: the credits roll (g3-d). Over the galaxy chart's starfield; a centred column that scrolls up; any tap or key skips */
+.credits-view { position: absolute; inset: 0; overflow: hidden; -webkit-mask: linear-gradient(transparent, #000 12%, #000 88%, transparent);
+  mask: linear-gradient(transparent, #000 12%, #000 88%, transparent); }
+.credits-roll { position: absolute; left: 50%; top: 0; width: min(88vw, 720px); margin-left: calc(min(88vw, 720px) / -2); text-align: center; color: var(--ink); }
+.credits-roll .cr-studio { font-weight: 800; letter-spacing: 0.35em; font-size: clamp(16px, 3.4vmin, 28px); }
+.credits-roll .cr-small { font-size: clamp(11px, 2vmin, 15px); letter-spacing: 0.25em; color: var(--dim); margin: 6px 0 14px; }
+.credits-roll .cr-mark { width: min(80vw, 640px); height: auto; display: block; margin: 0 auto; }
+.credits-roll .cr-gap { height: 18vh; }
+.credits-roll .cr-head { margin: 9vh 0 2.2vh; font-weight: 800; letter-spacing: 0.3em; font-size: clamp(13px, 2.6vmin, 20px); color: var(--cyan); text-shadow: var(--glow-c); }
+.credits-roll .cr-name { margin-top: 2.6vh; font-weight: 800; letter-spacing: 0.12em; font-size: clamp(18px, 4vmin, 32px); }
+.credits-roll .cr-say { margin: 0.8vh auto 0; max-width: 34em; font-size: clamp(12px, 2.3vmin, 17px); line-height: 1.5; color: #c9d2ec; }
+.credits-roll .cr-galaxy { display: block; margin: 2.4vh auto 0; height: clamp(26px, 5vmin, 48px); width: auto; }
+.credits-roll .cr-end { font-weight: 800; letter-spacing: 0.3em; font-size: clamp(18px, 4vmin, 30px); color: var(--amber); text-shadow: var(--glow-a); }
+.credits-skip { position: absolute; bottom: calc(14px + env(safe-area-inset-bottom)); right: 18px; font-size: 11px; letter-spacing: 0.25em; color: var(--dim); }

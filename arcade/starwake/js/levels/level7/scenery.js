@@ -3,8 +3,8 @@
 // and teal the starboard, the distant traffic streams by in lines of small lights, and far ahead the Spindle, the
 // station's spine, waits with the tunnel through it. Her tunnel rings are the set piece (laid by the course, not a
 // stream, so the tunnel starts and ends on its bar lines). Nothing here collides; everything stays outside the box.
-import { THREE, defineScenery, defineDecor, Instanced, GlowPoints, modelGroups, clamp, smoothstep, rng } from '../../api.js?v=0.3.0';
-import { MESH } from './mesh.js?v=0.3.0';
+import { THREE, defineScenery, defineDecor, Instanced, GlowPoints, modelGroups, clamp, smoothstep, rng } from '../../api.js?v=0.4.0';
+import { MESH } from './mesh.js?v=0.4.0';
 
 const tmpQ = new THREE.Quaternion(), eul = new THREE.Euler(), tmpC = new THREE.Color();
 const side = (R, lo, hi) => R.sign() * R.range(lo, hi);
@@ -112,7 +112,7 @@ export const blast = defineDecor({
     if (!e.done) {
       e.done = true;
       api.game.boost(1.1, 1.18); api.game.shake(0.7); api.game.hitstop(0.06);
-      api.game.sfx('combo', { rate: 0.7 });
+      api.game.sfx('reward', { rate: 0.7 }); // the reward cue (Evrtek 11-07); at 0.7 nothing of it reaches 2-5 kHz
       api.game.burst(api.ship.x, api.ship.y, -6, 70, { speed: 30, life: 0.9, s0: 2.2, r: 1, g: 0.3, b: 0.75, carry: 1, drag: 1 });
       api.game.burst(api.ship.x, api.ship.y, -6, 50, { speed: 22, life: 0.8, s0: 1.8, r: 0.2, g: 0.95, b: 0.85, carry: 1, drag: 1 });
       api.game.call('BLAST OUT!', 'c-cyan');

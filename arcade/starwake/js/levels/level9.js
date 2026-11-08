@@ -16,12 +16,12 @@
 //                                                   SET PIECE THE GALLERY on drop two's first four bars (64-68)
 //   ACT 4  THE KALEIDOSCOPE    bars 80-92  136 m/s  the drive: every volley, a step less dense than the Hall's peak
 //          THE STILL WATER     bars 92-95  142 m/s  the calm before THE TWINS (boss on bar 95)
-import { defineLevel, clamp } from '../api.js?v=0.3.0';
-import ring from '../pickups/ring/index.js?v=0.3.0';
-import emitter from '../enemies/crystal-emitter/index.js?v=0.3.0';
-import twins, { hull as twinsHull } from '../bosses/twins/index.js?v=0.3.0';
-import { mirrorGate } from './level9/mirror.js?v=0.3.0';
-import { mirrorCrystal, crystalArch, mirrorPane, mirrorShard, crystalBanks, crystalFloorField, archStream, hallPanes, glassFloor, thePrism, glints } from './level9/scenery.js?v=0.3.0';
+import { defineLevel, clamp } from '../api.js?v=0.4.0';
+import ring from '../pickups/ring/index.js?v=0.4.0';
+import emitter from '../enemies/crystal-emitter/index.js?v=0.4.0';
+import twins, { hull as twinsHull } from '../bosses/twins/index.js?v=0.4.0';
+import { mirrorGate } from './level9/mirror.js?v=0.4.0';
+import { mirrorCrystal, crystalArch, mirrorPane, mirrorShard, crystalBanks, crystalFloorField, archStream, hallPanes, glassFloor, thePrism, glints } from './level9/scenery.js?v=0.4.0';
 
 // ---- the music grid and the speed curve, one schedule (rule 30). From audio/levels/level9/music.json (take 3).
 const BAR_S = 1.76484, FIRST_BEAT = 0.1023;
@@ -102,6 +102,9 @@ export default defineLevel({
     { d: BOSS_D, tag: 'peak', what: 'THE TWINS' },
   ],
   acts: { introduce: [0, A1], develop: [A1, A2], twist: [A2, A3], master: [A3, BOSS_D] },
+  // 0.4.0, the galaxy 1 retrofit (the plan's 6.5; nothing else in the level moves, no ring is added or moved):
+  // THE MIRROR FIELD: Overclock at the end of the lead-in, right before the Gallery (bar 64); it runs out by bar 66, long before the bait (bar 70); the Shield Cell in the Still Water before the Twins.
+  powerups: [[11761, 'overclock', 0.17, 0.43], [18341, 'shield-cell', 0.19, 0.38]],
   build(R, L) {
     const { add, ring: one, line, sine, clearOfRings } = L;
     // an emitter stands in the lane: never on a ring line (try its spot, then nudged up or down, then mirrored)

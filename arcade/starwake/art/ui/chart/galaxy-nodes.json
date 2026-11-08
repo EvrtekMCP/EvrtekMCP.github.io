@@ -1,0 +1,74 @@
+{
+ "note": "normalised x,y of the three galaxy emblems on the GALAXY SELECT chart, per layout; text: where the name, stars and pips go (below the emblem, or to its right at x 0.70); emblem: the sprite pair; lock: the line shown under a locked galaxy; the route is the dashed line between them",
+ "landscape": {
+  "text": "below",
+  "galaxies": [
+   {
+    "galaxy": 1,
+    "x": 0.2,
+    "y": 0.5,
+    "name": "THE LATTICE REACH",
+    "emblem": "emblem-g1",
+    "nameSprite": "name-g1.png",
+    "lock": "FINISH THE LATTICE HEART",
+    "accent": "#9a7cff"
+   },
+   {
+    "galaxy": 2,
+    "x": 0.5,
+    "y": 0.46,
+    "name": "THE VERDANT DEEP",
+    "emblem": "emblem-g2",
+    "nameSprite": "name-g2.png",
+    "lock": "FINISH THE ROOTMIND",
+    "accent": "#7dffb0"
+   },
+   {
+    "galaxy": 3,
+    "x": 0.8,
+    "y": 0.5,
+    "name": "THE UNMADE",
+    "emblem": "emblem-g3",
+    "nameSprite": "name-g3.png",
+    "lock": "FINISH THE WEFTWORK",
+    "accent": "#e8eeff"
+   }
+  ]
+ },
+ "portrait": {
+  "text": "right",
+  "textX": 0.7,
+  "galaxies": [
+   {
+    "galaxy": 1,
+    "x": 0.3,
+    "y": 0.77,
+    "name": "THE LATTICE REACH",
+    "emblem": "emblem-g1",
+    "nameSprite": "name-g1.png",
+    "lock": "FINISH THE LATTICE HEART",
+    "accent": "#9a7cff"
+   },
+   {
+    "galaxy": 2,
+    "x": 0.3,
+    "y": 0.5,
+    "name": "THE VERDANT DEEP",
+    "emblem": "emblem-g2",
+    "nameSprite": "name-g2.png",
+    "lock": "FINISH THE ROOTMIND",
+    "accent": "#7dffb0"
+   },
+   {
+    "galaxy": 3,
+    "x": 0.3,
+    "y": 0.23,
+    "name": "THE UNMADE",
+    "emblem": "emblem-g3",
+    "nameSprite": "name-g3.png",
+    "lock": "FINISH THE WEFTWORK",
+    "accent": "#e8eeff"
+   }
+  ]
+ }
+}

@@ -22,8 +22,8 @@ ACT 1, THE APPROACH (approach track bars 1-56, about 96 s; 100 -> 140 m/s in thr
 |---|---|---|
 | 1-8 | calm | the Lattice ahead, red seams; rings in the open; the first defence ring alone: two blades, half open, slow (rules 4, 18) |
 | 9-24 | rising | the roll call: pods (L1), a boost chain and a strafer pair (L2), gate turrets (L3), seekers (L4); defence rings between |
-| 25-32 | rising | the speed steps first; then snipers (L5), a counter-turning ring pair, ice mines (L6) |
-| 33-48 | peak | THE DEFENCE GRID: swarms (L7), searchlight sentries (L8), crystal emitters (L9), four-blade rings, ring pairs (27 s) |
+| 25-32 | rising | the speed steps first; then a swarm (L5, Neon Orbital, since the 5/7 swap of 11-08), a counter-turning ring pair, ice mines (L6) |
+| 33-48 | peak | THE DEFENCE GRID: snipers (L7, Ion Storm, since 11-08), searchlight sentries (L8), crystal emitters (L9), four-blade rings, ring pairs (27 s) |
 | 49-56 | calm | THE SPLIT: nothing shoots; the shell splits open ahead; the rings lead in (rule 3's lead-in) |
 
 ACT 2, THE DIVE (dive track bars 1-48, about 80 s; 172 -> 197 m/s, the fastest in the game)

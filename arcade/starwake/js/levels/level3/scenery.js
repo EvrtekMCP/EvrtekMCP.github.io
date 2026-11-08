@@ -6,10 +6,10 @@
 //  - l3-shard     a broken keystone block tumbling near the lane, for the sense of speed
 //  - streams      the grid of gates in straight rows either side and above and below; the shards
 //  - l3-horizon   a set piece: the far grid of gates on the horizon, beyond the fog, slowly closing
-import { THREE, rng, defineScenery, defineDecor, Instanced, material, clamp } from '../../api.js?v=0.3.0';
-import { MESH } from './mesh.js?v=0.3.0';
-import { beatClock, pulse } from './beat.js?v=0.3.0';
-import { GATE_S } from './gate.js?v=0.3.0';
+import { THREE, rng, defineScenery, defineDecor, Instanced, material, clamp } from '../../api.js?v=0.4.0';
+import { MESH } from './mesh.js?v=0.4.0';
+import { beatClock, pulse } from './beat.js?v=0.4.0';
+import { GATE_S } from './gate.js?v=0.4.0';
 
 const tmpQ = new THREE.Quaternion(), eul = new THREE.Euler();
 // Decor laid down by a level's first fill (on the loading screen, before the run's own fade window opens) would

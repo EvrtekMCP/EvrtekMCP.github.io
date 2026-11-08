@@ -4,8 +4,8 @@
 // the size tell it from a plain ring (rule 8).
 //   add(d, 'boost-ring', { nx, ny, chain: 'c1', idx: 0, of: 4 })     (layout: L.line(d, x0, y0, x1, y1, n, step,
 //   'boost-ring', (i, n) => ({ chain: 'c1', idx: i, of: n })) lays a whole chain)
-import { THREE, definePickup, buildModel } from '../../api.js?v=0.3.0';
-import { MESH } from './mesh.js?v=0.3.0';
+import { THREE, definePickup, buildModel } from '../../api.js?v=0.4.0';
+import { MESH } from './mesh.js?v=0.4.0';
 
 const R_COLLECT = 2.1;              // a touch more generous than a plain ring (rule 14): it is bigger
 export const BOOST = { secs: 3.0, mul: 1.4, bonus: 1000, greed: 20 };
@@ -54,7 +54,7 @@ export default definePickup({
               api.game.score(BOOST.bonus * api.game.mult, api.ship.x, api.ship.y + 2, 0, 'big', 'BOOST');
               api.game.greed(BOOST.greed);
               api.game.call('BOOST!', '');
-              api.game.sfx('combo', { rate: 1.3 });
+              api.game.sfx('reward'); // at its own pitch: at 1.3 the default sat 87% in 2-5 kHz, the piercing band (11-07)
             } else api.game.pop(c.got + ' / ' + ev.of, e.x, e.y - 1.6, 0, '');
           }
         } else {

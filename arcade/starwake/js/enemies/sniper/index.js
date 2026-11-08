@@ -1,4 +1,4 @@
-// THE SNIPER (level 5 on): Yori's long barrel on three truss legs, perched on the storm's pylons. It never moves
+// THE SNIPER (Ion Storm on, played 7th since 11-08): Yori's long barrel on three truss legs, perched on the storm's pylons. It never moves
 // and it does one thing (her sheet: "the shot you read early or not at all"):
 //   SIGHT  a thin red line from its muzzle finds you and follows you (0.8 s; 1.2 s the first time you meet one),
 //   LOCK   the line goes white and stops following: that is where the shot will land (0.3 s),
@@ -11,9 +11,9 @@
 //          shots: 1, sight: 0.8, at: 2.8 (seconds out when it first sights), gap: 0.45 (between shots),
 //          miss: 0 (metres off you on purpose: the teaching shot grazes), hang: false (legs up, under a lamp) }
 // It brings no perch of its own: level 5 stands each one on an ion pylon's lamp (js/levels/level5/storm.js).
-import { THREE, defineEnemy, buildModel, clamp, SHIP_R } from '../../api.js?v=0.3.0';
-import { MESH } from './mesh.js?v=0.3.0';
-import { SightLines } from './sight.js?v=0.3.0';
+import { THREE, defineEnemy, buildModel, clamp, SHIP_R } from '../../api.js?v=0.4.0';
+import { MESH } from './mesh.js?v=0.4.0';
+import { SightLines } from './sight.js?v=0.4.0';
 
 export const SIGHT = 0.8, SIGHT_FIRST = 1.2, LOCK = 0.3, BOLT_T = 0.3;
 const SCALE = 1.7;
@@ -29,7 +29,7 @@ function make() {
 }
 export default defineEnemy({
   name: 'sniper',
-  hazard: { cls: 'shot', introduced: 5, shotT: BOLT_T, tel: SIGHT + LOCK },
+  hazard: { cls: 'shot', introduced: 7, shotT: BOLT_T, tel: SIGHT + LOCK },
   killPts: 1500,
   sample: { nx: 0, ny: 0, shots: 0 },
   init(api) { lines = new SightLines(api.scene); },

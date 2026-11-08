@@ -1,4 +1,4 @@
-// LEVEL 7: NEON ORBITAL. An orbital city at night; you join its traffic. One idea: weave through the freighter
+// LEVEL 7 (played 5th since 11-08): NEON ORBITAL. An orbital city at night; you join its traffic. One idea: weave through the freighter
 // lanes. Freighters run in a lane of three columns and two decks, slower than you, so you overtake them through
 // whichever cell is open (act 1); denser, faster, and some change lanes with a red strobe first (act 2); then the
 // lanes CROSS your route, freighters sliding across it, pink going left and teal going right (act 3); and a last
@@ -9,11 +9,11 @@
 // arrangement Intro 8 bars, Groove 16, Build 8, Drop 16, Breakdown 8, Build 8, Drop 16, Drive 8. Speed steps and
 // the set piece sit on bar lines (rule 30): the speed is a function of time stepped on bars, integrated once into
 // distance, so B(bar) is where bar `bar` starts on the course at the nominal speed.
-import { defineLevel, clamp, smooth } from '../api.js?v=0.3.0';
-import ring from '../pickups/ring/index.js?v=0.3.0';
-import swarm from '../enemies/swarm-unit/index.js?v=0.3.0';
-import { freighter, COL_X, DECK_Y } from './level7/traffic.js?v=0.3.0';
-import { tower, sign, tunnelRing, blast, towers, signs, traffic, trafficHigh, lanes, spindle, zones } from './level7/scenery.js?v=0.3.0';
+import { defineLevel, clamp, smooth } from '../api.js?v=0.4.0';
+import ring from '../pickups/ring/index.js?v=0.4.0';
+import swarm from '../enemies/swarm-unit/index.js?v=0.4.0';
+import { freighter, COL_X, DECK_Y } from './level7/traffic.js?v=0.4.0';
+import { tower, sign, tunnelRing, blast, towers, signs, traffic, trafficHigh, lanes, spindle, zones } from './level7/scenery.js?v=0.4.0';
 
 // ---------------------------------------------------------------- the music's clock, and the speed on it
 const BPM = 142.017, FIRST = 0.0996, BAR = 240 / BPM;   // l7 take 1's measured grid (audio-src/music-takes-levels.json)
@@ -39,7 +39,7 @@ const SPAWN = 800;
 const cellXY = (c) => [COL_X[+c[1]], DECK_Y[c[0] === 'T' ? 1 : 0]];
 
 export default defineLevel({
-  n: 7, id: 'orbital', name: 'NEON ORBITAL',
+  n: 5, id: 'orbital', name: 'NEON ORBITAL', // played FIFTH since Evrtek's swap (11-08); its file stays level7.js
   idea: 'Weave through the freighter traffic of an orbital city.',
   seed: 7007,
   length: LENGTH,
@@ -96,6 +96,9 @@ export default defineLevel({
   // rule 19: introduce (traffic, the swarm), develop (denser, lane changes), twist (the lanes cross), master
   acts: { introduce: [0, B(33)], develop: [B(33), B(57)], twist: [B(57), B(73)], master: [B(73), LENGTH] },
 
+  // 0.4.0, the galaxy 1 retrofit (the plan's 6.5; nothing else in the level moves, no ring is added or moved):
+  // NEON ORBITAL: Overclock 1.8 s before Freight Rush's first long swarm volley; the Shield Cell behind a risk, in the gap between two crossing freighters.
+  powerups: [[7298, 'overclock', -0.67, 0.5], [11186, 'shield-cell', 0, 0]],
   build(R, L) {
     const { add, ring: one, line, sine } = L;
     // ---- authoring helpers

@@ -7,13 +7,13 @@
 //   Act 3 TWIST      bars 41-56  the Breakdown       fire rains from ABOVE: the shade flips under the plates
 //   Act 4 MASTER     bars 57-88  Build two, Drop two, Drive: the Great Flare on the drop, the mix, the escape
 // Ending: off the limb into night (Drive), the star falling away beneath you.
-import { defineLevel, clamp } from '../api.js?v=0.3.0';
-import ringKind from '../pickups/ring/index.js?v=0.3.0';
-import seeker from '../enemies/seeker-drone/index.js?v=0.3.0';
-import flareKind from './level4/flare.js?v=0.3.0';
-import raftKind, { RAFT_LOW, RAFT_HIGH } from './level4/raft.js?v=0.3.0';
-import { surface, prominence, prominences, plateDrift, plateDrifts, greatLoop } from './level4/scenery.js?v=0.3.0';
-import { at, speed, LENGTH, BAR, BEAT } from './level4/timeline.js?v=0.3.0';
+import { defineLevel, clamp } from '../api.js?v=0.4.0';
+import ringKind from '../pickups/ring/index.js?v=0.4.0';
+import seeker from '../enemies/seeker-drone/index.js?v=0.4.0';
+import flareKind from './level4/flare.js?v=0.4.0';
+import raftKind, { RAFT_LOW, RAFT_HIGH } from './level4/raft.js?v=0.4.0';
+import { surface, prominence, prominences, plateDrift, plateDrifts, greatLoop } from './level4/scenery.js?v=0.4.0';
+import { at, speed, LENGTH, BAR, BEAT } from './level4/timeline.js?v=0.4.0';
 
 const LEAD1 = 3 * BEAT, LEAD = 2.5 * BEAT;   // eruption lead: 1.25 s while the idea is new (rule 12: 1.2 s+), 1.04 s after
 
@@ -85,6 +85,9 @@ export default defineLevel({
     { d: at(81), tag: 'calm', what: 'OFF THE LIMB: the star falls away into night; rings to the finish' },
   ],
   acts: { introduce: [0, at(17)], develop: [at(17), at(41)], twist: [at(41), at(57)], master: [at(57), LENGTH] },
+  // 0.4.0, the galaxy 1 retrofit (the plan's 6.5; nothing else in the level moves, no ring is added or moved):
+  // SOLAR SKIM: Overclock in Flare Alley, 2 s before the seeker over the gauntlet (the first, alone, stays the lesson); the Shield Cell behind a risk, in a raft's shade under a burning flare.
+  powerups: [[5293, 'overclock', 0.045, -0.23], [7862, 'shield-cell', 0.45, 0]],
   build(R, L) {
     const { add, ring } = L;
     // a flare that ERUPTS on bar b (on the grid) and burns `bars` bars at the ship; returns the bar it arrives

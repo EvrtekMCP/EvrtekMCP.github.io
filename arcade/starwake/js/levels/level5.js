@@ -1,16 +1,16 @@
-// LEVEL 5: ION STORM. A violet storm of floating pylons, white lightning jumping between their lamps on the beat.
+// LEVEL 5 (played 7th since 11-08): ION STORM. A violet storm of floating pylons, white lightning jumping between their lamps on the beat.
 // The headline (rule 20): slip through the lightning when it goes dark. The new enemy is the sniper (its sight-
 // line finds you, goes white, and one fast bolt flies down it). The twist puts snipers on the lightning's own
 // cables: send a sniper's bolt home and its sheet of lightning shorts out. The finish is the lightning wall.
 // The course is authored in BARS of the level's take (plan.js: B(bar) -> metres), so every set piece, speed step
 // and pattern change sits on a bar line of the music (rule 30). Beat sheet and spawn tables: level5/DESIGN.md.
-import { defineLevel } from '../api.js?v=0.3.0';
-import ring from '../pickups/ring/index.js?v=0.3.0';
-import sniper from '../enemies/sniper/index.js?v=0.3.0';
-import { pylon, pair, arc, sheet, wall } from './level5/storm.js?v=0.3.0';
-import { field, sky, crown } from './level5/scenery.js?v=0.3.0';
-import { PATTERNS } from './level5/arcs.js?v=0.3.0';
-import { B, LENGTH, speed, END_BAR } from './level5/plan.js?v=0.3.0';
+import { defineLevel } from '../api.js?v=0.4.0';
+import ring from '../pickups/ring/index.js?v=0.4.0';
+import sniper from '../enemies/sniper/index.js?v=0.4.0';
+import { pylon, pair, arc, sheet, wall } from './level5/storm.js?v=0.4.0';
+import { field, sky, crown } from './level5/scenery.js?v=0.4.0';
+import { PATTERNS } from './level5/arcs.js?v=0.4.0';
+import { B, LENGTH, speed, END_BAR } from './level5/plan.js?v=0.4.0';
 
 // Yori's level-5 palette (art-incoming/yori/levels/palettes.js): sky 0a0a2a, gas 4a2aa0 / e8e0ff / 2a1a6a,
 // fog 2a2060, key f0ecff, fill 4a30a0, accent c0a8ff. Violet and white only: the arcs are white, your bolt cyan.
@@ -21,7 +21,7 @@ const look = (o) => Object.assign({ sky: ['#0a0a2a', A('4a2aa0'), A('e8e0ff'), A
 const startOn = (p, k) => { const s = PATTERNS[p] || p; return ((k - 1) * 4) % s.length; };
 
 export default defineLevel({
-  n: 5, id: 'storm', name: 'ION STORM',
+  n: 7, id: 'storm', name: 'ION STORM', // played SEVENTH since Evrtek's swap (11-08); its file stays level5.js
   idea: 'Slip through the lightning when it goes dark.',
   seed: 505,
   length: LENGTH,
@@ -74,6 +74,9 @@ export default defineLevel({
   // rule 19: the four acts
   acts: { introduce: [0, B(25)], develop: [B(25), B(57)], twist: [B(57), B(77)], master: [B(77), LENGTH] },
 
+  // 0.4.0, the galaxy 1 retrofit (the plan's 6.5; nothing else in the level moves, no ring is added or moved):
+  // ION STORM: the Shield Cell in the quiet cell after the strike; Overclock 2.5 s before drop two's rail snipers.
+  powerups: [[7110, 'shield-cell', 0.5, 0.155], [9777, 'overclock', -0.125, 0.82]],
   build(R, L) {
     const { add, ring } = L;
     // n rings from bar b0 to bar b1, at f(u) = [nx, ny] for u 0..1

@@ -18,8 +18,8 @@
 //            plane, and which way it is swinging then (+1 toward larger angles)
 //     hunt:  { slew }    metres per second the pool closes at (the ship crosses the box in about half a second)
 //     wave:  { shrikes, pods, shots }  what being caught calls
-import { THREE, defineEnemy, buildModel, clamp, smoothstep, SPAWN_D, READ_D, HUES } from '../../api.js?v=0.3.0';
-import { SENTRY, PIVOT } from './mesh.js?v=0.3.0';
+import { THREE, defineEnemy, buildModel, clamp, smoothstep, SPAWN_D, READ_D, HUES } from '../../api.js?v=0.4.0';
+import { SENTRY, PIVOT } from './mesh.js?v=0.4.0';
 
 export const SCALE = 1.7;            // Yori's 3.0-tall sentry, drawn 5.1 tall so it reads beside a 3.3 ship
 export const BEAM_R = 2.3;           // the beam is this wide (radius, metres) 20 m out; it spreads at a fixed angle (see beamR)
@@ -34,6 +34,7 @@ export const beamR = (along, len) => BEAM_R * (0.15 * len + 0.85 * along) / 20;
 export const WAVE_CAP = 5;           // rule 15: never more than this many wave craft alive at once
 export const BOLT_T = 1.5;           // a hunter's bolt takes this long down the beam (rule 12: a new shot, >= 1.2 s)
 export const BOLT_TEL = 0.45;        // ...after the beam pulses red this long
+export const NET_BOLT_T = 0.75;      // 0.3.1: as a net (levels.js FIRE) it is faster, and still warns 1.2 s (rule 12, level 8)
 export const SWING = 0.7;            // seconds a hunter takes to swing its beam down onto the lane (or back up)
 
 const PALE = new THREE.Color(0xfff0d0), RED = new THREE.Color(HUES.hurts);
@@ -153,7 +154,7 @@ export default defineEnemy({
   name: 'searchlight-sentry',
   // rule 12: a sweeping beam is in view from the read line; a hunter's pool must cross at least the box's half-height
   // and then hold you for HUNT_DWELL; its bolt flies BOLT_T after a BOLT_TEL tell
-  hazard: { cls: 'sweep', introduced: 8, warn: (ev, v) => (ev.mode === 'hunt' ? Math.min(4.1 / ((ev.hunt && ev.hunt.slew) || 4) + HUNT_DWELL, BOLT_T + BOLT_TEL) : READ_D / Math.max(1, v)) },
+  hazard: { cls: 'sweep', introduced: 8, warn: (ev, v) => (ev.mode === 'hunt' ? Math.min(4.1 / ((ev.hunt && ev.hunt.slew) || 4) + HUNT_DWELL, BOLT_T + BOLT_TEL) : READ_D / Math.max(1, v)), net: { T: NET_BOLT_T, tel: BOLT_TEL } },
   killPts: 1500,
   sample: { mode: 'hunt', nx: 0.4, ny: 1.6, hunt: { slew: 4 } },
   // only a hunter far enough ahead can be hit; a sweeper is past before anything could reach it
@@ -297,7 +298,7 @@ function huntStep(e, dt, api) {
       if (e.tel >= BOLT_TEL) {
         e.tel = -1; e.fired = true;
         vL.copy(e.lamp).addScaledVector(e.dir, 1.2);
-        api.fire({ x: vL.x, y: vL.y, z: vL.z }, clamp(ship.x + ship.vx * 0.3, -box.x, box.x), clamp(ship.y + ship.vy * 0.3, -box.y, box.y), { T: BOLT_T, owner: e });
+        api.fire({ x: vL.x, y: vL.y, z: vL.z }, clamp(ship.x + ship.vx * 0.3, -box.x, box.x), clamp(ship.y + ship.vy * 0.3, -box.y, box.y), { T: BOLT_T, owner: e, net: true, netT: NET_BOLT_T });
       }
     }
     return;

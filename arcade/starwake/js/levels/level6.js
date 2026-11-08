@@ -7,12 +7,12 @@
 // Leviathan's key) is laid out in bars: intro 8, groove 16, build 8, DROP 16, breakdown 8, build 8, DROP 16, drive.
 // Each pass is timed so its head reaches you ON a bar line; the speed steps, the forks, the set pieces and the boss
 // sit on bar lines; the four acts follow the track's sections (bars below count from 0 at the first beat).
-import { defineLevel, clamp, smoothstep } from '../api.js?v=0.3.0';
-import ring from '../pickups/ring/index.js?v=0.3.0';
-import iceMine from '../obstacles/ice-mine/index.js?v=0.3.0';
-import { spur, curtain, fork, pass, icefall } from './level6/kinds.js?v=0.3.0';
-import { RIFT, SCENERY, DECOR, mouthGap } from './level6/scenery.js?v=0.3.0';
-import leviathan from '../bosses/leviathan/index.js?v=0.3.0';
+import { defineLevel, clamp, smoothstep } from '../api.js?v=0.4.0';
+import ring from '../pickups/ring/index.js?v=0.4.0';
+import iceMine from '../obstacles/ice-mine/index.js?v=0.4.0';
+import { spur, curtain, fork, pass, icefall } from './level6/kinds.js?v=0.4.0';
+import { RIFT, SCENERY, DECOR, mouthGap } from './level6/scenery.js?v=0.4.0';
+import leviathan from '../bosses/leviathan/index.js?v=0.4.0';
 
 // ---- the clock: the track's kick grid (music.json: bpm 134.999, firstBeat 0.0054 s)
 const BAR = 1.77779, FIRST_BEAT = 0.0054;
@@ -90,6 +90,9 @@ export default defineLevel({
     { d: BOSS_AT, tag: 'peak', what: 'bar 79: THE LEVIATHAN (its own track cuts in on the bar)' },
   ],
   acts: { introduce: [0, STEPS[0]], develop: [STEPS[0], STEPS[1]], twist: [STEPS[1], STEPS[2]], master: [STEPS[2], BOSS_AT] },
+  // 0.4.0, the galaxy 1 retrofit (the plan's 6.5; nothing else in the level moves, no ring is added or moved):
+  // FROZEN RIFT: Overclock before the ice-mine run in the Narrows (4 s out: the lane pass before the first mine has no ring line); the Shield Cell at the end of the Throat, before the Leviathan.
+  powerups: [[3987, 'overclock', -0.075, -0.425], [14332, 'shield-cell', 0, 0]],
   build(R, L) {
     const { add, line, sine } = L;
     const passAt = (bar, lane, warn, o = {}) => { add(distAt(barT(bar) - warn), 'l6-pass', Object.assign({ lane, warn }, o)); return B(bar); };

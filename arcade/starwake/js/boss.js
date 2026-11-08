@@ -1,4 +1,4 @@
-// STARWAKE 0.2.0: the boss framework. A boss (defineBoss, one folder each in js/bosses/) is a body that flies
+// STARWAKE 0.2.0 (0.4.0: secondary targets, restore): the boss framework. A boss (defineBoss, one folder each in js/bosses/) is a body that flies
 // in out of the haze, holds station ahead of the ship, and fights in PHASES. It has no armour you can shoot:
 // the ONLY damage is your own deflect (Quorra rules 24-28):
 //  - it always fires, on a pattern that repeats (learnable in 2-3 goes), and changes pattern each phase;
@@ -7,10 +7,10 @@
 //  - each phase starts with a tell (a call-out, a shake, and whatever the boss's enter() does);
 //  - if it is not beaten in escapeAfter seconds it retreats, so a fight can never hang (rule 26).
 // While a boss is up the course holds (no new course events), the scenery keeps streaming and its own music plays.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.3.0';
-import { clamp } from './util.js?v=0.3.0';
-import { defineEnemy, defineWeakPoint } from './registry.js?v=0.3.0';
-import { SPAWN_D } from './space.js?v=0.3.0';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.4.0';
+import { clamp } from './util.js?v=0.4.0';
+import { defineEnemy, defineWeakPoint } from './registry.js?v=0.4.0';
+import { SPAWN_D } from './space.js?v=0.4.0';
 
 const tmpV = new THREE.Vector3();
 // ---- attack helpers: (b, api, o) with o = the pattern step. `from` = a muzzle index (default 0).
@@ -74,16 +74,20 @@ function setup(b, def, api) {
   b.weak = (built.weak || []).map((w, i) => {
     const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: api.glowTex, color: w.color || 0xff3355, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, opacity: 0.15 }));
     s.position.set(w.at[0], w.at[1], w.at[2]); s.scale.setScalar((w.r || 1.5) * 2.2); b.root.add(s);
-    const o = { i, at: w.at, r: w.r || 1.5, hp: w.hp || 3, max: w.hp || 3, glow: s, obj: w.obj || null, flash: 0 };
+    const o = { i, at: w.at, r: w.r || 1.5, hp: w.hp || 3, max: w.hp || 3, glow: s, obj: w.obj || null, flash: 0, counts: w.counts !== false, call: w.call || null, tag: w.tag, color: w.color };
     o.ent = api.course.spawn({ type: 'weak-point', boss: b, wp: o }, b.z);
     return o;
   });
-  b.maxHp = b.weak.reduce((s, w) => s + w.max, 0) || 1;
+  // 0.4.0: a weak point with counts: false is a SECONDARY target (a keystone, a knot): it is hit like any other but is not
+  // part of the health bar; knocking it out is the boss's cue (onWeakDown) to open the real one. restore(w, hp) rebuilds one.
+  b.maxHp = b.weak.reduce((s, w) => s + (w.counts ? w.max : 0), 0) || 1;
   b.exposed = (w) => w.hp > 0 && (def.exposed ? !!def.exposed(b, w, api) : true);
   b.later = (sec, fn) => b.queue.push({ t: sec, fn });
-  b.hp = () => b.weak.reduce((s, w) => s + Math.max(0, w.hp), 0) / b.maxHp;
+  b.hp = () => b.weak.reduce((s, w) => s + (w.counts ? Math.max(0, w.hp) : 0), 0) / b.maxHp;
+  b.restore = (w, hp) => { w.hp = Math.min(w.max, hp ?? w.max); if (w.obj) w.obj.visible = true; api.game.boss({ frac: b.hp() }); };
   b.hitWeak = (e, s, api2) => hit(b, e.wp, api2, s);
   b.phase = def.phases[0];
+  b.freed = api.game.bossFreed ? api.game.bossFreed(def) : false; // 0.4.0: galaxy 2's bosses are freed, not destroyed
   api.game.boss({ show: true, title: def.title, frac: 1, phase: 0, phases: def.phases.length });
   if (def.enter) def.enter(b, api);
 }
@@ -101,14 +105,17 @@ function tick(b, dt, api) {
   } else if (b.state === 'fight') {
     b.fightT += dt;
     runPattern(b, dt, api);
+    watchdog(b, dt, api);
     if (def.escapeAfter && b.fightT > def.escapeAfter) { b.state = 'escape'; b.t = 0; api.game.call(def.escapeCall || 'IT GOT AWAY', 'c-red'); }
   } else if (b.state === 'escape') {
     b.z -= 120 * dt; b.y += 4 * dt;
     if (b.z < -SPAWN_D) { b.alive = false; api.game.bossEnd(false); }
   } else if (b.state === 'dying') {
     const T = def.defeatTime || 2.8;
-    if (Math.random() < dt * 14) api.game.burst(b.x + (Math.random() - 0.5) * 14, b.y + (Math.random() - 0.5) * 10, b.z + (Math.random() - 0.5) * 6, 40, { speed: 18, life: 0.7, s0: 2.4, r: 1, g: 0.6, b: 0.25, carry: 0, drag: 1.5 });
-    if (b.t > T) { b.alive = false; api.game.burst(b.x, b.y, b.z, 160, { speed: 30, life: 1.2, s0: 3, r: 1, g: 0.9, b: 0.7, carry: 0, drag: 1.2 }); api.game.sfx('boom', { vol: 1, rate: 0.7 }); api.game.bossEnd(true); }
+    // 0.4.0 (g2-c): a FREED boss (galaxy 2) sheds pearl motes and plays g2-boss-freed; any other bursts and booms
+    const freed = b.freed, c = freed ? { r: 0.9, g: 1, b: 0.94 } : { r: 1, g: 0.6, b: 0.25 }, c2 = freed ? { r: 0.8, g: 1, b: 0.9 } : { r: 1, g: 0.9, b: 0.7 };
+    if (Math.random() < dt * 14) api.game.burst(b.x + (Math.random() - 0.5) * 14, b.y + (Math.random() - 0.5) * 10, b.z + (Math.random() - 0.5) * 6, 40, Object.assign({ speed: freed ? 12 : 18, life: freed ? 1.1 : 0.7, s0: 2.4, carry: 0, drag: 1.5 }, c));
+    if (b.t > T) { b.alive = false; api.game.burst(b.x, b.y, b.z, 160, Object.assign({ speed: freed ? 20 : 30, life: freed ? 1.6 : 1.2, s0: 3, carry: 0, drag: 1.2 }, c2)); api.game.sfx(freed ? 'g2-boss-freed' : 'boom', freed ? { vol: 1 } : { vol: 1, rate: 0.7 }); api.game.bossEnd(true); }
   }
   // delayed shots
   for (let i = b.queue.length - 1; i >= 0; i--) { const q = b.queue[i]; q.t -= dt; if (q.t <= 0) { b.queue.splice(i, 1); if (b.state === 'fight') q.fn(); } }
@@ -131,7 +138,8 @@ function tick(b, dt, api) {
     w.flash = Math.max(0, w.flash - dt * 4);
     w.glow.visible = w.hp > 0;
     w.glow.material.opacity = w.hp <= 0 ? 0 : on ? 0.75 + 0.25 * Math.sin(b.t * 9) + w.flash : 0.12;
-    w.glow.material.color.setHex(w.flash > 0.3 ? 0xffffff : 0xff3355);
+    // 0.4.0: a weak point's own colour when it has one (the Whirlmaw's gills light green on the exhale: set w.color any time)
+    w.glow.material.color.setHex(w.flash > 0.3 ? 0xffffff : (w.color ?? 0xff3355));
   }
 }
 
@@ -159,6 +167,28 @@ function runPattern(b, dt, api) {
   });
   if (ph.update) ph.update(b, dt, api);
 }
+// 0.4.0 (Tron, field fixes 11-07; Evrtek: "the boss just kind of floated there and nothing ever happened"): the WATCHDOG.
+// A fight shows itself: a shot of its own in flight, a lit weak point, or something it has just put on the course (the
+// course holds during a boss, so anything newly born is its). A boss that shows nothing for IDLE_S seconds is not
+// fighting (its own clock waits on something that never comes), so the framework takes it over: every weak point still
+// standing lights, and it fires a telegraphed aimed volley of its own every RESCUE.loop s, so it can always be beaten.
+// escapeAfter still runs (fightT). The music clock (audio.tick) is the real fix; this is the net under every boss.
+const IDLE_S = 10, RESCUE = { loop: 2.8, at: 1.5, tel: 0.9, n: 3, gap: 0.25, T: 1.4 };
+function watchdog(b, dt, api) {
+  let busy = b.weak.some((w) => b.exposed(w));
+  if (!busy) for (const s of api.course.shots) if (s.owner === b && !s.reflected) { busy = true; break; }
+  if (!busy) for (const e of api.course.list) if (e !== b && e.t < 1 && e.type !== 'weak-point' && e.kind.role !== 'decor' && !(e.ev && e.ev.stream)) { busy = true; break; }
+  b.idleT = busy ? 0 : (b.idleT || 0) + dt; b.idleMax = Math.max(b.idleMax || 0, b.idleT); // (idleMax: tools/test/boss-trigger.js)
+  if (!b.rescue && b.idleT > IDLE_S) {
+    b.rescue = true; b.rescueT = 0; b.exposed = (w) => w.hp > 0;
+    console.warn('boss watchdog: ' + (b.def.title || b.def.name) + ' showed nothing for ' + IDLE_S + ' s of its fight; the framework runs it');
+  }
+  if (!b.rescue) return;
+  const was = b.rescueT; b.rescueT = (b.rescueT + dt) % RESCUE.loop;
+  const into = b.rescueT - (RESCUE.at - RESCUE.tel), g = b.glows[0];
+  if (into > 0 && into < RESCUE.tel) { g.material.opacity = Math.max(g.material.opacity, into / RESCUE.tel); g.scale.setScalar(2 + 4 * into / RESCUE.tel); }
+  if (was < RESCUE.at && b.rescueT >= RESCUE.at) ATTACKS.aimed(b, api, RESCUE);
+}
 function hit(b, w, api, shot) {
   if (b.state !== 'fight' || w.hp <= 0) return;
   if (!b.exposed(w)) {
@@ -169,10 +199,10 @@ function hit(b, w, api, shot) {
   api.game.score(b.def.hitPts ?? 2500, w.ent.x, w.ent.y + 2, w.ent.z, 'big', 'WEAK POINT');
   api.game.hitstop(0.06); api.game.shake(0.4); api.game.sfx('boom', { vol: 0.7, rate: 1.3 });
   api.game.burst(w.ent.x, w.ent.y, w.ent.z, 40, { speed: 16, life: 0.6, s0: 1.8, r: 1, g: 0.5, b: 0.3, carry: 0, drag: 1.5 });
-  if (w.hp <= 0) { api.game.call(b.def.pointDown || 'CORE DOWN!', 'c-cyan'); if (w.obj) w.obj.visible = false; if (b.def.onWeakDown) b.def.onWeakDown(b, w, api); }
+  if (w.hp <= 0) { api.game.call(w.call || b.def.pointDown || 'CORE DOWN!', 'c-cyan'); if (w.obj) w.obj.visible = false; if (b.def.onWeakDown) b.def.onWeakDown(b, w, api); }
   const f = b.hp();
   api.game.boss({ frac: f });
-  if (f <= 0) { b.state = 'dying'; b.t = 0; api.game.hitstop(0.25); api.game.shake(1.2); api.game.flash(); api.game.call(b.def.downCall || 'BOSS DOWN!', 'c-cyan'); if (b.def.defeat) b.def.defeat(b, api); return; }
+  if (f <= 0) { b.state = 'dying'; b.t = 0; api.game.hitstop(0.25); api.game.shake(1.2); api.game.flash(); api.game.call(b.def.downCall || (b.freed ? 'FREED!' : 'BOSS DOWN!'), 'c-cyan'); if (b.def.defeat) b.def.defeat(b, api); return; }
   const next = b.def.phases[b.pi + 1];
   if (next && f <= (b.phase.until ?? 0)) startPhase(b, b.pi + 1, api);
 }

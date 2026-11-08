@@ -14,9 +14,9 @@
 // and a tall phone alike; in metres a boundary is the line through the hub along (cos a * box.x, sin a * box.y).
 // Event: { nx, ny (the hub), n (sectors), rot (in sectors; 0 puts a boundary on the +x axis), closed: [indices],
 //          mode, pattern 'spin' | 'flip', dir (+1 anticlockwise), step (sectors a beat), hold (beats), dmg }
-import { THREE, defineObstacle, buildModel, clamp, READ_D, SHIP_R } from '../../api.js?v=0.3.0';
-import { MESH } from './mesh.js?v=0.3.0';
-import { beatClock, pulse } from './beat.js?v=0.3.0';
+import { THREE, defineObstacle, buildModel, clamp, READ_D, SHIP_R } from '../../api.js?v=0.4.0';
+import { MESH } from './mesh.js?v=0.4.0';
+import { beatClock, pulse } from './beat.js?v=0.4.0';
 
 export const GATE_S = 0.7;                    // Yori's gate is 44 across in Wake units; at 0.7 it is ~31 m
 export const FIELD_R = 18.4 * GATE_S;         // the field fills the ring's inner face
@@ -140,6 +140,14 @@ export default defineObstacle({
   // a static thing in the track whose answer is shown `hold` beats out (step) or always (turn): rule 12
   hazard: { cls: 'mover', introduced: 3, warn: (ev, v) => (ev.mode === 'turn' || ev.mode === 'sleep' ? READ_D / v : (ev.hold ?? 3) * 60 / 140) },
   sample: { n: 4, closed: [0], mode: 'step' },
+  // 0.3.1, check-levels' "no fully blocked moment": its solid shape as it crosses the ship's plane, as the distance from
+  // a ship centre (x, y) to its surface (the kind's own hit test is that distance under part of SHIP_R)
+  // (a step gate locks into its event's rot and closed set; a turning gate ratchets into it as it arrives)
+  solid(ev, B) {
+    if ((ev.mode || 'step') === 'sleep' || ev.ward || !(ev.closed || []).length) return null;
+    const n = clamp(ev.n || 4, 2, 8), st = { n, rot: ev.rot || 0 }, shut = new Set(ev.closed), hx = (ev.nx || 0) * B.x, hy = (ev.ny || 0) * B.y;
+    return [{ dist: (x, y) => { const s = sectorAt(st, hx, hy, x, y, B); if (shut.has(s.i)) return -0.01; return Math.min(shut.has(s.prev) ? s.d0 : 99, shut.has(s.next) ? s.d1 : 99); } }];
+  },
   init(api) {
     discGeo = new THREE.CircleGeometry(1, 72);
   },

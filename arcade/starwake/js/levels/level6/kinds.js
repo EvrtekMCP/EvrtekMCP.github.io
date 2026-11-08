@@ -2,9 +2,9 @@
 // rest is the canyon's furniture, all "space" pieces with red-lit edges where they hurt (rule 9 and 11): SPURS of
 // ice from the left or right wall, CURTAINS of ice from the top or the floor, and the FORK, a glacier spire that
 // splits the canyon into a left and a right channel for a while (the twist).
-import { THREE, defineObstacle, clamp, smoothstep, SHIP_R, SPAWN_D } from '../../api.js?v=0.3.0';
-import { Serpent } from '../../bosses/leviathan/serpent.js?v=0.3.0';
-import { RIFT } from './scenery.js?v=0.3.0';
+import { THREE, defineObstacle, clamp, smoothstep, SHIP_R, SPAWN_D } from '../../api.js?v=0.4.0';
+import { Serpent } from '../../bosses/leviathan/serpent.js?v=0.4.0';
+import { RIFT } from './scenery.js?v=0.4.0';
 
 // ------------------------------------------------------------------ shared ice
 let ice = null, crack = null, clearIce = null;
@@ -49,6 +49,9 @@ export const spur = defineObstacle({
   hazard: { cls: 'static', introduced: 6 },
   breaks: false,
   sample: { side: -1, to: -0.3 },
+  // 0.3.1, check-levels' "no fully blocked moment": its solid shape as it crosses the ship's plane, as the distance from
+  // a ship centre (x, y) to its surface (the kind's own hit test is that distance under part of SHIP_R)
+  solid: (ev, B) => [{ dist: (x) => -(x - (ev.to ?? -0.3) * B.x) * (ev.side || -1) }],
   spawn(e, ev, api) {
     e.obj = api.course.get('l6-spur', makeSpur);
     e.side = ev.side || -1; e.tip = (ev.to ?? -0.3) * api.box.x; e.x = e.tip; e.y = 0;
@@ -87,6 +90,9 @@ export const curtain = defineObstacle({
   name: 'l6-curtain',
   hazard: { cls: 'static', introduced: 6 },
   sample: { from: 'top', to: 0.2 },
+  // 0.3.1, check-levels' "no fully blocked moment": its solid shape as it crosses the ship's plane, as the distance from
+  // a ship centre (x, y) to its surface (the kind's own hit test is that distance under part of SHIP_R)
+  solid: (ev, B) => { const dir = ev.from === 'bottom' ? -1 : 1, edge = (ev.to ?? 0.2) * B.y; return [{ dist: (x, y) => -((y - edge) * dir + 1.0) }]; },
   spawn(e, ev, api) {
     e.obj = api.course.get('l6-curtain', makeCurtain);
     e.dir = ev.from === 'bottom' ? -1 : 1; e.edge = (ev.to ?? 0.2) * api.box.y; e.x = 0; e.y = e.edge;
@@ -129,6 +135,11 @@ export const fork = defineObstacle({
   name: 'l6-fork',
   hazard: { cls: 'static', introduced: 6 },
   sample: { len: 200, hw: 0.2 },
+  // 0.3.1, check-levels' "no fully blocked moment": its solid shape as it crosses the ship's plane, as the distance from
+  // a ship centre (x, y) to its surface (the kind's own hit test is that distance under part of SHIP_R)
+  // (as its hit test has it: the spire hurts at its tip, 0.1 of its width, and the width it takes then shrinks to
+  // nothing within a few metres, so only the tip is a wall)
+  solid: (ev, B) => [{ dist: (x) => Math.abs(x) - 0.1 * (ev.hw || 0.2) * B.x }],
   spawn(e, ev, api) {
     e.obj = api.course.get('l6-fork', makeFork);
     e.len = ev.len || 220; e.hw = (ev.hw || 0.2) * api.box.x; e.x = 0; e.y = 0; e.hitT = 0; e.scraped = false;

@@ -3,8 +3,8 @@
 // it reaches you. A side arrow and a low rumble as it enters the lane region; a trail of dust behind it.
 // Its fissures glow the hurts red (rule 9), where the drifting scenery chunks glow Yori's warm sun edge.
 //   add(d, 'boulder', { from: -1 | 1, cross: nx where it meets the ship's plane, ny, r: 2..4, span: 320 })
-import { THREE, defineObstacle, Instanced, modelGroups, SHIP_R, READ_D } from '../../api.js?v=0.3.0';
-import { MESH } from './mesh.js?v=0.3.0';
+import { THREE, defineObstacle, Instanced, modelGroups, SHIP_R, READ_D } from '../../api.js?v=0.4.0';
+import { MESH } from './mesh.js?v=0.4.0';
 
 const VARIANTS = ['a', 'b', 'c'];
 let layers;
@@ -14,6 +14,10 @@ export default defineObstacle({
   breaks: true,
   // its whole path is visible from the read line; the warning is the time from there (rule 12)
   hazard: { cls: 'mover', introduced: 1, warn: (ev, v) => READ_D / v },
+  // 0.3.1, check-levels' "no fully blocked moment": its solid shape as it crosses the ship's plane, as the distance from
+  // a ship centre (x, y) to its surface (the kind's own hit test is that distance under part of SHIP_R)
+  // it meets the ship's plane at `cross` (normalised x), on its own height
+  solid: (ev, B) => [{ dist: (x, y) => Math.hypot(x - (ev.cross || 0) * B.x, y - (ev.ny || 0) * B.y) - (ev.r || 2) * 0.8 }],
   sample: { from: 1, cross: 0, r: 2 },
   avoid: (e) => [{ x: e.xAt(0), y: e.y, r: e.r * 0.8 + 2.2 }],
   init(api) {

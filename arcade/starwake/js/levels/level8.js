@@ -13,13 +13,13 @@
 //         the bow into open space and the finish.
 // Stealth pays a little (UNSEEN per lamp, GHOST per act on the tally); being caught pays more if you can take what
 // it calls (deflects and kills). Pick one.
-import { defineLevel, clamp } from '../api.js?v=0.3.0';
-import ring from '../pickups/ring/index.js?v=0.3.0';
-import pod from '../enemies/pod/index.js?v=0.3.0';
-import shrike from '../enemies/shrike/index.js?v=0.3.0';
-import sentry, { beamR, CATCH_K, SHIP_CORE, LAMP_IN, beamDir, reach } from '../enemies/searchlight-sentry/index.js?v=0.3.0';
-import { spar, ghost } from './level8/kinds.js?v=0.3.0';
-import { hull, rib, debris, tombPlate, hullDrift, ribDrift, ribArches, debrisField, tombRibs, tombPlating, ash, mausoleum } from './level8/scenery.js?v=0.3.0';
+import { defineLevel, clamp } from '../api.js?v=0.4.0';
+import ring from '../pickups/ring/index.js?v=0.4.0';
+import pod from '../enemies/pod/index.js?v=0.4.0';
+import shrike from '../enemies/shrike/index.js?v=0.4.0';
+import sentry, { beamR, CATCH_K, SHIP_CORE, LAMP_IN, beamDir, reach } from '../enemies/searchlight-sentry/index.js?v=0.4.0';
+import { spar, ghost } from './level8/kinds.js?v=0.4.0';
+import { hull, rib, debris, tombPlate, hullDrift, ribDrift, ribArches, debrisField, tombRibs, tombPlating, ash, mausoleum } from './level8/scenery.js?v=0.4.0';
 
 // ---- one schedule (rule 30). The track's bar grid (audio/levels/level8/music.json, take l8-t1: 137.982 bpm, first
 // beat 0.154 s; intro 1-8, groove 9-24, build 25-32, drop 33-48, breakdown 49-56, build 57-64, drop 65-80, drive
@@ -164,6 +164,9 @@ export default defineLevel({
     { d: D(83), tag: 'calm', what: "bars 83-84 (the drive): out past the bow, the lights behind you; rings home to the finish on bar 85, at the take's loop end" },
   ],
   acts: { introduce: [0, D(25)], develop: [D(25), D(57)], twist: [D(57), D(73)], master: [D(73), END] },
+  // 0.4.0, the galaxy 1 retrofit (the plan's 6.5; nothing else in the level moves, no ring is added or moved):
+  // GRAVEYARD OF GIANTS: Overclock inside the greedy searchlight's beam on the Picket Line (take it, the light calls the wave, roll it home); the Shield Cell in Dead Water.
+  powerups: [[5030, 'overclock', -0.365, -0.44], [7743, 'shield-cell', 0.385, 0.375]],
   build(R, L) {
     const { add, ring: oneRing, line, sine } = L;
     const H = [];                                          // every hazard the rings must thread, in course order

@@ -1,0 +1,94 @@
+{
+ "track": "g2-level5",
+ "label": "Galaxy 2, level 5, Gravity Garden: hypnotic techno, a bass line that bends in pitch",
+ "galaxy": 2,
+ "key": "C# minor",
+ "take": "g2l5-t1",
+ "rate": 48000,
+ "duration": 161.10004,
+ "bpm": 140.03,
+ "firstBeat": 0.2136,
+ "beatSec": 0.42848,
+ "barSec": 1.71392,
+ "loopStart": 20.78423,
+ "loopEnd": 151.04202,
+ "loopBars": 76,
+ "wrapMismatch": 0.7,
+ "introBars": 12,
+ "lufs": -10.4,
+ "sections": [
+  {
+   "name": "Intro",
+   "kind": "intro",
+   "startBar": 1,
+   "bars": 8,
+   "start": 0.214,
+   "end": 13.925
+  },
+  {
+   "name": "Groove",
+   "kind": "groove",
+   "startBar": 9,
+   "bars": 16,
+   "start": 13.925,
+   "end": 41.348
+  },
+  {
+   "name": "Build one",
+   "kind": "build",
+   "startBar": 25,
+   "bars": 8,
+   "start": 41.348,
+   "end": 55.059
+  },
+  {
+   "name": "Drop one",
+   "kind": "drop",
+   "startBar": 33,
+   "bars": 16,
+   "start": 55.059,
+   "end": 82.482
+  },
+  {
+   "name": "Breakdown",
+   "kind": "break",
+   "startBar": 49,
+   "bars": 8,
+   "start": 82.482,
+   "end": 96.193
+  },
+  {
+   "name": "Build two",
+   "kind": "build",
+   "startBar": 57,
+   "bars": 8,
+   "start": 96.193,
+   "end": 109.904
+  },
+  {
+   "name": "Drop two",
+   "kind": "drop",
+   "startBar": 65,
+   "bars": 16,
+   "start": 109.904,
+   "end": 137.327
+  },
+  {
+   "name": "Drive",
+   "kind": "groove",
+   "startBar": 81,
+   "bars": 8,
+   "start": 137.327,
+   "end": 151.038
+  },
+  {
+   "name": "Outro",
+   "kind": "outro",
+   "startBar": 89,
+   "bars": 6,
+   "start": 151.038,
+   "end": 161.1
+  }
+ ],
+ "note": "The whole take plays from the top once, then loops from loopStart to loopEnd (whole bars). bpm and firstBeat are the kick grid fitted to the take: beat n sits at firstBeat + n * beatSec, bar k (1-based) at firstBeat + (k-1) * barSec. An AAC decode can carry a few ms of priming: shift the points by (decoded length - duration), as audio.js does for level 1."
+}

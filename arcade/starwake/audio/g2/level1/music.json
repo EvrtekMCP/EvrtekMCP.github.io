@@ -1,0 +1,94 @@
+{
+ "track": "g2-level1",
+ "label": "Galaxy 2, level 1, Tideway: warm rolling dub techno",
+ "galaxy": 2,
+ "key": "F minor",
+ "take": "g2l1-t1",
+ "rate": 48000,
+ "duration": 170.80598,
+ "bpm": 131.979,
+ "firstBeat": 0.0679,
+ "beatSec": 0.45462,
+ "barSec": 1.81847,
+ "loopStart": 14.60825,
+ "loopEnd": 145.53817,
+ "loopBars": 72,
+ "wrapMismatch": 1.33,
+ "introBars": 8,
+ "lufs": -11.7,
+ "sections": [
+  {
+   "name": "Intro",
+   "kind": "intro",
+   "startBar": 1,
+   "bars": 8,
+   "start": 0.068,
+   "end": 14.616
+  },
+  {
+   "name": "Groove",
+   "kind": "groove",
+   "startBar": 9,
+   "bars": 16,
+   "start": 14.616,
+   "end": 43.711
+  },
+  {
+   "name": "Build one",
+   "kind": "build",
+   "startBar": 25,
+   "bars": 8,
+   "start": 43.711,
+   "end": 58.259
+  },
+  {
+   "name": "Drop one",
+   "kind": "drop",
+   "startBar": 33,
+   "bars": 16,
+   "start": 58.259,
+   "end": 87.355
+  },
+  {
+   "name": "Breakdown",
+   "kind": "break",
+   "startBar": 49,
+   "bars": 8,
+   "start": 87.355,
+   "end": 101.902
+  },
+  {
+   "name": "Build two",
+   "kind": "build",
+   "startBar": 57,
+   "bars": 8,
+   "start": 101.902,
+   "end": 116.45
+  },
+  {
+   "name": "Drop two",
+   "kind": "drop",
+   "startBar": 65,
+   "bars": 16,
+   "start": 116.45,
+   "end": 145.546
+  },
+  {
+   "name": "Drive",
+   "kind": "groove",
+   "startBar": 81,
+   "bars": 8,
+   "start": 145.546,
+   "end": 160.094
+  },
+  {
+   "name": "Outro",
+   "kind": "outro",
+   "startBar": 89,
+   "bars": 6,
+   "start": 160.094,
+   "end": 170.806
+  }
+ ],
+ "note": "The whole take plays from the top once, then loops from loopStart to loopEnd (whole bars). bpm and firstBeat are the kick grid fitted to the take: beat n sits at firstBeat + n * beatSec, bar k (1-based) at firstBeat + (k-1) * barSec. An AAC decode can carry a few ms of priming: shift the points by (decoded length - duration), as audio.js does for level 1."
+}

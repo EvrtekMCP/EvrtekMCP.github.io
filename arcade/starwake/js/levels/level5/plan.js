@@ -2,7 +2,7 @@
 // bar lines and ramp over one bar (rule 6), and integrated once into a table, so the course can be authored in
 // bars: B(33) is where the ship is when bar 33 (Drop one) begins, at the nominal speed. GREED and boosts pull
 // everything earlier, as in every level; the arcs keep the music's time whatever the speed.
-import { TRACK, barStart } from './track.js?v=0.3.0';
+import { TRACK, barStart } from './track.js?v=0.4.0';
 
 // [bar, m/s]: Intro 72, Groove 80, Build one 92, Drop one 104, Build two 116, Drop two 126, the wall 136, Drive 144
 export const STEPS = [[1, 72], [9, 80], [25, 92], [33, 104], [57, 116], [65, 126], [77, 136], [81, 144]];

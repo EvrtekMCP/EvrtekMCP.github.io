@@ -1,0 +1,86 @@
+{
+ "track": "g2-boss-snare",
+ "label": "Galaxy 2 boss, the Snare (level 6): war-drum techno, ending on one long held note",
+ "galaxy": 2,
+ "key": "B minor",
+ "take": "g2snare-t2",
+ "rate": 48000,
+ "duration": 140.66648,
+ "bpm": 140.003,
+ "firstBeat": 0.2216,
+ "beatSec": 0.42856,
+ "barSec": 1.71425,
+ "loopStart": 7.07979,
+ "loopEnd": 130.50548,
+ "loopBars": 72,
+ "wrapMismatch": 0.72,
+ "introBars": 4,
+ "lufs": -10.4,
+ "sections": [
+  {
+   "name": "Impact",
+   "kind": "intro",
+   "startBar": 1,
+   "bars": 4,
+   "start": 0.222,
+   "end": 7.079
+  },
+  {
+   "name": "Phase one",
+   "kind": "groove",
+   "startBar": 5,
+   "bars": 16,
+   "start": 7.079,
+   "end": 34.507
+  },
+  {
+   "name": "Phase two",
+   "kind": "groove",
+   "startBar": 21,
+   "bars": 16,
+   "start": 34.507,
+   "end": 61.934
+  },
+  {
+   "name": "Pause",
+   "kind": "break",
+   "startBar": 37,
+   "bars": 4,
+   "start": 61.934,
+   "end": 68.791
+  },
+  {
+   "name": "Build",
+   "kind": "build",
+   "startBar": 41,
+   "bars": 4,
+   "start": 68.791,
+   "end": 75.648
+  },
+  {
+   "name": "Phase three",
+   "kind": "drop",
+   "startBar": 45,
+   "bars": 16,
+   "start": 75.648,
+   "end": 103.076
+  },
+  {
+   "name": "Phase four",
+   "kind": "drop",
+   "startBar": 61,
+   "bars": 16,
+   "start": 103.076,
+   "end": 130.504
+  },
+  {
+   "name": "Outro",
+   "kind": "outro",
+   "startBar": 77,
+   "bars": 6,
+   "start": 130.504,
+   "end": 140.666
+  }
+ ],
+ "note": "The whole take plays from the top once, then loops from loopStart to loopEnd (whole bars). bpm and firstBeat are the kick grid fitted to the take: beat n sits at firstBeat + n * beatSec, bar k (1-based) at firstBeat + (k-1) * barSec. An AAC decode can carry a few ms of priming: shift the points by (decoded length - duration), as audio.js does for level 1."
+}

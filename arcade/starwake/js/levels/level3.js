@@ -2,13 +2,17 @@
 // fields open and close on the beat, then stop where you will pass. Everything is written in BARS of the level's
 // track (level3/time.js turns bars into metres), so the gates, the speed steps, the arches and the Warden's entrance
 // all land on bar lines (rule 30). The beat sheet and the four acts are below; the boss is THE WARDEN.
-import { defineLevel } from '../api.js?v=0.3.0';
-import ring from '../pickups/ring/index.js?v=0.3.0';
-import gate from './level3/gate.js?v=0.3.0';
-import gateTurret from '../enemies/gate-turret/index.js?v=0.3.0';
-import { ringDecor, shard, gateRows, shards, horizon } from './level3/scenery.js?v=0.3.0';
-import { barD as B, speed } from './level3/time.js?v=0.3.0';
-import warden from '../bosses/warden/index.js?v=0.3.0';
+// 0.4.0, the ramp (Evrtek 11-07, the first outside playtester: level three "was deemed to be easy"; it must be harder
+// than levels 1 and 2 and still a beginner level): five turrets in acts 2 and 3 (bars 26, 30, 44, 62, 69) fire a second
+// volley three beats after the first, as bar 21's already did. Act 1's lessons, the gates, the Cascade and the Warden
+// are as they were.
+import { defineLevel } from '../api.js?v=0.4.0';
+import ring from '../pickups/ring/index.js?v=0.4.0';
+import gate from './level3/gate.js?v=0.4.0';
+import gateTurret from '../enemies/gate-turret/index.js?v=0.4.0';
+import { ringDecor, shard, gateRows, shards, horizon } from './level3/scenery.js?v=0.4.0';
+import { barD as B, speed } from './level3/time.js?v=0.4.0';
+import warden from '../bosses/warden/index.js?v=0.4.0';
 
 const BOSS_AT = B(84.75);          // a beat before bar 85: the Warden's track cuts in on bar 85's line
 const LENGTH = Math.round(BOSS_AT + 900);
@@ -27,6 +31,14 @@ const mid = (g, i, rho = 0.55) => { const a = (g.rot + i + 0.5) * TAU / g.n; ret
 export default defineLevel({
   n: 3, id: 'gatefield', name: 'THE GATEFIELD',
   idea: 'The gates open on the beat: be where they stop.',
+  // the ramp (11-07; the MCP's ruling (a), extended to this level by its word): the engine's STYLE[3] (A [3, 4], S [5, 6],
+  // DEGENERATE [8, 10]) let the decent bot reach DEGENERATE on one seed of three at 96% of the rings. Sized from this level's own
+  // bots (g1-ramp's final runs), the other builders' rule (A about a quarter of the decent bot's grazes and close calls and of
+  // its deflects, S 40%): its runs had 17/19/22 and 46/48/48, so A asks 5 and 12, S 8 and 19. DEGENERATE asks 12 and 50:
+  // past the decent bot's best deflects (48), so its 96% seed stays an S; the good bot with power-ups off had 15/16/17 and
+  // 51/53/56, so all three of its seeds made it. (Its deflects count each bolt of a net sent home: FIRE[3] is one volley in
+  // three as a seven-bolt net.) The ring gates are Evrtek's 30/60/80/90/95, untouched.
+  style: { A: [5, 12], S: [8, 19], DEGENERATE: [12, 50] },
   seed: 303,
   length: LENGTH,
   speed,                            // 72 m/s, stepping on bar lines to 114 (level3/time.js)
@@ -66,7 +78,7 @@ export default defineLevel({
     { d: B(43), tag: 'peak', what: 'the spiral train: four gates on the beat, the open pair turning' },
     { d: B(49), tag: 'calm', what: 'THE SLEEPING GATE: the kick stops, the gates sleep, the Great Gate on bar 53' },
     { d: B(57), tag: 'rising', what: 'the twist: turning gates that never lock; ride the gap (the Warden\'s sweep, taught)' },
-    { d: B(66), tag: 'peak', what: 'turning and stepping gates together, turrets: the hardest stretch' },
+    { d: B(66), tag: 'peak', what: 'turning and stepping gates together, turrets firing twice: the hardest stretch' },
     { d: B(71), tag: 'calm', what: 'two bars of open space before the set piece' },
     { d: B(73), tag: 'peak', what: 'THE CASCADE: sixteen gates on every other beat, a ring through each, round and back' },
     { d: B(81), tag: 'calm', what: "THE WARDEN'S DOOR: an arch on the downbeat; the Warden rises out of the haze" },
@@ -74,6 +86,9 @@ export default defineLevel({
   // rule 19: the four acts
   acts: { introduce: [0, B(25)], develop: [B(25), B(57)], twist: [B(57), B(73)], master: [B(73), BOSS_AT] },
 
+  // 0.4.0, the galaxy 1 retrofit (the plan's 6.5; nothing else in the level moves, no ring is added or moved):
+  // THE GATEFIELD: Overclock 2 s before drop one's six-way gate with its two turrets; the Shield Cell in the calm before the Warden.
+  powerups: [[4678, 'overclock', -0.51, -0.095], [12874, 'shield-cell', 0, 0.055]],
   build(R, L) {
     const { add, ring: one, line } = L;
     let P = [0, -0.3];                                  // where the guiding rings last left the ship
@@ -108,9 +123,9 @@ export default defineLevel({
 
     // ================= ACT 2, DEVELOP (bars 25-48): turrets on the gates, doubles, trains =================
     // bar 25: the speed steps up; nothing new for a bar (rule 6)
-    g(26, V2, { closed: [0], pattern: 'flip', hold: 3, mount: -90 }, mid(V2, 1, 0.5)); turret(26, -90, [8], 1);
+    g(26, V2, { closed: [0], pattern: 'flip', hold: 3, mount: -90 }, mid(V2, 1, 0.5)); turret(26, -90, [8, 5], 1);
     g(28, X4, { closed: [1, 2, 3], hold: 3 }, mid(X4, 0));
-    g(30, T3, { closed: [0, 2], hold: 3, mount: 90 }, mid(T3, 1)); turret(30, 90, [9], 2);
+    g(30, T3, { closed: [0, 2], hold: 3, mount: 90 }, mid(T3, 1)); turret(30, 90, [9, 6], 2);
     g(31, Q4, { closed: [1, 2, 3], hold: 3 }, mid(Q4, 0), 3);                     // the first double: a bar later
     g(32, H2, { closed: [1], hold: 3 }, mid(H2, 0, 0.5), 3);
     // drop one (bar 33): the speed steps; an arch on the downbeat, the gates a bar later
@@ -127,7 +142,7 @@ export default defineLevel({
     // a breath: an arch and rings (rule 2)
     arch(41); go(B(42.5), [0, 0.2], 6, 30);
     g(43, T3, { closed: [1], hold: 3 }, mid(T3, 0), 3);
-    g(44, Q4, { closed: [0, 2], pattern: 'flip', hold: 3, mount: 90 }, mid(Q4, 3), 3); turret(44, 90, [9], 3);
+    g(44, Q4, { closed: [0, 2], pattern: 'flip', hold: 3, mount: 90 }, mid(Q4, 3), 3); turret(44, 90, [9, 6], 3);
     // the spiral train: the open pair turns a quarter every half-bar (right+top, top+left, left+bottom, bottom+right)
     [[1, 2], [2, 3], [3, 0], [0, 1]].forEach((cl, j) => { const bar = 45 + j * 0.5; g(bar, X4, { closed: cl, hold: 3 }); const m = mid(X4, j); one(B(bar), m[0], m[1]); P = m; });
     g(47, H2, { closed: [0], hold: 3, mount: 0 }, mid(H2, 1, 0.5), 3); turret(47, 0, [9], 1); turret(47, 180, [9], 1);
@@ -142,7 +157,7 @@ export default defineLevel({
     // ================= ACT 3, TWIST (bars 57-72): gates that turn and never lock =================
     g(58, X4, { closed: [0], mode: 'turn', step: 0.25, dir: 1 }, mid(X4, 2));     // the clock hand: one field sweeping round
     g(60, X4, { closed: [0, 2], mode: 'turn', step: 0.25, dir: -1 }, mid(X4, 3));  // the propeller
-    g(62, T3, { closed: [0], mode: 'turn', step: 0.25, dir: 1, mount: -90 }, mid(T3, 1)); turret(62, -90, [9], 2);
+    g(62, T3, { closed: [0], mode: 'turn', step: 0.25, dir: 1, mount: -90 }, mid(T3, 1)); turret(62, -90, [9, 6], 2);
     g(63, Q4, { closed: [0, 1, 2], hold: 3 }, mid(Q4, 3), 3);                      // a locking gate between, for contrast
     g(64, V2, { closed: [1], mode: 'turn', step: 0.125, dir: 1 }, mid(V2, 0, 0.5), 3);
     // drop two (bar 65): the speed steps; an arch, then the hardest stretch
@@ -150,7 +165,7 @@ export default defineLevel({
     g(66, X4, { closed: [1, 3], mode: 'turn', step: 0.25, dir: 1, mount: 0 }, mid(X4, 0)); turret(66, 0, [10], 1); turret(66, 180, [10], 1);
     g(67, X4, { closed: [0, 1, 3], hold: 3 }, mid(X4, 2), 3);
     g(68, S6, { closed: [0, 2, 4], mode: 'turn', step: 0.25, dir: -1 }, mid(S6, 3), 3);
-    g(69, V2, { closed: [0], pattern: 'flip', hold: 3, mount: 90 }, mid(V2, 1, 0.5), 3); turret(69, 90, [9], 3);
+    g(69, V2, { closed: [0], pattern: 'flip', hold: 3, mount: 90 }, mid(V2, 1, 0.5), 3); turret(69, 90, [9, 6], 3);
     g(70, X4, { closed: [0, 1], mode: 'turn', step: 0.25, dir: 1 }, mid(X4, 2), 3);
     go(B(72.5), [0, 0.5], 6, 30);                                                  // two bars of open space (rule 3)
 

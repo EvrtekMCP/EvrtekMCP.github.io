@@ -9,15 +9,15 @@ const SRC = {
   boulder: '../../obstacles/boulder/index.js',                   // level 2
   'gate-turret': '../../enemies/gate-turret/index.js',          // level 3
   'seeker-drone': '../../enemies/seeker-drone/index.js',        // level 4
-  sniper: '../../enemies/sniper/index.js',                       // level 5
+  sniper: '../../enemies/sniper/index.js',                       // Ion Storm (level5.js), played 7th since 11-08
   'ice-mine': '../../obstacles/ice-mine/index.js',              // level 6
-  'swarm-unit': '../../enemies/swarm-unit/index.js',            // level 7
+  'swarm-unit': '../../enemies/swarm-unit/index.js',            // Neon Orbital (level7.js), played 5th since 11-08
   'searchlight-sentry': '../../enemies/searchlight-sentry/index.js', // level 8
   'crystal-emitter': '../../enemies/crystal-emitter/index.js',  // level 9
 };
 const GOT = {};
 await Promise.all(Object.entries(SRC).map(async ([key, path]) => {
-  try { const m = await import(path + '?v=0.3.0'); if (m.default && m.default.name) GOT[key] = m.default; } catch (e) { /* not merged yet */ }
+  try { const m = await import(path + '?v=0.4.0'); if (m.default && m.default.name) GOT[key] = m.default; } catch (e) { /* not merged yet */ }
 }));
 export const cameoKinds = () => Object.values(GOT);
 export const cameosPresent = () => Object.keys(GOT);
@@ -56,7 +56,7 @@ export const CAMEOS = {
     if (!put(L, 'seeker-drone', d, 0.5, 0.5, { shots: 2 })) L.add(d, 'pod', { nx: 0.5, ny: 0.5, drift: -2, bursts: 2, shots: 1 });
     if (!put(L, 'seeker-drone', d + 110, -0.5, 0.2, { shots: 2 })) L.add(d + 110, 'pod', { nx: -0.5, ny: 0.2, drift: 2, bursts: 2, shots: 1 });
   },
-  // level 5, ION STORM: snipers
+  // level5.js, ION STORM (played 7th since 11-08): snipers
   l5(L, d) {
     // perched outside the box (level 5's rule), each sights you, locks, and fires one bolt down its line
     if (!put(L, 'sniper', d, -1.3, 0.65, { shots: 1 })) L.add(d, 'pod', { nx: -0.55, ny: 0.65, bursts: 1, shots: 3 });
@@ -69,7 +69,7 @@ export const CAMEOS = {
     if (!put(L, 'ice-mine', d + 80, 0.45, -0.3)) L.add(d + 80, 'mines', { nx: 0.45, ny: -0.3, n: 4 });
     L.line(d - 20, 0.5, 0.45, 0.6, 0.5, 3, 24);
   },
-  // level 7, NEON ORBITAL: a swarm
+  // level7.js, NEON ORBITAL (played 5th since 11-08): a swarm
   l7(L, d) {
     // one chain of six, copying your path, then rippling red tail to head: one roll sends the whole volley back
     if (!put(L, 'swarm-unit', d, 0, 0, { n: 6, volleys: 1, aim: 'ship', side: 1, tel: 0.9 })) { L.add(d, 'shrike', { side: 1, ny: 0.4, shots: 3 }); L.add(d + 60, 'shrike', { side: -1, ny: 0.1, shots: 3 }); }

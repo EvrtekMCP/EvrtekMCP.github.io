@@ -8,11 +8,11 @@
 //             send the sniper's bolt home and the sheet shorts out for good.
 //   l5-wall   the lightning wall: arcs across the whole lane but for one gap. Always live. The finale.
 // The tell, for every arc (Yori): an arc about to fire has both lamps lit, red going white-hot, for a whole bar.
-import { THREE, defineDecor, defineObstacle, Instanced, appear, clamp, SHIP_R } from '../../api.js?v=0.3.0';
-import { MESH } from './mesh.js?v=0.3.0';
-import { ArcLayer, PATTERNS, CHARGE_BEATS, checkPattern, arcState } from './arcs.js?v=0.3.0';
-import { TRACK, beatAt } from './track.js?v=0.3.0';
-import { tAtD, speed } from './plan.js?v=0.3.0';
+import { THREE, defineDecor, defineObstacle, Instanced, appear, clamp, SHIP_R } from '../../api.js?v=0.4.0';
+import { MESH } from './mesh.js?v=0.4.0';
+import { ArcLayer, PATTERNS, CHARGE_BEATS, checkPattern, arcState } from './arcs.js?v=0.4.0';
+import { TRACK, beatAt } from './track.js?v=0.4.0';
+import { tAtD, speed } from './plan.js?v=0.4.0';
 
 export const HIT_BAND = 0.9;    // metres from a live arc's line to the ship's centre that hurts (core 0.12 + SHIP_R, generous)
 export const CLOSE_BAND = 2.4;  // a live arc this close pays CLOSE (the risk line, rule 31)
@@ -155,8 +155,12 @@ export const pair = defineDecor({
 //     pat (a PATTERNS name or an X./ string), off (beats), s (pylon scale)
 export const arc = defineObstacle({
   name: 'l5-arc',
-  hazard: { cls: 'sweep', introduced: 5, warn: (ev, v) => chargeWarn(ev, v) },
+  hazard: { cls: 'sweep', introduced: 7, warn: (ev, v) => chargeWarn(ev, v) },
   sample: { ax: -1.25, ay: 0.4, bx: 1.25, by: 0.4, pat: 'bar' },
+  // 0.3.1, check-levels' "no fully blocked moment": its solid shape as it crosses the ship's plane, as the distance from
+  // a ship centre (x, y) to its surface (the kind's own hit test is that distance under part of SHIP_R)
+  // (it switches on the beat; the check takes it as live: the worst case)
+  solid: (ev, B) => [{ live: 'beat', dist: (x, y) => segDist(x, y, ev.ax * B.x, ev.ay * B.y, ev.bx * B.x, ev.by * B.y) - 0.12 }],
   init: layers,
   begin: beginAll, end: endAll,
   spawn(e, ev, api) {
@@ -196,8 +200,12 @@ export const arc = defineObstacle({
 export const sheet = defineObstacle({
   name: 'l5-sheet',
   motion: 'own',
-  hazard: { cls: 'sweep', introduced: 5, warn: (ev, v) => chargeWarn(ev, v) },
+  hazard: { cls: 'sweep', introduced: 7, warn: (ev, v) => chargeWarn(ev, v) },
   sample: { ax: -1.25, ay: -0.4, bx: 1.25, by: -0.4, len: 60, pat: 'bar' },
+  // 0.3.1, check-levels' "no fully blocked moment": its solid shape as it crosses the ship's plane, as the distance from
+  // a ship centre (x, y) to its surface (the kind's own hit test is that distance under part of SHIP_R)
+  // (it runs past the ship for `len` metres and switches on the beat; the check takes it as live all the way)
+  solid(ev, B) { const out = [], len = ev.len || 200; for (let u = 0; u <= len; u += 20) out.push({ at: u, live: 'beat', dist: (x, y) => segDist(x, y, ev.ax * B.x, ev.ay * B.y, ev.bx * B.x, ev.by * B.y) - 0.12 }); return out; },
   init: layers,
   begin: beginAll, end: endAll,
   spawn(e, ev, api) {
@@ -290,8 +298,11 @@ function short(e, api) {
 //     default just outside the box), open: [r0, r1] the gap widens from r0 to r1 as it closes in (the finale)
 export const wall = defineObstacle({
   name: 'l5-wall',
-  hazard: { cls: 'static', introduced: 5 },
+  hazard: { cls: 'static', introduced: 7 },
   sample: { gx: 0, gy: 0, gr: 2.4 },
+  // 0.3.1, check-levels' "no fully blocked moment": its solid shape as it crosses the ship's plane, as the distance from
+  // a ship centre (x, y) to its surface (the kind's own hit test is that distance under part of SHIP_R)
+  solid: (ev, B) => [{ dist: (x, y) => (ev.open ? ev.open[1] : ev.gr || 3) - Math.hypot(x - (ev.gx || 0) * B.x, y - (ev.gy || 0) * B.y) }],
   init: layers,
   begin: beginAll, end: endAll,
   spawn(e, ev, api) {

@@ -1,0 +1,94 @@
+{
+ "track": "g3-level2",
+ "label": "Galaxy 3, level 2, The Loom Floor: EBM-techno, a sequenced bass that zigzags",
+ "galaxy": 3,
+ "key": "F minor",
+ "take": "g3l2-t3",
+ "rate": 48000,
+ "duration": 158.77804,
+ "bpm": 142.011,
+ "firstBeat": 0.1614,
+ "beatSec": 0.4225,
+ "barSec": 1.69001,
+ "loopStart": 27.19921,
+ "loopEnd": 148.87992,
+ "loopBars": 72,
+ "wrapMismatch": 1.21,
+ "introBars": 16,
+ "lufs": -11.4,
+ "sections": [
+  {
+   "name": "Intro",
+   "kind": "intro",
+   "startBar": 1,
+   "bars": 8,
+   "start": 0.161,
+   "end": 13.682
+  },
+  {
+   "name": "Groove",
+   "kind": "groove",
+   "startBar": 9,
+   "bars": 16,
+   "start": 13.682,
+   "end": 40.722
+  },
+  {
+   "name": "Build one",
+   "kind": "build",
+   "startBar": 25,
+   "bars": 8,
+   "start": 40.722,
+   "end": 54.242
+  },
+  {
+   "name": "Drop one",
+   "kind": "drop",
+   "startBar": 33,
+   "bars": 16,
+   "start": 54.242,
+   "end": 81.282
+  },
+  {
+   "name": "Breakdown",
+   "kind": "break",
+   "startBar": 49,
+   "bars": 8,
+   "start": 81.282,
+   "end": 94.802
+  },
+  {
+   "name": "Build two",
+   "kind": "build",
+   "startBar": 57,
+   "bars": 8,
+   "start": 94.802,
+   "end": 108.322
+  },
+  {
+   "name": "Drop two",
+   "kind": "drop",
+   "startBar": 65,
+   "bars": 16,
+   "start": 108.322,
+   "end": 135.362
+  },
+  {
+   "name": "Drive",
+   "kind": "groove",
+   "startBar": 81,
+   "bars": 8,
+   "start": 135.362,
+   "end": 148.882
+  },
+  {
+   "name": "Outro",
+   "kind": "outro",
+   "startBar": 89,
+   "bars": 6,
+   "start": 148.882,
+   "end": 158.778
+  }
+ ],
+ "note": "The whole take plays from the top once, then loops from loopStart to loopEnd (whole bars). bpm and firstBeat are the kick grid fitted to the take: beat n sits at firstBeat + n * beatSec, bar k (1-based) at firstBeat + (k-1) * barSec. An AAC decode can carry a few ms of priming: shift the points by (decoded length - duration), as audio.js does for level 1."
+}

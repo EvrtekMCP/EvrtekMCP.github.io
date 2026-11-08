@@ -1,7 +1,7 @@
 // MINES (level 1, from the derelict on): Yori's Lattice mine, in clusters (a ring of mines round one in the
 // middle). The red seams pulse faster as you close; armed, a white-hot strobe; then each pops into four bolts in
 // a cross, fixed in the track and spreading. Touching one costs a hit.
-import { THREE, defineObstacle, Instanced, modelGroups, clamp, SHIP_R } from '../../api.js?v=0.3.0';
+import { THREE, defineObstacle, Instanced, modelGroups, clamp, SHIP_R } from '../../api.js?v=0.4.0';
 
 const tmpQ = new THREE.Quaternion(), tmpA = new THREE.Vector3(), tmpC = new THREE.Color();
 let layers;
@@ -10,6 +10,16 @@ export default defineObstacle({
   name: 'mines',
   hazard: { cls: 'static', introduced: 2 },
   sample: { n: 1 },
+  // 0.4.0 (the MCP, 11-07), check-levels' "no fully blocked moment", check-only: a cluster's mines never drift (each
+  // stays where it was laid) and each pops into its cross of bolts about 0.9 s before it would reach you; the worst case
+  // is taken anyway: every mine of the cluster still whole at the ship's plane, a solid of its crash radius (0.95 m),
+  // the ones laid 3 m deeper as a moment of their own. Its bolts are fire, the roll's or the steering's, never a wall.
+  solid(ev, B) {
+    if (ev.decor) return null;
+    const n = ev.n || 5, x0 = ev.x ?? (ev.nx || 0) * B.x, y0 = ev.y ?? (ev.ny || 0) * B.y, rows = [[], []];
+    for (let i = 0; i < n; i++) { const a = i / (n - 1 || 1) * Math.PI * 2, rr = i === n - 1 ? 0 : 1.9; rows[i % 2].push([x0 + Math.cos(a) * rr, y0 + Math.sin(a) * rr]); }
+    return rows.map((ms, k) => (ms.length ? { at: k * 3, dist: (x, y) => Math.min(...ms.map(([mx, my]) => Math.hypot(x - mx, y - my))) - 0.95 } : null)).filter(Boolean);
+  },
   init(api) {
     layers = modelGroups('mine').map((g) => {
       const mat = g.glow ? new THREE.MeshBasicMaterial({ color: 0xffffff }) : new THREE.MeshStandardMaterial({ color: g.color, metalness: 0.5, roughness: 0.45, flatShading: true, side: THREE.DoubleSide });

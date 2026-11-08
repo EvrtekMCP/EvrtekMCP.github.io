@@ -1,9 +1,29 @@
-// STARWAKE: the DOM layer over the canvas: numbers, bars, pop-ups and call-outs. Loud and generous (ruling 4).
-import { fmt, V } from './util.js?v=0.3.0';
+// STARWAKE (0.4.0: the power-up strip): the DOM layer over the canvas: numbers, bars, pop-ups and call-outs. Loud and generous (ruling 4).
+import { fmt, V } from './util.js?v=0.4.0';
+import { POWERUPS } from './powerups.js?v=0.4.0';
 
 // Yori's call-out sprites (art/, glow baked in). Preloaded so the first GRAZE never waits on a decode.
 export const ART = ['graze', 'multi-deflect', 'greed', 'perfect', 'no-hit', 'level-clear', 'rank-c', 'rank-b', 'rank-a', 'rank-s', 'rank-degenerate', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7', 'x8'];
 export const artUrl = (n) => 'art/' + n + '-glow.png' + V;
+// 0.4.0: Yori's call-outs for the galaxies (art/<name>-glow.png), listed here as each lands on her art branch; until one
+// is, its call-out is said in text (hasArt). Names: pu-shield pu-overclock pu-mirror pu-phase pu-magnet pu-slip phased cache
+// parry snapped intercept calf-safe mother-safe shoal slingshot lure keyed stitched fractal-clear vault jackpot galaxy-clear
+export const ART_G = ["cache","calf-safe","deep-slingshot","fractal-clear","freed","galaxy-clear","intercept","is-open","jackpot","keyed","lure","mirror-shell","mother-safe","overclock","parry","phase","phased","ring-magnet","shield-cell","shoal","slingshot","slipstream","snapped","sting","stitched","vault"]; // Yori's, from art-incoming/yori/galaxies/callouts (g2-art)
+// the power-up strip's icons: Yori's (art/ui/pu/hud-<kind>.png, from g2-art); the drawn silhouettes below stay as the fallback
+const HUD_ART = true;
+function puIcon(id) {
+  const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), col = POWERUPS[id].css;
+  x.strokeStyle = col; x.fillStyle = col; x.lineWidth = 5; x.lineJoin = 'round'; x.translate(32, 32);
+  const poly = (n, r, a0 = 0) => { x.beginPath(); for (let i = 0; i < n; i++) { const a = a0 + i / n * Math.PI * 2; x[i ? 'lineTo' : 'moveTo'](Math.cos(a) * r, Math.sin(a) * r); } x.closePath(); };
+  if (HUD_ART) { const i = new Image(); i.src = 'art/ui/pu/hud-' + POWERUPS[id].kind + '.png' + V; i.srcset = 'art/ui/pu/hud-' + POWERUPS[id].kind + '@2x.png' + V + ' 2x'; i.alt = ''; i.decoding = 'async'; return i; } // Yori's icons
+  if (id === 'overclock') { for (let i = 0; i < 8; i++) { x.save(); x.rotate(i / 8 * Math.PI * 2); x.fillRect(-4, -20, 8, 9); x.restore(); } x.beginPath(); x.arc(0, 0, 13, 0, 7); x.fill(); }
+  else if (id === 'mirror') { poly(3, 18, -Math.PI / 2); x.fill(); }
+  else if (id === 'phase') { poly(4, 19, -Math.PI / 2); x.stroke(); poly(4, 9, -Math.PI / 2); x.stroke(); }
+  else if (id === 'magnet') { x.lineWidth = 9; x.beginPath(); x.arc(0, 2, 11, 0, Math.PI); x.moveTo(-11, 2); x.lineTo(-11, -14); x.moveTo(11, 2); x.lineTo(11, -14); x.stroke(); }
+  else if (id === 'slip') { x.beginPath(); x.moveTo(-14, -18); x.lineTo(14, -18); x.lineTo(-14, 18); x.lineTo(14, 18); x.closePath(); x.fill(); }
+  else { poly(6, 16, Math.PI / 6); x.fill(); }
+  return c;
+}
 
 const $ = (id) => document.getElementById(id);
 // Every effect here restarts with the Web Animations API. The old trick (drop a class, read offsetWidth, add it
@@ -23,8 +43,7 @@ export class Hud {
     this.shield = $('shield-fill'); this.greed = $('greed-fill'); this.greedBtn = $('greed-btn');
     this.roll = $('roll'); this.rollFill = $('roll-fill');
     this.banner = $('banner'); this.callout = $('callout'); this.calloutArt = $('callout-art'); this.flashEl = $('flash');
-    this.imgs = {};
-    for (const n of ART) { const i = new Image(); i.src = artUrl(n); i.alt = ''; i.decoding = 'async'; this.imgs[n] = i; }
+    this.imgs = {}; // Yori's call-out sprites: preloadArt(), once the boot's own loads are in (0.3.1)
     this.comboKey = '';
     this.warnL = $('warn-l'); this.warnR = $('warn-r');
     // 0.3.0: markers on the screen's edge for shots coming at you from off the screen (main.js threats())
@@ -36,11 +55,26 @@ export class Hud {
     this.pops = []; this.popI = 0;
     for (let i = 0; i < 18; i++) { const d = document.createElement('div'); d.className = 'p'; this.popsEl.appendChild(d); this.pops.push(d); }
     this.shown = 0; this.lastMult = 1; this.warnT = [0, 0];
+    // 0.4.0: the power-up strip above the shield bar: one icon a running power-up, a ring round it draining; the Shield
+    // Cell has none (it is instant: the shield bar's green sweep is its cue)
+    this.puEl = $('pu-strip'); this.puSlots = {};
+    if (this.puEl) for (const id of ['overclock', 'mirror', 'phase', 'magnet', 'slip']) {
+      const d = document.createElement('div'); d.className = 'pu'; d.style.setProperty('--c', POWERUPS[id].css); d.hidden = true; d.setAttribute('aria-label', POWERUPS[id].name);
+      d.appendChild(puIcon(id)); this.puEl.appendChild(d); this.puSlots[id] = d;
+    }
     this.last = {};
+  }
+  // 0.3.1 (load times): the call-out sprites (~0.9 MB) are only needed in play, so they load after the boot screen's
+  // own pictures and the first stretch of the menu music, not alongside them. 0.4.0: galaxies 2 and 3's call-outs (ART_G,
+  // ~1.8 MB) load here too, not in the constructor
+  preloadArt(ms = 30000) {
+    const wait = [];
+    for (const n of ART.concat(ART_G)) if (!this.imgs[n]) { const i = new Image(); wait.push(new Promise((ok) => { i.onload = i.onerror = ok; })); i.src = artUrl(n); i.alt = ''; i.decoding = 'async'; this.imgs[n] = i; }
+    return Promise.race([Promise.all(wait), new Promise((ok) => setTimeout(ok, ms))]);
   }
   // hidden by visibility, not display, so its layout is done on the title screen and not in the run's first frame
   show(on) { this.el.classList.toggle('off', !on); }
-  reset() { this.shown = 0; this.lastMult = 1; this.last = {}; this.banner.getAnimations().forEach((a) => a.cancel()); this.banner.style.opacity = 0; for (const p of this.pops) p.getAnimations().forEach((a) => a.cancel()); this.threats([], 0); this.tutor(null); }
+  reset() { this.shown = 0; this.lastMult = 1; this.last = {}; this.banner.getAnimations().forEach((a) => a.cancel()); this.banner.style.opacity = 0; for (const p of this.pops) p.getAnimations().forEach((a) => a.cancel()); this.threats([], 0); this.tutor(null); this.tip(null); }
   // a number that rolls up to the real score instead of jumping
   update(dt, g) {
     const target = g.score;
@@ -68,6 +102,13 @@ export class Hud {
     this.greed.classList.toggle('full', g.greed >= 100 && !g.greedOn);
     this.greed.classList.toggle('burning', g.greedOn);
     this.greedBtn.hidden = !(g.greed >= 100 && !g.greedOn);
+    const pu = (g.state === 'play' && g.pu) || {};
+    for (const id in this.puSlots) {
+      const d = this.puSlots[id], q = pu[id], on = !!q;
+      if (d.hidden === on) d.hidden = !on;
+      if (on) { const k = Math.max(0, q.t / q.max).toFixed(3); if (d._k !== k) { d._k = k; d.style.setProperty('--k', k); } d.classList.toggle('end', q.t < 1); }
+    }
+    this.roll.classList.toggle('oc', !!pu.overclock);
     const rk = g.rollCool > 0 ? 1 - g.rollCool / g.rollCoolMax : 1;
     this._style('rw', this.rollFill, 'width', Math.round(rk * 100) + '%');
     this.roll.classList.toggle('cool', g.rollCool > 0 || g.rolling);
@@ -123,6 +164,30 @@ export class Hud {
     this.tutorSkip.hidden = !o.skip;
     this.tutorEl.hidden = !(o.key || o.say);
   }
+  // 0.4.0, the first-time tips (js/tutorials.js): a card { name, say: [what it is, what to do], icon, art, glyph, color },
+  // or null to put it away. The title is Yori's lettering where she has lettered that name (art/<art>-glow.png), else
+  // the name in the banner's chrome; the icon is her HUD icon (art/<icon>.png), else a placeholder glyph.
+  tip(o) {
+    const T = this.tipEl || (this.tipEl = $('tip'));
+    if (!T) return;
+    this.el.classList.toggle('tip-on', !!o);
+    if (!o) { T.hidden = true; this.tipK = -1; return; }
+    const icon = $('tip-icon'), name = $('tip-name'), say = $('tip-say');
+    icon.textContent = ''; icon.className = 'tip-icon' + (o.icon ? '' : ' g-' + (o.glyph || 'hurt'));
+    icon.style.setProperty('--c', o.color || '');
+    if (o.icon) { const i = new Image(); i.src = 'art/' + o.icon + '.png' + V; i.srcset = 'art/' + o.icon + '@2x.png' + V + ' 2x'; i.alt = ''; icon.appendChild(i); }
+    name.textContent = '';
+    if (o.art && this.imgs[o.art]) { const i = this.imgs[o.art].cloneNode(); i.alt = o.name; name.appendChild(i); }
+    else { const s = document.createElement('span'); s.textContent = o.name; name.appendChild(s); }
+    say.textContent = '';
+    for (const line of o.say || []) { const d = document.createElement('div'); d.textContent = line; say.appendChild(d); }
+    T.setAttribute('aria-label', o.name + '. ' + (o.say || []).join(' '));
+    T.hidden = false;
+    T.animate([{ opacity: 0, transform: 'translateY(-10px) scale(0.96)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.2,.9,.3,1.1)' });
+    this.tipK = -1; this.tipLeft(1);
+  }
+  // the auto-resume's time left on the SKIP button, 1 to 0
+  tipLeft(k) { const r = Math.round(k * 100) / 100; if (r === this.tipK) return; this.tipK = r; $('tip-skip').style.setProperty('--k', r); }
   pop(text, x, y, cls = '') {
     const d = this.pops[this.popI++ % this.pops.length];
     d.textContent = text; d.className = 'p ' + cls;
@@ -144,6 +209,9 @@ export class Hud {
     this.callout.getAnimations().forEach((a) => a.cancel());
   }
   flash() { run(this.flashEl, [{ opacity: 1 }, { opacity: 0 }], 350); }
+  // 0.4.0: the Shield Cell's cue: the shield bar fills with a green sweep, then settles back to its cyan
+  cell(secs = 1.5) { this.shield.animate([{ filter: 'hue-rotate(-50deg) brightness(1.6)', boxShadow: '0 0 16px #4dff8a' }, { filter: 'hue-rotate(-50deg) brightness(1.25)', boxShadow: '0 0 12px #4dff8a', offset: 0.5 }, { filter: 'none' }], { duration: secs * 1000, easing: 'ease-out' }); }
+  hasArt(name) { return !!this.imgs[name]; }
   warn(side, t) { const el = side < 0 ? this.warnL : this.warnR; el.classList.add('on'); this.warnT[side < 0 ? 0 : 1] = t; }
   // the boss bar: { show, title, frac, phase, phases }; any field may come alone
   boss(o) {

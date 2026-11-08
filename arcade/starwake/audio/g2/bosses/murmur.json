@@ -1,0 +1,86 @@
+{
+ "track": "g2-boss-murmur",
+ "label": "Galaxy 2 boss, the Murmur (level 9): the arps doubled into a whirling peak",
+ "galaxy": 2,
+ "key": "C minor",
+ "take": "g2murmur-t1",
+ "rate": 48000,
+ "duration": 135.74385,
+ "bpm": 145.029,
+ "firstBeat": 0.1714,
+ "beatSec": 0.41371,
+ "barSec": 1.65484,
+ "loopStart": 13.41567,
+ "loopEnd": 119.32552,
+ "loopBars": 64,
+ "wrapMismatch": 0.45,
+ "introBars": 8,
+ "lufs": -10.4,
+ "sections": [
+  {
+   "name": "Impact",
+   "kind": "intro",
+   "startBar": 1,
+   "bars": 4,
+   "start": 0.171,
+   "end": 6.791
+  },
+  {
+   "name": "Phase one",
+   "kind": "groove",
+   "startBar": 5,
+   "bars": 16,
+   "start": 6.791,
+   "end": 33.268
+  },
+  {
+   "name": "Phase two",
+   "kind": "groove",
+   "startBar": 21,
+   "bars": 16,
+   "start": 33.268,
+   "end": 59.746
+  },
+  {
+   "name": "Pause",
+   "kind": "break",
+   "startBar": 37,
+   "bars": 4,
+   "start": 59.746,
+   "end": 66.365
+  },
+  {
+   "name": "Build",
+   "kind": "build",
+   "startBar": 41,
+   "bars": 4,
+   "start": 66.365,
+   "end": 72.985
+  },
+  {
+   "name": "Phase three",
+   "kind": "drop",
+   "startBar": 45,
+   "bars": 16,
+   "start": 72.985,
+   "end": 99.462
+  },
+  {
+   "name": "Phase four",
+   "kind": "drop",
+   "startBar": 61,
+   "bars": 16,
+   "start": 99.462,
+   "end": 125.94
+  },
+  {
+   "name": "Outro",
+   "kind": "outro",
+   "startBar": 77,
+   "bars": 6,
+   "start": 125.94,
+   "end": 135.744
+  }
+ ],
+ "note": "The whole take plays from the top once, then loops from loopStart to loopEnd (whole bars). bpm and firstBeat are the kick grid fitted to the take: beat n sits at firstBeat + n * beatSec, bar k (1-based) at firstBeat + (k-1) * barSec. An AAC decode can carry a few ms of priming: shift the points by (decoded length - duration), as audio.js does for level 1."
+}

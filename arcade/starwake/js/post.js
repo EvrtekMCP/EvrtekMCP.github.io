@@ -1,7 +1,7 @@
 // STARWAKE: the light post pass, high tier only. The scene renders to a texture; its bright parts are pulled out
 // at quarter size, blurred twice (across, then down), and laid back over the picture with a soft vignette.
 // Four cheap passes. Below the high tier the scene draws straight to the screen and this costs nothing.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.3.0';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.4.0';
 
 const VS = `varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
 const BRIGHT = `uniform sampler2D tex; uniform vec2 texel; varying vec2 vUv;
@@ -19,9 +19,17 @@ void main() {
   c += (texture2D(tex, vUv + dir * 3.231).rgb + texture2D(tex, vUv - dir * 3.231).rgb) * 0.070;
   gl_FragColor = vec4(c, 1.0);
 }`;
-const COMBINE = `uniform sampler2D scene; uniform sampler2D bloom; uniform float strength; uniform float heat; varying vec2 vUv;
+// 0.4.0: up to four LENSES (a gravity well bending the stars behind it, api.lens): the picture is pulled in round each
+// centre, strongest at its edge-in, nothing past its radius. Centre (x, y) in uv, z its radius in screen heights, w strength.
+const COMBINE = `uniform sampler2D scene; uniform sampler2D bloom; uniform float strength; uniform float heat; uniform vec4 lens[4]; uniform float aspect; varying vec2 vUv;
 void main() {
-  vec3 c = texture2D(scene, vUv).rgb + texture2D(bloom, vUv).rgb * strength;
+  vec2 uv = vUv;
+  for (int i = 0; i < 4; i++) {
+    vec4 L = lens[i]; if (L.z <= 0.0) continue;
+    vec2 d = (uv - L.xy) * vec2(aspect, 1.0); float r = length(d);
+    if (r < L.z && r > 1e-4) { float f = 1.0 - r / L.z; uv -= d / r * L.w * L.z * f * f * vec2(1.0 / aspect, 1.0); }
+  }
+  vec3 c = texture2D(scene, uv).rgb + texture2D(bloom, uv).rgb * strength;
   vec2 d = vUv - 0.5;
   float v = 1.0 - dot(d, d) * (0.9 + heat * 0.8);
   c *= v;
@@ -42,7 +50,7 @@ export class Post {
     const mk = (fs, uniforms) => new THREE.ShaderMaterial({ vertexShader: VS, fragmentShader: fs, uniforms, depthTest: false, depthWrite: false });
     this.mBright = mk(BRIGHT, { tex: { value: null }, texel: { value: new THREE.Vector2() } });
     this.mBlur = mk(BLUR, { tex: { value: null }, dir: { value: new THREE.Vector2() } });
-    this.mCombine = mk(COMBINE, { scene: { value: null }, bloom: { value: null }, strength: { value: 0.85 }, heat: { value: 0 } });
+    this.mCombine = mk(COMBINE, { scene: { value: null }, bloom: { value: null }, strength: { value: 0.85 }, heat: { value: 0 }, lens: { value: [0, 1, 2, 3].map(() => new THREE.Vector4()) }, aspect: { value: 1 } });
     this.rt = null;
   }
   setSize(renderer) {
@@ -54,8 +62,10 @@ export class Post {
       this.rt.texture.colorSpace = THREE.SRGBColorSpace;
       this.a = new THREE.WebGLRenderTarget(q(w), q(h), opt); this.b = new THREE.WebGLRenderTarget(q(w), q(h), opt);
     } else { this.rt.setSize(w, h); this.a.setSize(q(w), q(h)); this.b.setSize(q(w), q(h)); }
-    this.w = w; this.h = h;
+    this.w = w; this.h = h; this.mCombine.uniforms.aspect.value = w / h;
   }
+  // this frame's lenses: [[u, v, radius, strength], ...] (main.js gathers them from api.lens)
+  lens(list) { const U = this.mCombine.uniforms.lens.value; for (let i = 0; i < 4; i++) { const q = list[i]; if (q) U[i].set(q[0], q[1], q[2], q[3]); else U[i].set(0, 0, 0, 0); } }
   pass(mat, target) { this.quad.material = mat; this.renderer.setRenderTarget(target); this.renderer.render(this.scene, this.cam); }
   render(scene, camera, on, heat) {
     const r = this.renderer;

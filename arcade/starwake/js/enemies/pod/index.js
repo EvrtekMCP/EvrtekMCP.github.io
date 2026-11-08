@@ -1,6 +1,6 @@
 // THE LANTERN POD (level 1 on): Yori's turret pod. An octahedral node, a truss ring that spins, one barrel that
 // tracks you, a red core that charges white-hot for 0.75 s before each burst. Fires at 3.4 s and 2.2 s out.
-import { THREE, defineEnemy, buildModel, clamp, SHIP_R, LEGACY_LINE } from '../../api.js?v=0.3.0';
+import { THREE, defineEnemy, buildModel, clamp, SHIP_R, LEGACY_LINE, NET_T } from '../../api.js?v=0.4.0';
 
 function make(api) {
   // Her barrel points down -Z; the inner group turns it to +Z so lookAt() aims it at the ship.
@@ -13,7 +13,8 @@ function make(api) {
 }
 export default defineEnemy({
   name: 'pod',
-  hazard: { cls: 'shot', introduced: 1, shotT: 1.25, tel: 0.75 },
+  // net: its volley as a net on a level that asks (levels.js FIRE): the flight and tell check-levels' rule 12 times
+  hazard: { cls: 'shot', introduced: 1, shotT: 1.25, tel: 0.75, net: { T: NET_T, tel: 0.75 } },
   spawn(e, ev, api) {
     e.obj = api.course.get('pod', () => make(api));
     e.sx = e.sy = e.sz = 1.1;
@@ -49,7 +50,7 @@ export default defineEnemy({
       if (e.queue[q] <= 0) {
         e.queue.splice(q, 1);
         // aimed where the ship is heading, a third of a second ahead
-        api.fire(e, clamp(ship.x + ship.vx * 0.35, -box.x, box.x), clamp(ship.y + ship.vy * 0.35, -box.y, box.y));
+        api.fire(e, clamp(ship.x + ship.vx * 0.35, -box.x, box.x), clamp(ship.y + ship.vy * 0.35, -box.y, box.y), { net: true }); // 0.3.1: may come as a net (levels.js FIRE)
       }
     }
     if (Math.abs(e.z) < 1.4 && Math.hypot(ship.x - e.x, ship.y - e.y) < e.r + SHIP_R && !e.rammed) { e.rammed = true; api.game.crash(e, 20); api.kill(e, false); }

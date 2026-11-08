@@ -8,16 +8,16 @@
 //  ACT 3  THE CORE      core track, bars 1-36 loop  THE LATTICE HEART; its great beam is the one unreflectable thing
 //  OUT    THE ESCAPE    core track from bar 37      outrun the shockwave down the breaking shaft
 //  HOME   THE RUN HOME  core track, bars 69-90      a sunrise over a quiet blue planet; nothing can hurt you
-import { defineLevel, clamp } from '../api.js?v=0.3.0';
-import ring from '../pickups/ring/index.js?v=0.3.0';
-import pod from '../enemies/pod/index.js?v=0.3.0';
-import shrike from '../enemies/shrike/index.js?v=0.3.0';
-import mines from '../obstacles/mines/index.js?v=0.3.0';
-import crystal from '../obstacles/crystal/index.js?v=0.3.0';
-import { defenceRing, ram, iris, wall, beam, debris, energy } from './level10/kinds.js?v=0.3.0';
-import { sphere, strut, struts_, arc, arcs, segment, tunnel, tunnelGlow, chamber, mote, motes, breach, shaftRing, shaft, sunrise, wisp, wisps } from './level10/scenery.js?v=0.3.0';
-import { CAMEOS, cameoKinds } from './level10/cameos.js?v=0.3.0';
-import heart from '../bosses/lattice-heart/index.js?v=0.3.0';
+import { defineLevel, clamp } from '../api.js?v=0.4.0';
+import ring from '../pickups/ring/index.js?v=0.4.0';
+import pod from '../enemies/pod/index.js?v=0.4.0';
+import shrike from '../enemies/shrike/index.js?v=0.4.0';
+import mines from '../obstacles/mines/index.js?v=0.4.0';
+import crystal from '../obstacles/crystal/index.js?v=0.4.0';
+import { defenceRing, ram, iris, wall, beam, debris, energy } from './level10/kinds.js?v=0.4.0';
+import { sphere, strut, struts_, arc, arcs, segment, tunnel, tunnelGlow, chamber, mote, motes, breach, shaftRing, shaft, sunrise, wisp, wisps } from './level10/scenery.js?v=0.4.0';
+import { CAMEOS, cameoKinds } from './level10/cameos.js?v=0.4.0';
+import heart from '../bosses/lattice-heart/index.js?v=0.4.0';
 
 // ---------------------------------------------------------------------------------------------------------------------
 // THE SCHEDULE. Section starts are the tracks' own bar lines (audio/levels/level10/*.json).
@@ -101,8 +101,8 @@ export default defineLevel({
   beats: [
     { d: 0, tag: 'calm', what: 'the Lattice ahead; rings in the open; the first defence ring, alone, half open, slow' },
     { d: Math.round(at(A1.groove)), tag: 'rising', what: 'the roll call: pods, the boost chain, gate turrets, seekers, defence rings between' },
-    { d: Math.round(at(A1.build)), tag: 'rising', what: 'snipers and ice mines; counter-turning ring pairs (speed step first, density after)' },
-    { d: Math.round(at(A1.drop)), tag: 'peak', what: 'the defence grid: swarms, searchlight sentries, crystal emitters, ring pairs' },
+    { d: Math.round(at(A1.build)), tag: 'rising', what: 'a swarm and ice mines; counter-turning ring pairs (speed step first, density after)' },
+    { d: Math.round(at(A1.drop)), tag: 'peak', what: 'the defence grid: snipers, searchlight sentries, crystal emitters, ring pairs' },
     { d: Math.round(at(A1.breakdown)), tag: 'calm', what: 'the split: nothing shoots; the shell opens ahead, the rings lead in' },
     { d: Math.round(at(T2(0))), tag: 'rising', what: 'the dive: the tunnel closes round you at 172 m/s' },
     { d: Math.round(at(T2(A2.groove))), tag: 'rising', what: 'pistons: one alone with a long tell, then a ram every bar' },
@@ -119,6 +119,12 @@ export default defineLevel({
   acts: { introduce: [0, Math.round(at(A1.next - 0.6))], develop: [Math.round(at(A1.next - 0.6)), Math.round(at(T2(A2.pause)))], twist: [Math.round(at(T2(A2.pause))), BOSS_AT + 1], master: [BOSS_AT + 1, END_AT] },
   // the sunrise holds a moment after the finish line, before the tally
   outro: { time: 5, update(dt, api, t) { } },
+  // 0.4.0, the galaxy 1 retrofit (the plan's 6.5; nothing else in the level moves, no ring is added or moved):
+  // THE LATTICE HEART: Overclock between the last two rings of build one's ring line, 2 s before the swarm wave; two Shield Cells: the Split, and the pause before the Core.
+  // (The 5/7 swap, 11-08: the swarm moved up to build one, and its Overclock went with it: from 6050 m, at the end of the
+  // sine into the Defence Grid, 3.3 s before the swarm there, to the line that leads into the swarm now. The Defence Grid
+  // now opens on the snipers, two single bolts, which a faster roll does not help with.)
+  powerups: [[4660, 'overclock', 0, -0.375], [10275, 'shield-cell', 0.325, 0.25], [25842, 'shield-cell', 0, 0.125]],
   build(R, L) {
     const { add, ring: rg, line, sine } = L;
     const call = (t, text, cls) => add(at(t), 'call', { text, cls: cls || '' });
@@ -146,15 +152,17 @@ export default defineLevel({
     sine(at(33.6), 6, 24, 0.55, 0.45, 0.4);
     dring(37.6, { blades: 3, width: 1.1, spin: -0.5, gnx: 0.1, gny: -1 });
     add(at(39.6), 'mines', { nx: -0.45, ny: 0.35, n: 5 }); line(at(39.0), 0.5, -0.3, 0.6, -0.4, 3, 22);
-    // BUILD ONE (bars 25-32): the speed steps first; then snipers and ice mines
+    // BUILD ONE (bars 25-32): the speed steps first; then a swarm and ice mines
+    // (the 5/7 swap, 11-08: the swarm and the snipers traded places so the roll call keeps the order you met them in:
+    // Neon Orbital's swarm is level 5's now, Ion Storm's snipers level 7's. CAMEOS keep their files' names, l5 and l7.)
     line(at(41.6), 0, 0.5, 0, -0.5, 5, 26);
-    CAMEOS.l5(L, at(44.4), R);                                 // level 5: snipers
+    CAMEOS.l7(L, at(44.4), R);                                 // level 5, Neon Orbital: a swarm
     dring(47.4, { blades: 3, width: 1.0, spin: 0.55, gnx: 1, gny: -0.2 });
     dring(48.2, { blades: 3, width: 1.0, spin: -0.55, gnx: 1, gny: -0.2 });
     CAMEOS.l6(L, at(50.8), R);                                 // level 6: ice mines
     sine(at(52.6), 6, 24, 0.5, 0.45, 2.2);
     // DROP ONE (bars 33-48): THE DEFENCE GRID. The peak of act 1.
-    CAMEOS.l7(L, at(56.8), R);                                 // level 7: a swarm
+    CAMEOS.l5(L, at(56.8), R);                                 // level 7, Ion Storm: snipers
     line(at(57.4), -0.6, 0.4, 0.6, -0.4, 5, 24);
     dring(60.6, { blades: 4, width: 0.8, spin: 0.7, gnx: -0.6, gny: -0.7 });
     add(at(61.4), 'pod', { nx: 0.5, ny: 0.7, drift: -1.5, bursts: 2, shots: 2 });
@@ -185,8 +193,12 @@ export default defineLevel({
     rm(9, 'bottom', -0.15, { tel: 1.4 }); line(at(bar2(9)) - 110, 0, 0.3, 0, 0.55, 5, 22);
     rm(11, 'left', -0.1, { tel: 1.3 }); line(at(bar2(11)) - 110, 0.3, 0, 0.6, 0, 5, 22);
     rm(13, 'right', 0.1, { tel: 1.3 }); line(at(bar2(13)) - 110, -0.3, 0, -0.6, 0, 5, 22);
-    rm(15, 'top', 0.35); rm(15, 'bottom', -0.35); line(at(bar2(15)) - 90, 0, 0, 0, 0, 4, 24);
-    rm(16, 'left', -0.3); rm(16, 'right', 0.3); rg(at(bar2(16)) + 10, 0, 0);
+    // 0.3.1 (Evrtek 11-06: "two walls jut in from opposite sides and create a complete blocked path"). A ram's edge is
+    // measured from its own side (a bottom ram at -0.15 reaches 0.15 past the middle), so these pairs, written as mirror
+    // values, met at one line and closed the tunnel. A pair now stops the same distance short of the middle on both
+    // sides, and the gap is at least 2.58 m on any screen (check-levels: no fully blocked moment).
+    rm(15, 'top', 0.35); rm(15, 'bottom', 0.35); line(at(bar2(15)) - 90, 0, 0, 0, 0, 4, 24);
+    rm(16, 'left', 0.36); rm(16, 'right', 0.36); rg(at(bar2(16)) + 10, 0, 0);
     rm(17, 'top', -0.25); line(at(bar2(17)) - 80, 0.4, -0.6, -0.4, -0.6, 4, 22);
     rm(18, 'right', -0.2); line(at(bar2(18)) - 80, -0.6, 0.3, -0.6, -0.3, 4, 22);
     rm(19, 'bottom', 0.25); line(at(bar2(19)) - 80, -0.3, 0.6, 0.3, 0.6, 4, 22);
@@ -199,20 +211,20 @@ export default defineLevel({
     ir(28, 0.3, -0.45, 3.2);
     // DROP ONE (bars 29-44): the deep machine at 197 m/s. Irises and ram pairs alternate; bars 37-38 breathe.
     ir(29, -0.4, 0.4, 3.2, { spin: 1 });
-    rm(30, 'top', 0.3); rm(30, 'bottom', -0.3); rg(at(bar2(30)) + 10, 0, 0);
+    rm(30, 'top', 0.35); rm(30, 'bottom', 0.35); rg(at(bar2(30)) + 10, 0, 0); // 0.3.1: a gap, not a seam
     ir(31, 0.5, 0.0, 3.1);
     rm(32, 'left', 0.05); rm(32, 'top', 0.4); rg(at(bar2(32)) + 10, 0.6, -0.4);
     ir(33, -0.2, -0.45, 3.1, { spin: -1 });
     rm(34, 'right', -0.05); rm(34, 'bottom', -0.4); rg(at(bar2(34)) + 10, -0.6, 0.45);
     ir(35, 0.35, 0.45, 3.0);
-    rm(36, 'left', -0.3); rm(36, 'right', 0.3); rg(at(bar2(36)) + 10, 0, 0);
+    rm(36, 'left', 0.36); rm(36, 'right', 0.36); rg(at(bar2(36)) + 10, 0, 0); // 0.3.1: a gap, not a seam
     sine(at(bar2(37)), 8, 30, 0.4, 0.35);                    // breathe: two bars of rings only (rule 2)
     ir(39, 0, 0, 3.0, { spin: 1 });
     rm(40, 'top', -0.1); rg(at(bar2(40)) + 10, 0, -0.6);
     ir(41, -0.5, -0.3, 3.0);
     rm(42, 'bottom', 0.1); rg(at(bar2(42)) + 10, 0, 0.6);
     ir(43, 0.45, 0.25, 3.0, { spin: -1 });
-    rm(44, 'left', -0.3); rm(44, 'right', 0.3); rg(at(bar2(44)) + 10, 0, 0);
+    rm(44, 'left', 0.36); rm(44, 'right', 0.36); rg(at(bar2(44)) + 10, 0, 0); // 0.3.1: a gap, not a seam
     // PAUSE (bars 45-48): out of the tunnel into the core chamber. Rings, slowing.
     line(at(T2(A2.pause + 0.6)), 0, 0, 0, 0.2, 5, 30);
     call(T2(A2.pause + 2.6), 'THE HEART OF THE LATTICE', 'c-red');

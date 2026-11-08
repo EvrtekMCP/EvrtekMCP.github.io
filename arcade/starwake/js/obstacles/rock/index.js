@@ -1,6 +1,6 @@
 // ROCKS (level 1, the Shatter Belt): lumpy tumbling asteroids. In the lane they cost a hit and break; with
 // decor: true they are scenery outside the flight box and never collide.
-import { THREE, defineObstacle, Instanced, SHIP_R } from '../../api.js?v=0.3.0';
+import { THREE, defineObstacle, Instanced, SHIP_R } from '../../api.js?v=0.4.0';
 
 export function rockGeometry() {
   const g = new THREE.IcosahedronGeometry(1, 1), p = g.attributes.position;
@@ -19,6 +19,9 @@ export default defineObstacle({
   name: 'rock',
   hazard: { cls: 'static', introduced: 2 },
   sample: { r: 1 },
+  // 0.3.1, check-levels' "no fully blocked moment": its solid shape as it crosses the ship's plane, as the distance from
+  // a ship centre (x, y) to its surface (the kind's own hit test is that distance under part of SHIP_R)
+  solid: (ev, B) => (ev.decor ? null : [{ dist: (x, y) => Math.hypot(x - (ev.x ?? (ev.nx || 0) * B.x), y - (ev.y ?? (ev.ny || 0) * B.y)) - (ev.r || 1) * 0.82 }]),
   init(api) { L = new Instanced(api.scene, rockGeometry(), new THREE.MeshLambertMaterial({ color: 0x7a6a62, flatShading: true }), 260); },
   begin() { L.begin(); },
   end() { L.end(); },

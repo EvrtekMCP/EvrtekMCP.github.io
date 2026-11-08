@@ -1,0 +1,94 @@
+{
+ "track": "g2-level4",
+ "label": "Galaxy 2, level 4, The Migration: warm hopeful melodic techno, whale-call synth lines",
+ "galaxy": 2,
+ "key": "D major",
+ "take": "g2l4-t1",
+ "rate": 48000,
+ "duration": 163.56135,
+ "bpm": 138.014,
+ "firstBeat": 0.1718,
+ "beatSec": 0.43474,
+ "barSec": 1.73895,
+ "loopStart": 21.03342,
+ "loopEnd": 153.19392,
+ "loopBars": 76,
+ "wrapMismatch": 1.44,
+ "introBars": 12,
+ "lufs": -10.7,
+ "sections": [
+  {
+   "name": "Intro",
+   "kind": "intro",
+   "startBar": 1,
+   "bars": 8,
+   "start": 0.172,
+   "end": 14.083
+  },
+  {
+   "name": "Groove",
+   "kind": "groove",
+   "startBar": 9,
+   "bars": 16,
+   "start": 14.083,
+   "end": 41.907
+  },
+  {
+   "name": "Build one",
+   "kind": "build",
+   "startBar": 25,
+   "bars": 8,
+   "start": 41.907,
+   "end": 55.818
+  },
+  {
+   "name": "Drop one",
+   "kind": "drop",
+   "startBar": 33,
+   "bars": 16,
+   "start": 55.818,
+   "end": 83.642
+  },
+  {
+   "name": "Breakdown",
+   "kind": "break",
+   "startBar": 49,
+   "bars": 8,
+   "start": 83.642,
+   "end": 97.553
+  },
+  {
+   "name": "Build two",
+   "kind": "build",
+   "startBar": 57,
+   "bars": 8,
+   "start": 97.553,
+   "end": 111.465
+  },
+  {
+   "name": "Drop two",
+   "kind": "drop",
+   "startBar": 65,
+   "bars": 16,
+   "start": 111.465,
+   "end": 139.288
+  },
+  {
+   "name": "Drive",
+   "kind": "groove",
+   "startBar": 81,
+   "bars": 8,
+   "start": 139.288,
+   "end": 153.2
+  },
+  {
+   "name": "Outro",
+   "kind": "outro",
+   "startBar": 89,
+   "bars": 6,
+   "start": 153.2,
+   "end": 163.561
+  }
+ ],
+ "note": "The whole take plays from the top once, then loops from loopStart to loopEnd (whole bars). bpm and firstBeat are the kick grid fitted to the take: beat n sits at firstBeat + n * beatSec, bar k (1-based) at firstBeat + (k-1) * barSec. An AAC decode can carry a few ms of priming: shift the points by (decoded length - duration), as audio.js does for level 1."
+}

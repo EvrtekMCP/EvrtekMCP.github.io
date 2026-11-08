@@ -1,9 +1,10 @@
-// THE SWARM (level 7 on): Yori's swarm unit, a flat Lattice kite with a red core, flying in CHAINS of five to
+// THE SWARM (Neon Orbital on, played 5th since 11-08): Yori's swarm unit, a flat Lattice kite with a red core, flying in CHAINS of five to
 // eight. A chain swoops out of the haze and holds station ahead of you, every kite COPYING YOUR PATH: the head flies
 // where you were a second ago, each kite behind it where you were a little before that, so the chain draws your
 // own recent flying in the air in front of you. Then its tell: the kites light red one after another, tail to
 // head. The head fires, then each kite in turn, a quick volley down one line. A roll as it arrives sends the whole
-// volley back up the chain, every bolt to its own kite: MULTI-DEFLECT, and the chain is gone.
+// volley back up the chain, every bolt to its own kite: MULTI-DEFLECT, and the chain is gone. (0.3.1: on a level with
+// roll-or-hit fire, levels.js FIRE, a volley may instead be a NET the whole chain fires at once; see spread, below.)
 //
 // One entity per chain; its kites are members (like the mines), and each kite owns its own bolt, so a sent-back
 // bolt homes on the kite that fired it. Kites slip round anything solid on the course (a kind with blocks(e)),
@@ -13,8 +14,8 @@
 //          hold: s at station before the first ripple, station: m ahead of the ship for the head }
 // aim 'graze' sends the volley 1.6 m wide of the ship: do nothing and it is a GRAZE, roll and it all comes back.
 // That is how the level teaches it (rule 18: the first one costs nothing).
-import { THREE, defineEnemy, Instanced, GlowPoints, modelGroups, clamp, SPAWN_D, SHOT_T } from '../../api.js?v=0.3.0';
-import { MESH } from './mesh.js?v=0.3.0';
+import { THREE, defineEnemy, Instanced, GlowPoints, modelGroups, clamp, SPAWN_D, SHOT_T, NET_T } from '../../api.js?v=0.4.0';
+import { MESH } from './mesh.js?v=0.4.0';
 
 const SCALE = 3.4;          // Yori's kite is 1.4 across; it holds station ahead of you, so it is drawn 4.8 m across to read there
 const DELAY = 1.0, GAP = 0.12; // the head copies you 1.0 s ago; each kite 0.12 s before the one ahead of it
@@ -23,6 +24,11 @@ const IN_T = 1.6;           // the swoop in from the haze
 const LIFT = 1.6;           // metres above your old line
 const SPREAD = 0.05;        // seconds between bolts in a volley: eight arrive within 0.35 s, so one 0.45 s roll can take them all
 const AGAIN = 2.6;          // seconds from one volley to the next ripple
+// 0.3.1, roll-or-hit fire (levels.js FIRE): on a level that asks, some volleys come as a NET instead of down one line:
+// after the ripple the whole chain fires AT ONCE, the net's bolts (course.netPoints: centre and a hex ring, or two)
+// shared out round the kites, each bolt owned by the kite that fired it, all landing together in NET_T. Too wide to
+// steer out of in time; a roll as it lands still sends every bolt back up the chain to its own kite (MULTI-DEFLECT).
+// A teaching volley ('graze') never is one, and the course counts volleys over the level (course.netNext).
 
 // ---- the ship's recent path, sampled every frame (one history for every chain)
 const H = { t: new Float32Array(512), x: new Float32Array(512), y: new Float32Array(512), n: 0, i: 0, last: -1 };
@@ -65,7 +71,7 @@ function slip(api, x, y, z, m) {
 const kind = defineEnemy({
   name: 'swarm-unit',
   motion: 'own', spawnAt: 'now',
-  hazard: { cls: 'shot', introduced: 7, shotT: SHOT_T, tel: 0.9 },
+  hazard: { cls: 'shot', introduced: 5, shotT: SHOT_T, tel: 0.9, net: { T: NET_T, tel: 0.9 } }, // net: a spread volley (levels.js FIRE)
   sample: { n: 2 },
   killPts: 600,
   init(api) {
@@ -114,11 +120,19 @@ const kind = defineEnemy({
       if (e.rip < 0 && e.fireT < 0 && e.volley < e.volleys && e.t >= (e.volley === 0 ? e.hold : e.next)) { e.rip = 0; api.game.telegraph(e); }
       if (e.rip >= 0) {
         e.rip += dt;
-        if (e.rip >= e.tel) { e.rip = -1; e.fireT = 0; for (const m of e.members) m.fired = -1; }
+        if (e.rip >= e.tel) { e.rip = -1; e.fireT = 0; for (const m of e.members) m.fired = -1; e.spread = e.aim !== 'graze' && api.course.netNext(); e.spreadId = api.course.netN; }
       }
       if (e.fireT >= 0) {
         e.fireT += dt;
         let left = false, slot = 0;
+        if (e.spread) {
+          const alive = e.members.filter((m) => m.alive), cx = ship.x + ship.vx * 0.3, cy = ship.y + ship.vy * 0.3, w = 1.3;
+          api.course.netPoints().forEach(([dx, dy], i) => {
+            const m = alive[i % alive.length]; if (!m) return; m.fired = 1; m.hot = 1;
+            api.fire(m, clamp(cx + dx, -box.x * w, box.x * w), clamp(cy + dy, -box.y * w, box.y * w), { T: NET_T, netId: e.spreadId });
+          });
+          for (const m of e.members) m.fired = 1;
+        }
         for (const m of e.members) {
           if (!m.alive) continue;
           if (m.fired < 0 && e.fireT >= slot * SPREAD) {

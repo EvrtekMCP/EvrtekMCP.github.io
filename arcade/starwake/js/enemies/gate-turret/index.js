@@ -5,9 +5,9 @@
 // Event: { gx, gy (its gate's hub, normalised), mount (clock angle of the seat, degrees; -90 = six o'clock),
 //          volleys: [beats before its gate reaches you, ...], shots (per volley), miss (metres it aims wide: the
 //          first one only grazes if you do nothing, rule 18) }
-import { THREE, defineEnemy, buildModel, clamp } from '../../api.js?v=0.3.0';
-import { beatClock } from '../../levels/level3/beat.js?v=0.3.0';
-import { MOUNT_R, GATE_S } from '../../levels/level3/gate.js?v=0.3.0';
+import { THREE, defineEnemy, buildModel, clamp } from '../../api.js?v=0.4.0';
+import { beatClock } from '../../levels/level3/beat.js?v=0.4.0';
+import { MOUNT_R, GATE_S } from '../../levels/level3/gate.js?v=0.4.0';
 
 const TEL = 2, FLIGHT = 3;                 // beats of telegraph, beats of flight
 let bracketGeo, bracketMat;
@@ -22,7 +22,8 @@ function make(api) {
 }
 export default defineEnemy({
   name: 'gate-turret',
-  hazard: { cls: 'shot', introduced: 3, shotT: FLIGHT * 60 / 140, tel: TEL * 60 / 140 },
+  // net (levels.js FIRE): a net lands on a beat too, one beat after it leaves
+  hazard: { cls: 'shot', introduced: 3, shotT: FLIGHT * 60 / 140, tel: TEL * 60 / 140, net: { T: 60 / 140, tel: TEL * 60 / 140, beat: true } },
   killPts: 1200,
   sample: { gx: 0, gy: 0, mount: -90, volleys: [8] },
   init() {
@@ -82,7 +83,8 @@ export default defineEnemy({
         e.queue.splice(i, 1);
         let tx = ship.x + ship.vx * 0.3, ty = ship.y + ship.vy * 0.3;
         if (e.miss) { const s = tx >= 0 ? -1 : 1; tx += s * e.miss; }
-        api.fire(e, clamp(tx, -box.x, box.x), clamp(ty, -box.y, box.y), { T: FLIGHT * c.beatSec });
+        // 0.3.1: aimed fire may come as a net (levels.js FIRE), landing on a beat like the rest; a teaching miss never does
+        api.fire(e, clamp(tx, -box.x, box.x), clamp(ty, -box.y, box.y), { T: FLIGHT * c.beatSec, net: !e.miss, beat: c.beatSec });
       }
     }
     if (e.z > 12) e.alive = false;

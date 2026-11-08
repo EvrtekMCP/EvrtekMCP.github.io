@@ -5,10 +5,10 @@
 // panes of the Hall; and the mirror-shard, the one obstacle this level adds (a known thing, the level-1 crystal's
 // cousin, with the red spine that says it hurts).
 // Rule 9: nothing here is red, amber or cyan as a large flat colour; the shard's spine is the only red, and it hurts.
-import { THREE, defineScenery, defineDecor, defineObstacle, Instanced, GlowPoints, rng, clamp, SHIP_R } from '../../api.js?v=0.3.0';
-import { SCENERY } from './mesh.js?v=0.3.0';
-import { geometryOf } from '../../enemies/crystal-emitter/parts.js?v=0.3.0';
-import { glassTex } from './mirror.js?v=0.3.0';
+import { THREE, defineScenery, defineDecor, defineObstacle, Instanced, GlowPoints, rng, clamp, SHIP_R } from '../../api.js?v=0.4.0';
+import { SCENERY } from './mesh.js?v=0.4.0';
+import { geometryOf } from '../../enemies/crystal-emitter/parts.js?v=0.4.0';
+import { glassTex } from './mirror.js?v=0.4.0';
 
 const tmpQ = new THREE.Quaternion(), eul = new THREE.Euler();
 const side = (R, lo, hi) => R.sign() * R.range(lo, hi);
@@ -85,6 +85,12 @@ export const mirrorShard = defineObstacle({
   name: 'l9-shard',
   hazard: { cls: 'static', introduced: 1 },
   sample: { len: 10, tilt: 0.3 },
+  // 0.3.1, check-levels' "no fully blocked moment": its solid shape as it crosses the ship's plane, as the distance from
+  // a ship centre (x, y) to its surface (the kind's own hit test is that distance under part of SHIP_R)
+  solid(ev, B) {
+    const half = (ev.len || 10) / 2, ux = -Math.sin(ev.tilt || 0), uy = Math.cos(ev.tilt || 0), ex = ev.x ?? (ev.nx || 0) * B.x, ey = ev.y ?? (ev.ny || 0) * B.y;
+    return [{ dist: (x, y) => { const dx = x - ex, dy = y - ey, t = clamp(dx * ux + dy * uy, -half, half); return Math.hypot(dx - ux * t, dy - uy * t) - (0.62 * (1 - Math.abs(t) / half) + 0.12); } }];
+  },
   init(api) {
     const g = new THREE.OctahedronGeometry(1, 0); g.scale(0.55, 0.5, 0.42);
     shardBody = new Instanced(api.scene, g, new THREE.MeshStandardMaterial({ color: 0x4a3a8a, metalness: 0.45, roughness: 0.25, flatShading: true }), 40);

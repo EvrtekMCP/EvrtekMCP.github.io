@@ -1,0 +1,13 @@
+{
+  "about": "STARWAKE 0.4.0: the effects that exist, so the game only asks for what is there. The sound branch adds each name when its take lands in audio/sfx/<name>.{ogg,mp4}: powerups (pu-*), shared (any other always-loaded cue), galaxies (g2-*/g3-* effects a level lists in its sfx; one not listed is skipped, never fetched).",
+  "powerups": [],
+  "shared": [],
+  "gain": {
+    "pu-tick": 0.45,
+    "pu-mirror-ping": 0.4,
+    "pu-phase-pass": 0.55,
+    "pu-magnet-clink": 0.35,
+    "pu-cache": 0.6
+  },
+  "galaxies": []
+}

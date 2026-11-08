@@ -11,9 +11,9 @@
 <!-- Every URL here is relative and stamped (orders/arcade-releases.md): the folder runs as-is from the Arcade,
      from a preview page, or from tools/serve.js on 127.0.0.1. ES modules, so it needs a server, not a file://. -->
 <!-- Cabinet icons and share card: Yori, 2026-11-05. Local files, relative paths. -->
-<link rel="icon" href="starwake-favicon.svg?v=0.3.0" type="image/svg+xml">
-<link rel="icon" href="starwake-favicon.ico?v=0.3.0" sizes="any">
-<link rel="apple-touch-icon" href="starwake-touch-icon.png?v=0.3.0">
+<link rel="icon" href="starwake-favicon.svg?v=0.4.0" type="image/svg+xml">
+<link rel="icon" href="starwake-favicon.ico?v=0.4.0" sizes="any">
+<link rel="apple-touch-icon" href="starwake-touch-icon.png?v=0.4.0">
 <!-- Share card. Meta only: scrapers fetch these, the page never does. -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="STARWAKE">
@@ -21,9 +21,60 @@
 <meta property="og:url" content="https://reimertek.com/arcade/starwake/">
 <meta property="og:image" content="https://reimertek.com/arcade/starwake/og-starwake.png">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="css/starwake.css?v=0.3.0">
+<!-- 0.4.0, the studio splash (Evrtek 11-07): its CSS is here in the page, so the very first paint is black with nothing
+     half drawn behind it, before any module, picture or font has arrived. The script after #loading runs it. -->
+<style>
+#splash { position: fixed; inset: 0; z-index: 100; background: #000; display: flex; align-items: center; justify-content: center;
+  transition: opacity var(--sp-lift, 600ms) ease-out; }
+#splash .sp-logo { display: block; width: min(46vw, 92vh, 640px); height: auto; opacity: 0; transition: opacity var(--sp-in, 700ms) ease-out; }
+@media (orientation: portrait) { #splash .sp-logo { width: min(66vw, 44vh, 420px); } }
+#splash.in .sp-logo { opacity: 1; }
+#splash.out .sp-logo { opacity: 0; transition: opacity var(--sp-out, 600ms) ease-in; }
+#splash.lift { opacity: 0; }
+/* the boot (Evrtek 11-07): a LOADING bar at the foot of the studio screen for the whole load, "so no one thinks the game
+   is locked". The logo's cyan running into its sun's amber; clear of the phone's bottom edge; out with the logo. */
+#splash .sp-load { position: absolute; left: 50%; bottom: calc(env(safe-area-inset-bottom) + clamp(26px, 7vh, 64px)); transform: translateX(-50%);
+  width: min(52vw, 420px); opacity: 0; transition: opacity 0.5s ease-out; pointer-events: none;
+  font: 700 11px/1 ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace; letter-spacing: 0.42em; }
+@media (orientation: portrait) { #splash .sp-load { width: min(68vw, 300px); } }
+#splash .sp-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 9px; }
+#splash .sp-row .w { color: rgba(83, 230, 255, 0.85); }
+#splash .sp-row .n { color: rgba(255, 204, 51, 0.9); letter-spacing: 0.12em; }
+#splash .sp-bar { height: 3px; border-radius: 2px; background: rgba(83, 230, 255, 0.16); overflow: hidden; }
+#splash .sp-fill { height: 100%; transform-origin: 0 50%; transform: scaleX(0); transition: transform 0.12s linear;
+  background: linear-gradient(90deg, #53e6ff, #ffcc33); box-shadow: 0 0 8px rgba(83, 230, 255, 0.55); }
+#splash.bar-on .sp-load { opacity: 1; } /* (not .loading: starwake.css has an old .loading rule) */
+#splash.out .sp-load { opacity: 0; transition: opacity var(--sp-out, 600ms) ease-in; }
+</style>
+<!-- 0.4.0 boot-menu: #boot-old (or ?boot=old; js/params.js's rule) is today's boot, kept for comparison. Read here, before
+     anything else loads, so that boot's loading screen can ask for its background first, as it did. The new boot shows
+     no loading screen at boot, so it does not ask (main.js fetches it in the background after the menu is up). These
+     two URLs are stamped by hand (tools/stage.js checks only the page's src and href attributes). -->
+<script>
+(function () {
+  try {
+    var q = new URLSearchParams(location.search), v = q.has('boot') ? q.get('boot') : null;
+    if (v === null) (location.hash || '').replace(/^#/, '').split('.').forEach(function (k) { if (v === null && (k === 'boot' || k.indexOf('boot-') === 0)) v = k.slice(5); });
+    if (v !== 'old') return;
+    document.documentElement.classList.add('boot-old');
+    ['landscape', 'portrait'].forEach(function (o) {
+      var l = document.createElement('link'); l.rel = 'preload'; l.as = 'image'; l.media = '(orientation: ' + o + ')';
+      l.setAttribute('fetchpriority', 'high'); l.href = 'art/ui/loading-bg-' + o + '.png?v=0.4.0'; document.head.appendChild(l);
+    });
+  } catch (e) { /* the new boot, then */ }
+})();
+</script>
+<link rel="stylesheet" href="css/starwake.css?v=0.4.0">
 </head>
 <body>
+<!-- 0.4.0, the studio splash (Evrtek 11-07): black; REIMERTEK STUDIOS fades in, holds, fades out; then the loading screen
+     comes up, already whole. Yori's logo, The Portal (Evrtek's pick E), as approved: the stacked lockup on a portrait
+     screen, the horizontal one on a landscape screen. Once a page load; it takes no input. The boot (Evrtek 11-07): the
+     logo holds through the whole load, its LOADING bar below, and lifts onto the main menu (#boot-old: as above). -->
+<div id="splash">
+  <picture><source media="(orientation: portrait)" srcset="art/studio/lockup-stacked.svg?v=0.4.0"><img class="sp-logo" id="splash-logo" src="art/studio/lockup-horizontal.svg?v=0.4.0" alt="REIMERTEK STUDIOS" fetchpriority="high"></picture>
+  <div class="sp-load" id="splash-load" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="sp-row"><span class="w">LOADING</span><span class="n" id="splash-pct">0%</span></div><div class="sp-bar"><div class="sp-fill" id="splash-fill"></div></div></div>
+</div>
 <canvas id="view" aria-label="STARWAKE play field"></canvas>
 
 <div id="hud" class="off">
@@ -33,6 +84,8 @@
     <div id="rings" class="small">RINGS 0</div>
   </div>
   <div class="hud-right">
+    <!-- 0.4.0: one icon a running power-up, its ring draining (hud.js) -->
+    <div id="pu-strip" class="pu-strip"></div>
     <div class="shield-label">SHIELD</div>
     <div class="shield"><div id="shield-fill"></div></div>
     <div class="shield-label greed-label">GREED</div>
@@ -50,9 +103,13 @@
   <div id="threats" class="threats"></div>
   <!-- 0.3.0: the roll lesson (level 1, once): how to roll, said plainly; SKIP ends it for good -->
   <div id="tutor" class="tutor" hidden><div class="t-plate"><div id="tutor-key" class="t-key"></div><div id="tutor-say" class="t-say"></div></div><button id="tutor-skip" class="t-skip">SKIP</button></div>
+  <!-- 0.4.0: the first-time tips (js/tutorials.js): the first time you meet a thing, the game slows and this says what it is -->
+  <div id="tip" class="tip" role="status" aria-live="polite" hidden><div class="tip-plate"><div id="tip-icon" class="tip-icon"></div><div class="tip-body"><div id="tip-name" class="tip-name"></div><div id="tip-say" class="tip-say"></div></div></div><button id="tip-skip" class="tip-skip">SKIP<kbd class="tip-key">SPACE</kbd></button></div>
   <div id="warn-l" class="warn left">&#9664;</div>
   <div id="warn-r" class="warn right">&#9654;</div>
   <div id="flash" class="flash"></div>
+  <!-- 0.4.0: Slipstream's blue edges -->
+  <div id="slip-edge" class="slip-edge"></div>
 </div>
 
 <div id="boss" class="bossbar" hidden><div class="boss-name" id="boss-name"></div><div class="boss-track"><div id="boss-fill"></div></div><div class="boss-pips" id="boss-pips"></div></div>
@@ -64,10 +121,14 @@
      the route shows through, the four buttons, the foot), so nothing sits on anything at any screen size -->
 <div id="title" class="screen ui-screen launcher" hidden>
   <div class="ui-bg bg-launcher"></div>
+  <!-- 0.4.0 boot-menu (Evrtek 11-07: the route and its levels "don't mean anything to a new player"): Yori's vignette loop
+       plays behind the menu, the ship in the open space beside the buttons (art/ui/loader/vignette.js). The constellation
+       and the cruising Wake are #boot-old's (CSS hides the one; the splash's script puts in the other from its template). -->
+  <canvas class="menu-vignette" id="menu-vignette" aria-hidden="true"></canvas>
   <div class="ui-bg constellation"></div>
   <div class="launcher-body">
-    <h1 class="wordmark"><img src="art/starwake-wordmark.png?v=0.3.0" srcset="art/starwake-wordmark.png?v=0.3.0 1x, art/starwake-wordmark@2x.png?v=0.3.0 2x" width="1065" height="215" alt="STARWAKE"></h1>
-    <div class="launcher-mid"><img class="launcher-wake" src="art/ui/launcher-wake.png?v=0.3.0" width="456" height="312" alt=""></div>
+    <h1 class="wordmark"><img src="art/starwake-wordmark.png?v=0.4.0" srcset="art/starwake-wordmark.png?v=0.4.0 1x, art/starwake-wordmark@2x.png?v=0.4.0 2x" width="1065" height="215" alt="STARWAKE"></h1>
+    <div class="launcher-mid"><template id="launcher-wake-tpl"><img class="launcher-wake" src="art/ui/launcher-wake.png?v=0.4.0" width="456" height="312" alt=""></template></div>
     <div class="menu">
       <button id="start-btn" class="img-btn b-new-game"><span class="sr">NEW GAME</span></button>
       <button id="continue-btn" class="img-btn b-continue" hidden><span class="sr">CONTINUE</span><span class="cap" id="continue-cap"></span></button>
@@ -87,20 +148,43 @@
   <div class="studio" id="studio">REIMERTEK STUDIOS</div>
 </div>
 
-<!-- the level select: Yori's sector map; tiles sit under their nodes (art/ui/map-nodes.json) -->
+<!-- 0.4.0: the galaxy chart (LEVEL SELECT opens it): every galaxy, joined by the route; placeholders until Yori's art -->
+<div id="galaxies" class="screen ui-screen" hidden>
+  <div class="ui-bg bg-chart"></div>
+  <div class="chart-title">SELECT GALAXY</div>
+  <img class="chart-title-img" src="art/ui/chart/title-select-galaxy.png?v=0.4.0" width="517" height="78" alt="SELECT GALAXY">
+  <div class="chart" id="chart"></div>
+  <button class="img-btn b-back select-back" data-back><span class="sr">BACK</span></button>
+  <div class="totals" id="chart-totals"></div>
+</div>
+
+<!-- the level select: Yori's sector map; tiles sit under their nodes (art/ui/map-nodes.json). 0.4.0: one a galaxy, with
+     arrows (and a swipe, and the arrow keys) to its neighbours; BACK goes to the galaxy chart -->
 <div id="select" class="screen ui-screen" hidden>
   <div class="ui-bg bg-select"></div>
   <div class="map" id="map"><div class="map-route"></div><div class="map-tiles" id="tiles"></div></div>
-  <img class="select-title" src="art/ui/title-select-sector.png?v=0.3.0" width="508" height="78" alt="SELECT SECTOR">
-  <button class="img-btn b-back select-back" data-back><span class="sr">BACK</span></button>
+  <img class="select-title" src="art/ui/title-select-sector.png?v=0.4.0" width="508" height="78" alt="SELECT SECTOR">
+  <div class="select-galaxy" id="select-galaxy"></div>
+  <button class="gal-arrow prev" id="gal-prev" aria-label="Previous galaxy">&#9664;</button>
+  <button class="gal-arrow next" id="gal-next" aria-label="Next galaxy">&#9654;</button>
+  <button class="img-btn b-back select-back" id="select-back"><span class="sr">BACK</span></button>
   <div class="totals" id="totals"></div>
+</div>
+
+<!-- 0.4.0: the credits roll (g3-d): after the whole game's last clear on a real run, and from Options; any tap or key skips -->
+<div id="credits" class="screen ui-screen" hidden>
+  <div class="ui-bg bg-chart"></div>
+  <div class="credits-view"><div class="credits-roll" id="credits-roll"></div></div>
+  <div class="credits-skip" id="credits-skip"></div>
 </div>
 
 <div id="options" class="screen" hidden>
   <div class="title-card small-card opt-card">
     <h2>OPTIONS</h2>
-    <button class="opt-row img-tog" data-tog="music"><img src="art/ui/icon-music.png?v=0.3.0" alt=""><img src="art/ui/label-music.png?v=0.3.0" alt="MUSIC"><img class="sw" src="art/ui/toggle-on.png?v=0.3.0" alt=""></button>
-    <button class="opt-row img-tog" data-tog="sfx"><img src="art/ui/icon-sfx.png?v=0.3.0" alt=""><img src="art/ui/label-sfx.png?v=0.3.0" alt="SOUND"><img class="sw" src="art/ui/toggle-on.png?v=0.3.0" alt=""></button>
+    <button class="opt-row img-tog" data-tog="music"><img src="art/ui/icon-music.png?v=0.4.0" alt=""><img src="art/ui/label-music.png?v=0.4.0" alt="MUSIC"><img class="sw" src="art/ui/toggle-on.png?v=0.4.0" alt=""></button>
+    <button class="opt-row img-tog" data-tog="sfx"><img src="art/ui/icon-sfx.png?v=0.4.0" alt=""><img src="art/ui/label-sfx.png?v=0.4.0" alt="SOUND"><img class="sw" src="art/ui/toggle-on.png?v=0.4.0" alt=""></button>
+    <!-- 0.4.0: the first-time tips on or off (js/tutorials.js); Yori's icon and lettered label, as the rows above -->
+    <button class="opt-row img-tog" id="tips-tog"><img src="art/ui/icon-tips.png?v=0.4.0" alt=""><img src="art/ui/label-tips.png?v=0.4.0" alt="TIPS"><img class="sw" src="art/ui/toggle-on.png?v=0.4.0" alt=""></button>
     <!-- 0.3.0 (Evrtek 11-06): the PC keys, rebindable; hidden while playing by touch -->
     <div class="opt-keys" id="opt-keys">
       <div class="k-head">CONTROLS</div>
@@ -111,6 +195,7 @@
       <div class="k-note" id="k-note">Click a key to change it. Steer with the mouse, WASD or the arrows.</div>
       <button class="ghost-btn k-reset" id="k-reset">RESET TO DEFAULTS</button>
     </div>
+    <button class="ghost-btn" id="credits-btn">CREDITS</button>
     <button class="img-btn b-back small" data-back><span class="sr">BACK</span></button>
   </div>
 </div>
@@ -135,6 +220,7 @@
       <button class="tog" id="dev-tip">ROLL LESSON: WILL SHOW</button>
       <button class="tog" id="dev-off">DEV MODE: ON</button>
     </div>
+    <div class="dev-tabs"><button class="tog" data-dev-g="1">GALAXY 1</button><button class="tog" data-dev-g="2">GALAXY 2</button><button class="tog" data-dev-g="3">GALAXY 3</button></div>
     <div class="dev-levels" id="dev-levels"></div>
     <button class="ghost-btn" data-back>BACK</button>
   </div>
@@ -155,9 +241,10 @@
 <div id="end" class="screen" hidden>
   <div class="title-card small-card">
     <div id="end-head" class="end-head">SHIELD DOWN</div>
+    <div id="end-galaxy" class="end-galaxy" hidden></div>
     <div id="end-rank" class="rank"><img id="end-rank-img" alt=""></div>
     <div id="end-stars" class="end-stars"></div>
-    <div id="end-nohit" class="end-nohit" hidden><img src="art/no-hit-glow.png?v=0.3.0" alt="NO HIT"></div>
+    <div id="end-nohit" class="end-nohit" hidden><img src="art/no-hit-glow.png?v=0.4.0" alt="NO HIT"></div>
     <table class="tally" id="tally"></table>
     <div id="end-new" class="newbest" hidden>NEW BEST</div>
     <button id="again-btn" class="go">FLY AGAIN</button>
@@ -167,19 +254,221 @@
   </div>
 </div>
 
-<!-- the loading screen (Yori's art): the Wake in warp; the ring is real progress (sound, skies, shaders); when
-     it is full the Wake drops out of warp -->
+<!-- the loading screen (Yori's art): the ring is real progress (sound, skies, shaders). 0.4.0, the loader vignette
+     (Evrtek 11-07, as approved: "loading screen looks fine to me"): on the canvas the Wake threads rings, rolls a blast
+     straight back and banks past an asteroid, a 6.4 s loop (art/ui/loader/vignette.js, a plain script that runs before any
+     module, no three.js); when the screen lifts the Wake surges out of it and the loop stops. It replaced the streaks
+     (Evrtek: they "simply jerk in and out"). #loader-old brings the streak screen back: the splash's script puts in the
+     template (inert until then, so its pictures are never asked for otherwise). -->
 <div id="loading" class="loader">
   <div class="ui-bg bg-loading"></div>
-  <div class="ui-bg streaks"></div>
-  <img class="ld-wake" src="art/ui/loading-wake.png?v=0.3.0" width="760" height="520" alt="">
-  <img class="ld-mark" src="art/starwake-wordmark.png?v=0.3.0" width="1065" height="215" alt="STARWAKE">
+  <canvas class="ld-vignette" id="loader-vignette" aria-hidden="true"></canvas>
+  <template id="loader-streaks"><div class="ui-bg streaks"></div><img class="ld-wake" src="art/ui/loading-wake.png?v=0.4.0" width="760" height="520" alt="" fetchpriority="high"></template>
+  <img class="ld-mark" src="art/starwake-wordmark.png?v=0.4.0" width="1065" height="215" alt="STARWAKE" fetchpriority="high">
   <div class="ld-label" id="loader-label"></div>
-  <div class="ld-ring" id="loader-ring"><img src="art/ui/loading-ring-track.png?v=0.3.0" width="240" height="240" alt=""><img class="fill" src="art/ui/loading-ring-fill.png?v=0.3.0" width="240" height="240" alt=""></div>
+  <div class="ld-ring" id="loader-ring"><img src="art/ui/loading-ring-track.png?v=0.4.0" width="240" height="240" alt="" fetchpriority="high"><img class="fill" src="art/ui/loading-ring-fill.png?v=0.4.0" width="240" height="240" alt="" fetchpriority="high"></div>
   <div class="loader-what" id="loader-what">LOADING</div>
   <div class="loader-prompt" id="loader-prompt"></div>
 </div>
+<!-- the loader vignette: its lane and sprite sheet (Yori's render-vignette.js), then its player. Deferred: they run as soon
+     as the page is parsed, just after the splash's script below (which waits for the vignette), and never hold it up (as
+     plain scripts they kept the logo back half a second on slow 4G) -->
+<script src="art/ui/loader/vignette-data.js?v=0.4.0" defer fetchpriority="high"></script>
+<script src="art/ui/loader/vignette.js?v=0.4.0" id="vignette-js" defer fetchpriority="high"></script>
 
-<script type="module" src="js/main.js?v=0.3.0"></script>
+<!-- 0.4.0, the studio splash's script. A plain script, so it runs as soon as the page and its stylesheet are in.
+     THE BOOT (boot-menu, Evrtek 11-07: "While the game is loading, we should have the reimertek studios fade in. Once the
+     main menu is ready it should fade out and the menu should fade in"):
+     1. Black until the logo has loaded (a black screen while it loads is fine), then it fades in (0.7 s). The game
+        (js/main.js, and with it every sound, sky and shader) is started at once: the logo holds for its whole load.
+     2. Half a second after the logo, a LOADING bar at the foot of the screen (Evrtek: "to show the load progress and
+        make sure no one thinks the game is locked"): main.js's real progress (__splash.progress(k, cap)); between two
+        reports it creeps on inside the share of the file in flight (toward cap, never past it), so it never sits still.
+        Half a second, so a quick load does not flash it in and out with the logo: a menu whole by then never shows it.
+     3. It holds at least 1.5 s, and until the main menu is whole behind it: main.js has opened it (__splash.menuReady:
+        the sounds and the menu music decoded, level 1's skies and shaders made, the launcher's pictures in), and here,
+        every picture it shows decoded (its images, its buttons and backdrop), its vignette drawing (Yori's loop, the
+        five sprites) and the fonts of its words.
+     4. Then the logo and the bar fade out together (0.6 s) and the black lifts (0.6 s): the menu fades in, complete.
+        There is no loading screen at boot (it is hidden here, under the black); level loads still have it.
+     No 8 s lift: the screen is never black for long (the logo by then, or the bar alone if the logo never comes), and the
+     menu never shows half loaded. 90 s on, if the menu is still not ready (something broken), the loading screen comes
+     up with its ring, so it is never the logo for good. A tap or key skips the hold only once the menu is whole; the
+     menu's first press (it unlocks the sound) is ui.firstGesture's. ?splash=0 skips it (the test tools); a run started
+     before the menu (a test, a dev link) ends it at once (main.js start).
+     #boot-old (the head reads it) is today's boot, exactly as it was, for comparison:
+     1. Black until the logo has loaded (a black screen while it loads is fine), then it fades in (0.7 s).
+     2. It holds at least 1.5 s, and until the loading screen is whole: every picture in #loading decoded (its three
+        images and its background, as this screen's shape uses it), the vignette ready (its five sprites decoded and its
+        first frame drawn: window.__vignette.ready) and the fonts its words use (the device's own monospace today: no
+        files, so nothing to wait for). With #loader-old: today's four images and two backgrounds, as before.
+     3. Then the logo fades out (0.6 s) and the black lifts (0.6 s) onto the loading screen, complete, wherever the
+        loading has got to (if it is done, it arrives at its prompt).
+     The loading screen's pictures come first (the MCP, 11-07: ahead of the music, skies and modules). The page asks for
+     them at high priority, and the game itself (js/main.js, and with it every sound, sky and shader) is started by this
+     script once they are in, or at the limit. Measured on slow 4G (11-07): with the game loading beside them, the streaks
+     were still coming at 9.9 s; the boot is held by its bandwidth, not its order, so READY comes no later.
+     With the loader vignette (11-07, tools/test/splash.js): the screen is 611 KB, not 1056 (landscape; portrait 585, not
+     746), and on slow 4G it is whole at 4.6 s, not 6.8 (portrait 5.9, not 7.1); READY at 17.0 s, not 19.2.
+     8 s after the link was opened it stops waiting (a request that never answers must not leave the player on black): a
+     logo that has not come by then is skipped, one that is showing still gets its hold. Reduced motion: 0.2 s fades, the
+     same hold. A tap or key skips the splash only once the loading screen is whole, and never counts as the press that
+     starts the game (ui.pressToStart ignores presses while the splash is up). ?splash=0 skips it (the test tools); a run
+     started before the press (a test, a dev link) ends it at once (main.js start). Whatever goes wrong here, the game
+     still starts: at the limit, when the splash ends, on any error, and at 15 s. The game's URL is stamped here, by hand
+     (tools/stage.js checks only the page's src and href attributes). -->
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); }, noop = function () {};
+  var S = $('splash'), logo = $('splash-logo');
+  var phase = 'black', whole = false, t = {}, timer = 0, booted = false, tick = 0;
+  var mark = function (k) { t[k] = Math.round(performance.now()); };
+  function boot() {
+    if (booted) return; booted = true; mark('boot');
+    var m = document.createElement('script'); m.type = 'module'; m.src = 'js/main.js?v=0.4.0'; document.body.appendChild(m);
+  }
+  function end() {
+    if (phase === 'gone') return;
+    phase = 'gone'; mark('gone'); clearTimeout(timer); clearInterval(tick); window.removeEventListener('keydown', skip, true);
+    if (S && S.parentNode) S.parentNode.removeChild(S);
+    boot();
+  }
+  function skip(e) { if (!whole || phase === 'lift' || phase === 'gone' || (e.type === 'keydown' && e.repeat)) return; mark('skip'); lift(); }
+  var LIFT = 600;
+  function lift() { if (phase === 'lift' || phase === 'gone') return; phase = 'lift'; mark('lift'); S.classList.add('lift'); timer = setTimeout(end, LIFT); }
+  var bootOld = document.documentElement.classList.contains('boot-old'); // #boot-old, read in the head
+  // the page reads these: main.js ends it, reports its progress and says when the menu is open; the tests read its times
+  window.__splash = { end: end, t: t, bootOld: bootOld, progress: noop, menuReady: noop, get phase() { return phase; }, get whole() { return whole; } };
+  // the vignette's script (deferred: it runs once the page is parsed, after this), loaded or failed: listened for now, while
+  // it cannot have happened yet (the new boot asks long after it has)
+  var vjs = $('vignette-js'), vjsIn = new Promise(function (ok) { if (!vjs) return ok(); vjs.addEventListener('load', ok); vjs.addEventListener('error', ok); });
+  // the loader vignette's revert switch, #loader-old (or ?loader=old: js/params.js's rule, the query string first, then the
+  // #anchor's tokens; read here, before any module): the streak screen comes back from its template, and the vignette's
+  // script (deferred, so after this) finds no canvas and does nothing
+  var loaderOld = false;
+  try {
+    var lq = new URLSearchParams(location.search), lv = lq.has('loader') ? lq.get('loader') : null;
+    if (lv === null) (location.hash || '').replace(/^#/, '').split('.').forEach(function (k) { if (lv === null && (k === 'loader' || k.indexOf('loader-') === 0)) lv = k.slice(7); });
+    var lbox = $('loading'), lcv = $('loader-vignette'), ltpl = $('loader-streaks');
+    if (lv === 'old' && lbox && lcv && ltpl) { lbox.insertBefore(ltpl.content.cloneNode(true), lcv); lbox.removeChild(lcv); loaderOld = true; }
+  } catch (e) { /* the vignette, then */ }
+  // which boot: the new one hides the loading screen (under the black, so it is never seen at boot); #boot-old puts back
+  // today's launcher (its cruising Wake from its template; its constellation is CSS) and drops the menu's vignette canvas
+  try {
+    var mcv = $('menu-vignette');
+    if (bootOld) { var wt = $('launcher-wake-tpl'), mid = document.querySelector('#title .launcher-mid'); if (wt && mid) mid.appendChild(wt.content.cloneNode(true)); if (mcv) mcv.parentNode.removeChild(mcv); }
+    else if (lbox) lbox.classList.add('done', 'parked'); // (parked: out of the page, so its background waits for the menu)
+  } catch (e) { /* as it is, then */ }
+  if (/[?&]splash=0(&|$)/.test(location.search)) { end(); return; }
+  var still, IN, HOLD = 1500, OUT, LIMIT = 8000, fadeOut, settle;
+  try {
+    still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    IN = still ? 200 : 700; OUT = still ? 200 : 600; LIFT = still ? 200 : 600;
+    fadeOut = function () { if (phase !== 'in') return; phase = 'out'; mark('out'); S.classList.add('out'); timer = setTimeout(lift, OUT); };
+    S.style.setProperty('--sp-in', IN + 'ms'); S.style.setProperty('--sp-out', OUT + 'ms'); S.style.setProperty('--sp-lift', LIFT + 'ms');
+    S.addEventListener('pointerdown', skip); window.addEventListener('keydown', skip, true);
+    // a picture is settled when it is decoded, or when it has failed for good (a broken one never comes: no use waiting)
+    settle = function (im) {
+      return (im.decode ? im.decode() : Promise.reject()).catch(function () {
+        return new Promise(function (ok) { if (im.complete) ok(); else { im.addEventListener('load', ok); im.addEventListener('error', ok); } });
+      });
+    };
+  } catch (e) { boot(); end(); throw e; }
+  // a vignette (art/ui/loader/vignette.js, deferred: it runs once the page is parsed, after this) ready: its sprites in,
+  // its first frame drawn if it is showing. If its script fails, the screen shows without it rather than waiting
+  var vignette = function (name) {
+    return vjsIn.then(function () { return window[name] ? window[name].ready : null; }).catch(noop);
+  };
+  // the fonts some words use, each by its own font (not document.fonts.ready: in Chrome that waits for the page's whole
+  // load, the boot's pictures with it; it came at 18 s on slow 4G)
+  var fonts = function (sel, waits) {
+    if (document.fonts && document.fonts.load) [].forEach.call(document.querySelectorAll(sel), function (el) {
+      var f = getComputedStyle(el).font; if (f) waits.push(document.fonts.load(f).catch(noop));
+    });
+  };
+  var bgs = function (el, waits, urls) {
+    var re = /url\(["']?([^"')]+)["']?\)/g, bg = getComputedStyle(el).backgroundImage, m;
+    while ((m = re.exec(bg))) { var im = new Image(); im.src = m[1]; urls.push(m[1]); waits.push(settle(im)); }
+  };
+  if (bootOld) oldBoot(); else newBoot();
+
+  // ---- today's boot (#boot-old), as it was
+  function oldBoot() {
+    setTimeout(end, 15000); // the last resort: whatever happens, never black for good
+    try {
+      var waits = [], urls = [];
+      [].forEach.call(document.querySelectorAll('#loading img'), function (im) { waits.push(settle(im)); });
+      [].forEach.call(document.querySelectorAll('#loading .ui-bg'), function (el) { bgs(el, waits, urls); });
+      if (!loaderOld) waits.push(vignette('__vignette'));
+      fonts('#loader-label, #loader-what, #loader-prompt', waits);
+      window.__splash.bg = urls;
+      var limit = new Promise(function (ok) { setTimeout(ok, Math.max(0, LIMIT - performance.now())); });
+      var art = Promise.all(waits).then(function () { whole = true; mark('whole'); });
+      var ready = Promise.race([art, limit.then(function () { if (!whole) mark('limit'); })]);
+      ready.then(boot);
+      var shown = settle(logo).then(function () { return logo.naturalWidth > 0; });
+      Promise.race([shown, limit.then(function () { return false; })]).then(function (ok) {
+        if (phase !== 'black') return;
+        if (!ok) { mark('nologo'); ready.then(lift); return; } // no logo by the limit, or none at all: straight to the loading screen
+        phase = 'in'; mark('in'); void getComputedStyle(logo).opacity; S.classList.add('in'); // (its 0 resolved first, so it fades even from a warm cache)
+        Promise.all([new Promise(function (r) { setTimeout(r, IN + HOLD); }), ready]).then(fadeOut);
+      });
+    } catch (e) { boot(); end(); throw e; }
+  }
+
+  // ---- the new boot: the logo and its LOADING bar until the menu is whole
+  function newBoot() {
+    boot();
+    // the last resort (something broken: 90 s and still no menu): the loading screen, its ring at the real progress
+    setTimeout(function () {
+      if (phase === 'gone' || whole) return;
+      mark('last'); var lb = $('loading'); if (lb) lb.classList.remove('done', 'parked'); if (window.__vignette) window.__vignette.show(true); end();
+    }, 90000);
+    try {
+      // the bar: k is done, cap where the step in flight ends; shown creeps from k toward cap (85% of the way, slowing),
+      // and never goes back
+      var bar = $('splash-load'), fill = $('splash-fill'), pct = $('splash-pct');
+      var P = { k: 0, cap: 0.3, at: performance.now(), shown: 0, drawn: -1, n: -1 }; // (until main.js reports: its code, 30%)
+      var draw = function () {
+        var target = whole ? 1 : P.k + (P.cap - P.k) * 0.85 * (1 - Math.exp(-(performance.now() - P.at) / 5000));
+        if (target > P.shown) P.shown = Math.min(1, target);
+        if (P.shown - P.drawn >= 0.001 || P.shown === 1) { P.drawn = P.shown; fill.style.transform = 'scaleX(' + P.shown.toFixed(4) + ')'; }
+        var n = Math.floor(P.shown * 100); if (n !== P.n) { P.n = n; pct.textContent = n + '%'; bar.setAttribute('aria-valuenow', n); }
+      };
+      window.__splash.progress = function (k, cap) {
+        if (whole || !(k >= 0)) return;
+        P.k = Math.max(P.k, Math.min(1, k)); P.cap = Math.max(P.k, Math.min(1, cap >= 0 ? cap : k)); P.at = performance.now();
+      };
+      window.__splash.bar = function () { return { k: P.k, cap: P.cap, shown: +P.shown.toFixed(3), text: pct.textContent, on: S.classList.contains('bar-on') }; };
+      // (a menu whole by then never shows it)
+      var showBar = function () { if (phase === 'gone' || whole || S.classList.contains('bar-on')) return; mark('bar'); draw(); S.classList.add('bar-on'); tick = setInterval(draw, 100); };
+      // the menu, whole: main.js has opened it behind the black; then every picture it shows, its vignette, its fonts
+      var menuIn = new Promise(function (ok) { window.__splash.menuReady = function () { if (!t.menu) mark('menu'); ok(); }; });
+      var urls = [];
+      var art = menuIn.then(function () {
+        var waits = [], shown = function (el) { return el.getClientRects().length > 0; };
+        [].forEach.call(document.querySelectorAll('#title img'), function (im) { if (shown(im)) waits.push(settle(im)); });
+        [].forEach.call(document.querySelectorAll('#title, #title *'), function (el) { if (shown(el)) bgs(el, waits, urls); });
+        waits.push(vignette('__menuVignette'));
+        fonts('#title .credits-line, #title .hint, #title .best, #title .studio', waits);
+        window.__splash.bg = urls;
+        // (the 8 s rule, for the menu's own last pictures: one that never answers must not hold the logo; the boot itself
+        // has no such limit, its bar shows it moving)
+        return Promise.race([Promise.all(waits), new Promise(function (ok) { setTimeout(function () { if (!whole) mark('limit'); ok(); }, LIMIT); })]);
+      }).then(function () { whole = true; mark('whole'); draw(); });
+      var limit = new Promise(function (ok) { setTimeout(ok, Math.max(0, LIMIT - performance.now())); });
+      var shownLogo = settle(logo).then(function () { return logo.naturalWidth > 0; });
+      Promise.race([shownLogo, limit.then(function () { return false; })]).then(function (ok) {
+        if (phase !== 'black') return;
+        phase = 'in';
+        if (!ok) { mark('nologo'); showBar(); art.then(fadeOut); return; } // no logo by 8 s, or none at all: the bar alone
+        mark('in'); void getComputedStyle(logo).opacity; S.classList.add('in'); // (its 0 resolved first, so it fades even from a warm cache)
+        setTimeout(showBar, 500);
+        Promise.all([new Promise(function (r) { setTimeout(r, IN + HOLD); }), art]).then(fadeOut);
+      });
+    } catch (e) { end(); throw e; }
+  }
+})();
+</script>
 </body>
 </html>

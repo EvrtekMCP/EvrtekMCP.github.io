@@ -1,0 +1,94 @@
+{
+ "track": "g3-level3",
+ "label": "Galaxy 3, level 3, The Lockworks: industrial techno, big metallic hits on the one",
+ "galaxy": 3,
+ "key": "Bb minor",
+ "take": "g3l3-t1",
+ "rate": 48000,
+ "duration": 156.59537,
+ "bpm": 144.008,
+ "firstBeat": 0.1622,
+ "beatSec": 0.41664,
+ "barSec": 1.66657,
+ "loopStart": 13.4991,
+ "loopEnd": 146.82542,
+ "loopBars": 80,
+ "wrapMismatch": 0.5,
+ "introBars": 8,
+ "lufs": -10.5,
+ "sections": [
+  {
+   "name": "Intro",
+   "kind": "intro",
+   "startBar": 1,
+   "bars": 8,
+   "start": 0.162,
+   "end": 13.495
+  },
+  {
+   "name": "Groove",
+   "kind": "groove",
+   "startBar": 9,
+   "bars": 16,
+   "start": 13.495,
+   "end": 40.16
+  },
+  {
+   "name": "Build one",
+   "kind": "build",
+   "startBar": 25,
+   "bars": 8,
+   "start": 40.16,
+   "end": 53.493
+  },
+  {
+   "name": "Drop one",
+   "kind": "drop",
+   "startBar": 33,
+   "bars": 16,
+   "start": 53.493,
+   "end": 80.158
+  },
+  {
+   "name": "Breakdown",
+   "kind": "break",
+   "startBar": 49,
+   "bars": 8,
+   "start": 80.158,
+   "end": 93.491
+  },
+  {
+   "name": "Build two",
+   "kind": "build",
+   "startBar": 57,
+   "bars": 8,
+   "start": 93.491,
+   "end": 106.823
+  },
+  {
+   "name": "Drop two",
+   "kind": "drop",
+   "startBar": 65,
+   "bars": 16,
+   "start": 106.823,
+   "end": 133.488
+  },
+  {
+   "name": "Drive",
+   "kind": "groove",
+   "startBar": 81,
+   "bars": 8,
+   "start": 133.488,
+   "end": 146.821
+  },
+  {
+   "name": "Outro",
+   "kind": "outro",
+   "startBar": 89,
+   "bars": 6,
+   "start": 146.821,
+   "end": 156.595
+  }
+ ],
+ "note": "The whole take plays from the top once, then loops from loopStart to loopEnd (whole bars). bpm and firstBeat are the kick grid fitted to the take: beat n sits at firstBeat + n * beatSec, bar k (1-based) at firstBeat + (k-1) * barSec. An AAC decode can carry a few ms of priming: shift the points by (decoded length - duration), as audio.js does for level 1."
+}

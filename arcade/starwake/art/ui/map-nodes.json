@@ -34,7 +34,7 @@
    "x": 0.46,
    "y": 0.6,
    "kind": "level",
-   "accent": "#c0a8ff"
+   "accent": "#ff2fa0"
   },
   {
    "level": 6,
@@ -48,7 +48,7 @@
    "x": 0.64,
    "y": 0.54,
    "kind": "level",
-   "accent": "#ff2fa0"
+   "accent": "#c0a8ff"
   },
   {
    "level": 8,
@@ -106,7 +106,7 @@
    "x": 0.32,
    "y": 0.6,
    "kind": "level",
-   "accent": "#c0a8ff"
+   "accent": "#ff2fa0"
   },
   {
    "level": 6,
@@ -120,7 +120,7 @@
    "x": 0.36,
    "y": 0.44,
    "kind": "level",
-   "accent": "#ff2fa0"
+   "accent": "#c0a8ff"
   },
   {
    "level": 8,
@@ -247,5 +247,337 @@
    "x": 0.576,
    "y": 0.17
   }
- ]
+ ],
+ "g2": {
+  "landscape": [
+   {
+    "level": 1,
+    "x": 0.09,
+    "y": 0.66,
+    "kind": "level",
+    "accent": "#7dffb0",
+    "name": "TIDEWAY"
+   },
+   {
+    "level": 2,
+    "x": 0.17,
+    "y": 0.46,
+    "kind": "level",
+    "accent": "#e08aff",
+    "name": "THE SHOALS"
+   },
+   {
+    "level": 3,
+    "x": 0.26,
+    "y": 0.34,
+    "kind": "boss",
+    "accent": "#e0a060",
+    "name": "THE DRUMREEF"
+   },
+   {
+    "level": 4,
+    "x": 0.36,
+    "y": 0.5,
+    "kind": "level",
+    "accent": "#9fd8ff",
+    "name": "THE MIGRATION"
+   },
+   {
+    "level": 5,
+    "x": 0.45,
+    "y": 0.7,
+    "kind": "level",
+    "accent": "#c090ff",
+    "name": "GRAVITY GARDEN"
+   },
+   {
+    "level": 6,
+    "x": 0.55,
+    "y": 0.56,
+    "kind": "boss",
+    "accent": "#a0c040",
+    "name": "THE TANGLE"
+   },
+   {
+    "level": 7,
+    "x": 0.64,
+    "y": 0.36,
+    "kind": "level",
+    "accent": "#ff9ae0",
+    "name": "BLOOMFALL"
+   },
+   {
+    "level": 8,
+    "x": 0.73,
+    "y": 0.5,
+    "kind": "level",
+    "accent": "#f0ffc0",
+    "name": "ANGLER'S DEEP"
+   },
+   {
+    "level": 9,
+    "x": 0.82,
+    "y": 0.68,
+    "kind": "boss",
+    "accent": "#f4f0ff",
+    "name": "THE MURMURATION"
+   },
+   {
+    "level": 10,
+    "x": 0.92,
+    "y": 0.4,
+    "kind": "final",
+    "accent": "#d0ffb0",
+    "name": "THE ROOTMIND"
+   }
+  ],
+  "portrait": [
+   {
+    "level": 1,
+    "x": 0.3,
+    "y": 0.9,
+    "kind": "level",
+    "accent": "#7dffb0",
+    "name": "TIDEWAY"
+   },
+   {
+    "level": 2,
+    "x": 0.68,
+    "y": 0.84,
+    "kind": "level",
+    "accent": "#e08aff",
+    "name": "THE SHOALS"
+   },
+   {
+    "level": 3,
+    "x": 0.36,
+    "y": 0.76,
+    "kind": "boss",
+    "accent": "#e0a060",
+    "name": "THE DRUMREEF"
+   },
+   {
+    "level": 4,
+    "x": 0.66,
+    "y": 0.68,
+    "kind": "level",
+    "accent": "#9fd8ff",
+    "name": "THE MIGRATION"
+   },
+   {
+    "level": 5,
+    "x": 0.32,
+    "y": 0.6,
+    "kind": "level",
+    "accent": "#c090ff",
+    "name": "GRAVITY GARDEN"
+   },
+   {
+    "level": 6,
+    "x": 0.68,
+    "y": 0.52,
+    "kind": "boss",
+    "accent": "#a0c040",
+    "name": "THE TANGLE"
+   },
+   {
+    "level": 7,
+    "x": 0.34,
+    "y": 0.44,
+    "kind": "level",
+    "accent": "#ff9ae0",
+    "name": "BLOOMFALL"
+   },
+   {
+    "level": 8,
+    "x": 0.66,
+    "y": 0.36,
+    "kind": "level",
+    "accent": "#f0ffc0",
+    "name": "ANGLER'S DEEP"
+   },
+   {
+    "level": 9,
+    "x": 0.32,
+    "y": 0.28,
+    "kind": "boss",
+    "accent": "#f4f0ff",
+    "name": "THE MURMURATION"
+   },
+   {
+    "level": 10,
+    "x": 0.62,
+    "y": 0.18,
+    "kind": "final",
+    "accent": "#d0ffb0",
+    "name": "THE ROOTMIND"
+   }
+  ]
+ },
+ "g3": {
+  "landscape": [
+   {
+    "level": 1,
+    "x": 0.08,
+    "y": 0.8,
+    "kind": "level",
+    "accent": "#e8eeff",
+    "name": "THE SCAFFOLD"
+   },
+   {
+    "level": 2,
+    "x": 0.2,
+    "y": 0.8,
+    "kind": "level",
+    "accent": "#8a5aff",
+    "name": "THE LOOM FLOOR"
+   },
+   {
+    "level": 3,
+    "x": 0.2,
+    "y": 0.52,
+    "kind": "boss",
+    "accent": "#c87a50",
+    "name": "THE LOCKWORKS"
+   },
+   {
+    "level": 4,
+    "x": 0.34,
+    "y": 0.52,
+    "kind": "level",
+    "accent": "#d080ff",
+    "name": "THE AUGURY"
+   },
+   {
+    "level": 5,
+    "x": 0.34,
+    "y": 0.28,
+    "kind": "level",
+    "accent": "#4a80f0",
+    "name": "THE DRAFTING HALL"
+   },
+   {
+    "level": 6,
+    "x": 0.5,
+    "y": 0.28,
+    "kind": "boss",
+    "accent": "#ff4ad8",
+    "name": "THE FORGERY"
+   },
+   {
+    "level": 7,
+    "x": 0.5,
+    "y": 0.6,
+    "kind": "level",
+    "accent": "#b0d8ff",
+    "name": "THE RIVET LINE"
+   },
+   {
+    "level": 8,
+    "x": 0.66,
+    "y": 0.6,
+    "kind": "level",
+    "accent": "#5ab0c0",
+    "name": "THE FRACTAL YARD"
+   },
+   {
+    "level": 9,
+    "x": 0.8,
+    "y": 0.6,
+    "kind": "boss",
+    "accent": "#ffe0a0",
+    "name": "THE VAULT"
+   },
+   {
+    "level": 10,
+    "x": 0.92,
+    "y": 0.32,
+    "kind": "final",
+    "accent": "#ffffff",
+    "name": "THE WEFTWORK"
+   }
+  ],
+  "portrait": [
+   {
+    "level": 1,
+    "x": 0.24,
+    "y": 0.87,
+    "kind": "level",
+    "accent": "#e8eeff",
+    "name": "THE SCAFFOLD"
+   },
+   {
+    "level": 2,
+    "x": 0.7,
+    "y": 0.87,
+    "kind": "level",
+    "accent": "#8a5aff",
+    "name": "THE LOOM FLOOR"
+   },
+   {
+    "level": 3,
+    "x": 0.7,
+    "y": 0.72,
+    "kind": "boss",
+    "accent": "#c87a50",
+    "name": "THE LOCKWORKS"
+   },
+   {
+    "level": 4,
+    "x": 0.3,
+    "y": 0.72,
+    "kind": "level",
+    "accent": "#d080ff",
+    "name": "THE AUGURY"
+   },
+   {
+    "level": 5,
+    "x": 0.3,
+    "y": 0.57,
+    "kind": "level",
+    "accent": "#4a80f0",
+    "name": "THE DRAFTING HALL"
+   },
+   {
+    "level": 6,
+    "x": 0.7,
+    "y": 0.57,
+    "kind": "boss",
+    "accent": "#ff4ad8",
+    "name": "THE FORGERY"
+   },
+   {
+    "level": 7,
+    "x": 0.7,
+    "y": 0.42,
+    "kind": "level",
+    "accent": "#b0d8ff",
+    "name": "THE RIVET LINE"
+   },
+   {
+    "level": 8,
+    "x": 0.3,
+    "y": 0.42,
+    "kind": "level",
+    "accent": "#5ab0c0",
+    "name": "THE FRACTAL YARD"
+   },
+   {
+    "level": 9,
+    "x": 0.3,
+    "y": 0.27,
+    "kind": "boss",
+    "accent": "#ffe0a0",
+    "name": "THE VAULT"
+   },
+   {
+    "level": 10,
+    "x": 0.66,
+    "y": 0.15,
+    "kind": "final",
+    "accent": "#ffffff",
+    "name": "THE WEFTWORK"
+   }
+  ]
+ }
 }

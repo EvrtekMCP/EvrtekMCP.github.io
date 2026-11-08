@@ -1,6 +1,6 @@
 // THE DERELICT'S STRUCTURE (level 1, the Quiet Colossus): girders across the lane (over or under), pylons
 // (left or right), and ribs that arch over the whole lane (scenery you fly through). Three kinds, one hull.
-import { THREE, defineObstacle, TX, SHIP_R } from '../../api.js?v=0.3.0';
+import { THREE, defineObstacle, TX, SHIP_R } from '../../api.js?v=0.4.0';
 
 let hullMat, warnMat, stripeMat;
 function mats() {
@@ -36,6 +36,9 @@ function bar(name) {
   return defineObstacle({
     name,
     hazard: name === 'rib' ? null : { cls: 'static', introduced: 2 },
+    // 0.3.1, check-levels' "no fully blocked moment": its solid shape as it crosses the ship's plane, as the distance from
+    // a ship centre (x, y) to its surface (the kind's own hit test is that distance under part of SHIP_R)
+    solid: name === 'rib' ? null : (ev, B) => [{ dist: name === 'girder' ? (x, y) => Math.abs(y - (ev.ny || 0) * B.y) - 0.7 : (x) => Math.abs(x - (ev.nx || 0) * B.x) - 0.7 }],
     init: mats,
     spawn(e, ev, api) {
       e.obj = api.course.get(name, () => build(name));

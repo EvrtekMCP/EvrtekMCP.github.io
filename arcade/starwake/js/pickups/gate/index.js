@@ -1,12 +1,15 @@
 // THE LIGHTGATE (level 1, sector 4): a hexagonal hoop. Through the middle pays; the frame hurts.
 // 0.2.0 (Evrtek, rule 9 ruling): white-violet, not cyan, so it reads as structure and never as your own shot.
-import { THREE, definePickup, SHIP_R } from '../../api.js?v=0.3.0';
+import { THREE, definePickup, SHIP_R } from '../../api.js?v=0.4.0';
 
 const GATE_R = 2.9, GATE_T = 0.32;
 let geo, disc, mat, fill;
 export default definePickup({
   name: 'gate',
   hazard: { cls: 'static', introduced: 2 }, // its frame costs a hit
+  // 0.3.1, check-levels' "no fully blocked moment": its solid shape as it crosses the ship's plane, as the distance from
+  // a ship centre (x, y) to its surface (the kind's own hit test is that distance under part of SHIP_R)
+  solid: (ev, B) => [{ dist: (x, y) => Math.abs(Math.hypot(x - (ev.nx || 0) * B.x, y - (ev.ny || 0) * B.y) - GATE_R) - GATE_T }],
   init() {
     geo = new THREE.TorusGeometry(GATE_R, GATE_T, 6, 6);
     disc = new THREE.CircleGeometry(GATE_R - GATE_T, 6);

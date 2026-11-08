@@ -7,7 +7,7 @@
 // the moment the second one loads, so parallel builders find a collision on their first run, not at the merge.
 
 const KINDS = new Map(), SCENERY = new Map(), BOSSES = new Map();
-const ROLES = ['pickup', 'obstacle', 'enemy', 'decor', 'weakpoint'];
+const ROLES = ['pickup', 'obstacle', 'enemy', 'decor', 'weakpoint', 'ally'];
 
 function put(table, what, d) {
   if (!d || typeof d.name !== 'string' || !/^[a-z][a-z0-9-]*$/.test(d.name)) throw new Error(what + ': a name in kebab-case is required, got ' + (d && d.name));
@@ -31,6 +31,8 @@ export const defineObstacle = (d) => kind('obstacle', d);
 export const defineEnemy = (d) => kind('enemy', d);
 export const defineDecor = (d) => kind('decor', d);
 export const defineWeakPoint = (d) => kind('weakpoint', d); // the boss framework makes these; levels rarely need it
+//  role 'ally'      0.4.0: something on your side (galaxy 2's calf and the mother whale); never collides, never a target
+export const defineAlly = (d) => kind('ally', d);
 
 // ---- scenery (ambient, around the flight box): streams of decor and set pieces faded by weight
 export const defineScenery = (d) => {
@@ -63,5 +65,8 @@ export function defineLevel(L) {
   }
   for (const k of L.kinds) if (!k || !k.name) throw new Error('level ' + L.n + ': kinds holds something that is not a kind');
   for (const a of ['introduce', 'develop', 'twist', 'master']) if (!L.acts[a]) throw new Error('level ' + L.n + ': acts.' + a + ' is missing (rule 19)');
-  return Object.assign({ scenery: [], boss: null, seed: L.n * 7919, sfx: [] }, L);
+  // 0.4.0: g is the galaxy (1 when a module does not say); a galaxy 2 or 3 level lives in js/levels/g<g>/level<n>.js
+  const g = L.g || 1;
+  if (![1, 2, 3].includes(g)) throw new Error('level ' + L.n + ': g must be 1, 2 or 3');
+  return Object.assign({ g, scenery: [], boss: null, seed: (g === 1 ? 0 : g * 100000) + L.n * 7919, sfx: [] }, L);
 }

@@ -7,9 +7,9 @@
 //  l10-debris        the escape: a torn armour plate tumbling across the lane
 // Every hazard is timed by its time to arrival (-z / speed), never by the clock, so its state when it reaches you is
 // the one the course was laid out for at any speed, GREED included, and its tell always runs for its full length.
-import { THREE, defineObstacle, definePickup, buildModel, modelGroups, smoothstep, SHIP_R, READ_D, RING_R, Instanced } from '../../api.js?v=0.3.0';
-import { MESH } from './mesh.js?v=0.3.0';
-import { MESH as HEART } from '../../bosses/lattice-heart/mesh.js?v=0.3.0';
+import { THREE, defineObstacle, definePickup, buildModel, modelGroups, smoothstep, SHIP_R, READ_D, RING_R, Instanced } from '../../api.js?v=0.4.0';
+import { MESH } from './mesh.js?v=0.4.0';
+import { MESH as HEART } from '../../bosses/lattice-heart/mesh.js?v=0.4.0';
 
 const RED = 0xff3355, PLATE = 0x4a5070, DARK = 0x2a1018, TRUSS = 0x2a2e44;
 const TAU = Math.PI * 2;
@@ -73,6 +73,12 @@ export const defenceRing = defineObstacle({
   // it turns, and it is in sight from READ_D on; the open sector is lit with rings
   hazard: { cls: 'sweep', introduced: 10, warn: (ev, v) => READ_D / v },
   sample: { blades: 3, width: 1.1, spin: 0.4, gnx: 1, gny: 0 },
+  // 0.3.1, check-levels' "no fully blocked moment": its solid shape as it crosses the ship's plane, as the distance from
+  // a ship centre (x, y) to its surface (the kind's own hit test is that distance under part of SHIP_R)
+  solid(ev, B) {
+    const n = ev.blades || 3, w = ev.width || 1.0, rot = Math.atan2((ev.gny || 0) * B.y, (ev.gnx ?? 1) * B.x);
+    return [{ dist: (x, y) => { const rho = Math.hypot(x, y), phi = Math.atan2(y, x); let near = 9; for (let k = 0; k < n; k++) near = Math.min(near, Math.abs(angDiff(phi, rot + (k + 0.5) * TAU / n)) - w / 2); return Math.min(rho - HUB_R, near < 0 ? -0.01 : rho * Math.sin(Math.min(near, Math.PI / 2))); } }];
+  },
   init() {
     bladeMat = new THREE.MeshStandardMaterial({ color: PLATE, metalness: 0.45, roughness: 0.5, flatShading: true, side: THREE.DoubleSide });
     edgeGeo = new THREE.BoxGeometry(BLADE_R - HUB_R, 0.42, 1.5); edgeGeo.translate((BLADE_R + HUB_R) / 2, 0, 0);
@@ -147,6 +153,10 @@ export const ram = defineObstacle({
   name: 'l10-ram',
   hazard: { cls: 'sweep', introduced: 10, warn: (ev) => (ev.still ? 99 : (ev.lead ?? 1.0) + STROKE + (ev.tel ?? 1.2)) },
   sample: { side: 'top', edge: 0.2 },
+  // 0.3.1, check-levels' "no fully blocked moment": its solid shape as it crosses the ship's plane, as the distance from
+  // a ship centre (x, y) to its surface (the kind's own hit test is that distance under part of SHIP_R)
+  // (its edge, out: everything on its side of `edge` along its axis is solid)
+  solid(ev, B) { const side = ev.side || 'top', ax = axisOf(side), sg = signOf(side), at = sg * (ev.edge ?? 0.2) * (ax === 'y' ? B.y : B.x); return [{ dist: (x, y) => sg * (at - (ax === 'y' ? y : x)) }]; },
   init() {
     ramBodyMat = new THREE.MeshStandardMaterial({ color: PLATE, metalness: 0.45, roughness: 0.5, flatShading: true });
     ramEdgeMat = new THREE.MeshBasicMaterial({ color: RED });
@@ -247,6 +257,9 @@ export const iris = defineObstacle({
   name: 'l10-iris',
   hazard: { cls: 'sweep', introduced: 10, warn: (ev) => (ev.lead ?? 0.45) + (ev.close ?? 1.0) + (ev.tel ?? 1.3) },
   sample: { cnx: 0, cny: 0, a: 3.2 },
+  // 0.3.1, check-levels' "no fully blocked moment": its solid shape as it crosses the ship's plane, as the distance from
+  // a ship centre (x, y) to its surface (the kind's own hit test is that distance under part of SHIP_R)
+  solid: (ev, B) => [{ dist: (x, y) => (ev.a || 3.2) - Math.hypot(x - (ev.cnx || 0) * B.x, y - (ev.cny || 0) * B.y) }],
   init() {
     irisFrameGroups = filterGroups(MESH.iris, (x, y, g) => g.color !== '#140408' && Math.hypot(x, y) > 12.4);
     irisBladeMat = new THREE.MeshStandardMaterial({ color: PLATE, metalness: 0.45, roughness: 0.5, flatShading: true, side: THREE.DoubleSide });
@@ -447,6 +460,10 @@ export const debris = defineObstacle({
   name: 'l10-debris',
   hazard: { cls: 'static', introduced: 10 },
   sample: { r: 2.6 },
+  // 0.3.1, check-levels' "no fully blocked moment": its solid shape as it crosses the ship's plane, as the distance from
+  // a ship centre (x, y) to its surface (the kind's own hit test is that distance under part of SHIP_R)
+  // (it drifts sideways from the read line in: drift x the time from there to the ship, at the speed it is met)
+  solid: (ev, B, v) => { const cx = (ev.x ?? (ev.nx || 0) * B.x) + (ev.drift || 0) * READ_D / Math.max(1, v), cy = ev.y ?? (ev.ny || 0) * B.y; return [{ dist: (x, y) => Math.hypot(x - cx, y - cy) - (ev.r || 2.6) * 0.8 }]; },
   init(api) {
     // Yori's armour plate with its hinge core gone dark: torn off the Heart
     const dead = HEART.plate.map((g) => (g.glow ? Object.assign({}, g, { color: '#2a2730', glow: false }) : g));

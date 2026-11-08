@@ -1,8 +1,8 @@
 // STARWAKE 0.2.0: the space the course lives in, and the numbers every kind shares.
 // SHIP-RELATIVE: the ship sits at z = 0 flying toward -Z; the course streams toward it at the current speed.
 // x and y are metres inside the flight box (box.x, box.y); events are authored in the normalised box (nx, ny).
-import * as THREE from '../vendor/three/three.module.min.js?v=0.3.0';
-import { smoothstep } from './util.js?v=0.3.0';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.4.0';
+import { smoothstep } from './util.js?v=0.4.0';
 
 // ---- ruling 5 (no pop-in). The fog is fully opaque at 760 m of depth. Everything on the course is born at
 // SPAWN_D, past that, at zero size, and grows to full size by APPEAR_D, where it is still about 80 % fog. So no
@@ -23,6 +23,9 @@ export const SHIP_R = 0.72;      // the ship's hit radius: a touch inside its wi
 export const RING_R = 1.75;      // a ring counts when the ship's centre passes inside this
 export const HIT_R = 0.78, GRAZE_R = 2.5, DEFLECT_R = 2.3;
 export const SHOT_T = 1.25;      // seconds an aimed shot takes to reach the ship's plane
+// 0.3.1, roll-or-hit fire (levels.js FIRE): a NET's bolts sit NET_S apart (no hole a ship fits: 1.3 / sqrt(3) = 0.75 m,
+// under HIT_R) and take NET_T to reach your plane (a kind may ask a little longer: opts.netT)
+export const NET_S = 1.3, NET_T = 0.4;
 
 // ---- rule 9: the colour vocabulary, the same in every level. Scenery never uses these as large flat colour.
 export const HUES = { hurts: 0xff3355, collect: 0xffcc33, reflected: 0x53e6ff };

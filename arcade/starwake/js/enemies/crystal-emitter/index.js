@@ -18,10 +18,11 @@
 //   wide  how far wide the miss goes, metres (lie / truth)
 //   T     the real bolt's time to your plane (default 1.3; 'bait' 1.45)
 //   aim   'true' (default) or 'graze': aimed 1.6 m off you, so a first try costs a graze at worst
-import { THREE, defineEnemy, clamp, SHIP_R } from '../../api.js?v=0.3.0';
-import { EMITTER } from './mesh.js?v=0.3.0';
-import { buildParts, geometryOf } from './parts.js?v=0.3.0';
-import { Ghosts } from './ghosts.js?v=0.3.0';
+// 0.3.1: on a level with roll-or-hit fire (levels.js FIRE), a truth, late or mix volley's real bolt may come as a NET.
+import { THREE, defineEnemy, clamp, SHIP_R, NET_T } from '../../api.js?v=0.4.0';
+import { EMITTER } from './mesh.js?v=0.4.0';
+import { buildParts, geometryOf } from './parts.js?v=0.4.0';
+import { Ghosts } from './ghosts.js?v=0.4.0';
 
 const CHARGE = 0.8, THREAD = 0.5, CARRY = 0.22, SPLIT = 0.16;
 const WHITE = new THREE.Color(0xffffff), BLACK = new THREE.Color(0x000000);
@@ -68,7 +69,7 @@ export default defineEnemy({
   name: 'crystal-emitter',
   // for the warning-time check: every real bolt is a reflectable shot, at least 1.15 s to your plane, after a
   // 0.8 s charge; brand-new in level 9
-  hazard: { cls: 'shot', introduced: 9, shotT: 1.15, tel: CHARGE },
+  hazard: { cls: 'shot', introduced: 9, shotT: 1.15, tel: CHARGE, net: { T: NET_T, tel: CHARGE } }, // net: levels.js FIRE
   sample: { vols: [{ at: 2.6, mode: 'mix' }] },
   spawn(e, ev, api) {
     e.obj = api.course.get('crystal-emitter', () => make(api));
@@ -148,7 +149,7 @@ export default defineEnemy({
         ghosts(a, b, c, d, T); break;
       }
       case 'truth': {
-        api.fire(e, rx, ry, { T });
+        api.fire(e, rx, ry, { T, net: vol.aim !== 'graze' }); // 0.3.1: the true bolt may come as a net (levels.js FIRE)
         ghosts(wideX(vol.wide), ly + 1.5, wideX(vol.wide + 1.5), ly - 1.5, T); break;
       }
       case 'bait': {
@@ -157,7 +158,7 @@ export default defineEnemy({
         ghosts(a, b, c, d, Math.max(0.6, T - vol.gap)); break;
       }
       case 'late': {
-        api.fire(e, rx, ry, { T });
+        api.fire(e, rx, ry, { T, net: vol.aim !== 'graze' });
         const [a, b] = near(-0.7, 0.4), [c, d] = near(0.7, -0.4);
         ghosts(a, b, c, d, T + 0.5); break;
       }
@@ -178,9 +179,10 @@ export default defineEnemy({
         ghosts(a, b, c, d, Math.max(0.6, CARRY + bankT - (vol.gap ?? 0.35))); break;
       }
       default: { // 'mix'
-        api.fire(e, rx, ry, { T });
+        // 0.3.1: the real bolt may come as a net (levels.js FIRE); its ghosts then fly as fast, so all of it still lands together
+        const s = api.fire(e, rx, ry, { T, net: vol.aim !== 'graze' });
         const [a, b] = near(-0.7, 0.35), [c, d] = near(0.7, -0.35);
-        ghosts(a, b, c, d, T);
+        ghosts(a, b, c, d, s && s.net ? NET_T : T);
       }
     }
   },

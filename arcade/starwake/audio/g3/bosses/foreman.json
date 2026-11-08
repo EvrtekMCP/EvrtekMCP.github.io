@@ -1,0 +1,86 @@
+{
+ "track": "g3-boss-foreman",
+ "label": "Galaxy 3 boss, the Foreman (level 3): heavier industrial techno with a ratcheting clank",
+ "galaxy": 3,
+ "key": "Bb minor",
+ "take": "g3foreman-t2",
+ "rate": 48000,
+ "duration": 136.67265,
+ "bpm": 143.688,
+ "firstBeat": 0.2102,
+ "beatSec": 0.41757,
+ "barSec": 1.67029,
+ "loopStart": 13.56667,
+ "loopEnd": 127.1461,
+ "loopBars": 68,
+ "wrapMismatch": 0.33,
+ "introBars": 8,
+ "lufs": -10.4,
+ "sections": [
+  {
+   "name": "Impact",
+   "kind": "intro",
+   "startBar": 1,
+   "bars": 4,
+   "start": 0.21,
+   "end": 6.891
+  },
+  {
+   "name": "Phase one",
+   "kind": "groove",
+   "startBar": 5,
+   "bars": 16,
+   "start": 6.891,
+   "end": 33.616
+  },
+  {
+   "name": "Phase two",
+   "kind": "groove",
+   "startBar": 21,
+   "bars": 16,
+   "start": 33.616,
+   "end": 60.34
+  },
+  {
+   "name": "Pause",
+   "kind": "break",
+   "startBar": 37,
+   "bars": 4,
+   "start": 60.34,
+   "end": 67.021
+  },
+  {
+   "name": "Build",
+   "kind": "build",
+   "startBar": 41,
+   "bars": 4,
+   "start": 67.021,
+   "end": 73.703
+  },
+  {
+   "name": "Phase three",
+   "kind": "drop",
+   "startBar": 45,
+   "bars": 16,
+   "start": 73.703,
+   "end": 100.427
+  },
+  {
+   "name": "Phase four",
+   "kind": "drop",
+   "startBar": 61,
+   "bars": 16,
+   "start": 100.427,
+   "end": 127.152
+  },
+  {
+   "name": "Outro",
+   "kind": "outro",
+   "startBar": 77,
+   "bars": 6,
+   "start": 127.152,
+   "end": 136.673
+  }
+ ],
+ "note": "The whole take plays from the top once, then loops from loopStart to loopEnd (whole bars). bpm and firstBeat are the kick grid fitted to the take: beat n sits at firstBeat + n * beatSec, bar k (1-based) at firstBeat + (k-1) * barSec. An AAC decode can carry a few ms of priming: shift the points by (decoded length - duration), as audio.js does for level 1."
+}
