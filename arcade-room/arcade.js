@@ -5,15 +5,17 @@
 // to the 3D renderer or a plain 2D one (no WebGL2, or reduced motion asked for).
 //
 // Stores nothing: no cookies, no localStorage. The address carries the state instead,
-// as plain tokens joined by dots: #starwake (a cabinet), #puzzle.crosswire (a filter
+// as plain tokens joined by dots: #ring-reaper (a cabinet), #puzzle.crosswire (a filter
 // and a cabinet), #list, #list.puzzle. SHARE always shares #<game-id>.
-import { curve, layoutFor, wrapD, paintWindowView, paintCarpet } from './shared.js?v=0.3.0';
+import { curve, layoutFor, wrapD, paintWindowView, paintCarpet } from './shared.js?v=0.3.1';
 
 const data = JSON.parse(document.getElementById('cabinet-data').textContent);
 const games = data.games;
 const CATS = data.categories;
 const N = games.length;
 const byId = new Map(games.map((g, i) => [g.id, i]));
+// a renamed game's old deep links still find it (#starwake is RING REAPER); an alias never shadows a real id
+for (const [i, g] of games.entries()) for (const a of g.aliases || []) if (!byId.has(a)) byId.set(a, i);
 const $ = (id) => document.getElementById(id);
 const stage = $('stage');
 const canvas = $('room');
@@ -609,7 +611,7 @@ if (params.has('test')) {
 async function start() {
 	if (mode === '3d') {
 		try {
-			const { createRoom3D } = await import('./room3d.js?v=0.3.0');
+			const { createRoom3D } = await import('./room3d.js?v=0.3.1');
 			view = await createRoom3D({ canvas, games, brand: data.brand, onFirstFrame: ready });
 		} catch (err) {
 			console.warn('3D room unavailable, using the 2D arcade', err);

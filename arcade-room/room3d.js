@@ -3,7 +3,7 @@
 // shadows instead), capped pixel ratio, and each cabinet's art loads only when it
 // comes near the front.
 import * as THREE from './vendor/three.module.min.js?v=r170';
-import { curve, layoutFor, wrapD, loadImage, paintWindowView, paintCarpet, paintSideArt, paintCoinDoor, paintRadial, paintBulbs, paintNeonSign } from './shared.js?v=0.3.0';
+import { curve, layoutFor, wrapD, loadImage, paintWindowView, paintCarpet, paintSideArt, paintCoinDoor, paintRadial, paintBulbs, paintNeonSign } from './shared.js?v=0.3.1';
 
 const CW = 0.64; // cabinet width (m)
 const PT = 0.03; // side panel thickness
