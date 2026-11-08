@@ -7,7 +7,7 @@
 // Stores nothing: no cookies, no localStorage. The address carries the state instead,
 // as plain tokens joined by dots: #ring-reaper (a cabinet), #puzzle.crosswire (a filter
 // and a cabinet), #list, #list.puzzle. SHARE always shares #<game-id>.
-import { curve, layoutFor, wrapD, paintWindowView, paintCarpet } from './shared.js?v=0.3.1';
+import { curve, layoutFor, wrapD, paintWindowView, paintCarpet } from './shared.js?v=0.4.0';
 
 const data = JSON.parse(document.getElementById('cabinet-data').textContent);
 const games = data.games;
@@ -395,9 +395,10 @@ function createFlat() {
 	});
 	let L = layoutFor(1, 1), W = 1;
 	return {
-		resize(w, h, top, bottom) {
+		resize(w, h, top, bottom, cx = w / 2) {
 			W = w;
 			L = layoutFor(w, h);
+			flatRoot.style.setProperty('--cx', cx + 'px');
 			flatRoot.style.setProperty('--ch', Math.min((bottom - top) * 0.86, 620) + 'px');
 			flatRoot.style.setProperty('--mid', (top + bottom) / 2 + 'px');
 		},
@@ -432,12 +433,18 @@ function createFlat() {
 }
 
 /* ------------------------------------------------------------ layout */
+// The free space for the cabinet: below the toolbar, and above the title card, or (on a
+// landscape phone, where the card sits to the right) left of it, full height.
 function measure() {
 	const sr = stage.getBoundingClientRect();
+	const cw = cardWrap.getBoundingClientRect();
 	const top = toolbar.getBoundingClientRect().bottom - sr.top;
-	const bottom = cardWrap.getBoundingClientRect().top - sr.top;
+	const side = cw.left - sr.left > sr.width * 0.4;
+	const bottom = side ? sr.height - 8 : cw.top - sr.top;
+	const right = side ? cw.left - sr.left - 8 : sr.width;
 	stage.style.setProperty('--free-mid', ((top + bottom) / 2).toFixed(0) + 'px');
-	if (view) view.resize(sr.width, sr.height, top, bottom);
+	stage.style.setProperty('--free-right', (sr.width - right).toFixed(0) + 'px');
+	if (view) view.resize(sr.width, sr.height, top, bottom, right / 2, right);
 }
 
 /* ------------------------------------------------------------ input */
@@ -588,6 +595,7 @@ if (params.has('test')) {
 		state: () => ({ pos, target, focused: gameAt(target), id: games[gameAt(target)].id, view: viewMode, filter, ring: ring.map((i) => games[i].id), tweening: !!tween, info: view && view.info() }),
 		go, goTo, setView, setFilter,
 		pointOf: (i) => (view ? view.pointOf(i) : null),
+		screenRect: (i) => (view && view.screenRect ? view.screenRect(i) : null),
 	};
 }
 
@@ -611,7 +619,7 @@ if (params.has('test')) {
 async function start() {
 	if (mode === '3d') {
 		try {
-			const { createRoom3D } = await import('./room3d.js?v=0.3.1');
+			const { createRoom3D } = await import('./room3d.js?v=0.4.0');
 			view = await createRoom3D({ canvas, games, brand: data.brand, onFirstFrame: ready });
 		} catch (err) {
 			console.warn('3D room unavailable, using the 2D arcade', err);

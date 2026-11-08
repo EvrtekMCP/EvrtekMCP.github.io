@@ -3,7 +3,7 @@
 // shadows instead), capped pixel ratio, and each cabinet's art loads only when it
 // comes near the front.
 import * as THREE from './vendor/three.module.min.js?v=r170';
-import { curve, layoutFor, wrapD, loadImage, paintWindowView, paintCarpet, paintSideArt, paintCoinDoor, paintRadial, paintBulbs, paintNeonSign } from './shared.js?v=0.3.1';
+import { curve, layoutFor, wrapD, loadImage, paintWindowView, paintCarpet, paintSideArt, paintCoinDoor, paintRadial, paintBulbs, paintNeonSign } from './shared.js?v=0.4.0';
 
 const CW = 0.64; // cabinet width (m)
 const PT = 0.03; // side panel thickness
@@ -341,6 +341,9 @@ export async function createRoom3D({ canvas, games, brand, onFirstFrame }) {
 	// lands on the back wall, then size the sign to fill it, whatever the screen.
 	function fitSign() {
 		if (!sign) return;
+		// no room for the sign when the cabinet is framed close (phones)
+		sign.visible = signBand.h >= 40;
+		if (!sign.visible) return;
 		camera.updateMatrixWorld();
 		const ndcY = 1 - (2 * (signBand.y + signBand.h * 0.5)) / view.H;
 		raycaster.setFromCamera(ndc.set(0, ndcY), camera);
@@ -351,7 +354,10 @@ export async function createRoom3D({ canvas, games, brand, onFirstFrame }) {
 		const worldW = (wpx * camera.position.distanceTo(signHit)) / focal;
 		sign.scale.setScalar(worldW / sign.userData.baseW);
 	}
-	function resize(W, H, top, bottom) {
+	// Fit the focused cabinet's framed slice (L.frame) into the free space: by height or
+	// by width, whichever is tighter, so every screen shape works. cx is the free space's
+	// horizontal centre (the title card sits to the side on a landscape phone).
+	function resize(W, H, top, bottom, cx = W / 2, freeW = W) {
 		view = { W, H };
 		L = layoutFor(W, H);
 		camera.fov = L.fov;
@@ -359,15 +365,15 @@ export async function createRoom3D({ canvas, games, brand, onFirstFrame }) {
 		const f = H / 2 / Math.tan(THREE.MathUtils.degToRad(L.fov / 2));
 		focal = f;
 		const freeH = Math.max(140, bottom - top);
-		const band = freeH * 0.22;
+		const band = freeH * L.band;
 		signBand = { y: top, h: band };
 		const cTop = top + band;
-		dist = (1.92 * f) / (L.fit * (bottom - cTop));
-		dist = Math.max(dist, (0.7 * f) / (0.6 * W));
-		const lookY = 0.98;
+		const sliceH = L.frame[1] - L.frame[0];
+		dist = Math.max((sliceH * f) / (L.fitH * (bottom - cTop)), (CW * 1.03 * f) / (L.fitW * freeW));
+		const lookY = (L.frame[0] + L.frame[1]) / 2;
 		camera.position.set(0, lookY + dist * Math.tan(THREE.MathUtils.degToRad(L.pitch)), dist);
 		camera.lookAt(0, lookY, 0);
-		camera.setViewOffset(W, H, 0, H / 2 - (cTop + bottom) / 2, W, H);
+		camera.setViewOffset(W, H, W / 2 - cx, H / 2 - (cTop + bottom) / 2, W, H);
 		camera.updateProjectionMatrix();
 		halfW = ((W / 2) * dist) / f;
 		pxPerCab = L.X[1] * (W / 2);
@@ -423,7 +429,7 @@ export async function createRoom3D({ canvas, games, brand, onFirstFrame }) {
 					const dpr = renderer.getPixelRatio();
 					if (slow > 48 && dpr > 1) {
 						renderer.setPixelRatio(Math.max(1, Math.round((dpr - 0.5) * 2) / 2));
-						resize(view.W, view.H, lastTop, lastBottom);
+						resize(view.W, view.H, lastTop, lastBottom, lastCx, lastFreeW);
 					} else watchWindows = 7;
 					frames = 30;
 					slow = 0;
@@ -434,7 +440,24 @@ export async function createRoom3D({ canvas, games, brand, onFirstFrame }) {
 	}
 	let watchWindows = 0;
 	let lastTop = 0, lastBottom = 1;
-	function resizeTracked(W, H, top, bottom) { lastTop = top; lastBottom = bottom; resize(W, H, top, bottom); }
+	let lastCx, lastFreeW;
+	function resizeTracked(W, H, top, bottom, cx, freeW) { lastTop = top; lastBottom = bottom; lastCx = cx; lastFreeW = freeW; resize(W, H, top, bottom, cx, freeW); }
+	// the focused screen's on-page rectangle (test hook: the arrows must not cover it)
+	function screenRect(i) {
+		const c = cabs[i];
+		if (!c.grp.visible) return null;
+		const m = c.pick[5];
+		m.updateMatrixWorld();
+		const r = canvas.getBoundingClientRect();
+		let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+		const pa = m.geometry.attributes.position;
+		for (let k = 0; k < pa.count; k++) {
+			tmp.fromBufferAttribute(pa, k).applyMatrix4(m.matrixWorld).project(camera);
+			const x = r.left + ((tmp.x + 1) / 2) * r.width, y = r.top + ((1 - tmp.y) / 2) * r.height;
+			x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+		}
+		return { left: x0, top: y0, right: x1, bottom: y1 };
+	}
 
 	// after the first look, fetch the next ring out so it is ready before it is needed
 	setTimeout(() => cabs.forEach((c) => { const d = lastCtx && lastCtx.d(c.i); if (d !== null && d !== undefined && Math.abs(d) <= L.range + 1.6) ensureArt(c); }), 1800);
@@ -464,6 +487,7 @@ export async function createRoom3D({ canvas, games, brand, onFirstFrame }) {
 	return {
 		frame: (ctx, time, dt) => { lastCtx = ctx; frame(ctx, time, dt); },
 		resize: resizeTracked,
+		screenRect,
 		pick,
 		pointOf,
 		pxPerCab: () => pxPerCab,

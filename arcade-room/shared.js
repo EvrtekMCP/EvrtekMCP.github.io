@@ -38,13 +38,22 @@ export function loadImage(src) {
 // X is in screen half-widths (so it holds on any screen), Z in metres back from the
 // front, R the turn away from the camera in radians, S the scale. Catmull-Rom between
 // the knots keeps the motion smooth as the carousel spins through.
+// Framing (Evrtek 11-08, "the cabinets should be zoomed in a lot"): the camera fits the
+// focused cabinet's slice from frame[0] to frame[1] (metres up from the floor) into the
+// free space, by height or by width, whichever is tighter (fitH / fitW are the share of
+// that space it may fill). band is the share of the free space kept above for the sign
+// (0: no sign). Phones frame the control deck up to the marquee top: no carpet.
 export const LAYOUTS = {
-	wide: { name: 'wide', fov: 34, fit: 0.9, pitch: 7, X: [0, 0.43, 0.78, 1.18, 1.6], Z: [0, -0.9, -2.0, -3.2, -4.4], R: [0, 0.42, 0.78, 1.05, 1.25], S: [1, 0.8, 0.66, 0.56, 0.5], show: 3.3, range: 2 },
-	tall: { name: 'tall', fov: 40, fit: 0.9, pitch: 6, X: [0, 0.94, 1.75, 2.5, 3.2], Z: [0, -0.9, -1.9, -3.0, -4.0], R: [0, 0.55, 0.85, 1.05, 1.2], S: [1, 0.78, 0.64, 0.56, 0.5], show: 2.6, range: 1 },
+	wide: { name: 'wide', fov: 34, pitch: 6, frame: [0.95, 1.92], fitH: 0.93, fitW: 0.5, band: 0.18, X: [0, 0.43, 0.78, 1.18, 1.6], Z: [0, -0.9, -2.0, -3.2, -4.4], R: [0, 0.42, 0.78, 1.05, 1.25], S: [1, 0.8, 0.66, 0.56, 0.5], show: 3.3, range: 2 },
+	// phone landscape: the cabinet takes the height; the title card sits to its right
+	short: { name: 'short', fov: 34, pitch: 4, frame: [0.98, 1.92], fitH: 0.95, fitW: 0.62, band: 0, X: [0, 0.62, 1.1, 1.6, 2.1], Z: [0, -0.9, -2.0, -3.2, -4.4], R: [0, 0.42, 0.78, 1.05, 1.25], S: [1, 0.8, 0.66, 0.56, 0.5], show: 2.6, range: 1 },
+	// phone portrait: marquee to control deck fills the width; neighbours are slivers
+	tall: { name: 'tall', fov: 40, pitch: 4, frame: [0.98, 1.92], fitH: 0.95, fitW: 0.88, band: 0, X: [0, 1.45, 2.6, 3.6, 4.6], Z: [0, -0.9, -1.9, -3.0, -4.0], R: [0, 0.55, 0.85, 1.05, 1.2], S: [1, 0.78, 0.64, 0.56, 0.5], show: 2.2, range: 1 },
 };
 
 export function layoutFor(w, h) {
-	return w / h < 0.85 ? LAYOUTS.tall : LAYOUTS.wide;
+	if (w / h < 0.85) return LAYOUTS.tall;
+	return h < 520 ? LAYOUTS.short : LAYOUTS.wide;
 }
 
 export function curve(K, a, odd) {
