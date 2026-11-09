@@ -448,8 +448,10 @@ export function paintNeonSign(logo) {
 	return { canvas: c, logoFrac: LW / W, aspect: LOCKUP.w / LOCKUP.h };
 }
 
-// The chrome sign (11-09): the approved synthwave lockup (lockup-sign.png, tightly cropped) lit
-// from behind with a soft pink-and-cyan glow; drawn as delivered, never re-lettered. 2680 px wide.
+// The chrome sign (11-09): the approved synthwave lockup (lockup-sign.png, tightly cropped), drawn as
+// delivered, never re-lettered. A dark halo is laid behind it first so the magenta half of the
+// letters reads against the sunset window (Evrtek, 11-09: "the pink lettering gets lost in the
+// background"), then a thin cyan rim. 2680 px wide.
 export function paintChromeSign(img) {
 	const LW = 2200, k = LW / img.width, LH = Math.round(img.height * k);
 	const W = 2680, H = LH + 480;
@@ -457,11 +459,10 @@ export function paintChromeSign(img) {
 	const g = c.getContext('2d');
 	const x = (W - LW) / 2, y = (H - LH) / 2;
 	const draw = () => g.drawImage(img, x, y, LW, LH);
-	g.shadowColor = 'rgba(255,63,184,0.7)';
-	g.shadowBlur = 150;
-	draw();
-	g.shadowColor = 'rgba(83,230,255,0.55)';
-	g.shadowBlur = 60;
+	g.shadowColor = 'rgba(8,5,24,0.96)';
+	for (const b of [120, 70, 36, 16]) { g.shadowBlur = b; draw(); }
+	g.shadowColor = 'rgba(83,230,255,0.6)';
+	g.shadowBlur = 14;
 	draw();
 	g.shadowBlur = 0;
 	draw();

@@ -3,7 +3,7 @@
 // shadows instead), capped pixel ratio, and each cabinet's art loads only when it
 // comes near the front.
 import * as THREE from './vendor/three.module.min.js?v=r170';
-import { curve, layoutFor, wrapD, loadImage, paintWindowView, paintCarpet, paintSideArt, paintCoinDoor, paintRadial, paintBulbs, paintChromeSign } from './shared.js?v=0.6.0';
+import { curve, layoutFor, wrapD, loadImage, paintWindowView, paintCarpet, paintSideArt, paintCoinDoor, paintRadial, paintBulbs, paintChromeSign } from './shared.js?v=0.6.1';
 
 const CW = 0.64; // cabinet width (m)
 const PT = 0.03; // side panel thickness
@@ -349,7 +349,7 @@ export async function createRoom3D({ canvas, games, brand, onFirstFrame }) {
 		raycaster.setFromCamera(ndc.set(0, ndcY), camera);
 		if (!raycaster.ray.intersectPlane(signPlane, signHit)) return;
 		sign.position.set(0, signHit.y, WALL_Z - 0.02);
-		let wpx = signBand.h * 0.68 * sign.userData.aspect;
+		let wpx = signBand.h * 0.6 * sign.userData.aspect;
 		wpx = Math.min(wpx, view.W * 0.72, 420);
 		const worldW = (wpx * camera.position.distanceTo(signHit)) / focal;
 		sign.scale.setScalar(worldW / sign.userData.baseW);
