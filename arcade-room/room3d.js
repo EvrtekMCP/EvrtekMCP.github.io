@@ -3,7 +3,7 @@
 // shadows instead), capped pixel ratio, and each cabinet's art loads only when it
 // comes near the front.
 import * as THREE from './vendor/three.module.min.js?v=r170';
-import { curve, layoutFor, wrapD, loadImage, paintWindowView, paintCarpet, paintSideArt, paintCoinDoor, paintRadial, paintBulbs, paintNeonSign } from './shared.js?v=0.4.0';
+import { curve, layoutFor, wrapD, loadImage, paintWindowView, paintCarpet, paintSideArt, paintCoinDoor, paintRadial, paintBulbs, paintChromeSign } from './shared.js?v=0.6.0';
 
 const CW = 0.64; // cabinet width (m)
 const PT = 0.03; // side panel thickness
@@ -118,8 +118,8 @@ export async function createRoom3D({ canvas, games, brand, onFirstFrame }) {
 
 	// the neon sign hangs in the top of the window
 	let sign = null;
-	loadImage(brand.lockupSvg).then((logo) => {
-		const { canvas: sc, logoFrac, aspect } = paintNeonSign(logo);
+	loadImage(brand.lockup).then((logo) => {
+		const { canvas: sc, logoFrac, aspect } = paintChromeSign(logo);
 		const logoW = 2.7;
 		const w = logoW / logoFrac, h = (w * sc.height) / sc.width;
 		sign = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: canvasTex(sc), transparent: true, depthWrite: false, fog: false }));

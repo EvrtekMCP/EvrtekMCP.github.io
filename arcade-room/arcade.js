@@ -7,7 +7,7 @@
 // Stores nothing: no cookies, no localStorage. The address carries the state instead,
 // as plain tokens joined by dots: #ring-reaper (a cabinet), #puzzle.crosswire (a filter
 // and a cabinet), #list, #list.puzzle. SHARE always shares #<game-id>.
-import { curve, layoutFor, wrapD, paintWindowView, paintCarpet } from './shared.js?v=0.4.0';
+import { curve, layoutFor, wrapD, paintWindowView, paintCarpet } from './shared.js?v=0.6.0';
 
 const data = JSON.parse(document.getElementById('cabinet-data').textContent);
 const games = data.games;
@@ -371,7 +371,7 @@ function createFlat() {
 	const win = paintWindowView({ width: 2304 });
 	win.className = 'flat-window';
 	const sign = new Image();
-	sign.src = data.brand.lockupSvg;
+	sign.src = data.brand.lockup;
 	sign.alt = '';
 	sign.className = 'flat-sign';
 	const floor = document.createElement('div');
@@ -619,7 +619,7 @@ if (params.has('test')) {
 async function start() {
 	if (mode === '3d') {
 		try {
-			const { createRoom3D } = await import('./room3d.js?v=0.4.0');
+			const { createRoom3D } = await import('./room3d.js?v=0.6.0');
 			view = await createRoom3D({ canvas, games, brand: data.brand, onFirstFrame: ready });
 		} catch (err) {
 			console.warn('3D room unavailable, using the 2D arcade', err);

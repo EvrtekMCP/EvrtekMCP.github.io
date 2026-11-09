@@ -447,3 +447,23 @@ export function paintNeonSign(logo) {
 	draw();
 	return { canvas: c, logoFrac: LW / W, aspect: LOCKUP.w / LOCKUP.h };
 }
+
+// The chrome sign (11-09): the approved synthwave lockup (lockup-sign.png, tightly cropped) lit
+// from behind with a soft pink-and-cyan glow; drawn as delivered, never re-lettered. 2680 px wide.
+export function paintChromeSign(img) {
+	const LW = 2200, k = LW / img.width, LH = Math.round(img.height * k);
+	const W = 2680, H = LH + 480;
+	const c = makeCanvas(W, H);
+	const g = c.getContext('2d');
+	const x = (W - LW) / 2, y = (H - LH) / 2;
+	const draw = () => g.drawImage(img, x, y, LW, LH);
+	g.shadowColor = 'rgba(255,63,184,0.7)';
+	g.shadowBlur = 150;
+	draw();
+	g.shadowColor = 'rgba(83,230,255,0.55)';
+	g.shadowBlur = 60;
+	draw();
+	g.shadowBlur = 0;
+	draw();
+	return { canvas: c, logoFrac: LW / W, aspect: img.width / img.height };
+}
