@@ -13,10 +13,10 @@
 // The swarm layers are shared (the Murmur draws its thousands through them): swarmBegin/moth/outline/swarmEnd.
 //   add(d, 'g2-flock', { key, shape: 'wall', n: 360, hole: { nx, ny, r }, script: [{ t: 3.4, to: { shape, ... } }],
 //                        hold: { z: -30, secs: 8 } (a tube), crack: { nx, ny } (a phase patch), decor: true (harmless) })
-import { THREE, defineObstacle, Instanced, GlowPoints, clamp, rng, modelGroups } from '../../api.js?v=0.6.2';
-import { MESH } from './mesh.js?v=0.6.2';
-import { MESH as CRACK } from '../g2-angler/crack.js?v=0.6.2';
-import { morphModel } from '../g2-bloomer/morph.js?v=0.6.2';
+import { THREE, defineObstacle, Instanced, GlowPoints, clamp, rng, modelGroups } from '../../api.js?v=0.6.3';
+import { MESH } from './mesh.js?v=0.6.3';
+import { MESH as CRACK } from '../g2-angler/crack.js?v=0.6.3';
+import { morphModel } from '../g2-bloomer/morph.js?v=0.6.3';
 
 // ---------------------------------------------------------------- the shared swarm: two flap poses, instanced
 export const SW = { up: null, down: null, out: null, began: false };

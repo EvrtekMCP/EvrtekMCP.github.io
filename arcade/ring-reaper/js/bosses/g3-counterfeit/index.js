@@ -30,10 +30,10 @@
 //     works the rest of the time, as before;
 //   - A SPLIT CRACK STAYS SPLIT: its ring rush mends a cracked seam, never one you have split open.
 // The Photo Finish is unchanged: its pair was already a one-roll finish.
-import { THREE, defineBoss, buildModel, clamp, SPAWN_D } from '../../api.js?v=0.6.2';
-import { buildParts } from '../../enemies/crystal-emitter/parts.js?v=0.6.2';
-import { MESH } from './mesh.js?v=0.6.2';
-import { raceRing, take } from './rings.js?v=0.6.2';
+import { THREE, defineBoss, buildModel, clamp, SPAWN_D } from '../../api.js?v=0.6.3';
+import { buildParts } from '../../enemies/crystal-emitter/parts.js?v=0.6.3';
+import { MESH } from './mesh.js?v=0.6.3';
+import { raceRing, take } from './rings.js?v=0.6.3';
 
 export { raceRing };
 export const BPM = 146.092, BAR = 240 / BPM;

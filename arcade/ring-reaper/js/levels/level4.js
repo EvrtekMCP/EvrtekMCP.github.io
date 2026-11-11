@@ -7,13 +7,13 @@
 //   Act 3 TWIST      bars 41-56  the Breakdown       fire rains from ABOVE: the shade flips under the plates
 //   Act 4 MASTER     bars 57-88  Build two, Drop two, Drive: the Great Flare on the drop, the mix, the escape
 // Ending: off the limb into night (Drive), the star falling away beneath you.
-import { defineLevel, clamp } from '../api.js?v=0.6.2';
-import ringKind from '../pickups/ring/index.js?v=0.6.2';
-import seeker from '../enemies/seeker-drone/index.js?v=0.6.2';
-import flareKind from './level4/flare.js?v=0.6.2';
-import raftKind, { RAFT_LOW, RAFT_HIGH } from './level4/raft.js?v=0.6.2';
-import { surface, prominence, prominences, plateDrift, plateDrifts, greatLoop } from './level4/scenery.js?v=0.6.2';
-import { at, speed, LENGTH, BAR, BEAT } from './level4/timeline.js?v=0.6.2';
+import { defineLevel, clamp } from '../api.js?v=0.6.3';
+import ringKind from '../pickups/ring/index.js?v=0.6.3';
+import seeker from '../enemies/seeker-drone/index.js?v=0.6.3';
+import flareKind from './level4/flare.js?v=0.6.3';
+import raftKind, { RAFT_LOW, RAFT_HIGH } from './level4/raft.js?v=0.6.3';
+import { surface, prominence, prominences, plateDrift, plateDrifts, greatLoop } from './level4/scenery.js?v=0.6.3';
+import { at, speed, LENGTH, BAR, BEAT } from './level4/timeline.js?v=0.6.3';
 
 const LEAD1 = 3 * BEAT, LEAD = 2.5 * BEAT;   // eruption lead: 1.25 s while the idea is new (rule 12: 1.2 s+), 1.04 s after
 

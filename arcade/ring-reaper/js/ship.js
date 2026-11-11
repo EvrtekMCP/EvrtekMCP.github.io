@@ -16,9 +16,9 @@
 //    basically replaces the visual of the ship". v2 keeps the ship the star: two glint arcs that ride the wingtips
 //    round the roll, a tip lamp that flares, a thin ripple that runs out to the deflect reach (space.js DEFLECT_R,
 //    2.3 m: the rim of what gets sent home) and fades, and cyan sparks the tips shed. Same 0.45 s, driven by rollLook().
-import * as THREE from '../vendor/three/three.module.min.js?v=0.6.2';
-import { buildModel, SHIP_V } from './models.js?v=0.6.2';
-import { DEFLECT_R } from './space.js?v=0.6.2';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.6.3';
+import { buildModel, SHIP_V } from './models.js?v=0.6.3';
+import { DEFLECT_R } from './space.js?v=0.6.3';
 
 const SCALE = 0.85; // root scale: model units to metres
 const tmpV = new THREE.Vector3();

@@ -3,24 +3,25 @@
 // 2 and 3 need (a push on the ship, a roll that answers things that are not shots, GREED lit by a boss).
 // Levels, kinds, scenery and bosses are modules (js/levels, js/pickups, js/obstacles, js/enemies, js/bosses);
 // this file runs whichever level is loaded and owns every rule that scores.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.6.2';
-import { VERSION, clamp, damp, lerp, isTouch, fmt, store } from './util.js?v=0.6.2';
-import { Input } from './input.js?v=0.6.2';
-import { Audio, canonTrack, multRate } from './audio.js?v=0.6.2';
-import { buildShip } from './ship.js?v=0.6.2';
-import { Backdrop } from './backdrop.js?v=0.6.2';
-import { Course } from './course.js?v=0.6.2';
-import { Scenery } from './scenery.js?v=0.6.2';
-import { Particles } from './fx.js?v=0.6.2';
-import { Hud, artUrl } from './hud.js?v=0.6.2';
-import { CATALOGUE, GALAXIES, galaxy, entryOf, catalogueOf, gn, levelLabel, loadLevel, isMarker, Progress, grade, easeOf, starProgress } from './levels.js?v=0.6.2';
-import { POWERUPS, POWERUP_IDS } from './powerups.js?v=0.6.2';
-import { appear, DEFLECT_R } from './space.js?v=0.6.2';
-import { bossKind, weakPointKind } from './boss.js?v=0.6.2';
-import { Quality } from './quality.js?v=0.6.2';
-import { Post } from './post.js?v=0.6.2';
-import { UI } from './ui.js?v=0.6.2';
-import { Tips } from './tutorials.js?v=0.6.2';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.6.3';
+import { VERSION, clamp, damp, lerp, isTouch, fmt, store } from './util.js?v=0.6.3';
+import { Input } from './input.js?v=0.6.3';
+import { Audio, canonTrack, multRate } from './audio.js?v=0.6.3';
+import { buildShip } from './ship.js?v=0.6.3';
+import { Backdrop } from './backdrop.js?v=0.6.3';
+import { Course } from './course.js?v=0.6.3';
+import { Scenery } from './scenery.js?v=0.6.3';
+import { Particles } from './fx.js?v=0.6.3';
+import { Hud, artUrl } from './hud.js?v=0.6.3';
+import { CATALOGUE, GALAXIES, galaxy, entryOf, catalogueOf, gn, levelLabel, loadLevel, isMarker, Progress, grade, easeOf, starProgress } from './levels.js?v=0.6.3';
+import { POWERUPS, POWERUP_IDS } from './powerups.js?v=0.6.3';
+import { appear, DEFLECT_R } from './space.js?v=0.6.3';
+import { bossKind, weakPointKind } from './boss.js?v=0.6.3';
+import { Quality } from './quality.js?v=0.6.3';
+import { Post } from './post.js?v=0.6.3';
+import { UI } from './ui.js?v=0.6.3';
+import { Tips } from './tutorials.js?v=0.6.3';
+import * as Mult from './mult.js?v=0.6.3'; // 0.6.3: the multiplier's rules (Evrtek 11-11)
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -40,7 +41,7 @@ const T = {
   perfectBonus: 5000, noHitBonus: 25000, shieldBonus: 100,
   // 0.6.0, the player pass (Evrtek 11-10: checkpoints; "decide sensibly and say what you chose"). A run that goes down after
   // taking its checkpoint may start again from it: with the SCORE, the rings and every count it had at the checkpoint, a
-  // FULL shield (restartShield), and its MULTIPLIER back at x1 (the same price as any crash: a crash empties the chain).
+  // FULL shield (restartShield), and its MULTIPLIER back at x1 (0.6.3: a fresh start, not a penalty; a crash costs three steps: js/mult.js).
   // It is safe for restartInvuln seconds while the course comes back. A restarted run cannot earn the NO-HIT bonus.
   // A checkpoint flown past does NOT count (checkpointMissCounts: false): it is a thing you grab, and it is 4.2 m wide.
   restartShield: 100, restartInvuln: 1.6, checkpointMissCounts: false,
@@ -98,20 +99,16 @@ function screenOf(x, y, z) {
   tmpV.set(x, y, z).project(camera);
   return [(tmpV.x * 0.5 + 0.5) * window.innerWidth, (-tmpV.y * 0.5 + 0.5) * window.innerHeight];
 }
-function multOf(chain) { return Math.min(8, 1 + Math.floor(chain / 5)); }
 function gain(base, x, y, z, cls = '', label = '') {
   const pts = Math.round(base * (G.greedOn ? 2 : 1));
   G.score += pts;
   if (x !== undefined) { const [sx, sy] = screenOf(x, y, z); hud.pop((label ? label + ' ' : '') + '+' + fmt(pts), sx, sy, cls); }
   return pts;
 }
-function setChain(c) {
-  const before = G.mult;
-  G.chain = Math.max(0, c); G.mult = multOf(G.chain);
-  G.bestChain = Math.max(G.bestChain, G.chain); G.bestMult = Math.max(G.bestMult, G.mult);
-  if (G.mult > before) { audio.play('streak', { rate: multRate(G.mult) }); hud.callArt(['x' + G.mult]); } // rate 1 unless #multrise
+// 0.6.3 (Evrtek 11-11): the pips and the multiplier are lost apart (js/mult.js). n rings in a row; each step up sounds.
+function addRings(n) {
+  for (let i = 0; i < n; i++) if (Mult.ring(G)) { audio.play('streak', { rate: multRate(G.mult) }); hud.callArt(['x' + G.mult]); } // rate 1 unless #multrise
 }
-function stepDown() { setChain(Math.max(0, (G.mult - 2) * 5)); }
 function addGreed(n) {
   if (G.greedOn) return;
   const was = G.greed;
@@ -128,7 +125,7 @@ function onRing(e) {
   if (cache) { G.cachesGot++; if (G.time - (G.cacheCallT ?? -9) > 3) { G.cacheCallT = G.time; callArtOr('cache', 'CACHE!', 'c-cyan'); audio.play('pu-cache'); } }
   else { G.ringsGot++; G.secGot[G.section] = (G.secGot[G.section] || 0) + 1; }
   if (e.magnet) { G.magnetN = (G.magnetN || 0) + 1; audio.play('pu-magnet-clink', { rate: 1 + Math.random() * 0.1 }); }
-  setChain(G.chain + 1);
+  addRings(1);
   const roll = G.rolling;
   gain(T.ringPts * G.mult * (roll ? 2 : 1), e.x, e.y + 1.2, 0, roll ? 'cyan' : '', roll ? 'ROLL-RING' : '');
   if (roll) addGreed(5);
@@ -139,8 +136,8 @@ function onRing(e) {
 function onMiss(e) {
   if (e.ev && (e.ev.cache || e.ev.shower)) return; // a missed extra costs nothing; nor does a ring a burst forgery gave back (0.6.0)
   G.ringsMissed++; G.secMiss[G.section] = (G.secMiss[G.section] || 0) + 1;
-  if (G.chain > 0) { const [sx, sy] = screenOf(e.x, e.y, 0); hud.pop('MISS', sx, sy, 'red'); }
-  stepDown();
+  // 0.6.3: a miss clears the pips and keeps the multiplier (Evrtek 11-11: "missing rings should not drop you down")
+  if (Mult.miss(G)) { const [sx, sy] = screenOf(e.x, e.y, 0); hud.pop('MISS', sx, sy, 'red'); }
 }
 function onScrape() {
   G.scrapes++;
@@ -174,7 +171,8 @@ function onGate(e, pass) {
   audio.play('ring', { rate: 0.75 });
   fx.burst(e.x, e.y, 0, Math.round(30 * quality.particleScale), { speed: 14, life: 0.5, s0: 1, r: 0.3, g: 0.9, b: 1, carry: 1, flatZ: 0.1 });
 }
-function damage(dmg, big) {
+// 0.6.3: drop = the steps it costs the multiplier (Mult.DROP: a shot 1, a crash 3), never below x1; the pips clear
+function damage(dmg, big, drop = Mult.DROP.shot) {
   dmg *= level.ease.dmg; // the human pass: early levels hit softer (EASE, levels.js)
   if (G.hold) dmg *= level.ease.boss; // 0.6.0: ...and a boss fight has a dial of its own (no rings heal you there: levels.js)
   if (G.god) dmg = 0;
@@ -182,20 +180,20 @@ function damage(dmg, big) {
   ship.invuln = big ? 0.8 : 0.6;
   hud.flash(); G.shake = Math.max(G.shake, big ? 0.9 : 0.5);
   audio.play('hit');
-  if (big) setChain(0); else stepDown();
+  Mult.drop(G, drop);
   if (G.shield <= 0) die();
 }
 function onShot(s) {
   if (s.tutor) return; // a teaching shot never hurts (the G2 hound's first bolt)
   if (ship.invuln > 0) return;
-  damage(s.dmg ?? T.shotDmg, false);
+  damage(s.dmg ?? T.shotDmg, false, Mult.DROP.shot);
   fx.burst(ship.x, ship.y, 0, Math.round(18 * quality.particleScale), { speed: 8, life: 0.35, s0: 1, r: 1, g: 0.3, b: 0.2, carry: 0.2 });
 }
 function onCrash(e, dmg, small) {
   // 0.4.0, PHASE: solid things pass through you unharmed (rocks, walls, coral, wrecks, teeth); fire never does
   if (ship.phasing) { phased(e); return 'stay'; }
   if (ship.invuln > 0) return 'stay';
-  damage(dmg, !small);
+  damage(dmg, !small, Mult.DROP.crash); // 0.6.3: every crash, every size, three steps (Evrtek 11-11)
   const x = e.x ?? ship.x, y = e.y ?? ship.y;
   fx.burst(lerp(x, ship.x, 0.6), lerp(y, ship.y, 0.6), 0, Math.round(30 * quality.particleScale), { speed: 12, life: 0.5, s0: 1.2, r: 1, g: 0.55, b: 0.3, carry: 0.6 });
   if (e.type === 'rock' || e.type === 'crystal' || (e.kind && e.kind.breaks)) { audio.play('boom', { vol: 0.6, rate: 1.2 }); return 'gone'; }
@@ -289,11 +287,14 @@ const GAME = {
   // generic
   score: (base, x, y, z, cls, label) => gain(base, x, y, z, cls, label),
   pop: (text, x, y, z, cls) => { const [sx, sy] = screenOf(x, y, z); hud.pop(text, sx, sy, cls); },
-  greed: addGreed, heal, damage: (dmg, big) => damage(dmg, big),
+  // 0.6.3: damage that does not come through crash() (Phase cannot pass it: blasts, beams, pulses) costs a shot's step unless
+  // the caller says otherwise (drop: Mult.DROP.crash for a solid thing)
+  greed: addGreed, heal, damage: (dmg, big, drop) => damage(dmg, big, drop ?? Mult.DROP.shot),
   // 0.4.0: a slow DRAIN (a leech's tether): shield away by n x the level's dmg ease, and nothing else: no hit counted, no
   // combo step, no invulnerability, no flash. Only an empty shield ends the run (g2-b).
   drain: (n) => { if (G.state !== 'play' || G.god) return; G.shield -= n * level.ease.dmg; G.drained = (G.drained || 0) + n * level.ease.dmg; if (G.shield <= 0) die(); },
-  chain: (n) => setChain(G.chain + n), stepDown,
+  // 0.6.3: chain(n) is n rings in a row toward the next step; stepDown() is a shot's step off, for damage dealt another way
+  chain: (n) => addRings(n), stepDown: () => Mult.drop(G, Mult.DROP.shot),
   // a speed burst (boost rings): mul for secs, stacking by refreshing
   // 0.4.0: { quiet: true } is the same burst without the FOV kick and the shake (a current's ride, not a boost chain)
   boost: (secs, mul = 1.4, o = {}) => { G.boostT = Math.max(G.boostT, secs); G.boostMul = mul; if (!o.quiet) { G.fovKick = 1; G.shake = Math.max(G.shake, 0.4); } },
@@ -437,7 +438,7 @@ function newRun(opts = {}, fromTitle = false) {
   if (opts.boss && L.boss) startD = Math.max(0, L.boss.at - 400);
   Object.assign(G, {
     state: 'play', time: 0, dist: 0, courseD: startD, v: L.speed(startD), vMul: 1, evL: 0, evN: 0, hold: false,
-    score: 0, chain: 0, mult: 1, bestMult: 1, bestChain: 0, ringsGot: 0, ringsMissed: 0,
+    score: 0, chain: 0, pips: 0, mult: 1, bestMult: 1, bestChain: 0, ringsGot: 0, ringsMissed: 0,
     shield: 100, greed: 0, greedOn: false, greedT: 0, greedReadyT: 0, boostT: 0, boostMul: 1, boostK: 0,
     rolling: false, rollT: 0, rollDir: 1, rollCool: 0, rollCoolMax: T.rollCool, rollDeflects: 0, rolls: 0,
     hits: 0, grazes: 0, deflects: 0, kills: 0, multiMax: 0, gates: 0, scrapes: 0, bonuses: [], bossBeaten: false,
@@ -448,7 +449,7 @@ function newRun(opts = {}, fromTitle = false) {
     timeScale: 1, wtime: 0, slip: null, snapDebt: 0, snapK: 1, pushX: 0, pushY: 0, driftX: 0, driftY: 0, g: L.g || 1, flowK: 1, flowWant: 1,
   });
   if (cp) {
-    // from the checkpoint: everything it kept, a full shield, the multiplier at x1 (chain 0, set above), safe for a moment
+    // from the checkpoint: everything it kept, a full shield, the multiplier at x1 (chain and pips 0, set above), safe for a moment
     Object.assign(G, cp.keep, { secGot: Object.assign({}, cp.secGot), secMiss: Object.assign({}, cp.secMiss), perfect: cp.perfect.slice(), bonuses: cp.bonuses.map((b) => b.slice()), puGot: Object.assign({}, cp.puGot),
       greed: cp.greed, shield: T.restartShield, restarts: (cp.restarts = (cp.restarts || 0) + 1) });
   }
@@ -1057,7 +1058,7 @@ window.__sw.retry = () => (level && G.cp ? start(level.g || 1, level.n, { checkp
   const art = () => hud.preloadArt().then(() => { audio.held = 0; });
   audio.loadTrack(openingOf(level).track).then(art, art);
   window.__sw.warm = true;
-  if (params.has('test')) import('./testhooks.js?v=0.6.2').then((m) => m.install(window.__sw));
+  if (params.has('test')) import('./testhooks.js?v=0.6.3').then((m) => m.install(window.__sw));
   if (G.state !== 'boot') return; // a test or a dev link already started a run
   if (!BOOT_OLD) { openMenu(); return; }
   ui.pressToStart(() => {

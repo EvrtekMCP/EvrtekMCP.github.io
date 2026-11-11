@@ -4,9 +4,9 @@
 // time, soft light-shafts from above like sun through water, and the landmark, the REEF ARCH: a kilometre ring of
 // living jade coral the Tide Race runs through (her reefArch, built from its band and her own placement loop).
 // Galaxy 2 levels 2 and 3 share the coral, the kelp, the motes and the shafts (they are this branch's).
-import { THREE, defineObstacle, defineDecor, defineScenery, Instanced, modelGroups, GlowPoints, rng, clamp, smoothstep, SHIP_R, READ_D } from '../../../api.js?v=0.6.2';
-import { MESH } from './mesh.js?v=0.6.2';
-import { flowAt } from '../../../obstacles/g2-current/index.js?v=0.6.2';
+import { THREE, defineObstacle, defineDecor, defineScenery, Instanced, modelGroups, GlowPoints, rng, clamp, smoothstep, SHIP_R, READ_D } from '../../../api.js?v=0.6.3';
+import { MESH } from './mesh.js?v=0.6.3';
+import { flowAt } from '../../../obstacles/g2-current/index.js?v=0.6.3';
 
 const tmpQ = new THREE.Quaternion(), tmpE = new THREE.Euler(), ax = new THREE.Vector3();
 const side = (R, lo, hi) => R.sign() * R.range(lo, hi);

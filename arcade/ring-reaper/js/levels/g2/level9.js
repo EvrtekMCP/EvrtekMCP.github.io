@@ -14,14 +14,14 @@
 //   ACT 3  THE TUBE            bars 48-64  130 m/s  the flock flies with you as a tube and squeezes; OVERCLOCK; clusters
 //   ACT 4  THE GREAT WHEEL     bars 64-88  150 m/s  SET PIECE: wheels turning as they come, conductors among the spokes
 //          THE STILL SKY       bars 88-93  164 m/s  calm; a SHIELD CELL at the Murmur's door; THE MURMUR on bar 93
-import { defineLevel, clamp } from '../../api.js?v=0.6.2';
-import ring from '../../pickups/ring/index.js?v=0.6.2';
-import { phase, overclock, shieldCell } from '../../pickups/powerups/index.js?v=0.6.2';
-import bloomer from '../../enemies/g2-bloomer/index.js?v=0.6.2';
-import flock from '../../enemies/g2-flock/index.js?v=0.6.2';
-import conductor from '../../enemies/g2-conductor/index.js?v=0.6.2';
-import murmur from '../../bosses/g2-murmur/index.js?v=0.6.2';
-import { driftLights, lights, greatWheel } from './level9/scenery.js?v=0.6.2';
+import { defineLevel, clamp } from '../../api.js?v=0.6.3';
+import ring from '../../pickups/ring/index.js?v=0.6.3';
+import { phase, overclock, shieldCell } from '../../pickups/powerups/index.js?v=0.6.3';
+import bloomer from '../../enemies/g2-bloomer/index.js?v=0.6.3';
+import flock from '../../enemies/g2-flock/index.js?v=0.6.3';
+import conductor from '../../enemies/g2-conductor/index.js?v=0.6.3';
+import murmur from '../../bosses/g2-murmur/index.js?v=0.6.3';
+import { driftLights, lights, greatWheel } from './level9/scenery.js?v=0.6.3';
 
 const BPM = 145, FIRST_BEAT = 0, BAR_S = 240 / BPM;
 const STEPS = [[0, 88], [24, 112], [48, 130], [64, 150], [80, 164]];

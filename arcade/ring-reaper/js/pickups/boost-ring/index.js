@@ -4,8 +4,8 @@
 // the size tell it from a plain ring (rule 8).
 //   add(d, 'boost-ring', { nx, ny, chain: 'c1', idx: 0, of: 4 })     (layout: L.line(d, x0, y0, x1, y1, n, step,
 //   'boost-ring', (i, n) => ({ chain: 'c1', idx: i, of: n })) lays a whole chain)
-import { THREE, definePickup, buildModel } from '../../api.js?v=0.6.2';
-import { MESH } from './mesh.js?v=0.6.2';
+import { THREE, definePickup, buildModel } from '../../api.js?v=0.6.3';
+import { MESH } from './mesh.js?v=0.6.3';
 
 const R_COLLECT = 2.1;              // a touch more generous than a plain ring (rule 14): it is bigger
 export const BOOST = { secs: 3.0, mul: 1.4, bonus: 1000, greed: 20 };

@@ -6,15 +6,15 @@
 // 0.2.0: one track per level (and per boss), named by path stem under audio/ (e.g. 'music' for level 1,
 // 'levels/level2/music', 'bosses/warden'), each with its .json of loop points and beat grid beside it. Only
 // the playing level's tracks stay decoded (a decoded take is ~55 MB). A boss track cuts in on a bar line.
-import { V, store } from './util.js?v=0.6.2';
-import { param } from './params.js?v=0.6.2';
+import { V, store } from './util.js?v=0.6.3';
+import { param } from './params.js?v=0.6.3';
 
 // 0.3.1: bytes of a track at which its first stretches are decoded, before the whole (about 15 s, then a minute)
 const STEPS = [512 * 1024, 2 * 1024 * 1024];
 // a source that never started (a jump past what had arrived) cannot be stopped
 const stopSrc = (s, at) => { if (s && s._on) { try { s.stop(at); } catch (e) { /* already stopped */ } } };
 
-// 0.4.0: 'streak', the multiplier step's own sound (main.js setChain: x2 at five rings in a row, then x3 ... x8). Evrtek, 11-07:
+// 0.4.0: 'streak', the multiplier step's own sound (js/mult.js: x2 at five rings in a row, then x3 ... x8). Evrtek, 11-07:
 // the old combo there is "harsh on the ears"; he asked for five reward-type sounds to choose from. Each candidate is one whole
 // ElevenLabs take, with the gain that puts it at -13.8 LUFS max momentary in the mix, 1 dB under the reward cues (it repeats).
 // ?mult=1 ... 15|old (or #mult-N, params.js) picks one; with none, mult-10 (Evrtek's pick). 'old' is the combo sweep at 0.6

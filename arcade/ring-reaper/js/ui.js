@@ -1,12 +1,12 @@
 // STARWAKE 0.4.0: the screens around the flying: the loading screen, the launcher (NEW GAME, CONTINUE, LEVEL
 // SELECT, OPTIONS), the galaxy chart (0.4.0), each galaxy's sector map with stars, the end card's stars, pause, and the
 // hidden dev menu (a tab a galaxy). Every level shares them; nothing here knows any one level.
-import { fmt, store, V } from './util.js?v=0.6.2';
-import { loadLevel, RANK_ORDER, MAX_STARS, GALAXIES, galaxy, catalogueOf, entryOf, levelLabel } from './levels.js?v=0.6.2';
-import { keyLabel, codeOf } from './input.js?v=0.6.2';
-import { param } from './params.js?v=0.6.2';
-import { tipsSetting, setTipsSetting } from './tutorials.js?v=0.6.2';
-import { DEMO, DEMO_BUILD, DEMO_TEXT, DEMO_LEVELS, demoEnds } from './demo.js?v=0.6.2';
+import { fmt, store, V } from './util.js?v=0.6.3';
+import { loadLevel, RANK_ORDER, MAX_STARS, GALAXIES, galaxy, catalogueOf, entryOf, levelLabel } from './levels.js?v=0.6.3';
+import { keyLabel, codeOf } from './input.js?v=0.6.3';
+import { param } from './params.js?v=0.6.3';
+import { tipsSetting, setTipsSetting } from './tutorials.js?v=0.6.3';
+import { DEMO, DEMO_BUILD, DEMO_TEXT, DEMO_LEVELS, demoEnds } from './demo.js?v=0.6.3';
 
 const $ = (id) => document.getElementById(id);
 const SCREENS = ['title', 'galaxies', 'select', 'options', 'confirm', 'dev', 'paused', 'end', 'credits', 'demo'];

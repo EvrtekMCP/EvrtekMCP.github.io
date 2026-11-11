@@ -6,9 +6,9 @@
 //  - g2-l5-farwells: wells far out to the sides, big and still: the garden itself (scenery: no pull, no bend)
 //  - g2-l5-disc:     the landmark: the collapsed star, a violet-white accretion disc seen nearly edge-on (not amber,
 //                    not red); it swells toward the end, where THE DROP flies its rim
-import { THREE, defineScenery, defineDecor, Instanced, modelGroups, material, rng } from '../../../api.js?v=0.6.2';
-import { MESH } from './mesh.js?v=0.6.2';
-import { moteStream, motes as moteKind } from '../level4/scenery.js?v=0.6.2';
+import { THREE, defineScenery, defineDecor, Instanced, modelGroups, material, rng } from '../../../api.js?v=0.6.3';
+import { MESH } from './mesh.js?v=0.6.3';
+import { moteStream, motes as moteKind } from '../level4/scenery.js?v=0.6.3';
 
 const q = new THREE.Quaternion(), eul = new THREE.Euler();
 export const motes = moteStream('g2-l5-motes', 0xc090ff, 0x9affc0);

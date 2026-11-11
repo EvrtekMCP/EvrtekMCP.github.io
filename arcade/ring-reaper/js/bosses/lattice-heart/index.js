@@ -10,8 +10,8 @@
 // Each loop is four bars of the core track (150 bpm, 1.6 s a bar), so the rhythm is the music's (rule 28, 30).
 // The beam's sides and the wall's gaps run in a fixed order, so the third time round you know what comes next.
 // 0.6.0 (Evrtek 11-10: no level has a timer): it no longer tears itself apart on a clock. The fight ends when it is beaten.
-import { THREE, defineBoss, buildModel, clamp } from '../../api.js?v=0.6.2';
-import { MESH } from './mesh.js?v=0.6.2';
+import { THREE, defineBoss, buildModel, clamp } from '../../api.js?v=0.6.3';
+import { MESH } from './mesh.js?v=0.6.3';
 
 const SCALE = 2.2, N = 8, PLATE_R = 11.5, EYE_R = 9;
 const BAR = 1.6, BEAT = 0.4;

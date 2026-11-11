@@ -12,8 +12,8 @@
 //     the shuttle starts from), still (taut and never plucked: a static line).
 // Every state is timed by its time to arrival (-z / speed), never the clock, so it rings where the course laid it at
 // any speed, GREED included, and its tell always runs its full length.
-import { THREE, defineObstacle, buildModel, clamp, smoothstep, SHIP_R, READ_D } from '../../api.js?v=0.6.2';
-import { MESH } from './mesh.js?v=0.6.2';
+import { THREE, defineObstacle, buildModel, clamp, smoothstep, SHIP_R, READ_D } from '../../api.js?v=0.6.3';
+import { MESH } from './mesh.js?v=0.6.3';
 
 const L = 40, HALF = L / 2, N = 28;                 // its length, and the points along it
 const RED = new THREE.Color(0xff3355), HOT = new THREE.Color(0xffd8e0), WHITE = new THREE.Color(0xe8eeff);

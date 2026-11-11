@@ -4,7 +4,7 @@
 // lines (rule 6). While the level's OWN take plays, the speed leans (at most 6 %) toward where the music says the ship
 // should be, so set pieces stay on the beat after a hit-pause. A galaxy 1 stand-in (another tempo, until the sound
 // branch's flag is flipped) is left alone: the course then flies its own clock.
-import { clamp, smooth } from '../../../api.js?v=0.6.2';
+import { clamp, smooth } from '../../../api.js?v=0.6.3';
 
 const LAG = 0.05;                         // the music starts 50 ms into a run (audio.startMusic)
 

@@ -10,18 +10,18 @@
 // DROP 65-80, drive 81-88. Bars below count from 0 at the first beat (bar n here is the manifest's bar n + 1). The
 // speed steps sit on section lines, every hound is timed so its bolt crosses your lane ON a bar, and the acts follow
 // the track's sections.
-import { defineLevel } from '../../api.js?v=0.6.2';
-import ring from '../../pickups/ring/index.js?v=0.6.2';
-import pod from '../../enemies/pod/index.js?v=0.6.2';
-import seeker from '../../enemies/seeker-drone/index.js?v=0.6.2';
-import { shieldCell, mirrorShell } from '../../pickups/powerups/index.js?v=0.6.2';
-import calf from '../../allies/g2-calf/index.js?v=0.6.2';
-import current from '../../obstacles/g2-current/index.js?v=0.6.2';
-import thrummer, { pulse } from '../../enemies/g2-thrummer/index.js?v=0.6.2';
-import shoalFish from '../../pickups/g2-shoal/index.js?v=0.6.2';
-import hound, { crossAfter } from '../../enemies/g2-hound/index.js?v=0.6.2';
-import { clock } from './level4/clock.js?v=0.6.2';
-import { SCENERY, DECOR } from './level4/scenery.js?v=0.6.2';
+import { defineLevel } from '../../api.js?v=0.6.3';
+import ring from '../../pickups/ring/index.js?v=0.6.3';
+import pod from '../../enemies/pod/index.js?v=0.6.3';
+import seeker from '../../enemies/seeker-drone/index.js?v=0.6.3';
+import { shieldCell, mirrorShell } from '../../pickups/powerups/index.js?v=0.6.3';
+import calf from '../../allies/g2-calf/index.js?v=0.6.3';
+import current from '../../obstacles/g2-current/index.js?v=0.6.3';
+import thrummer, { pulse } from '../../enemies/g2-thrummer/index.js?v=0.6.3';
+import shoalFish from '../../pickups/g2-shoal/index.js?v=0.6.3';
+import hound, { crossAfter } from '../../enemies/g2-hound/index.js?v=0.6.3';
+import { clock } from './level4/clock.js?v=0.6.3';
+import { SCENERY, DECOR } from './level4/scenery.js?v=0.6.3';
 
 // ---- the clock: the track's kick grid (audio/g2/level4/music.json: bpm 138.014, firstBeat 0.1718 s); speed 76 to 152
 // m/s in four steps on section lines, each eased over 150 m in a calm bar (rule 6)

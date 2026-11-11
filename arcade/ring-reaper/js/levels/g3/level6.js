@@ -24,19 +24,19 @@
 // The difficulty is the engine's (EASE_G[3][6]: dmg 0.98, heal 1.0, shot 1.02, ring 1.0; softened for the boss level).
 // Stars (the MCP's default 4): the forgeries' stolen rings count in the ring total, so ★4 and ★5 need you to stop the
 // forgeries; ★1-★3 never do (about a fifth of the rings are ever in a forgery's reach).
-import { defineLevel, clamp } from '../../api.js?v=0.6.2';
-import ring from '../../pickups/ring/index.js?v=0.6.2';
-import boostRing from '../../pickups/boost-ring/index.js?v=0.6.2';
-import pod from '../../enemies/pod/index.js?v=0.6.2';
-import seeker from '../../enemies/seeker-drone/index.js?v=0.6.2';
-import { shieldCell, overclock, ringMagnet } from '../../pickups/powerups/index.js?v=0.6.2';
-import forgery from '../../enemies/g3-forgery/index.js?v=0.6.2';
-import forgeTurret from '../../enemies/g3-forge-turret/index.js?v=0.6.2';
-import plotter from '../../enemies/g3-plotter/index.js?v=0.6.2';
-import augur from '../../enemies/g3-augur/index.js?v=0.6.2';
-import counterfeit, { raceRing } from '../../bosses/g3-counterfeit/index.js?v=0.6.2';
-import { musicClock } from './level4/clock.js?v=0.6.2';
-import { blank, spark, press, blanks, presses, mint } from './level6/scenery.js?v=0.6.2';
+import { defineLevel, clamp } from '../../api.js?v=0.6.3';
+import ring from '../../pickups/ring/index.js?v=0.6.3';
+import boostRing from '../../pickups/boost-ring/index.js?v=0.6.3';
+import pod from '../../enemies/pod/index.js?v=0.6.3';
+import seeker from '../../enemies/seeker-drone/index.js?v=0.6.3';
+import { shieldCell, overclock, ringMagnet } from '../../pickups/powerups/index.js?v=0.6.3';
+import forgery from '../../enemies/g3-forgery/index.js?v=0.6.3';
+import forgeTurret from '../../enemies/g3-forge-turret/index.js?v=0.6.3';
+import plotter from '../../enemies/g3-plotter/index.js?v=0.6.3';
+import augur from '../../enemies/g3-augur/index.js?v=0.6.3';
+import counterfeit, { raceRing } from '../../bosses/g3-counterfeit/index.js?v=0.6.3';
+import { musicClock } from './level4/clock.js?v=0.6.3';
+import { blank, spark, press, blanks, presses, mint } from './level6/scenery.js?v=0.6.3';
 
 const C = musicClock(146, 0.16, [[1, 88], [9, 96], [25, 108], [33, 122], [57, 130], [65, 142], [81, 154], [85, 162]], 95);
 export const B = C.B, BAR = C.BAR;

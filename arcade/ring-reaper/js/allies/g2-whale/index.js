@@ -6,9 +6,9 @@
 //    for its volleys and tethers, and pays MOTHER SAFE.
 //   add(d, 'g2-whale', { side: -1, nx: -1.55, ny: 0.1, len: 30, life: 12 })
 //     d     where she has swum in beside you; life: seconds she stays before swimming off ahead (Infinity: until told)
-import { THREE, defineAlly, buildModel, clamp, damp, SPAWN_D } from '../../api.js?v=0.6.2';
-import { MESH } from './mesh.js?v=0.6.2';
-import { interceptAsks } from '../../enemies/g2-hound/index.js?v=0.6.2';
+import { THREE, defineAlly, buildModel, clamp, damp, SPAWN_D } from '../../api.js?v=0.6.3';
+import { MESH } from './mesh.js?v=0.6.3';
+import { interceptAsks } from '../../enemies/g2-hound/index.js?v=0.6.3';
 
 export const WHALE = { fly: 3.2, len: 30, z: -10 };
 

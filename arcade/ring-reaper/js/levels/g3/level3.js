@@ -11,20 +11,20 @@
 //   Act 3 TWIST      bars 49-64  DOUBLE LOCKS: two keystones, two turrets, one roll sends both home; MIRROR SHELL first
 //   Act 4 MASTER     bars 65-84  THE GREAT LOCK: a door the size of a moon's, a whole volley to send home; then the
 //                                Foreman's yard, a SHIELD CELL at its entrance, and THE FOREMAN (bar 85, its own track)
-import { defineLevel, clamp } from '../../api.js?v=0.6.2';
-import ring from '../../pickups/ring/index.js?v=0.6.2';
-import boostRing from '../../pickups/boost-ring/index.js?v=0.6.2';
-import { mirrorShell, shieldCell } from '../../pickups/powerups/index.js?v=0.6.2';
-import pod from '../../enemies/pod/index.js?v=0.6.2';
-import seeker from '../../enemies/seeker-drone/index.js?v=0.6.2';
-import swarm from '../../enemies/swarm-unit/index.js?v=0.6.2';
-import wall from '../../obstacles/g3-blueprint-wall/index.js?v=0.6.2';
-import shuttler from '../../enemies/g3-shuttler/index.js?v=0.6.2';
-import lockgate, { ductExit } from '../../obstacles/g3-lockgate/index.js?v=0.6.2';
-import foreman from '../../bosses/g3-foreman/index.js?v=0.6.2';
-import girder from '../../bosses/g3-foreman/girder.js?v=0.6.2';
-import { frame, frames, pipe, pipes, crane } from './level3/scenery.js?v=0.6.2';
-import { timeline } from './level1/time.js?v=0.6.2';
+import { defineLevel, clamp } from '../../api.js?v=0.6.3';
+import ring from '../../pickups/ring/index.js?v=0.6.3';
+import boostRing from '../../pickups/boost-ring/index.js?v=0.6.3';
+import { mirrorShell, shieldCell } from '../../pickups/powerups/index.js?v=0.6.3';
+import pod from '../../enemies/pod/index.js?v=0.6.3';
+import seeker from '../../enemies/seeker-drone/index.js?v=0.6.3';
+import swarm from '../../enemies/swarm-unit/index.js?v=0.6.3';
+import wall from '../../obstacles/g3-blueprint-wall/index.js?v=0.6.3';
+import shuttler from '../../enemies/g3-shuttler/index.js?v=0.6.3';
+import lockgate, { ductExit } from '../../obstacles/g3-lockgate/index.js?v=0.6.3';
+import foreman from '../../bosses/g3-foreman/index.js?v=0.6.3';
+import girder from '../../bosses/g3-foreman/girder.js?v=0.6.3';
+import { frame, frames, pipe, pipes, crane } from './level3/scenery.js?v=0.6.3';
+import { timeline } from './level1/time.js?v=0.6.3';
 
 // audio/g3/level3/music.json (take g3l3-t1): the kick grid fitted to the take
 const TL = timeline({ name: 'g3/level3/music', bpm: 144.008, firstBeat: 0.1622, barSec: 1.66657 },

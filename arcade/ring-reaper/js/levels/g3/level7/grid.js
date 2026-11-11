@@ -7,7 +7,7 @@
 // on each track's PLANNED tempo from AUDIO-MANIFEST.md (148, 150, 150 bpm) with a first downbeat of 0.16 s, the galaxy's
 // measured norm (0.154, 0.161, 0.162 s). When a take lands, its .json's bpm and firstBeat go in here and every bar moves
 // with them; check-levels reports the section starts against the real grid.
-import { clamp } from '../../../api.js?v=0.6.2';
+import { clamp } from '../../../api.js?v=0.6.3';
 
 export function musicGrid({ bpm, firstBeat = 0.16, steps, bars = 110 }) {
   const BAR_S = 240 / bpm;

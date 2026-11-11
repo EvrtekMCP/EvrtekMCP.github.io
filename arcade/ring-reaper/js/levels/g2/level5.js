@@ -9,18 +9,18 @@
 // bar map (intro 1-8, groove 9-24, build 25-32, DROP 33-48, breakdown 49-56, build 57-64, DROP 65-80, drive 81-88).
 // Bars below count from 0 at the first beat. Speed steps on section lines; the set piece (THE DROP) on the drive.
 // Wells are sized in box-width units (rn), so a ring at nx = well.nx -+ 1.3 rn skims its rim on every screen.
-import { defineLevel } from '../../api.js?v=0.6.2';
-import ring from '../../pickups/ring/index.js?v=0.6.2';
-import boostRing from '../../pickups/boost-ring/index.js?v=0.6.2';
-import pod from '../../enemies/pod/index.js?v=0.6.2';
-import seeker from '../../enemies/seeker-drone/index.js?v=0.6.2';
-import { shieldCell, mirrorShell, phase } from '../../pickups/powerups/index.js?v=0.6.2';
-import well from '../../obstacles/g2-gravity-well/index.js?v=0.6.2';
-import slinger from '../../enemies/g2-slinger/index.js?v=0.6.2';
-import current from '../../obstacles/g2-current/index.js?v=0.6.2';
-import drifter from '../../enemies/g2-drifter/index.js?v=0.6.2';
-import { clock } from './level4/clock.js?v=0.6.2';
-import { SCENERY, DECOR } from './level5/scenery.js?v=0.6.2';
+import { defineLevel } from '../../api.js?v=0.6.3';
+import ring from '../../pickups/ring/index.js?v=0.6.3';
+import boostRing from '../../pickups/boost-ring/index.js?v=0.6.3';
+import pod from '../../enemies/pod/index.js?v=0.6.3';
+import seeker from '../../enemies/seeker-drone/index.js?v=0.6.3';
+import { shieldCell, mirrorShell, phase } from '../../pickups/powerups/index.js?v=0.6.3';
+import well from '../../obstacles/g2-gravity-well/index.js?v=0.6.3';
+import slinger from '../../enemies/g2-slinger/index.js?v=0.6.3';
+import current from '../../obstacles/g2-current/index.js?v=0.6.3';
+import drifter from '../../enemies/g2-drifter/index.js?v=0.6.3';
+import { clock } from './level4/clock.js?v=0.6.3';
+import { SCENERY, DECOR } from './level5/scenery.js?v=0.6.3';
 
 // the track's kick grid (audio/g2/level5/music.json: bpm 140.03, firstBeat 0.2136 s); 80 to 156 m/s in four steps
 const C = clock({ bpm: 140.03, firstBeat: 0.2136, v0: 80, steps: [[24, 19], [48, 19], [64, 19], [80, 19]] });

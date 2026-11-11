@@ -8,10 +8,10 @@
 //  - 0.6.0 (Evrtek 11-10: "No level has a timer"): a boss never retreats on a clock. The fight ends when the boss is beaten
 //    (or the ship is down). The watchdog below still takes over a boss that stops fighting, so a fight can always be won.
 // While a boss is up the course holds (no new course events), the scenery keeps streaming and its own music plays.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.6.2';
-import { clamp } from './util.js?v=0.6.2';
-import { defineEnemy, defineWeakPoint } from './registry.js?v=0.6.2';
-import { SPAWN_D } from './space.js?v=0.6.2';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.6.3';
+import { clamp } from './util.js?v=0.6.3';
+import { defineEnemy, defineWeakPoint } from './registry.js?v=0.6.3';
+import { SPAWN_D } from './space.js?v=0.6.3';
 
 const tmpV = new THREE.Vector3();
 // ---- attack helpers: (b, api, o) with o = the pattern step. `from` = a muzzle index (default 0).

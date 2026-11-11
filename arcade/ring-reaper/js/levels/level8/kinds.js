@@ -1,7 +1,7 @@
 // LEVEL 8 course kinds: the broken spar (a supporting obstacle: a girder you already know, torn and lying at an
 // angle) and the GHOST marker that pays an act's stealth bonus.
-import { THREE, defineObstacle, defineDecor, SHIP_R, SPAWN_D } from '../../api.js?v=0.6.2';
-import { watch } from '../../enemies/searchlight-sentry/index.js?v=0.6.2';
+import { THREE, defineObstacle, defineDecor, SHIP_R, SPAWN_D } from '../../api.js?v=0.6.3';
+import { watch } from '../../enemies/searchlight-sentry/index.js?v=0.6.3';
 
 const DEG = Math.PI / 180;
 // ---- the spar: a rusted I-beam 30 m long through (nx, ny) at angle a (degrees from level), one end torn off

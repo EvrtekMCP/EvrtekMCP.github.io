@@ -13,9 +13,9 @@
 //   add(d, 'g2-bloomer', { nx, ny, fireAt: 290, seeds: 1, gap: 1.2, mode: 'at' | 'wide', aim: { nx, ny }, s: 1.2 })
 //   fireAt: metres out it fires its first seed; seeds: how many; gap: seconds between; mode 'wide' aims 6 m off
 //   (harmless: the lesson's seed); aim: a fixed point on your plane to aim at instead of you.
-import { THREE, defineEnemy, clamp, DEFLECT_R } from '../../api.js?v=0.6.2';
-import { MESH } from './mesh.js?v=0.6.2';
-import { morphModel, setMorph, setLook } from './morph.js?v=0.6.2';
+import { THREE, defineEnemy, clamp, DEFLECT_R } from '../../api.js?v=0.6.3';
+import { MESH } from './mesh.js?v=0.6.3';
+import { morphModel, setMorph, setLook } from './morph.js?v=0.6.3';
 
 export const SEED = { T: 1.6, bloomAt: 0.6, crack: 0.4, tell: 0.6, fanN: 5, fanW: 4.4, size: 1.6 };
 // how close to the seed's line the ship must be for an early roll to take it: the roll's reach, plus a little (a

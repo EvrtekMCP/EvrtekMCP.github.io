@@ -8,17 +8,17 @@
 //   Act 2 DEVELOP    bars 25-48  walls in sequence, the gaps moving, pods on the scaffolds; RING MAGNET, PHASE
 //   Act 3 TWIST      bars 49-64  REVISIONS: a plan changes once, 1.2 s before its build, and the gap moves; SHIELD CELL
 //   Act 4 MASTER     bars 65-88  THE FRAMEWORK: the plan of a whole tower builds round you, a ring corkscrew up its core
-import { defineLevel, clamp } from '../../api.js?v=0.6.2';
-import ring from '../../pickups/ring/index.js?v=0.6.2';
-import boostRing from '../../pickups/boost-ring/index.js?v=0.6.2';
-import { shieldCell, phase, ringMagnet } from '../../pickups/powerups/index.js?v=0.6.2';
-import pod from '../../enemies/pod/index.js?v=0.6.2';
-import shrike from '../../enemies/shrike/index.js?v=0.6.2';
-import seeker from '../../enemies/seeker-drone/index.js?v=0.6.2';
-import sniper from '../../enemies/sniper/index.js?v=0.6.2';
-import wall from '../../obstacles/g3-blueprint-wall/index.js?v=0.6.2';
-import { tower, towers, floor, floors, grid, halfStar } from './level1/scenery.js?v=0.6.2';
-import { timeline } from './level1/time.js?v=0.6.2';
+import { defineLevel, clamp } from '../../api.js?v=0.6.3';
+import ring from '../../pickups/ring/index.js?v=0.6.3';
+import boostRing from '../../pickups/boost-ring/index.js?v=0.6.3';
+import { shieldCell, phase, ringMagnet } from '../../pickups/powerups/index.js?v=0.6.3';
+import pod from '../../enemies/pod/index.js?v=0.6.3';
+import shrike from '../../enemies/shrike/index.js?v=0.6.3';
+import seeker from '../../enemies/seeker-drone/index.js?v=0.6.3';
+import sniper from '../../enemies/sniper/index.js?v=0.6.3';
+import wall from '../../obstacles/g3-blueprint-wall/index.js?v=0.6.3';
+import { tower, towers, floor, floors, grid, halfStar } from './level1/scenery.js?v=0.6.3';
+import { timeline } from './level1/time.js?v=0.6.3';
 
 // audio/g3/level1/music.json (take g3l1-t1): the kick grid fitted to the take
 const TL = timeline({ name: 'g3/level1/music', bpm: 140.004, firstBeat: 0.1542, barSec: 1.71424 },

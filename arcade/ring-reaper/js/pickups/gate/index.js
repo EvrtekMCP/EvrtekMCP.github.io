@@ -1,6 +1,6 @@
 // THE LIGHTGATE (level 1, sector 4): a hexagonal hoop. Through the middle pays; the frame hurts.
 // 0.2.0 (Evrtek, rule 9 ruling): white-violet, not cyan, so it reads as structure and never as your own shot.
-import { THREE, definePickup, SHIP_R } from '../../api.js?v=0.6.2';
+import { THREE, definePickup, SHIP_R } from '../../api.js?v=0.6.3';
 
 const GATE_R = 2.9, GATE_T = 0.32;
 let geo, disc, mat, fill;

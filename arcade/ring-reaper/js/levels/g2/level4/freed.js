@@ -5,7 +5,7 @@
 // It is drawn by the kind that owns it (in that kind's begin), not as a course thing: it is the same creature
 // changing, never something appearing, and it only ever leaves (it fades out by distance into the fog).
 //   const FREE = new Freed(MESH.freed);   FREE.spawn(api, e, { s: 1, side: 1 });   in begin(api): FREE.tick(api)
-import { buildModel, SPAWN_D } from '../../../api.js?v=0.6.2';
+import { buildModel, SPAWN_D } from '../../../api.js?v=0.6.3';
 
 export class Freed {
   constructor(groups) { this.groups = groups; this.live = []; this.pool = []; }

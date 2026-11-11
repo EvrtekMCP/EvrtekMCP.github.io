@@ -1,6 +1,6 @@
 // STARWAKE (0.4.0: the power-up strip): the DOM layer over the canvas: numbers, bars, pop-ups and call-outs. Loud and generous (ruling 4).
-import { fmt, V } from './util.js?v=0.6.2';
-import { POWERUPS } from './powerups.js?v=0.6.2';
+import { fmt, V } from './util.js?v=0.6.3';
+import { POWERUPS } from './powerups.js?v=0.6.3';
 
 // Yori's call-out sprites (art/, glow baked in). Preloaded so the first GRAZE never waits on a decode.
 export const ART = ['graze', 'multi-deflect', 'greed', 'perfect', 'no-hit', 'level-clear', 'rank-c', 'rank-b', 'rank-a', 'rank-s', 'rank-degenerate', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7', 'x8'];
@@ -105,7 +105,7 @@ export class Hud {
       this.lastMult = m;
     }
     // the chain: rings toward the next step of the multiplier (at x8 all five stay lit)
-    const pips = m >= 8 ? 5 : g.chain % 5, pk = pips + (m >= 8 ? 'm' : '');
+    const pips = m >= 8 ? 5 : (g.pips || 0), pk = pips + (m >= 8 ? 'm' : ''); // 0.6.3: the pips are their own count (js/mult.js)
     if (pk !== this.last.pips) { this.last.pips = pk; this.pips.forEach((el, i) => el.classList.toggle('on', i < pips)); if (this.chainEl) this.chainEl.classList.toggle('max', m >= 8); }
     // the star meter: g.star is levels.js starProgress() of what the run has banked (main.js). The first star is the clear
     // itself, so it shows half lit until the run is home.

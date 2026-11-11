@@ -8,9 +8,9 @@
 //  - g2-l4-mothers:  the landmark, the Mother Herd: twelve whales a kilometre long crossing the sky
 //  - g2-l4-crosser:  THE STAMPEDE (course decor): whales sweeping across your lane ahead of you, harmless
 //  - g2-l4-cloud:    one nursery cloud placed by the level (the Nursery's ring)
-import { THREE, defineScenery, defineDecor, Instanced, modelGroups, material, buildModel, clamp, rng } from '../../../api.js?v=0.6.2';
-import { MESH } from './mesh.js?v=0.6.2';
-import { MESH as WHALE } from '../../../allies/g2-whale/mesh.js?v=0.6.2';
+import { THREE, defineScenery, defineDecor, Instanced, modelGroups, material, buildModel, clamp, rng } from '../../../api.js?v=0.6.3';
+import { MESH } from './mesh.js?v=0.6.3';
+import { MESH as WHALE } from '../../../allies/g2-whale/mesh.js?v=0.6.3';
 
 const q = new THREE.Quaternion(), eul = new THREE.Euler();
 

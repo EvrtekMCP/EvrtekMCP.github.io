@@ -7,10 +7,10 @@
 // you (or as its tube starts holding), one pair every `gap` seconds, `pairs` times.
 //   add(d, 'g2-conductor', { flock: key, at: [nx, ny], dz: 0, first: 2.8, pairs: 1, gap: 1.6, hold })
 //   (d and hold the same as its flock's, so the two move as one)
-import { THREE, defineEnemy, clamp } from '../../api.js?v=0.6.2';
-import { MESH } from './mesh.js?v=0.6.2';
-import { morphModel, setMorph, setLook } from '../g2-bloomer/morph.js?v=0.6.2';
-import { joined, conductorDown } from '../g2-flock/index.js?v=0.6.2';
+import { THREE, defineEnemy, clamp } from '../../api.js?v=0.6.3';
+import { MESH } from './mesh.js?v=0.6.3';
+import { morphModel, setMorph, setLook } from '../g2-bloomer/morph.js?v=0.6.3';
+import { joined, conductorDown } from '../g2-flock/index.js?v=0.6.3';
 
 const TEL = 0.9, SHOT_T = 1.3, PAIR_GAP = 0.18, SIZE = 1.8;
 let glowMat = null;

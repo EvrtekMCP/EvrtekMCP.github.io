@@ -15,7 +15,7 @@
 //     Riding inside it: x1.15 speed (api.game.flow), RIDE points, a little GREED, and a gentle pull back in near its edge,
 //     so it carries you along its line. say: a call-out the first time you slip into it (the Tide Race names itself).
 // The level lays its rings on the carried path with simulateDrift() (below), the same sums the engine runs.
-import { THREE, defineObstacle, GlowPoints, clamp, smoothstep } from '../../api.js?v=0.6.2';
+import { THREE, defineObstacle, GlowPoints, clamp, smoothstep } from '../../api.js?v=0.6.3';
 
 const LIVE = new Set();
 const RIDE = { mul: 1.15, pts: 60, greed: 2.5, pull: 0.55 };   // the ride's speed, points and GREED a second, pull to the middle

@@ -14,8 +14,8 @@
 //          hold: s at station before the first ripple, station: m ahead of the ship for the head }
 // aim 'graze' sends the volley 1.6 m wide of the ship: do nothing and it is a GRAZE, roll and it all comes back.
 // That is how the level teaches it (rule 18: the first one costs nothing).
-import { THREE, defineEnemy, Instanced, GlowPoints, modelGroups, clamp, SPAWN_D, SHOT_T, NET_T } from '../../api.js?v=0.6.2';
-import { MESH } from './mesh.js?v=0.6.2';
+import { THREE, defineEnemy, Instanced, GlowPoints, modelGroups, clamp, SPAWN_D, SHOT_T, NET_T } from '../../api.js?v=0.6.3';
+import { MESH } from './mesh.js?v=0.6.3';
 
 const SCALE = 3.4;          // Yori's kite is 1.4 across; it holds station ahead of you, so it is drawn 4.8 m across to read there
 const DELAY = 1.0, GAP = 0.12; // the head copies you 1.0 s ago; each kite 0.12 s before the one ahead of it

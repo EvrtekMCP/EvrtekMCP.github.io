@@ -4,7 +4,7 @@
 //                        ghost of the band flickers where it will burn. The one thing in galaxy 2 a roll cannot send back.
 //  g2-rootmind-sap       SAP-LIGHT: what a struck knot spills. Pale sap-green (Yori: sap-green is shield). Fly through it
 //                        for shield and points. It is not a ring: it never counts toward RINGS or a PERFECT.
-import { THREE, defineObstacle, definePickup, smoothstep, SHIP_R, RING_R } from '../../api.js?v=0.6.2';
+import { THREE, defineObstacle, definePickup, smoothstep, SHIP_R, RING_R } from '../../api.js?v=0.6.3';
 
 // =====================================================================================================================
 // STARFIRE. ev: c (metres: where the band's middle line crosses the lane's middle, along its normal), w (half-width, m),

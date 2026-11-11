@@ -9,8 +9,8 @@
 //     path   where it swims, by course distance, in the normalised box (outside it, |nx| about 1.35, is its usual
 //            place; inside it, it marks a lane: its glow is the safe line). Between two points it eases across.
 //     home   the course distance where it leaves for its mother; CALF SAFE is paid then if it is fully bright
-import { THREE, defineAlly, buildModel, clamp, damp, smoothstep, SPAWN_D } from '../../api.js?v=0.6.2';
-import { MESH } from './mesh.js?v=0.6.2';
+import { THREE, defineAlly, buildModel, clamp, damp, smoothstep, SPAWN_D } from '../../api.js?v=0.6.3';
+import { MESH } from './mesh.js?v=0.6.3';
 
 export const CALF = { z: -3, s: 0.85, steps: 4, recover: 12, fly: 3, bonus: 20000 };
 const BRIGHT = new THREE.Color(0xe8f6ff), DIM = new THREE.Color(0x30465e), BODY = new THREE.Color(0xcfe8ff);

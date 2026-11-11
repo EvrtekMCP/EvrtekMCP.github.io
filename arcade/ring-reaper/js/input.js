@@ -13,7 +13,7 @@
 // HUD or any menu never rolls. No pointer lock: the steering is the pointer's own position, so a click moves nothing.
 // THE MODE (0.3.0): what the player is using right now, not what the device is. Any touch means 'touch'; a key or a
 // real mouse move means 'pc'. It switches live (a laptop with a touch screen), and every control text follows it.
-import { clamp, store } from './util.js?v=0.6.2';
+import { clamp, store } from './util.js?v=0.6.3';
 
 const DT_MS = 280, DT_PX = 40, TAP_MS = 250, TAP_PX = 14;
 export const DEFAULT_KEYS = { roll: ['Space', ''], greed: ['Shift', ''], pause: ['Escape', 'KeyP'], mouse: true };

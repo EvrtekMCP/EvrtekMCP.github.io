@@ -14,9 +14,9 @@
 // and a tall phone alike; in metres a boundary is the line through the hub along (cos a * box.x, sin a * box.y).
 // Event: { nx, ny (the hub), n (sectors), rot (in sectors; 0 puts a boundary on the +x axis), closed: [indices],
 //          mode, pattern 'spin' | 'flip', dir (+1 anticlockwise), step (sectors a beat), hold (beats), dmg }
-import { THREE, defineObstacle, buildModel, clamp, READ_D, SHIP_R } from '../../api.js?v=0.6.2';
-import { MESH } from './mesh.js?v=0.6.2';
-import { beatClock, pulse } from './beat.js?v=0.6.2';
+import { THREE, defineObstacle, buildModel, clamp, READ_D, SHIP_R } from '../../api.js?v=0.6.3';
+import { MESH } from './mesh.js?v=0.6.3';
+import { beatClock, pulse } from './beat.js?v=0.6.3';
 
 export const GATE_S = 0.7;                    // Yori's gate is 44 across in Wake units; at 0.7 it is ~31 m
 export const FIELD_R = 18.4 * GATE_S;         // the field fills the ring's inner face
@@ -254,7 +254,7 @@ function cross(e, api) {
   const clean = !(closed && dEdge > EDGE_SAFE);
   if (e.ev.set) tally(e.ev, clean, api);
   if (!clean) {
-    api.game.crash(at, st.dmg, true); // a step off the combo, not all of it: it is the level's one idea
+    api.game.crash(at, st.dmg, true); // a crash (0.6.3: three steps off the multiplier, as every crash: js/mult.js)
   } else {
     if (dEdge < THREAD_R) api.game.scrape(at, dEdge);
     api.game.gate(at, true);
