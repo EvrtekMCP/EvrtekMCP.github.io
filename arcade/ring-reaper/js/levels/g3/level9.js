@@ -19,17 +19,17 @@
 //          LIGHTS UP         bars 88-94  170 m/s  calm; a Shield Cell; the wheel lights up. THE HIGH ROLLER (bar 94)
 // Re-uses: riveters (graze strings and curtains) and fractals, this branch's. Forgeries racing you to the vaults,
 // plotters and a vault behind a lockgate belong to g3-a and g3-b and have not landed on `galaxies` (marked RE-USE).
-import { defineLevel } from '../../api.js?v=0.5.0';
-import ring from '../../pickups/ring/index.js?v=0.5.0';
-import { shieldCell, ringMagnet } from '../../pickups/powerups/index.js?v=0.5.0';
-import riveter from '../../enemies/g3-riveter/index.js?v=0.5.0';
-import fractal from '../../enemies/g3-fractal/index.js?v=0.5.0';
-import vault, { RD } from '../../obstacles/g3-vault/index.js?v=0.5.0';
-import vaultRing from '../../pickups/g3-vault-ring/index.js?v=0.5.0';
-import highRoller from '../../bosses/g3-high-roller/index.js?v=0.5.0';
-import { musicGrid, ringRun } from './level7/grid.js?v=0.5.0';
-import { primer } from './level9/primer.js?v=0.5.0';
-import { column, columns, treasury, treasuryHall, wheel } from './level9/scenery.js?v=0.5.0';
+import { defineLevel } from '../../api.js?v=0.6.0';
+import ring from '../../pickups/ring/index.js?v=0.6.0';
+import { shieldCell, ringMagnet } from '../../pickups/powerups/index.js?v=0.6.0';
+import riveter from '../../enemies/g3-riveter/index.js?v=0.6.0';
+import fractal from '../../enemies/g3-fractal/index.js?v=0.6.0';
+import vault, { RD } from '../../obstacles/g3-vault/index.js?v=0.6.0';
+import vaultRing from '../../pickups/g3-vault-ring/index.js?v=0.6.0';
+import highRoller from '../../bosses/g3-high-roller/index.js?v=0.6.0';
+import { musicGrid, ringRun } from './level7/grid.js?v=0.6.0';
+import { primer } from './level9/primer.js?v=0.6.0';
+import { column, columns, treasury, treasuryHall, wheel } from './level9/scenery.js?v=0.6.0';
 
 const { BAR, speed, BAR_S } = musicGrid({ bpm: 150, steps: [[0, 94], [24, 116], [48, 132], [62, 152], [82, 162], [88, 170]] });
 const A1 = BAR(24), A2 = BAR(48), A3 = BAR(64), DRIVE = BAR(82), STILL = BAR(88), BOSS_D = BAR(94), LEVEL_END = BOSS_D + 600;

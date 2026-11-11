@@ -3,9 +3,9 @@
 // rows still white plan lines), her gantries span the lane one every 60 m or so with two riveters mounted high, arc-blue
 // welding light flickers on the plates, and far off to the left the dreadnought itself lies half-riveted, the
 // landmark. Nothing here collides; everything stays outside the box. Arc blue is pale and cool, never cyan.
-import { THREE, defineScenery, defineDecor, GlowPoints, clamp } from '../../../api.js?v=0.5.0';
-import { MESH } from './mesh.js?v=0.5.0';
-import { layersOf, begin, end, farModel } from './layers.js?v=0.5.0';
+import { THREE, defineScenery, defineDecor, GlowPoints, clamp } from '../../../api.js?v=0.6.0';
+import { MESH } from './mesh.js?v=0.6.0';
+import { layersOf, begin, end, farModel } from './layers.js?v=0.6.0';
 
 const tmpQ = new THREE.Quaternion(), eul = new THREE.Euler();
 export const DECK_Y = -15;   // the hull's crown, well under the lane (a phone's box reaches -5.6)

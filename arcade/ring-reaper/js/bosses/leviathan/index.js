@@ -8,15 +8,15 @@
 //                  drift back into your lane and pop. Their shards, rolled back, go to its lens too.
 //   3 THE WALL SLAM it slams its head into the canyon walls: ice falls into the lane on that side (dodge it), and the
 //                  maw keeps firing. Shorter than phase 2.
-// It always fires on a two- or three-bar loop at 135 bpm (rules 26 and 28), and if it is not beaten it dives into
-// the ice and is gone (escapeAfter): the level still ends, without its bonus.
+// It always fires on a two- or three-bar loop at 135 bpm (rules 26 and 28). 0.6.0 (Evrtek 11-10: no level has a timer):
+// it no longer dives away on a clock; the fight ends when it is beaten.
 // 0.3.0, the human pass (Evrtek 11-06, "make them easier"): it was the steepest step on the curve, pressure with no let-up
 // (one calm moment in a 66 s fight). Now every loop ends in a BREATHER, one whole bar (1.78 s) with nothing fired, so
 // its rhythm stays on the bar lines; THE SHARDS throws one beat earlier so its ice has landed before the breather; the
 // maw's fan, its harshest volley, flies 15% slower; and each lens takes LENS_HP hits (was 8), so the fight, with fewer
 // volleys to send back, is no longer than it was.
-import { THREE, defineBoss, clamp, damp, smoothstep, SPAWN_D } from '../../api.js?v=0.5.0';
-import { Serpent, LEV } from './serpent.js?v=0.5.0';
+import { THREE, defineBoss, clamp, damp, smoothstep, SPAWN_D } from '../../api.js?v=0.6.0';
+import { Serpent, LEV } from './serpent.js?v=0.6.0';
 
 const BAR = 4 * 60 / 135, BEAT = BAR / 4;
 const BREATHER = 1; // bars of calm at the end of every loop (0.3.0)
@@ -79,7 +79,6 @@ function arcSpine(curve, A) {
 export default defineBoss({
   name: 'leviathan', title: 'THE LEVIATHAN',
   hold: 52, enterTime: 4.5, scale: 2.8, y: -0.8,
-  escapeAfter: 110, escapeCall: 'IT DIVES INTO THE ICE',
   bonus: 60000, hitPts: 2500,
   pointDown: 'LENS DOWN!', downCall: 'THE LEVIATHAN FALLS!',
   build(api, b) {

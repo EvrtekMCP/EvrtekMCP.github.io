@@ -3,10 +3,10 @@
 // the light). Her pieces from g3-scenery.js: mintPress(stroke) (its die apart, so it stamps), blank(), sparks().
 // Rule 9: weld magenta (hue 312) is the light here; the only red is the copies of your ship in the presses (forgeries:
 // they are the enemy, and red says so) and the turrets' cores.
-import { THREE, defineScenery, defineDecor, Instanced, clamp } from '../../../api.js?v=0.5.0';
-import { geometryOf } from '../../../enemies/crystal-emitter/parts.js?v=0.5.0';
-import { MESH } from './mesh.js?v=0.5.0';
-import { meshDecor, matFor, pieceGroup, fadeTo, side } from '../level4/kit.js?v=0.5.0';
+import { THREE, defineScenery, defineDecor, Instanced, clamp } from '../../../api.js?v=0.6.0';
+import { geometryOf } from '../../../enemies/crystal-emitter/parts.js?v=0.6.0';
+import { MESH } from './mesh.js?v=0.6.0';
+import { meshDecor, matFor, pieceGroup, fadeTo, side } from '../level4/kit.js?v=0.6.0';
 
 const tmpQ = new THREE.Quaternion(), eul = new THREE.Euler();
 

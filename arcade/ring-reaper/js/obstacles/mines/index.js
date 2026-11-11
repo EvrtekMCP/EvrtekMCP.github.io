@@ -1,7 +1,7 @@
 // MINES (level 1, from the derelict on): Yori's Lattice mine, in clusters (a ring of mines round one in the
 // middle). The red seams pulse faster as you close; armed, a white-hot strobe; then each pops into four bolts in
 // a cross, fixed in the track and spreading. Touching one costs a hit.
-import { THREE, defineObstacle, Instanced, modelGroups, clamp, SHIP_R } from '../../api.js?v=0.5.0';
+import { THREE, defineObstacle, Instanced, modelGroups, clamp, SHIP_R } from '../../api.js?v=0.6.0';
 
 const tmpQ = new THREE.Quaternion(), tmpA = new THREE.Vector3(), tmpC = new THREE.Color();
 let layers;

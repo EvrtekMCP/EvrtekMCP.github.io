@@ -4,8 +4,8 @@
 //  g3-weft-light  THREAD-LIGHT: what a struck reed spills (shield and points; not a ring, so the tally stays honest)
 // Yori's pieces: the reed is her beater's reed (a red bar with its roots), the blades are her shear's blades; both are
 // taken from js/bosses/g3-weftwork/mesh.js (her g3-bosses.js), and repeated or moved here, never redrawn.
-import { THREE, definePickup, defineObstacle, buildModel, clamp, smoothstep, SHIP_R, RING_R } from '../../api.js?v=0.5.0';
-import { MESH } from './mesh.js?v=0.5.0';
+import { THREE, definePickup, defineObstacle, buildModel, clamp, smoothstep, SHIP_R, RING_R } from '../../api.js?v=0.6.0';
+import { MESH } from './mesh.js?v=0.6.0';
 
 const RED = 0xff3355;
 // keep the triangles of her groups whose centroid passes a test

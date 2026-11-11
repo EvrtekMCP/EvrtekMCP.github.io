@@ -24,19 +24,19 @@
 // The difficulty is the engine's (EASE_G[3][6]: dmg 0.98, heal 1.0, shot 1.02, ring 1.0; softened for the boss level).
 // Stars (the MCP's default 4): the forgeries' stolen rings count in the ring total, so ★4 and ★5 need you to stop the
 // forgeries; ★1-★3 never do (about a fifth of the rings are ever in a forgery's reach).
-import { defineLevel, clamp } from '../../api.js?v=0.5.0';
-import ring from '../../pickups/ring/index.js?v=0.5.0';
-import boostRing from '../../pickups/boost-ring/index.js?v=0.5.0';
-import pod from '../../enemies/pod/index.js?v=0.5.0';
-import seeker from '../../enemies/seeker-drone/index.js?v=0.5.0';
-import { shieldCell, overclock, ringMagnet } from '../../pickups/powerups/index.js?v=0.5.0';
-import forgery from '../../enemies/g3-forgery/index.js?v=0.5.0';
-import forgeTurret from '../../enemies/g3-forge-turret/index.js?v=0.5.0';
-import plotter from '../../enemies/g3-plotter/index.js?v=0.5.0';
-import augur from '../../enemies/g3-augur/index.js?v=0.5.0';
-import counterfeit, { raceRing } from '../../bosses/g3-counterfeit/index.js?v=0.5.0';
-import { musicClock } from './level4/clock.js?v=0.5.0';
-import { blank, spark, press, blanks, presses, mint } from './level6/scenery.js?v=0.5.0';
+import { defineLevel, clamp } from '../../api.js?v=0.6.0';
+import ring from '../../pickups/ring/index.js?v=0.6.0';
+import boostRing from '../../pickups/boost-ring/index.js?v=0.6.0';
+import pod from '../../enemies/pod/index.js?v=0.6.0';
+import seeker from '../../enemies/seeker-drone/index.js?v=0.6.0';
+import { shieldCell, overclock, ringMagnet } from '../../pickups/powerups/index.js?v=0.6.0';
+import forgery from '../../enemies/g3-forgery/index.js?v=0.6.0';
+import forgeTurret from '../../enemies/g3-forge-turret/index.js?v=0.6.0';
+import plotter from '../../enemies/g3-plotter/index.js?v=0.6.0';
+import augur from '../../enemies/g3-augur/index.js?v=0.6.0';
+import counterfeit, { raceRing } from '../../bosses/g3-counterfeit/index.js?v=0.6.0';
+import { musicClock } from './level4/clock.js?v=0.6.0';
+import { blank, spark, press, blanks, presses, mint } from './level6/scenery.js?v=0.6.0';
 
 const C = musicClock(146, 0.16, [[1, 88], [9, 96], [25, 108], [33, 122], [57, 130], [65, 142], [81, 154], [85, 162]], 95);
 export const B = C.B, BAR = C.BAR;
@@ -115,10 +115,13 @@ export default defineLevel({
       let d = B(b0); const end = B(b1); let k = 0;
       while (d < end - 70) {
         const pick = (k + R.int(0, 3)) % 4; k++;
-        if (pick === 0) d = line(d, R.range(-0.55, 0.55), R.range(-0.45, 0.45), R.range(-0.55, 0.55), R.range(-0.45, 0.45), 5, 24);
-        else if (pick === 1) d = line(d, -0.6, R.range(-0.3, 0.3), 0.6, R.range(-0.3, 0.3), 6, 22);
-        else if (pick === 2) d = line(d, R.range(-0.3, 0.3), 0.55, R.range(-0.3, 0.3), -0.5, 5, 24);
-        else d = sine(d, 8, 24, R.range(0.45, 0.6), R.range(0.38, 0.5), R() * 6);
+        // 0.6.0 (Evrtek 11-10: fix the Forgery): every filler is a line or a turn the ship can FOLLOW at this level's speed.
+        // They were not: a corkscrew 4.5 m wide turning once in 192 m, a line across the whole lane in 110 m. Even the good
+        // bot dropped a ring in five on them, so nobody could hold a multiplier here, forgeries or no forgeries.
+        if (pick === 0) d = line(d, R.range(-0.4, 0.4), R.range(-0.36, 0.36), R.range(-0.4, 0.4), R.range(-0.36, 0.36), 5, 28);
+        else if (pick === 1) d = line(d, -0.36, R.range(-0.26, 0.26), 0.36, R.range(-0.26, 0.26), 6, 30);
+        else if (pick === 2) d = line(d, R.range(-0.26, 0.26), 0.4, R.range(-0.26, 0.26), -0.36, 5, 28);
+        else d = sine(d, 8, 36, R.range(0.26, 0.32), R.range(0.22, 0.28), R() * 6);
         d += 30;
       }
     };
@@ -148,8 +151,10 @@ export default defineLevel({
     // groove: a raid at a time, from either side; then two at once
     raid(12.5, -0.4, -0.2, { line: [-0.4, -0.2, 0.2, 0.2, 7] });
     fill(16, 17);
-    raid(17, 0.5, 0.3, { line: [0.45, 0.3, 0.45, -0.1, 6] });
-    raid(17.4, -0.5, -0.3, { line: [-0.45, -0.3, -0.45, 0.1, 6], keyAt: 3.6 });
+    // (0.6.0: the two race for ONE line. It was a line each, 6.8 m apart: nobody can fly both, and every ring of the line
+    // you were not on was a miss against you)
+    raid(17, 0.5, 0.3, { line: [0.3, 0.25, -0.3, -0.15, 9] });
+    raid(17.4, -0.5, -0.3, { line: [0, 0, 0, 0, 0], keyAt: 3.6 });
     fill(21.5, 25);
 
     // ================= ACT 2: DEVELOP (bars 25-48): THE PROOF ROOM =================
@@ -162,8 +167,8 @@ export default defineLevel({
     plot(38, [[1.25, -0.6], [-0.3, -0.6]], { from: 2.6, to: 0.5 }); line(B(38) - 50, 0.4, 0.2, 0.5, 0.3, 3, 25);
     aug(38.5, 1.35, 0.6);
     // the peak: two raids, one turret each (or one roll for both bolts), seekers, a pod
-    raid(39.5, 0.45, 0.2, { line: [0.45, 0.2, 0.2, 0.4, 6], lat: 6 });
-    raid(39.8, -0.45, -0.1, { line: [-0.45, -0.1, -0.3, -0.4, 6], rolls: 1, lat: 6 });
+    raid(39.5, 0.45, 0.2, { line: [0.3, 0.2, -0.3, -0.2, 9], lat: 6 });                      // (0.6.0: one line for the two, as in act 1)
+    raid(39.8, -0.45, -0.1, { line: [0, 0, 0, 0, 0], rolls: 1, lat: 6 });
     seek(43.5, 0.5, 0.45); podAt(44, 0.2, -0.3, { shots: 2 }); line(B(43.5), -0.3, 0.3, 0.3, 0, 6, 24);
     fill(45.5, 49);
 
@@ -180,7 +185,9 @@ export default defineLevel({
     add(B(56.2), 'ring-magnet', { nx: 0, ny: 0 }); // 2.6 s before the field: the magnet runs 8 s
     raid(55.6, 0.5, 0.4, { line: [0, 0, 0, 0, 0], lat: 7, side: -1, keyAt: 3.6 });
     raid(56, -0.5, -0.4, { line: [0, 0, 0, 0, 0], lat: 7, side: 1, keyAt: 4.2 });
-    { let d = B(57.8); for (let i = 0; i < 18; i++) { one(d, R.range(-0.7, 0.7), R.range(-0.6, 0.6)); d += R.range(18, 26); } }
+    // (0.6.0: the field sits inside the magnet's reach of the middle of the lane, on a wide screen and a phone alike; it
+    // was up to 5.2 m out, so even with the magnet a third of it went by)
+    { let d = B(57.8); for (let i = 0; i < 18; i++) { one(d, R.range(-0.5, 0.5), R.range(-0.45, 0.45)); d += R.range(22, 30); } }
     // build two: a second heist, two forgeries for one chain, a turret each
     raid(59.4, 0.5, 0.3, { want: 'boost', line: [0, 0, 0, 0, 0], lat: 6, side: -1, keyAt: 1.6 });
     raid(59.8, -0.5, 0.3, { want: 'boost', line: [0, 0, 0, 0, 0], lat: 6, side: 1, keyAt: 1.8 });
@@ -194,14 +201,15 @@ export default defineLevel({
     raid(65, -0.4, 0.2, { line: [0, 0, 0, 0, 0], lat: 6, side: 1, keyAt: 3.0 });
     raid(65.3, 0.4, -0.2, { line: [0, 0, 0, 0, 0], lat: 6, side: -1, keyAt: 3.0 });
     raid(65.6, 0, 0.5, { line: [0, 0, 0, 0, 0], rolls: 1, lat: 6, side: 1, keyAt: 4.4, ky: -0.45 });
-    { let d = B(67.2); for (let i = 0; i < 24; i++) { const t = i / 24; one(d, Math.sin(t * Math.PI * 3) * 0.55, Math.cos(t * Math.PI * 2) * 0.35); d += 24; } }
+    // (0.6.0: the maze weaves 2.6 m either side over 290 m; it was 4.1 m over 190 m, a sideways 10 m/s the ship cannot do)
+    { let d = B(67.2); for (let i = 0; i < 21; i++) { const t = i / 21; one(d, Math.sin(t * Math.PI * 2) * 0.35, Math.cos(t * Math.PI * 2) * 0.3); d += 28; } }
     plot(72.5, [[-1.25, 0.65], [1.25, 0.65]], { from: 2.6, to: 0.4 });
     line(B(73.2), -0.3, -0.2, 0.3, -0.2, 6, 26);
     // the hardest stretch: the pack again, rollers among them, a sheet and an augur
     raid(74.5, 0.45, 0.3, { line: [0, 0, 0, 0, 0], rolls: 1, lat: 6, side: -1, keyAt: 3.0 });
     raid(74.8, -0.45, 0.3, { line: [0, 0, 0, 0, 0], lat: 6, side: 1, keyAt: 3.0 });
     raid(75.1, 0, -0.4, { line: [0, 0, 0, 0, 0], rolls: 1, lat: 6, side: 1, keyAt: 4.3, ky: -0.45 });
-    { let d = B(76.8); for (let i = 0; i < 18; i++) { const t = i / 18; one(d, Math.sin(t * Math.PI * 2 + 1) * 0.5, Math.sin(t * Math.PI * 4) * 0.3); d += 24; } }
+    { let d = B(76.8); for (let i = 0; i < 16; i++) { const t = i / 16; one(d, Math.sin(t * Math.PI * 2 + 1) * 0.35, Math.sin(t * Math.PI * 3) * 0.24); d += 28; } }
     aug(78.5, 1.35, -0.6);
     plot(80.5, [[-0.2, 1.25], [-0.2, -1.25]], { from: 2.6, to: 0.4 }); line(B(80.5) - 70, 0.3, 0.2, 0.45, 0.1, 4, 24);
     // the drive, faster: one raid, the last rings

@@ -12,8 +12,8 @@
 // Event: { id     a key its rings name
 //          nx, ny where its door is, normalised (keep the drum's far edge inside the box's reach: |n| <= 0.65)
 //          ask    seconds out the bots should cash in (default 3.4; the Double Down's first vault asks later) }
-import { THREE, defineObstacle, buildModel, material, clamp, SHIP_R } from '../../api.js?v=0.5.0';
-import { MESH } from './mesh.js?v=0.5.0';
+import { THREE, defineObstacle, buildModel, material, clamp, SHIP_R } from '../../api.js?v=0.6.0';
+import { MESH } from './mesh.js?v=0.6.0';
 
 export const SC = 0.62;                       // her drum is 10 across: 6.2 m here
 export const RD = 5.0 * SC + 0.15;             // the drum's radius: solid

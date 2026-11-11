@@ -9,12 +9,12 @@
 //  OUT  THE UNRAVEL g3-l10-snap (threads snapping outward), g3-l10-suns (the unmade stars lighting again, one by one)
 //  HOME             galaxy 1's sunrise over the quiet blue planet (imported, never copied), galaxy 2's freed star
 //                   (g3-l10-star), and the re-lit suns: all three galaxies' landmarks in one sky
-import { THREE, defineScenery, defineDecor, Instanced, buildModel, modelGroups, clamp, smoothstep } from '../../../api.js?v=0.5.0';
-import { MESH } from './mesh.js?v=0.5.0';
-import { MESH as STAR } from './star-mesh.js?v=0.5.0';
-import { MESH as LOOM } from '../../../bosses/g3-weftwork/mesh.js?v=0.5.0';
-import { MESH as HEDDLE } from '../../../obstacles/g3-heddle/mesh.js?v=0.5.0';
-import { MESH as SHUTTLE } from '../../../bosses/g3-weftwork/shuttle-mesh.js?v=0.5.0';
+import { THREE, defineScenery, defineDecor, Instanced, buildModel, modelGroups, clamp, smoothstep } from '../../../api.js?v=0.6.0';
+import { MESH } from './mesh.js?v=0.6.0';
+import { MESH as STAR } from './star-mesh.js?v=0.6.0';
+import { MESH as LOOM } from '../../../bosses/g3-weftwork/mesh.js?v=0.6.0';
+import { MESH as HEDDLE } from '../../../obstacles/g3-heddle/mesh.js?v=0.6.0';
+import { MESH as SHUTTLE } from '../../../bosses/g3-weftwork/shuttle-mesh.js?v=0.6.0';
 
 const tmpQ = new THREE.Quaternion(), tmpE = new THREE.Euler(), tmpV = new THREE.Vector3(), I = new THREE.Quaternion();
 // Yori's fronts face -Z; you meet a thing's +z side first, so her pieces are turned half round to face you

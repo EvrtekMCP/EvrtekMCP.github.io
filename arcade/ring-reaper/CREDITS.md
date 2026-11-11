@@ -1,6 +1,6 @@
 # CREDITS
 
-**RING REAPER**, an arcade space-runner by **REIMERTEK STUDIOS**. Version 0.5.0: three galaxies of ten levels, twelve bosses and six power-ups.
+**RING REAPER**, an arcade space-runner by **REIMERTEK STUDIOS**. Version 0.6.0, the player pass: three galaxies of ten levels, twelve bosses and six power-ups.
 
 *Formerly STARWAKE, renamed 2026-11-08.*
 
@@ -14,11 +14,12 @@
 - the press-to-start;
 - the menu music;
 - two more galaxies, each a little harder than the last, with new enemies and bosses on levels 3, 6, 9 and 10;
-- the six power-ups, flown into and never stored (Shield Cell, Overclock, Mirror Shell, Phase, Ring Magnet, Slipstream).
+- the six power-ups, flown into and never stored (Shield Cell, Overclock, Mirror Shell, Phase, Ring Magnet, Slipstream);
+- the player pass (0.6.0): a checkpoint on every level, stars won by score, no level on a timer, Shield Cells off the ring line, every thing in the game introduced the first time it is met, and the first roll staged so it is seen to send a shot home.
 
 The MCP planned the first ten levels; CLU planned galaxies 2 and 3 and the power-ups. Quorra researched level design and wrote the checklist every level was built to.
 
-**Build:** CLU. Level 1 and the level framework, then one CLU per level for levels 3 to 10, and a sound CLU. For galaxies 2 and 3, an integrator CLU (the galaxy engine, the power-ups, the menus) and eight builder CLUs, three levels or a finale each, with a sound CLU. Every line of game code is original.
+**Build:** CLU. Level 1 and the level framework, then one CLU per level for levels 3 to 10, and a sound CLU. For galaxies 2 and 3, an integrator CLU (the galaxy engine, the power-ups, the menus) and eight builder CLUs, three levels or a finale each, with a sound CLU. The player pass (0.6.0): Fundi, the studio's engineer (CLU until the studio renamed its programs on 2026-11-08). Every line of game code is original.
 
 **Art: Yori.**
 - The RING REAPER wordmark and all the call-out lettering, from GRAZE! to DEGENERATE.
@@ -29,6 +30,7 @@ The MCP planned the first ten levels; CLU planned galaxies 2 and 3 and the power
 - Every level's look and scenery.
 - The REIMERTEK STUDIOS logo (The Portal) on the opening splash.
 - The launcher, the loading screen, the galaxy chart, each galaxy's sector map and level select, the icons, the share card and the cabinet art.
+- The checkpoint (0.6.0) is not hers yet: it is a first build drawn in code by Fundi, until she redraws it.
 - Her 2D art is drawn in code by her own renderer. Her ship, enemy, boss and scenery designs are vertex lists that the game builds into 3D at run time. No model files are loaded.
 
 ## What this folder holds

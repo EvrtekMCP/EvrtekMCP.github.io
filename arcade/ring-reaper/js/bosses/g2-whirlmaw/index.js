@@ -4,7 +4,7 @@
 // spins: steer against the boss itself. Its distance is the health bar: every hit knocks it back, every inhale draws it
 // in; win by pushing it out of the arena. No galaxy 1 boss moves the player.
 // Weak points: four gill-lights along its jaw, lit (green, her colour) only while it exhales (rule 25). Deflect-only:
-// its own spit, rolled home, and in phase 2 its own heartbeat, parried. It dives after 110 s if not beaten (rule 26).
+// its own spit, rolled home, and in phase 2 its own heartbeat, parried. (0.6.0, Evrtek 11-10: no level has a timer. It no longer leaves on a clock; the fight ends when it is beaten.)
 //  1 THE INHALE: it breathes in (1.2 s tell: motes stream into its mouth), the pull and the whirl; on the exhale its
 //    gills flare and it spits a fan of three. Roll them home.
 //  2 THE HEARTBEAT: its heart thrums: pulses from its mouth between the spit volleys. Parry them: the echo hits a gill.
@@ -12,8 +12,8 @@
 //    the shoal it was feeding on pours out of its mouth past you: catch them and your shield comes back (rule 7).
 // Freed: the graft cracks and falls away (her freed(): silver, seams gone), it rolls over and swims off into the deep.
 // Every phase loops on whole bars of its take (g2/bosses/whirlmaw, 136 bpm, 1.765 s a bar): rule 28.
-import { THREE, defineBoss, defineDecor, buildModel, GlowPoints, clamp, damp, smoothstep, SHIP_R } from '../../api.js?v=0.5.0';
-import { MESH } from './mesh.js?v=0.5.0';
+import { THREE, defineBoss, defineDecor, buildModel, GlowPoints, clamp, damp, smoothstep, SHIP_R } from '../../api.js?v=0.6.0';
+import { MESH } from './mesh.js?v=0.6.0';
 
 const BAR = 1.76473;                                  // the take's bar (its .json): every loop is whole bars
 const GILL_DARK = new THREE.Color(0x1e6a44), GILL_LIT = new THREE.Color(0xd6ffe3);
@@ -89,7 +89,6 @@ function mouth(b) { const v = new THREE.Vector3(0, 0, 14); b.root.localToWorld(v
 export default defineBoss({
   name: 'g2-whirlmaw', title: 'THE WHIRLMAW',
   hold: HOLD.far, enterTime: 4.5, scale: 1, y: 0,
-  escapeAfter: 110, escapeCall: 'IT DIVES INTO THE DEEP',
   bonus: 60000, hitPts: 2500, pointDown: 'GILL OUT!', defeatTime: 3.2,   // galaxy 2: the engine frees it (FREED!, g2-boss-freed, the tally line)
   build(api, b) {
     const root = new THREE.Group(), inner = new THREE.Group(); root.add(inner);

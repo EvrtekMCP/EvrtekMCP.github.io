@@ -11,11 +11,11 @@
 //    the shade is under a high raft.
 // Touching the fire costs a small hit (and another each time the shield's grace ends, if you stay in it).
 // Flying close to it pays SKIM (rule 31: the risk line); riding a corridor through a burn pays SHADE.
-import { THREE, defineObstacle, Instanced, clamp, smoothstep, appear, SPAWN_D } from '../../api.js?v=0.5.0';
-import { rafts, sheltered, insideBy, blockAt, surfaceY, ceilingY } from './shade.js?v=0.5.0';
-import { star } from './star.js?v=0.5.0';
-import { fogFade } from './raft.js?v=0.5.0';
-import { BEAT } from './timeline.js?v=0.5.0';
+import { THREE, defineObstacle, Instanced, clamp, smoothstep, appear, SPAWN_D } from '../../api.js?v=0.6.0';
+import { rafts, sheltered, insideBy, blockAt, surfaceY, ceilingY } from './shade.js?v=0.6.0';
+import { star } from './star.js?v=0.6.0';
+import { fogFade } from './raft.js?v=0.6.0';
+import { BEAT } from './timeline.js?v=0.6.0';
 
 const CAP = 1500, SEG = 48, ROW = 4.5;
 const qA = new THREE.Quaternion(), eul = new THREE.Euler();

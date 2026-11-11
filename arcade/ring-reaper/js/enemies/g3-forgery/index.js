@@ -4,7 +4,10 @@
 //              the rings before they reach you. Every ring it eats rides in its cradle (amber hoops: laden).
 //   KEYED FIRE the level's turrets are keyed to forgeries (g3-forge-turret): roll a turret's bolt home and it homes on
 //              the nearest laden forgery instead. The forgery bursts and drops everything it stole as a shower of rings
-//              you can catch. Those are the level's own rings, so catching them back counts (the MCP's default 4: the
+//              that FLY BACK TO YOU (0.6.0, Evrtek 11-10: fix the Forgery. They were dropped where the forgery was, up to a
+//              lane's width from the ship and a second and a half out, and each one not reached counted as a missed
+//              ring: the better a pilot sent bolts home, the more rings it then missed. Now they home on the ship, and
+//              fumbling one costs nothing). Those are the level's own rings, so catching them back counts (the MCP's default 4: the
 //              stolen rings are the skill that ★4 and ★5 ask for; ★1-★3 never need them).
 //   IT ROLLS   a later forgery (rolls: 1) rolls your first send straight back at you: a white flash and a bolt. Its
 //              roll is slow: the white ring above it empties and refills (2.6 s). Roll the bolt home again while the
@@ -13,9 +16,9 @@
 //          off with what it took), lat: 7 (m/s it can slide across the lane), rolls: 0, enter: 2.4,
 //          want: 'boost' (it goes for boost rings first: the Heist), cap: 3 (its cradle: full, it makes off with them,
 //          slowly enough that a keyed bolt still catches it on its way) }
-import { THREE, defineEnemy, buildModel, clamp, SPAWN_D } from '../../api.js?v=0.5.0';
-import { MESH } from './mesh.js?v=0.5.0';
-import { SightLines } from '../sniper/sight.js?v=0.5.0';
+import { THREE, defineEnemy, buildModel, clamp, SPAWN_D } from '../../api.js?v=0.6.0';
+import { MESH } from './mesh.js?v=0.6.0';
+import { SightLines } from '../sniper/sight.js?v=0.6.0';
 
 const SCALE = 3.3, COOL = 2.6, ROLL_T = 0.45, BACK_T = 1.25, EAT_R = 2.2;
 let lines = null;
@@ -155,7 +158,7 @@ function burst(e, api) {
   for (let i = 0; i < n; i++) {
     const a = i * 2.4, rr = 0.9 + 0.25 * (i % 3);
     const x = clamp(e.x + Math.cos(a) * rr, -box.x * 0.85, box.x * 0.85), y = clamp(e.y + Math.sin(a) * rr * 0.7, -box.y * 0.8, box.y * 0.8);
-    const r = api.spawn({ type: 'ring', x, y, shower: true }, Math.min(-160, e.z - i * 16));
+    const r = api.spawn({ type: 'ring', x, y, shower: true, homing: true }, Math.min(-160, e.z - i * 16)); // 0.6.0: they fly to the ship (course.js)
     r.grow = 0.02; r.sx = r.sy = r.sz = 0.02; api.pose(r); e.shower.push(r);
   }
   if (n) api.game.pop(n > 1 ? n + ' RINGS BACK' : 'RING BACK', e.x, e.y + 3, e.z, 'cyan');

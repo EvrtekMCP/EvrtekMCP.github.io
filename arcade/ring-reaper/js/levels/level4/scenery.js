@@ -5,11 +5,11 @@
 //  - l4-prominences: arches of star-stuff over the lane (Yori's prominence), the level's landmark.
 //  - l4-plate-drifts: her shield-plates at full size, tumbling slowly outside the box.
 //  - l4-great-loop: one colossal prominence standing on the horizon.
-import { THREE, defineScenery, defineDecor, Instanced, buildModel, modelGroups, material, clamp, smoothstep, rng } from '../../api.js?v=0.5.0';
-import { MESH } from './mesh.js?v=0.5.0';
-import { star } from './star.js?v=0.5.0';
-import { surfaceY } from './shade.js?v=0.5.0';
-import { plateMaterial } from './raft.js?v=0.5.0';
+import { THREE, defineScenery, defineDecor, Instanced, buildModel, modelGroups, material, clamp, smoothstep, rng } from '../../api.js?v=0.6.0';
+import { MESH } from './mesh.js?v=0.6.0';
+import { star } from './star.js?v=0.6.0';
+import { surfaceY } from './shade.js?v=0.6.0';
+import { plateMaterial } from './raft.js?v=0.6.0';
 
 const BASE_CURV = 1 / 26000;
 

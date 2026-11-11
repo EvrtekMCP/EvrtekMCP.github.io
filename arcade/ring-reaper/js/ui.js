@@ -1,21 +1,22 @@
 // STARWAKE 0.4.0: the screens around the flying: the loading screen, the launcher (NEW GAME, CONTINUE, LEVEL
 // SELECT, OPTIONS), the galaxy chart (0.4.0), each galaxy's sector map with stars, the end card's stars, pause, and the
 // hidden dev menu (a tab a galaxy). Every level shares them; nothing here knows any one level.
-import { fmt, store, V } from './util.js?v=0.5.0';
-import { loadLevel, RANK_ORDER, MAX_STARS, GALAXIES, galaxy, catalogueOf, entryOf, levelLabel } from './levels.js?v=0.5.0';
-import { keyLabel, codeOf } from './input.js?v=0.5.0';
-import { param } from './params.js?v=0.5.0';
-import { tipsSetting, setTipsSetting } from './tutorials.js?v=0.5.0';
+import { fmt, store, V } from './util.js?v=0.6.0';
+import { loadLevel, RANK_ORDER, MAX_STARS, GALAXIES, galaxy, catalogueOf, entryOf, levelLabel } from './levels.js?v=0.6.0';
+import { keyLabel, codeOf } from './input.js?v=0.6.0';
+import { param } from './params.js?v=0.6.0';
+import { tipsSetting, setTipsSetting } from './tutorials.js?v=0.6.0';
+import { DEMO, DEMO_BUILD, DEMO_TEXT, DEMO_LEVELS, demoEnds } from './demo.js?v=0.6.0';
 
 const $ = (id) => document.getElementById(id);
-const SCREENS = ['title', 'galaxies', 'select', 'options', 'confirm', 'dev', 'paused', 'end', 'credits'];
+const SCREENS = ['title', 'galaxies', 'select', 'options', 'confirm', 'dev', 'paused', 'end', 'credits', 'demo'];
 const STAR = '★', NOSTAR = '☆';
 
 export class UI {
   constructor(o) {
     this.o = o; this.G = o.G; this.audio = o.audio; this.Progress = o.Progress; this.CATALOGUE = o.CATALOGUE; this.level = o.level; this.input = o.input;
     this.fpsOn = false; this.fpsT = 0; this.fpsN = 0; this.back = 'title';
-    this.devOn = param('dev') !== null || !!store('ringreaper.dev'); // ?dev or #dev (params.js)
+    this.devOn = !DEMO_BUILD && (param('dev') !== null || !!store('ringreaper.dev')); // ?dev or #dev (params.js); never in a demo build
     this.gal = 1; this.devGal = 1; // the galaxy the sector map (and the dev menu) shows
     this.nodes = null; fetch('art/ui/map-nodes.json' + V).then((r) => r.json()).then((j) => { this.nodes = j; if (!$('select').hidden) this.select(this.gal); }, () => {});
     window.addEventListener('resize', () => { if (!$('select').hidden) this.layoutMap(); if (!$('galaxies').hidden) this.layoutChart(); });
@@ -33,7 +34,12 @@ export class UI {
     on('options-btn', () => { this.syncToggles(); this.show('options'); });
     on('dev-btn', () => this.devMenu());
     on('again-btn', () => this.start(this.level().g || 1, this.level().n, this.lastOpts || {}));
-    on('next-btn', () => { if (this.finalClear) { this.rollThen(() => this.o.toTitle()); return; } const nx = this.nextOf(this.level()); if (nx) this.start(nx[0], nx[1]); });
+    // 0.6.0: start again from the checkpoint the run took (main.js newRun, opts.checkpoint)
+    on('cp-btn', () => this.o.start(this.level().g || 1, this.level().n, { checkpoint: true }));
+    // 0.6.0, the demo: beating its last level goes on to the demo card (js/demo.js), and from there back to the levels or the menu
+    on('demo-levels', () => this.select(1));
+    on('demo-menu', () => this.o.toTitle());
+    on('next-btn', () => { if (this.demoEnd) { this.demoCard(); return; } if (this.finalClear) { this.rollThen(() => this.o.toTitle()); return; } const nx = this.nextOf(this.level()); if (nx) this.start(nx[0], nx[1]); });
     on('levels-btn', () => this.rollThen(() => this.select(this.level().g || 1)));
     // 0.4.0: the sector map's arrows (and a swipe, and the arrow keys) move to the neighbouring galaxy; BACK is the chart
     on('gal-prev', () => this.select(this.gal - 1));
@@ -62,7 +68,7 @@ export class UI {
       const st = this.G.state;
       if (st === 'title' && /^[a-z]$/i.test(e.key)) { typed = (typed + e.key.toLowerCase()).slice(-3); if (typed === 'dev') { typed = ''; this.toggleDev(); } }
       if ((e.key === 'Enter' || (e.key === ' ' && !e.repeat)) && st === 'title' && !$('title').hidden) { e.preventDefault(); this.audio.unlock(); if (this.Progress.any()) this.start(...this.Progress.furthestAt()); else this.start(1); }
-      if ((e.key === 'Enter' || (e.key === ' ' && !e.repeat)) && st === 'end') { e.preventDefault(); this.start(this.level().g || 1, this.level().n, this.lastOpts || {}); }
+      if ((e.key === 'Enter' || (e.key === ' ' && !e.repeat)) && st === 'end') { e.preventDefault(); if (this.cpReady) this.o.start(this.level().g || 1, this.level().n, { checkpoint: true }); else this.start(this.level().g || 1, this.level().n, this.lastOpts || {}); }
       if (!$('select').hidden && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) { e.preventDefault(); this.select(this.gal + (e.key === 'ArrowRight' ? 1 : -1)); }
       if (!$('select').hidden && e.key === 'Escape') { e.preventDefault(); this.chart(); }
     });
@@ -242,6 +248,8 @@ export class UI {
         b.addEventListener('click', () => { this.audio.unlock(); this.select(x.g); });
       } else if (x.has.label) info.appendChild(img('ui/chart/lock-g' + x.g + '.png', 'glock'));
       else { const lk = document.createElement('div'); lk.className = 'glock'; lk.textContent = 'FINISH ' + GALAXIES[i - 1].finale; info.appendChild(lk); }
+      // 0.6.0, the demo: a shut galaxy is not waiting on a level you can finish; it says where it is
+      if (!open && DEMO) { const gl = info.querySelector('.glock'); if (gl) gl.remove(); const lk = document.createElement('div'); lk.className = 'glock demo-lock'; lk.textContent = DEMO_TEXT.locked; info.appendChild(lk); b.setAttribute('aria-label', x.name + ', ' + DEMO_TEXT.locked.toLowerCase()); }
       box.appendChild(b);
     });
     this.justOpened = null;
@@ -275,7 +283,7 @@ export class UI {
     $('select').dataset.g = g; $('select').classList.toggle('ph', !G.has.map); $('select').style.setProperty('--tint', G.tint);
     for (const c of G.levels) {
       const p = this.Progress.get(g, c.n), open = this.Progress.unlocked(g, c.n) || this.devOn, nn = String(c.n).padStart(2, '0');
-      const t = document.createElement('button'); t.className = 'mtile ' + (p.cleared ? 'cleared' : open ? 'open' : 'locked'); t.dataset.n = c.n;
+      const t = document.createElement('button'); t.className = 'mtile ' + (!open ? 'locked' : p.cleared ? 'cleared' : 'open'); t.dataset.n = c.n; // (0.6.0: locked first, so a level shut by the demo reads as locked whatever the save holds)
       t.disabled = !open; t.setAttribute('aria-label', 'Level ' + c.n + ' ' + c.name + (open ? '' : ', locked') + ', ' + p.stars + ' of ' + MAX_STARS + ' stars');
       t.append(img('ui/num-' + nn + '.png', 'n'));
       if (g === 1) t.append(img('ui/name-' + (c.art || nn) + '.png', 'nm'));
@@ -300,6 +308,8 @@ export class UI {
     $('gal-prev').hidden = !galaxy(g - 1); $('gal-next').hidden = !galaxy(g + 1);
     $('gal-next').disabled = !!galaxy(g + 1) && !this.Progress.galaxyOpen(g + 1) && !this.devOn;
     $('totals').textContent = STAR + ' ' + this.Progress.totalStars(g) + ' / ' + this.Progress.maxStars(g) + '   ·   ' + STAR + ' ' + this.Progress.totalStars() + ' / ' + this.Progress.maxStars();
+    // 0.6.0, the demo: the map says where the shut levels are (never a price, never a link)
+    if (DEMO) $('totals').textContent = STAR + ' ' + this.Progress.totalStars(g) + ' / ' + DEMO_LEVELS * MAX_STARS + '   ·   LEVELS ' + (DEMO_LEVELS + 1) + ' TO ' + G.levels.length + ' ARE ' + DEMO_TEXT.locked;
     this.show('select');
     this.layoutMap();
   }
@@ -333,8 +343,12 @@ export class UI {
     n.textContent = dev ? 'DEV RUN: NOTHING SAVED. ' + st.next : st.next;
     el.appendChild(n);
   }
-  endScreen(L, cleared, gc) {
+  // cp (0.6.0): { score } when the run went down after taking its checkpoint: the card offers a start from there, and says
+  // what that keeps
+  endScreen(L, cleared, gc, cp = null) {
     this.show('end');
+    this.cpReady = !!cp; $('cp-btn').hidden = !cp; $('again-btn').textContent = cp ? 'FROM THE START' : 'FLY AGAIN'; $('again-btn').className = cp ? 'ghost-btn' : 'go'; // (the checkpoint is the card's first offer)
+    if (cp) { const n = document.createElement('div'); n.className = 'need cp'; n.textContent = 'YOUR CHECKPOINT KEPT ' + fmt(cp.score) + ' POINTS. FROM THERE YOU START AT x1 WITH A FULL SHIELD.'; $('end-stars').appendChild(n); }
     const nx = this.nextOf(L), open = nx && (this.Progress.unlocked(nx[0], nx[1]) || this.G.dev);
     $('next-btn').hidden = !(cleared && open);
     // 0.4.0: a level 10 finished. The chart's route lights up to the next galaxy, which says it is open.
@@ -350,6 +364,16 @@ export class UI {
     // the whole game's last clear, on a real run: the credits roll on the way out (once), and the card offers them
     this.finalClear = !!(gc && gc.final);
     if (this.finalClear) { $('next-btn').hidden = false; $('next-btn').textContent = 'CREDITS'; }
+    // 0.6.0, the demo: its last level beaten: the card's next step is the demo card (js/demo.js)
+    this.demoEnd = !!(cleared && demoEnds(L.g || 1, L.n));
+    if (this.demoEnd) { $('next-btn').hidden = false; $('next-btn').textContent = 'CONTINUE'; }
+  }
+  // ---- the DEMO CARD (0.6.0; Evrtek 11-10: a tasteful 'full version' end card; no prices, no store links, no 'buy')
+  demoCard() {
+    $('demo-head').textContent = DEMO_TEXT.head;
+    const box = $('demo-lines'); box.textContent = '';
+    for (const t of DEMO_TEXT.lines) { const d = document.createElement('p'); d.textContent = t; box.appendChild(d); }
+    this.demoEnd = false; this.show('demo'); this.o.menuMusic();
   }
   // ---- the CREDITS (0.4.0, g3-d): from CREDITS.md, in a person's voice. Headings in Yori's lettering where she has drawn
   // them (the wordmark, the three galaxy names), plain styled text otherwise. The menu's track keeps playing under it.
@@ -418,6 +442,7 @@ export class UI {
 
   // ---- dev mode: ships hidden; a DEV badge shows while it is on
   toggleDev() {
+    if (DEMO_BUILD) return; // a demo build has no dev menu (it opens every level)
     this.devOn = !this.devOn; this.G.dev = this.devOn;
     store('ringreaper.dev', this.devOn ? 1 : 0);
     this.toast(this.devOn ? 'DEV MODE ON' : 'DEV MODE OFF');

@@ -20,11 +20,11 @@
 //                       turret PAIR fires two at once, and a MULTI-DEFLECT beats it (the first it rolls back, the second
 //                       lands while its ring refills)
 // Defeat: its paint burns off, leaving a hollow white frame (the plan it was copied from) that peels away and breaks up.
-// Safety net (rule 26): not beaten in 120 s, it wins the race and flies off, with no bonus.
-import { THREE, defineBoss, buildModel, clamp, SPAWN_D } from '../../api.js?v=0.5.0';
-import { buildParts } from '../../enemies/crystal-emitter/parts.js?v=0.5.0';
-import { MESH } from './mesh.js?v=0.5.0';
-import { raceRing, take } from './rings.js?v=0.5.0';
+// (0.6.0, Evrtek 11-10: no level has a timer. It no longer leaves on a clock; the fight ends when it is beaten.)
+import { THREE, defineBoss, buildModel, clamp, SPAWN_D } from '../../api.js?v=0.6.0';
+import { buildParts } from '../../enemies/crystal-emitter/parts.js?v=0.6.0';
+import { MESH } from './mesh.js?v=0.6.0';
+import { raceRing, take } from './rings.js?v=0.6.0';
 
 export { raceRing };
 export const BPM = 146.092, BAR = 240 / BPM;
@@ -41,7 +41,7 @@ function turretSpot(api, i) { return [(i ? 1 : -1) * api.box.x * 1.45, api.box.y
 
 export default defineBoss({
   name: 'g3-counterfeit', title: 'THE COUNTERFEIT',
-  hold: HOLD, scale: SCALE, y: 0.4, enterTime: 2 * BAR, escapeAfter: 120, escapeCall: 'IT WON THE RACE',
+  hold: HOLD, scale: SCALE, y: 0.4, enterTime: 2 * BAR,
   bonus: 70000, hitPts: 3000, defeatTime: 2.8, downCall: 'COUNTERFEIT DOWN!',
   build(api, b) {
     const root = new THREE.Group();

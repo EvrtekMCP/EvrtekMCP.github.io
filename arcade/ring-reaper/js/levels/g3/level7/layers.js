@@ -1,7 +1,7 @@
 // GALAXY 3, levels 7-9 (CLU, g3-c): drawing Yori's pieces as scenery. One instanced layer per colour group of one of her
 // models: lit groups take her colour and metal; glowing groups are unlit (white, tinted per copy when asked). And a
 // far model for a landmark: her groups with their own materials, out of the fog, faded by the scenery's weight.
-import { THREE, Instanced, modelGroups } from '../../../api.js?v=0.5.0';
+import { THREE, Instanced, modelGroups } from '../../../api.js?v=0.6.0';
 
 const tmpC = new THREE.Color();
 // opts.dead: glowing colours to draw unlit in her "dead" colour (#2a2730): the guns mounted on a scenery gantry are

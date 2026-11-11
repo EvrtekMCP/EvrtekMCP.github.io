@@ -3,8 +3,8 @@
 // biggest wreck of all, THE MAUSOLEUM, grows across the level until act 4 flies down the inside of it: its ribs
 // flashing past, its torn plating overhead. Palette: Yori's level 8 (near-black greys, rust, olive ash). Nothing
 // here is red, amber or cyan, and nothing here is in the flight box.
-import { THREE, defineScenery, defineDecor, Instanced, buildModel, rng, clamp, smoothstep } from '../../api.js?v=0.5.0';
-import { WRECK } from './meshes.js?v=0.5.0';
+import { THREE, defineScenery, defineDecor, Instanced, buildModel, rng, clamp, smoothstep } from '../../api.js?v=0.6.0';
+import { WRECK } from './meshes.js?v=0.6.0';
 
 const tmpQ = new THREE.Quaternion(), eul = new THREE.Euler(), tmpV = new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0);
 // the Mausoleum's own sky-beams: a soft cone, brightest where you look through it, fading toward its far end

@@ -19,8 +19,8 @@
 //                      lane, its gap planned 1.5 s first; it is the one thing in the galaxy you cannot roll back
 // The clock is the music's: every loop starts on the track's Call bar line when the music is playing (and on its own
 // clock, from the same grid, when it is not), so the notes land on the beat.
-// Rule 26: it tears itself apart after 150 s unbeaten (no bonus); every hit buys 3 s, so only a ship that has stopped
-// hurting it is timed out. Ten reeds, two hits each (20). (g3-roll tried three: the fight ran 133 s, too long.)
+// (0.6.0, Evrtek 11-10: no level has a timer. It no longer tears itself apart on a clock; the fight ends when it is beaten.)
+// Ten reeds, two hits each (20). (g3-roll tried three: the fight ran 133 s, too long.)
 // CHORDS (g3-roll, 11-07: roll demand rises to the end of the game, and this is the end). One note in each loop is a
 // CHORD: its bolt flies its bar like any note, and ONE BEAT before it lands it opens into a weft round you, a hex of
 // bolts NET_S apart (one ring, seven bolts: the MCP's limit for a finale boss's own net, 11-07), all landing together.
@@ -30,11 +30,11 @@
 // into that same reed and spark on it without cutting, so a chord is one hit on the loom, never seven. They are the
 // loom's own bolts (the boss owns them: born inside 150 m, they come from a shooter on screen, the popin rule); sent
 // home, the boss's update turns each one from the lit weak point to the reed's spark point before it can get there.
-import { THREE, defineBoss, buildModel, clamp, smoothstep, NET_S } from '../../api.js?v=0.5.0';
-import { MESH } from './mesh.js?v=0.5.0';
-import { MESH as SHUTTLE } from './shuttle-mesh.js?v=0.5.0';
-import { pick, REED_X, comb, shear, light } from './kinds.js?v=0.5.0';
-import { GRID, barT, beatOf } from '../../levels/g3/level10/grid.js?v=0.5.0';
+import { THREE, defineBoss, buildModel, clamp, smoothstep, NET_S } from '../../api.js?v=0.6.0';
+import { MESH } from './mesh.js?v=0.6.0';
+import { MESH as SHUTTLE } from './shuttle-mesh.js?v=0.6.0';
+import { pick, REED_X, comb, shear, light } from './kinds.js?v=0.6.0';
+import { GRID, barT, beatOf } from '../../levels/g3/level10/grid.js?v=0.6.0';
 
 export const kinds = [comb, shear, light];
 const S = 2.4, NR = REED_X.length;                       // her units x 2.4; ten reeds
@@ -93,8 +93,7 @@ export default defineBoss({
   // the boss marker comes 0.8 s before the shed's bar line, where its track cuts in; it flies in through the Impact and
   // starts on the Call's bar line
   enterTime: 0.8 + barT('weftwork', 5),
-  escapeAfter: 150, defeatTime: 4.2,
-  escapeCall: "IT'S TEARING ITSELF APART!",
+  defeatTime: 4.2,
   bonus: 120000, hitPts: 3000, pointDown: 'REED CUT!', downCall: 'THE LOOM IS COMING APART!',
   build(api, b) {
     const root = new THREE.Group(), inner = new THREE.Group();
@@ -329,7 +328,7 @@ function animate(b, dt, api) {
   }
   // every hit on a reed spills thread-light (a cut one spills more, in onWeakDown)
   // and every hit buys 3 s on the clock (galaxy 1's finale rule): only a ship that has stopped hurting it is timed out
-  for (const w of b.weak) { if (w.lastHp !== undefined && w.hp < w.lastHp && fight) { if (w.hp > 0) { spill(b, api, 1, w.i); b.flash[w.i] = 1; } b.fightT = Math.max(0, b.fightT - 3); api.game.sfx('boss-hit', { vol: 0.9 }); } w.lastHp = w.hp; }
+  for (const w of b.weak) { if (w.lastHp !== undefined && w.hp < w.lastHp && fight) { if (w.hp > 0) { spill(b, api, 1, w.i); b.flash[w.i] = 1; } api.game.sfx('boss-hit', { vol: 0.9 }); } w.lastHp = w.hp; }
   b.slitT = Math.max(0, (b.slitT || 0) - dt);
   b.slit.color.setHex(b.slitT > 0 ? 0xffffff : 0xff3355);
   b.root.updateMatrixWorld(); tmpV.set(0, 0, 0); b.shuttle.localToWorld(tmpV); b.root.worldToLocal(tmpV);

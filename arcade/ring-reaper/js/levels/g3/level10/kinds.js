@@ -4,8 +4,8 @@
 //                      crack on its face, the cache's amber glow bleeding round its edges, and amber sparks drifting
 //                      out of it. The level lays a trail of cache rings running into it: real rings, never fake ones.
 // ev: nx, ny (its middle), w, h (metres), seed.
-import { THREE, defineObstacle, buildModel, SHIP_R } from '../../../api.js?v=0.5.0';
-import { MESH as CRACK } from './crack-mesh.js?v=0.5.0';
+import { THREE, defineObstacle, buildModel, SHIP_R } from '../../../api.js?v=0.6.0';
+import { MESH as CRACK } from './crack-mesh.js?v=0.6.0';
 
 const PITCH = 0.85;
 let thrGeo = null, thrMat = null, frameMat = null, boxGeo = null, bleedMat = null, sparkMat = null;

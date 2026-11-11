@@ -1,6 +1,6 @@
 // STARWAKE (0.4.0: the power-up strip): the DOM layer over the canvas: numbers, bars, pop-ups and call-outs. Loud and generous (ruling 4).
-import { fmt, V } from './util.js?v=0.5.0';
-import { POWERUPS } from './powerups.js?v=0.5.0';
+import { fmt, V } from './util.js?v=0.6.0';
+import { POWERUPS } from './powerups.js?v=0.6.0';
 
 // Yori's call-out sprites (art/, glow baked in). Preloaded so the first GRAZE never waits on a decode.
 export const ART = ['graze', 'multi-deflect', 'greed', 'perfect', 'no-hit', 'level-clear', 'rank-c', 'rank-b', 'rank-a', 'rank-s', 'rank-degenerate', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7', 'x8'];
@@ -39,7 +39,18 @@ const BANNER_MS = 4000; // a section's name stays about four seconds (0.3.0; it 
 export class Hud {
   constructor() {
     this.el = $('hud');
-    this.score = $('score'); this.combo = $('combo'); this.rings = $('rings');
+    this.score = $('score'); this.combo = $('combo');
+    // 0.6.0, the player pass (Evrtek 11-10: "The HUD should make the score and multiplier, and progress toward the next star,
+    // readable"): the chain's five pips beside the multiplier (one a ring: all five step it up), and the star meter under
+    // them (the stars this run's score has reached, a bar to the next, and how far off it is). RINGS and CHAIN as bare
+    // numbers are gone: the ring count is on the end card, and the chain is the pips.
+    this.chainEl = $('chain'); this.pips = this.chainEl ? [...this.chainEl.children] : [];
+    this.starRow = $('star-row'); this.starFill = $('star-fill'); this.starNext = $('star-next'); this.starEls = [];
+    if (this.starRow) for (let i = 0; i < 5; i++) {
+      const d = document.createElement('span');
+      for (const k of ['off', 'on']) { const im = new Image(); im.src = 'art/ui/star-' + k + '.png' + V; im.alt = ''; im.className = k; d.appendChild(im); }
+      this.starRow.appendChild(d); this.starEls.push(d);
+    }
     this.shield = $('shield-fill'); this.greed = $('greed-fill'); this.greedBtn = $('greed-btn');
     this.roll = $('roll'); this.rollFill = $('roll-fill');
     this.banner = $('banner'); this.callout = $('callout'); this.calloutArt = $('callout-art'); this.flashEl = $('flash');
@@ -94,7 +105,21 @@ export class Hud {
       if (m > this.lastMult) run(this.combo, SHAKE, 280, 'linear');
       this.lastMult = m;
     }
-    this._set('rings', 'RINGS ' + g.ringsGot + '  CHAIN ' + g.chain);
+    // the chain: rings toward the next step of the multiplier (at x8 all five stay lit)
+    const pips = m >= 8 ? 5 : g.chain % 5, pk = pips + (m >= 8 ? 'm' : '');
+    if (pk !== this.last.pips) { this.last.pips = pk; this.pips.forEach((el, i) => el.classList.toggle('on', i < pips)); if (this.chainEl) this.chainEl.classList.toggle('max', m >= 8); }
+    // the star meter: g.star is levels.js starProgress() of what the run has banked (main.js). The first star is the clear
+    // itself, so it shows half lit until the run is home.
+    const st = g.star;
+    if (st && this.starEls.length) {
+      if (st.stars !== this.last.stars) {
+        const up = this.last.stars !== undefined && st.stars > this.last.stars; this.last.stars = st.stars;
+        this.starEls.forEach((el, i) => { el.classList.toggle('got', i > 0 && i < st.stars); el.classList.toggle('clear', i === 0); });
+        if (up) run(this.starEls[st.stars - 1], [{ scale: '1' }, { scale: '1.9', offset: 0.3 }, { scale: '1' }], 520);
+      }
+      this._style('stw', this.starFill, 'width', Math.round(st.k * 100) + '%');
+      this._set('starNext', st.next ? fmt(Math.ceil(st.more / 100) * 100) + ' TO ' + (st.next.rank === 'DEGENERATE' ? 'DEGENERATE' : '★'.repeat(st.next.stars)) : 'DEGENERATE');
+    }
     const sh = Math.max(0, g.shield);
     this._style('sw', this.shield, 'width', sh + '%');
     this.shield.classList.toggle('low', sh < 30);
@@ -147,6 +172,7 @@ export class Hud {
   // the roll lesson's panel: { key, say, skip } or null to hide it
   tutor(o) {
     if (!this.tutorEl) return;
+    this.tutorEl.classList.toggle('now', !!(o && o.now)); // 0.6.0: the world has stopped on the moment: the prompt pulses
     if (!o) { this.tutorEl.hidden = true; return; }
     this.tutorKey.textContent = ''; this.tutorKey.hidden = !o.key;
     const K = this.tutorKey, el = (tag, cls, text) => { const d = document.createElement(tag); if (cls) d.className = cls; if (text) d.textContent = text; K.appendChild(d); return d; };
@@ -171,7 +197,8 @@ export class Hud {
     const T = this.tipEl || (this.tipEl = $('tip'));
     if (!T) return;
     this.el.classList.toggle('tip-on', !!o);
-    if (!o) { T.hidden = true; this.tipK = -1; return; }
+    if (!o) { T.hidden = true; this.tipK = -1; this.tipMark(null); return; }
+    T.classList.toggle('note', o.kind === 'note'); // 0.6.0: a NOTE (a rule of the game) is the smaller card
     const icon = $('tip-icon'), name = $('tip-name'), say = $('tip-say');
     icon.textContent = ''; icon.className = 'tip-icon' + (o.icon ? '' : ' g-' + (o.glyph || 'hurt'));
     icon.style.setProperty('--c', o.color || '');
@@ -187,7 +214,14 @@ export class Hud {
     this.tipK = -1; this.tipLeft(1);
   }
   // the auto-resume's time left on the SKIP button, 1 to 0
-  tipLeft(k) { const r = Math.round(k * 100) / 100; if (r === this.tipK) return; this.tipK = r; $('tip-skip').style.setProperty('--k', r); }
+  tipLeft(k) { const r = Math.round(k * 100) / 100; if (r === this.tipK || !this.tipEl) return; this.tipK = r; this.tipEl.style.setProperty('--k', r); }
+  // 0.6.0: the bracket on the thing the card is about: [x, y] on the screen, or null to put it away
+  tipMark(pos) {
+    const M = this.markEl || (this.markEl = $('tip-mark')); if (!M) return;
+    if (!pos) { if (!M.hidden) M.hidden = true; return; }
+    if (M.hidden) M.hidden = false;
+    M.style.transform = 'translate(' + pos[0].toFixed(1) + 'px,' + pos[1].toFixed(1) + 'px)';
+  }
   pop(text, x, y, cls = '') {
     const d = this.pops[this.popI++ % this.pops.length];
     d.textContent = text; d.className = 'p ' + cls;

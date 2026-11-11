@@ -3,9 +3,9 @@
 // behind its bell: touching them costs a small hit; brushing past them pays STING (a graze). It never fires. A shot
 // sent back at it (a stray deflect) cracks its graft: freed, it goes silver (Yori's colour map) and drifts on.
 //   add(d, 'g2-drifter', { nx, ny, s: 0.8..1.2, drift: own sideways drift in half-boxes a second })
-import { THREE, defineEnemy, buildModel, clamp, damp, HIT_R, GRAZE_R, SHIP_R, READ_D } from '../../api.js?v=0.5.0';
-import { MESH } from './mesh.js?v=0.5.0';
-import { flowAt } from '../../obstacles/g2-current/index.js?v=0.5.0';
+import { THREE, defineEnemy, buildModel, clamp, damp, HIT_R, GRAZE_R, SHIP_R, READ_D } from '../../api.js?v=0.6.0';
+import { MESH } from './mesh.js?v=0.6.0';
+import { flowAt } from '../../obstacles/g2-current/index.js?v=0.6.0';
 
 const TAIL = 8;                                           // tendrils trail this far behind the bell (toward you)
 const REACH = 2.3;                                        // the tendrils' ring, round its middle

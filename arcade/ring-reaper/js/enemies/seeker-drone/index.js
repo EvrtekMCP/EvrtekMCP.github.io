@@ -10,8 +10,8 @@
 //          longer tell, a slower bolt, and its first bolt only grazes you) }
 // Yori's two states: her seekerDrone(1) sweeps the fins back along the body, seekerDrone(0) spreads them. Her
 // note says the fins hug the body and FLARE before it fires, so: at rest = her (1), the tell = her (0).
-import { THREE, defineEnemy, buildModel, GlowPoints, clamp, damp, smoothstep, SPAWN_D } from '../../api.js?v=0.5.0';
-import { MESH } from './mesh.js?v=0.5.0';
+import { THREE, defineEnemy, buildModel, GlowPoints, clamp, damp, smoothstep, SPAWN_D } from '../../api.js?v=0.6.0';
+import { MESH } from './mesh.js?v=0.6.0';
 
 const HUG = MESH.flared, SPREAD = MESH.rest;
 const RED = new THREE.Color(0xff3355), HOT = new THREE.Color(0xfff0f0);

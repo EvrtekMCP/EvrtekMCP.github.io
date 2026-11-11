@@ -17,7 +17,7 @@ const SRC = {
 };
 const GOT = {};
 await Promise.all(Object.entries(SRC).map(async ([key, path]) => {
-  try { const m = await import(path + '?v=0.5.0'); if (m.default && m.default.name) GOT[key] = m.default; } catch (e) { /* not merged yet */ }
+  try { const m = await import(path + '?v=0.6.0'); if (m.default && m.default.name) GOT[key] = m.default; } catch (e) { /* not merged yet */ }
 }));
 export const cameoKinds = () => Object.values(GOT);
 export const cameosPresent = () => Object.keys(GOT);

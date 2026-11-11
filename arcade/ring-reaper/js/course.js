@@ -2,10 +2,10 @@
 // level's events at the spawn line, streams them down the track, and runs every shot in flight: aimed fire, the
 // graze, the hit and the deflect. What each thing looks like and does lives in its kind (js/pickups, js/obstacles,
 // js/enemies, js/levels/*); what it scores lives in the game (main.js), reached through api.game.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.5.0';
-import { GlowPoints } from './fx.js?v=0.5.0';
-import { getKind } from './registry.js?v=0.5.0';
-import { appear, Instanced, HIT_R, GRAZE_R, DEFLECT_R, SHOT_T, NET_S, NET_T, LEGACY_LINE } from './space.js?v=0.5.0';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.6.0';
+import { GlowPoints } from './fx.js?v=0.6.0';
+import { getKind } from './registry.js?v=0.6.0';
+import { appear, Instanced, HIT_R, GRAZE_R, DEFLECT_R, SHOT_T, NET_S, NET_T, LEGACY_LINE } from './space.js?v=0.6.0';
 
 // While a level warms up (shaders compiling on a loading screen) its kinds run against this: every game call
 // does nothing, so a sample shrike does not flash a warning and a sample ring does not score.
@@ -89,6 +89,13 @@ export class Course {
         if (M && e.kind.countsAsRing && !e.anim && e.z < 0 && e.z > -Math.max(30, v * 0.8) && !(e.ev && (e.ev.cache || e.ev.noMagnet || e.decor))) {
           const dx = ship.x - e.x, dy = ship.y - e.y, d = Math.hypot(dx, dy);
           if (d < M && d > 0.02) { const tArr = -e.z / Math.max(1, v), k = Math.min(1, dt / Math.max(dt, tArr - 0.04)); e.x += dx * k; e.y += dy * k; e.magnet = true; }
+        }
+        // 0.6.0 (the Forgery's fix, Evrtek 11-10): a HOMING ring (ev.homing: rings a burst forgery gives back) flies to the ship
+        // from wherever it was dropped, over its last second and a half, and arrives where the ship is: what you win back
+        // comes back to you, it is not one more thing to chase
+        else if (e.ev && e.ev.homing && e.kind.countsAsRing && !e.anim && e.z < 0 && e.z > -Math.max(60, v * 1.5)) {
+          const dx = ship.x - e.x, dy = ship.y - e.y;
+          if (Math.abs(dx) + Math.abs(dy) > 0.02) { const tArr = -e.z / Math.max(1, v), k = Math.min(1, dt / Math.max(dt, tArr - 0.05)); e.x += dx * k; e.y += dy * k; }
         }
         Instanced.cur = e;
         e.kind.update(e, dt, api);

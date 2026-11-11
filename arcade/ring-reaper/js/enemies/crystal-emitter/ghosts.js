@@ -5,8 +5,8 @@
 // to the engine's shots: they cannot hit, graze or be deflected, and the autopilot never sees them.
 // Reading them pays: a ghost that passes through you while you hold your roll scores READ IT; rolling at one
 // shows FOOLED (no penalty but the roll you spent).
-import { THREE } from '../../api.js?v=0.5.0';
-import { ringTex } from './parts.js?v=0.5.0';
+import { THREE } from '../../api.js?v=0.6.0';
+import { ringTex } from './parts.js?v=0.6.0';
 
 const CAP = 96, PINK = new THREE.Color(0xff9ad0);
 const list = [];

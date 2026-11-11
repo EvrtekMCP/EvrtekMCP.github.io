@@ -8,16 +8,16 @@
 //  ACT 3  THE CORE      core track, bars 1-36 loop  THE LATTICE HEART; its great beam is the one unreflectable thing
 //  OUT    THE ESCAPE    core track from bar 37      outrun the shockwave down the breaking shaft
 //  HOME   THE RUN HOME  core track, bars 69-90      a sunrise over a quiet blue planet; nothing can hurt you
-import { defineLevel, clamp } from '../api.js?v=0.5.0';
-import ring from '../pickups/ring/index.js?v=0.5.0';
-import pod from '../enemies/pod/index.js?v=0.5.0';
-import shrike from '../enemies/shrike/index.js?v=0.5.0';
-import mines from '../obstacles/mines/index.js?v=0.5.0';
-import crystal from '../obstacles/crystal/index.js?v=0.5.0';
-import { defenceRing, ram, iris, wall, beam, debris, energy } from './level10/kinds.js?v=0.5.0';
-import { sphere, strut, struts_, arc, arcs, segment, tunnel, tunnelGlow, chamber, mote, motes, breach, shaftRing, shaft, sunrise, wisp, wisps } from './level10/scenery.js?v=0.5.0';
-import { CAMEOS, cameoKinds } from './level10/cameos.js?v=0.5.0';
-import heart from '../bosses/lattice-heart/index.js?v=0.5.0';
+import { defineLevel, clamp } from '../api.js?v=0.6.0';
+import ring from '../pickups/ring/index.js?v=0.6.0';
+import pod from '../enemies/pod/index.js?v=0.6.0';
+import shrike from '../enemies/shrike/index.js?v=0.6.0';
+import mines from '../obstacles/mines/index.js?v=0.6.0';
+import crystal from '../obstacles/crystal/index.js?v=0.6.0';
+import { defenceRing, ram, iris, wall, beam, debris, energy } from './level10/kinds.js?v=0.6.0';
+import { sphere, strut, struts_, arc, arcs, segment, tunnel, tunnelGlow, chamber, mote, motes, breach, shaftRing, shaft, sunrise, wisp, wisps } from './level10/scenery.js?v=0.6.0';
+import { CAMEOS, cameoKinds } from './level10/cameos.js?v=0.6.0';
+import heart from '../bosses/lattice-heart/index.js?v=0.6.0';
 
 // ---------------------------------------------------------------------------------------------------------------------
 // THE SCHEDULE. Section starts are the tracks' own bar lines (audio/levels/level10/*.json).

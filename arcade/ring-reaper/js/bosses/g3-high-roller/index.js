@@ -14,11 +14,11 @@
 //                       everything x2 and no healing, for both of you (its bolts hit twice as hard; every bolt you send
 //                       home counts twice). Three volleys from every red segment at once, its core wide open.
 //   JACKPOT             beaten: the wheel bursts into a shower of bonus rings.
-//   CASHES OUT          not beaten in about 120 s: it spins down and leaves, with no bonus (rule 26).
+//   (0.6.0, Evrtek 11-10: no level has a timer. It no longer leaves on a clock; the fight ends when it is beaten.)
 // Everything fires on the beat of its own track (audio/g3/bosses/high-roller, 150 bpm), counted from its bar lines.
-import { THREE, defineBoss, buildModel, material, clamp, damp } from '../../api.js?v=0.5.0';
-import { MESH } from './mesh.js?v=0.5.0';
-import { CURTAIN_T, lineOfBolts } from '../../enemies/g3-riveter/index.js?v=0.5.0';
+import { THREE, defineBoss, buildModel, material, clamp, damp } from '../../api.js?v=0.6.0';
+import { MESH } from './mesh.js?v=0.6.0';
+import { CURTAIN_T, lineOfBolts } from '../../enemies/g3-riveter/index.js?v=0.6.0';
 
 const SCALE = 2.2, HOLD = 140, HP = 18, BEATS_IN = 16;   // it flies in over the four bars of its track's Impact
 const SEGS = 12, MUZZLE_R = 12.8, TAU = Math.PI * 2;
@@ -164,7 +164,7 @@ const PHASES = [
 const highRoller = defineBoss({
   name: 'g3-high-roller', title: 'THE HIGH ROLLER',
   hold: HOLD, enterTime: BEATS_IN * 60 / 150, scale: SCALE, y: 0.5,
-  escapeAfter: 120, escapeCall: 'IT CASHED OUT', downCall: 'JACKPOT!',
+  downCall: 'JACKPOT!',
   bonus: 90000, hitPts: 2500, defeatTime: 2.8,
   build,
   // the core shows only while your GREED is lit (or ALL IN holds it open): the iris is the tell

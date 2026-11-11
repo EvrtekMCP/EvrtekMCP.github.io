@@ -16,12 +16,12 @@
 //                                                   SET PIECE THE GALLERY on drop two's first four bars (64-68)
 //   ACT 4  THE KALEIDOSCOPE    bars 80-92  136 m/s  the drive: every volley, a step less dense than the Hall's peak
 //          THE STILL WATER     bars 92-95  142 m/s  the calm before THE TWINS (boss on bar 95)
-import { defineLevel, clamp } from '../api.js?v=0.5.0';
-import ring from '../pickups/ring/index.js?v=0.5.0';
-import emitter from '../enemies/crystal-emitter/index.js?v=0.5.0';
-import twins, { hull as twinsHull } from '../bosses/twins/index.js?v=0.5.0';
-import { mirrorGate } from './level9/mirror.js?v=0.5.0';
-import { mirrorCrystal, crystalArch, mirrorPane, mirrorShard, crystalBanks, crystalFloorField, archStream, hallPanes, glassFloor, thePrism, glints } from './level9/scenery.js?v=0.5.0';
+import { defineLevel, clamp } from '../api.js?v=0.6.0';
+import ring from '../pickups/ring/index.js?v=0.6.0';
+import emitter from '../enemies/crystal-emitter/index.js?v=0.6.0';
+import twins, { hull as twinsHull } from '../bosses/twins/index.js?v=0.6.0';
+import { mirrorGate } from './level9/mirror.js?v=0.6.0';
+import { mirrorCrystal, crystalArch, mirrorPane, mirrorShard, crystalBanks, crystalFloorField, archStream, hallPanes, glassFloor, thePrism, glints } from './level9/scenery.js?v=0.6.0';
 
 // ---- the music grid and the speed curve, one schedule (rule 30). From audio/levels/level9/music.json (take 3).
 const BAR_S = 1.76484, FIRST_BEAT = 0.1023;

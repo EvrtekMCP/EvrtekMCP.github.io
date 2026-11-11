@@ -11,10 +11,9 @@
 // Each loop is four bars of the Rootmind's part of the music (150 bpm, 1.6 s a bar). The knots come round in one
 // direction, three in every four bars (g2-roll, 11-07; it was one every two), the whips and the bands in a fixed
 // order, so the third time round you know what is next (rules 24, 28). Every struck knot spills sap-light (shield) and every loop spills one more (rule 7).
-// Rule 26: escapeAfter 135 s, and every hit buys 3 s more, so only a ship that stops hurting it sees the star tear itself
-// free (sized from the decent human bot); then the release plays, with no boss bonus.
-import { THREE, defineBoss, buildModel, clamp, smoothstep } from '../../api.js?v=0.5.0';
-import { MESH } from './mesh.js?v=0.5.0';
+// 0.6.0 (Evrtek 11-10: no level has a timer): it no longer tears itself free on a clock. The fight ends when it is freed.
+import { THREE, defineBoss, buildModel, clamp, smoothstep } from '../../api.js?v=0.6.0';
+import { MESH } from './mesh.js?v=0.6.0';
 
 const BAR = 1.6, BEAT = 0.4;
 const X0 = 42, Y0 = -4.5, HOLD = 128, N = 8, STAR_R = 20, SCALE = 0.85;
@@ -164,8 +163,7 @@ function spill(b, api, n, from) {
 
 export default defineBoss({
   name: 'g2-rootmind', title: 'THE ROOTMIND',
-  hold: HOLD, y: Y0, scale: SCALE, enterTime: 6.4, escapeAfter: 135, defeatTime: 3.6,
-  escapeCall: 'THE STAR TORE ITSELF FREE',
+  hold: HOLD, y: Y0, scale: SCALE, enterTime: 6.4, defeatTime: 3.6,
   bonus: 110000, hitPts: 3000, pointDown: 'KNOT DOWN!', downCall: 'THE STAR IS FREE!',
   build(api, b) {
     const root = new THREE.Group(); root.position.set(X0, Y0, -800);
@@ -270,7 +268,7 @@ export default defineBoss({
     if (b.pi < 2 || !b.arm.visible) { tw.at[0] = 0; tw.at[1] = 0; tw.at[2] = 0; }
     // every hit: a spill of sap-light at that knot, and 2 s more on the clock before the star tears itself free
     for (const w of b.weak) {
-      if (w.lastHp !== undefined && w.hp < w.lastHp && b.state === 'fight') { if (w.hp > 0) spill(b, api, 1, w.ent); b.fightT = Math.max(0, b.fightT - 3); api.game.sfx('boss-hit', { vol: 0.9 }); }
+      if (w.lastHp !== undefined && w.hp < w.lastHp && b.state === 'fight') { if (w.hp > 0) spill(b, api, 1, w.ent); api.game.sfx('boss-hit', { vol: 0.9 }); }
       w.lastHp = w.hp;
     }
     // the starfire gap brightens through its tell, flares while the band burns

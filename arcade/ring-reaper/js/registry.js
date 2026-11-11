@@ -55,6 +55,8 @@ export const allKinds = () => [...KINDS.values()];
 // the event list (levels.js) when the level is played.
 // (0.3.0: no 'ranks'. Stars and ranks come from the rings caught and the style shown, the same rule on every level:
 // levels.js GATES and STYLE. A score threshold no longer decides anything.)
+// (0.6.0, Evrtek 11-10: the other way round. Stars come from the SCORE alone: levels.js STAR_SCORES, a measured row a level.
+// GATES and STYLE are gone, and a module's `style` field is no longer read.)
 const LEVEL_KEYS = ['n', 'id', 'name', 'idea', 'length', 'sections', 'looks', 'kinds', 'build', 'speed', 'beats', 'acts', 'music'];
 export function defineLevel(L) {
   for (const k of LEVEL_KEYS) if (L[k] === undefined) throw new Error('level ' + (L.n || L.id || '?') + ': missing "' + k + '"');

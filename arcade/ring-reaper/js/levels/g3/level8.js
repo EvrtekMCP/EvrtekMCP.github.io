@@ -17,16 +17,16 @@
 //          THE LAST FRAME     bars 80-93  160/168  the drive, a step lighter; the outro, rings only
 // Re-uses: riveters (this branch's), the seeker drones and pods of galaxy 1 (the plan names them). Plotters, forgeries
 // and augurs belong to g3-a and g3-b and have not landed on `galaxies`; where they go is marked RE-USE.
-import { defineLevel } from '../../api.js?v=0.5.0';
-import ring from '../../pickups/ring/index.js?v=0.5.0';
-import { phase, slipstream, mirrorShell } from '../../pickups/powerups/index.js?v=0.5.0';
-import riveter from '../../enemies/g3-riveter/index.js?v=0.5.0';
-import fractal from '../../enemies/g3-fractal/index.js?v=0.5.0';
-import seeker from '../../enemies/seeker-drone/index.js?v=0.5.0';
-import { musicGrid, ringRun } from './level7/grid.js?v=0.5.0';
-import { breeder } from './level8/breeder.js?v=0.5.0';
-import { frameWall } from './level8/wall.js?v=0.5.0';
-import { frame, frames, scrap, scrapField, greatFrame } from './level8/scenery.js?v=0.5.0';
+import { defineLevel } from '../../api.js?v=0.6.0';
+import ring from '../../pickups/ring/index.js?v=0.6.0';
+import { phase, slipstream, mirrorShell } from '../../pickups/powerups/index.js?v=0.6.0';
+import riveter from '../../enemies/g3-riveter/index.js?v=0.6.0';
+import fractal from '../../enemies/g3-fractal/index.js?v=0.6.0';
+import seeker from '../../enemies/seeker-drone/index.js?v=0.6.0';
+import { musicGrid, ringRun } from './level7/grid.js?v=0.6.0';
+import { breeder } from './level8/breeder.js?v=0.6.0';
+import { frameWall } from './level8/wall.js?v=0.6.0';
+import { frame, frames, scrap, scrapField, greatFrame } from './level8/scenery.js?v=0.6.0';
 
 const { BAR, speed, BAR_S } = musicGrid({ bpm: 150, steps: [[0, 92], [24, 114], [48, 132], [62, 150], [80, 160], [88, 168]] });
 const A1 = BAR(24), A2 = BAR(48), A3 = BAR(64), DRIVE = BAR(80), LEN = BAR(93);

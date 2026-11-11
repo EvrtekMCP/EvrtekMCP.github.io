@@ -5,12 +5,13 @@
 //  - its WEAK POINTS glow only while they can be hit (exposed); a reflected shot homes on a lit one;
 //  - every attack is telegraphed (a charge glow at its muzzle, tel >= 0.8 s for anything reflectable);
 //  - each phase starts with a tell (a call-out, a shake, and whatever the boss's enter() does);
-//  - if it is not beaten in escapeAfter seconds it retreats, so a fight can never hang (rule 26).
+//  - 0.6.0 (Evrtek 11-10: "No level has a timer"): a boss never retreats on a clock. The fight ends when the boss is beaten
+//    (or the ship is down). The watchdog below still takes over a boss that stops fighting, so a fight can always be won.
 // While a boss is up the course holds (no new course events), the scenery keeps streaming and its own music plays.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.5.0';
-import { clamp } from './util.js?v=0.5.0';
-import { defineEnemy, defineWeakPoint } from './registry.js?v=0.5.0';
-import { SPAWN_D } from './space.js?v=0.5.0';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.6.0';
+import { clamp } from './util.js?v=0.6.0';
+import { defineEnemy, defineWeakPoint } from './registry.js?v=0.6.0';
+import { SPAWN_D } from './space.js?v=0.6.0';
 
 const tmpV = new THREE.Vector3();
 // ---- attack helpers: (b, api, o) with o = the pattern step. `from` = a muzzle index (default 0).
@@ -101,15 +102,11 @@ function tick(b, dt, api) {
     // boss tens of metres in a step); it starts from rest, peaks mid-flight, and settles onto its station
     const T = def.enterTime || 4, k = Math.min(1, b.t / T), ease = k * k * k * (k * (k * 6 - 15) + 10);
     b.z = -SPAWN_D + (SPAWN_D - b.hold) * ease;
-    if (k >= 1) { b.state = 'fight'; b.t = 0; startPhase(b, 0, api); }
+    if (k >= 1) { b.state = 'fight'; b.t = 0; startPhase(b, 0, api); if (api.game.tip) api.game.tip('boss-' + def.name, b); } // 0.6.0: its first-time card
   } else if (b.state === 'fight') {
     b.fightT += dt;
     runPattern(b, dt, api);
     watchdog(b, dt, api);
-    if (def.escapeAfter && b.fightT > def.escapeAfter) { b.state = 'escape'; b.t = 0; api.game.call(def.escapeCall || 'IT GOT AWAY', 'c-red'); }
-  } else if (b.state === 'escape') {
-    b.z -= 120 * dt; b.y += 4 * dt;
-    if (b.z < -SPAWN_D) { b.alive = false; api.game.bossEnd(false); }
   } else if (b.state === 'dying') {
     const T = def.defeatTime || 2.8;
     // 0.4.0 (g2-c): a FREED boss (galaxy 2) sheds pearl motes and plays g2-boss-freed; any other bursts and booms
@@ -172,7 +169,8 @@ function runPattern(b, dt, api) {
 // course holds during a boss, so anything newly born is its). A boss that shows nothing for IDLE_S seconds is not
 // fighting (its own clock waits on something that never comes), so the framework takes it over: every weak point still
 // standing lights, and it fires a telegraphed aimed volley of its own every RESCUE.loop s, so it can always be beaten.
-// escapeAfter still runs (fightT). The music clock (audio.tick) is the real fix; this is the net under every boss.
+// The music clock (audio.tick) is the real fix; this is the net under every boss. (fightT is the fight's own clock, which
+// bosses read for their patterns; nothing ends on it.)
 const IDLE_S = 10, RESCUE = { loop: 2.8, at: 1.5, tel: 0.9, n: 3, gap: 0.25, T: 1.4 };
 function watchdog(b, dt, api) {
   let busy = b.weak.some((w) => b.exposed(w));
@@ -194,7 +192,7 @@ function hit(b, w, api, shot) {
   if (!b.exposed(w)) {
     // a boss may answer an unlit hit itself (lv-9: the Twins bounce it off a raised plate); return true to skip the CLANG
     if (b.def.onClang && b.def.onClang(b, w, shot, api) === true) return;
-    api.game.burst(w.ent.x, w.ent.y, w.ent.z, 14, { speed: 10, life: 0.3, s0: 0.8, r: 0.6, g: 0.9, b: 1, carry: 0 }); api.game.pop('CLANG', w.ent.x, w.ent.y + 1.5, w.ent.z, 'red'); return; }
+    api.game.burst(w.ent.x, w.ent.y, w.ent.z, 14, { speed: 10, life: 0.3, s0: 0.8, r: 0.6, g: 0.9, b: 1, carry: 0 }); api.game.pop('CLANG', w.ent.x, w.ent.y + 1.5, w.ent.z, 'red'); if (api.game.tip) api.game.tip('clang'); return; }
   w.hp--; w.flash = 1;
   api.game.score(b.def.hitPts ?? 2500, w.ent.x, w.ent.y + 2, w.ent.z, 'big', 'WEAK POINT');
   api.game.hitstop(0.06); api.game.shake(0.4); api.game.sfx('boom', { vol: 0.7, rate: 1.3 });
@@ -202,6 +200,14 @@ function hit(b, w, api, shot) {
   if (w.hp <= 0) { api.game.call(w.call || b.def.pointDown || 'CORE DOWN!', 'c-cyan'); if (w.obj) w.obj.visible = false; if (b.def.onWeakDown) b.def.onWeakDown(b, w, api); }
   const f = b.hp();
   api.game.boss({ frac: f });
+  // 0.6.0 (Evrtek 11-10: Shield Cells are "useful right before or during a boss fight"): once a fight, when the boss is down
+  // to half (def.cellAt), a Shield Cell drifts in out of the haze, off to the far side from where you are flying: leave your
+  // ground to fetch it, or stay and keep rolling. A level opts out with boss.cell: false.
+  if (!b.cellSent && f > 0 && f <= (b.def.cellAt ?? 0.5) && api.level && api.level.boss && api.level.boss.cell !== false) {
+    b.cellSent = true;
+    const cell = api.spawn({ type: 'shield-cell', nx: (api.ship.x > 0 ? -1 : 1) * 0.72, ny: (api.ship.y > 0 ? -1 : 1) * 0.6, bossCell: true }, -SPAWN_D);
+    if (api.game.tip) api.game.tip('boss-cell', cell);
+  }
   if (f <= 0) { b.state = 'dying'; b.t = 0; api.game.hitstop(0.25); api.game.shake(1.2); api.game.flash(); api.game.call(b.def.downCall || (b.freed ? 'FREED!' : 'BOSS DOWN!'), 'c-cyan'); if (b.def.defeat) b.def.defeat(b, api); return; }
   const next = b.def.phases[b.pi + 1];
   if (next && f <= (b.phase.until ?? 0)) startPhase(b, b.pi + 1, api);

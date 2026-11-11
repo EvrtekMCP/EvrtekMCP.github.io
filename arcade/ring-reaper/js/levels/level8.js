@@ -13,13 +13,13 @@
 //         the bow into open space and the finish.
 // Stealth pays a little (UNSEEN per lamp, GHOST per act on the tally); being caught pays more if you can take what
 // it calls (deflects and kills). Pick one.
-import { defineLevel, clamp } from '../api.js?v=0.5.0';
-import ring from '../pickups/ring/index.js?v=0.5.0';
-import pod from '../enemies/pod/index.js?v=0.5.0';
-import shrike from '../enemies/shrike/index.js?v=0.5.0';
-import sentry, { beamR, CATCH_K, SHIP_CORE, LAMP_IN, beamDir, reach } from '../enemies/searchlight-sentry/index.js?v=0.5.0';
-import { spar, ghost } from './level8/kinds.js?v=0.5.0';
-import { hull, rib, debris, tombPlate, hullDrift, ribDrift, ribArches, debrisField, tombRibs, tombPlating, ash, mausoleum } from './level8/scenery.js?v=0.5.0';
+import { defineLevel, clamp } from '../api.js?v=0.6.0';
+import ring from '../pickups/ring/index.js?v=0.6.0';
+import pod from '../enemies/pod/index.js?v=0.6.0';
+import shrike from '../enemies/shrike/index.js?v=0.6.0';
+import sentry, { beamR, CATCH_K, SHIP_CORE, LAMP_IN, beamDir, reach } from '../enemies/searchlight-sentry/index.js?v=0.6.0';
+import { spar, ghost } from './level8/kinds.js?v=0.6.0';
+import { hull, rib, debris, tombPlate, hullDrift, ribDrift, ribArches, debrisField, tombRibs, tombPlating, ash, mausoleum } from './level8/scenery.js?v=0.6.0';
 
 // ---- one schedule (rule 30). The track's bar grid (audio/levels/level8/music.json, take l8-t1: 137.982 bpm, first
 // beat 0.154 s; intro 1-8, groove 9-24, build 25-32, drop 33-48, breakdown 49-56, build 57-64, drop 65-80, drive

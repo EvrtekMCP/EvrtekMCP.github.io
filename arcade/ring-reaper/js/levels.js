@@ -1,11 +1,14 @@
 // STARWAKE 0.4.0: three galaxies of levels: the catalogues, loading a level module, laying out its course, and the
 // player's progress (unlocks, stars, best score and rank per level). All progress is in localStorage on the
 // device; dev runs never write any of it.
-import { V, rng, store } from './util.js?v=0.5.0';
-import { getKind } from './registry.js?v=0.5.0';
-import { layout } from './layout.js?v=0.5.0';
-import { SPAWN_D, LEGACY_LINE } from './space.js?v=0.5.0';
-import { POWERUP_KINDS } from './pickups/powerups/index.js?v=0.5.0'; // 0.4.0: a level's `powerups` field (the galaxy 1 retrofit)
+import { V, rng, store, fmt } from './util.js?v=0.6.0';
+import { getKind } from './registry.js?v=0.6.0';
+import { layout } from './layout.js?v=0.6.0';
+import { SPAWN_D, LEGACY_LINE, RING_R } from './space.js?v=0.6.0';
+import { POWERUP_KINDS, shieldCell } from './pickups/powerups/index.js?v=0.6.0'; // 0.4.0: a level's `powerups` field (the galaxy 1 retrofit)
+import { PICK_R } from './powerups.js?v=0.6.0';
+import checkpointKind from './pickups/checkpoint/index.js?v=0.6.0'; // 0.6.0: the engine lays one on every level
+import { DEMO, inDemo } from './demo.js?v=0.6.0';                    // 0.6.0: the demo switch (off unless a demo build or ?demo)
 
 // The PLAY ORDER (n is the number a player sees). `file` is the module, js/levels/level<file>.js, when it differs;
 // `art` is Yori's name lettering (art/ui/name-<art>.png) when it differs. Evrtek, 11-05: "let's swap level one and
@@ -80,61 +83,66 @@ export const levelLabel = (g, n) => (g === 1 ? 'LEVEL ' + n : galaxy(g).name + '
 // '' is a clear with no letter (one star) or a run that did not finish
 export const RANK_ORDER = ['', 'C', 'B', 'A', 'S', 'DEGENERATE'];
 
-// ---- the difficulty curve (0.3.0, the human pass; Evrtek 11-06: "Game is too hard in the early levels"). Per level,
-// in play order; a level with no entry plays at full strength, so levels 7-10 keep their character (6 has softer hits).
+// ---- THE DIFFICULTY DIALS: one row a level, by galaxy and by PLACE in the play order (a level that moves, as 5 and 7 of
+// galaxy 1 did on 11-08, takes the dials of the place it moves to).
 //   dmg   every hit to the shield is scaled by this
 //   heal  the shield a ring gives back is scaled by this
-//   shot  enemy shots take this much longer to reach you: more warning, more time to roll (level 3 keeps 1: its gate
-//         turrets land their shots on the beat)
-//   ring  how far from a ring's middle still counts as through it (a boost ring's too), scaled
-// Why (tools/test/human.js, the human bot, on 0.2.0): a newcomer finished Nebula Run on 2% shield, six of its thirteen
-// hits on the lightgates' frames; and on levels 1 and 2 no skill caught 80% of the rings, where levels 3-8 gave 88-97%.
-// By PLACE, not by level (the 5/7 swap, 11-08): place 5's 0.92 is now Neon Orbital's, and Ion Storm at 7 flies at full
-// strength, as the 1/2 swap gave the opener's gentleness to whichever level opens.
-export const EASE = {
-  1: { dmg: 0.55, heal: 1.5, shot: 1.3, ring: 1.3 },
-  2: { dmg: 0.6, heal: 1.5, shot: 1.25, ring: 1.3 },
-  3: { dmg: 0.75, heal: 1.25, shot: 1, ring: 1.15 },
-  4: { dmg: 0.85, heal: 1.1, shot: 1, ring: 1.05 },
-  5: { dmg: 0.92, heal: 1, shot: 1, ring: 1 },
-  // the one late step steeper than the rest: in the Leviathan's fight (it holds 52 m out, fans of five) the bot's decent
-  // runs fell to 8% and 30% shield and a newcomer went down, below levels 9 and 10. Softer hits and 10% slower shots;
-  // its patterns, its loop timing (so the fight is no longer), the rings and the speed are untouched.
-  6: { dmg: 0.8, heal: 1, shot: 1.1, ring: 1 },
-};
-// 0.4.0: galaxies 2 and 3 go past full strength (the plan's §5.1): dmg above 1 hurts more, heal below 1 gives back less,
-// shot below 1 arrives a little sooner, ring below 1 tightens the catch. Pressure (dmg / heal / shot) starts above the
-// last galaxy's start and ends above its end: G1 0.28 -> 1.00, G2 0.39 -> 1.18, G3 0.52 -> 1.39. Two guard rails: shot
-// never under 0.92 (check-levels holds every warning floor) and ring never under 0.95 (ring share is the star gate).
-// RE-BASED when 0.3.1 lands (its galaxy 1 rise): galaxy 2's level 1 sits at or above galaxy 1's middle, its 10 above 1's 10.
+//   shot  enemy shots take this much longer to reach you: more warning, more time to roll (never under 0.92: check-levels
+//         holds every warning floor)
+//   ring  how far from a ring's middle still counts as through it (a boost ring's too), scaled (never under 0.95)
+//   boss  (0.6.0) every hit taken while the level's boss holds the course is scaled by this, on top of dmg
+// History: 0.3.0 (the human pass) softened galaxy 1's first six levels by hand; 0.4.0 set galaxies 2 and 3 to a plan
+// (pressure = dmg / heal / shot rising through each galaxy); neither was measured level against level.
+// 0.6.0, THE PLAYER PASS (Evrtek 11-10: "one constant ramp ... boss fights as a temporary spike"): dmg and boss are now
+// MEASURED. tools/test/sweep.js flies the human bots over all thirty levels, and tools/test/tune.js sets each level's dmg
+// so the shield its pilots lose a minute follows one straight ramp a galaxy (6 -> 28, 12 -> 38, 18 -> 48 for the decent
+// bot), and each boss dial so the shield its whole fight costs climbs boss by boss (35 for the Warden to 80 for the Weftwork). heal, shot and ring are as they were.
+// tune.js --write rewrites the table below; do not edit dmg or boss by hand without flying the sweep again.
+// (Three boss dials had a second step after the tuned sweep, each by its own figures there, and those three levels were
+// flown again: the Lattice Heart cost 86 against an aim of 60 (0.76 -> 0.53), the Counterfeit 75 against 65 (0.61 -> 0.53),
+// the Weftwork 93 against 80 (1.03 -> 0.89). No boss retreats any more, so their fights run longer than 0.5.0 ever measured.)
 export const EASE_G = {
-  1: EASE,
+  1: {
+    1: { dmg: 0.55, heal: 1.5, shot: 1.3, ring: 1.3 },
+    2: { dmg: 0.6, heal: 1.5, shot: 1.25, ring: 1.3 },
+    3: { dmg: 0.45, heal: 1.25, shot: 1, ring: 1.15, boss: 1.6 },
+    4: { dmg: 0.45, heal: 1.1, shot: 1, ring: 1.05 },
+    5: { dmg: 1.15, heal: 1, shot: 1, ring: 1 },
+    6: { dmg: 1, heal: 1, shot: 1.1, ring: 1 },
+    7: { dmg: 0.5, heal: 1, shot: 1, ring: 1 },
+    8: { dmg: 1.25, heal: 1, shot: 1, ring: 1 },
+    9: { dmg: 0.99, heal: 1, shot: 1, ring: 1.45, boss: 0.65 },
+    10: { dmg: 1, heal: 1, shot: 1, ring: 1, boss: 0.53 },
+  },
   2: {
-    1: { dmg: 0.65, heal: 1.4, shot: 1.2, ring: 1.25 },
-    2: { dmg: 0.7, heal: 1.35, shot: 1.15, ring: 1.2 },
-    3: { dmg: 0.8, heal: 1.2, shot: 1.05, ring: 1.12 },
-    4: { dmg: 0.88, heal: 1.1, shot: 1.0, ring: 1.05 },
-    5: { dmg: 0.95, heal: 1.0, shot: 1.0, ring: 1.0 },
-    6: { dmg: 0.9, heal: 1.0, shot: 1.05, ring: 1.0 },
-    7: { dmg: 1.02, heal: 0.98, shot: 0.98, ring: 1.0 },
-    8: { dmg: 1.04, heal: 0.97, shot: 0.98, ring: 1.0 },
-    9: { dmg: 1.06, heal: 0.95, shot: 0.97, ring: 0.98 },
-    10: { dmg: 1.08, heal: 0.95, shot: 0.96, ring: 0.98 },
+    1: { dmg: 0.45, heal: 1.4, shot: 1.2, ring: 1.25 },
+    2: { dmg: 0.45, heal: 1.35, shot: 1.15, ring: 1.2 },
+    3: { dmg: 0.45, heal: 1.2, shot: 1.05, ring: 1.12, boss: 1.08 },
+    4: { dmg: 0.61, heal: 1.1, shot: 1, ring: 1.05 },
+    5: { dmg: 0.48, heal: 1, shot: 1, ring: 1 },
+    6: { dmg: 0.52, heal: 1, shot: 1.05, ring: 1, boss: 1.6 },
+    7: { dmg: 1.27, heal: 0.98, shot: 0.98, ring: 1.15 },
+    8: { dmg: 1.3, heal: 0.97, shot: 0.98, ring: 1.4 },
+    9: { dmg: 1.3, heal: 0.95, shot: 0.97, ring: 1.5, boss: 1.02 },
+    10: { dmg: 1.11, heal: 0.95, shot: 0.96, ring: 0.98, boss: 0.73 },
   },
   3: {
-    1: { dmg: 0.75, heal: 1.3, shot: 1.1, ring: 1.2 },
-    2: { dmg: 0.8, heal: 1.25, shot: 1.35, ring: 1.15 }, // the curve (11-07): shots slower, so the Loom Floor stays an early level (it asked 25.6 rolls a minute, above all but the Vault)
-    3: { dmg: 0.88, heal: 1.15, shot: 1.02, ring: 1.08 },
-    4: { dmg: 0.95, heal: 1.05, shot: 1.0, ring: 1.0 },
-    5: { dmg: 1.0, heal: 1.0, shot: 0.98, ring: 1.0 },
-    6: { dmg: 0.98, heal: 1.0, shot: 1.02, ring: 1.0 },
-    7: { dmg: 1.08, heal: 0.97, shot: 0.97, ring: 0.98 },
-    8: { dmg: 1.12, heal: 0.95, shot: 0.95, ring: 0.97 },
-    9: { dmg: 1.15, heal: 0.93, shot: 0.94, ring: 0.96 },
-    10: { dmg: 1.18, heal: 0.92, shot: 0.92, ring: 0.95 },
+    1: { dmg: 0.45, heal: 1.3, shot: 1.1, ring: 1.2 },
+    2: { dmg: 0.45, heal: 1.25, shot: 1.35, ring: 1.15 },
+    3: { dmg: 0.45, heal: 1.15, shot: 1.02, ring: 1.08, boss: 1.6 },
+    4: { dmg: 1.19, heal: 1.05, shot: 1, ring: 1.5 },
+    5: { dmg: 1.25, heal: 1, shot: 0.98, ring: 1.2 },
+    6: { dmg: 1.22, heal: 1, shot: 1.02, ring: 1, boss: 0.53 },
+    7: { dmg: 0.54, heal: 0.97, shot: 0.97, ring: 1.18 },
+    8: { dmg: 0.57, heal: 0.95, shot: 0.95, ring: 1.5 },
+    9: { dmg: 1.3, heal: 0.93, shot: 0.94, ring: 0.96, boss: 0.82 },
+    10: { dmg: 1.23, heal: 0.92, shot: 0.92, ring: 0.95, boss: 0.89 },
   },
 };
-export const easeOf = (n, g = 1) => Object.assign({ dmg: 1, heal: 1, shot: 1, ring: 1 }, (EASE_G[g] || EASE)[n] || {});
+export const EASE = EASE_G[1]; // galaxy 1's rows, as 0.3.0 named them
+// 0.6.0: 'boss' scales every hit taken while a boss holds the course (on top of dmg). The course heals as you fly it (a ring
+// gives shield back) and a boss fight does not, so the fight is where a level's spike lives, and it gets its own dial.
+export const easeOf = (n, g = 1) => Object.assign({ dmg: 1, heal: 1, shot: 1, ring: 1, boss: 1 }, (EASE_G[g] || EASE)[n] || {});
 export const pressureOf = (e) => e.dmg / e.heal / e.shot;
 // ---- ROLL-OR-HIT FIRE (0.3.1, Evrtek 11-06: "levels seem to get easier as the game goes on ... less need for doing the
 // barrel rolls"). On 0.3.0 a player who never rolled was shot almost never after level 4 (the human bot's 'dodger': 0
@@ -189,109 +197,46 @@ export const FIRE_G = {
 };
 export const fireOf = (n, g = 1) => { const F = (FIRE_G[g] || {})[n]; return F && F.every ? F : null; };
 
-// ---- stars and ranks (Evrtek 11-06, the human pass): FIVE stars a level, won by the share of the level's rings
-// caught; the top ones also want some style. Score never buys a star or a rank (it is the brag number). The rank
-// letters follow the stars, and DEGENERATE sits above all five: the brag rank, no sixth star.
-//   ★ clear the level   ★★ 30% of the rings (C)   ★★★ 60% (B)   ★★★★ 80% + style (A)   ★★★★★ 90% + style (S)
-//   DEGENERATE 95% + more style   (levels 9 and 10 ask less: RING_SHARES, below)
-// Style = grazes and close calls (counted together) and roll deflects (shots sent back), each with a small minimum per
-// level (STYLE), sized from the human bot so a decent player who is trying gets them on the way.
+// ---- stars and ranks (0.6.0, the player pass; Evrtek 11-10: "Stars come from SCORE ... This promotes the build up to max
+// multipliers and holding that multiplier"). FIVE stars a level, won by the run's TOTAL (its score and its end bonuses)
+// and by nothing else. The ring share, the grazes and close calls and the roll-backs gate nothing any more (0.3.0's GATES,
+// STYLE and RING_SHARES are gone): they still score, so they still matter, but no star hides behind a count the player
+// cannot see. The rank letters follow the stars, and DEGENERATE sits above all five: the brag rank, no sixth star.
+//   ★ clear the level   ★★ C   ★★★ B   ★★★★ A   ★★★★★ S   DEGENERATE     each a score, per level: STAR_SCORES
 export const MAX_STARS = 5;
-export const GATES = [
-  { stars: 1, rank: '', rings: 0 },
-  { stars: 2, rank: 'C', rings: 0.30 },
-  { stars: 3, rank: 'B', rings: 0.60 },
-  { stars: 4, rank: 'A', rings: 0.80, style: true },
-  { stars: 5, rank: 'S', rings: 0.90, style: true },
-  { stars: 5, rank: 'DEGENERATE', rings: 0.95, style: true },
+export const TIERS = [
+  { stars: 1, rank: '' }, { stars: 2, rank: 'C' }, { stars: 3, rank: 'B' }, { stars: 4, rank: 'A' }, { stars: 5, rank: 'S' }, { stars: 5, rank: 'DEGENERATE' },
 ];
-// [grazes + close calls, deflects] wanted for A, S and DEGENERATE, per level in play order. Sized from the human bot's
-// decent runs on 0.3.0 (tools/test/human.js; what it showed per level, close / deflects: 1: 16/10, 2: 24/19, 3: 17/33,
-// 4: 1/8, 5: 18/4, 6: 65/76, 7: 14/8, 8: 7/7, 9: 26/26, 10: 19/47): A asks about a quarter of that, S about 40%,
-// DEGENERATE about 60%. Level 4 asks no close calls: nothing on it scrapes, and its seekers' grazing bolts only graze if
-// you do not roll them (the autopilot, rolling everything, made none), so there its style is the roll alone. The rings
-// are the real gate.
-// The 5/7 swap (11-08): each LEVEL keeps its own minimums (they are sized from what it gives), so 5 and 7 traded rows:
-// the "5: 18/4" above is Ion Storm's, now played 7th, and "7: 14/8" Neon Orbital's, now 5th. By place, Ion Storm's
-// DEGENERATE would ask 5 roll-backs of a level where the decent bot makes about 4.
-export const STYLE = {
-  1: { A: [3, 2], S: [5, 3], DEGENERATE: [8, 5] },
-  2: { A: [4, 3], S: [6, 5], DEGENERATE: [10, 8] },
-  3: { A: [3, 4], S: [5, 6], DEGENERATE: [8, 10] },
-  4: { A: [0, 2], S: [0, 3], DEGENERATE: [0, 6] },
-  5: { A: [2, 2], S: [4, 3], DEGENERATE: [6, 5] }, // NEON ORBITAL
-  6: { A: [8, 8], S: [14, 14], DEGENERATE: [24, 24] },
-  7: { A: [3, 1], S: [5, 2], DEGENERATE: [8, 3] }, // ION STORM
-  8: { A: [1, 2], S: [2, 3], DEGENERATE: [4, 5] },
-  9: { A: [4, 4], S: [6, 6], DEGENERATE: [10, 10] },
-  10: { A: [3, 6], S: [5, 10], DEGENERATE: [8, 16] },
+// The score each tier asks, per level in play order: [★★, ★★★, ★★★★, ★★★★★, DEGENERATE]; one star is the clear itself.
+// MEASURED, never guessed (Evrtek: "Re-measure what each level can achieve at a human level ... and realign every level's
+// star gates"): tools/test/sweep.js flies the human bots (newcomer, decent, good) over every level, and tools/test/
+// star-gates.js sizes each level's row from their totals by one rule, the same on all thirty:
+//   ★★     half of what the newcomer bot's runs score (a first clear that took its rings)
+//   ★★★    nine tenths of the newcomer's
+//   ★★★★   nine tenths of the decent bot's
+//   ★★★★★  just under the good bot's weaker runs (0.96 of their lower quartile): a skilled, clean run that built its
+//          multiplier and held it
+//   DEGENERATE  above the good bot's best (1.12 of it): better than the bot that plays well
+// Galaxy 1's levels 1 and 2 are a rung gentler, the on-ramp (Evrtek 11-06, still standing: "levels 1 and 2 must feel rewarding
+// and encouraging"): ★★ 0.35, ★★★ 0.70 and ★★★★ 0.90 of the newcomer's median, ★★★★★ 0.90 of the decent bot's.
+// Rounded to the nearest thousand. A level with no row yet uses FALLBACK (the proving levels).
+export const STAR_SCORES = {
+  1: { 1: [66000, 132000, 169000, 273000, 389000], 2: [39000, 79000, 101000, 127000, 313000], 3: [238000, 428000, 626000, 772000, 1035000], 4: [117000, 211000, 355000, 436000, 577000], 5: [141000, 253000, 529000, 571000, 831000], 6: [111000, 199000, 285000, 388000, 497000], 7: [66000, 118000, 320000, 433000, 619000], 8: [155000, 279000, 523000, 609000, 956000], 9: [340000, 613000, 720000, 883000, 1351000], 10: [349000, 628000, 678000, 758000, 1331000] },
+  2: { 1: [130000, 234000, 325000, 453000, 603000], 2: [115000, 207000, 386000, 702000, 968000], 3: [136000, 245000, 526000, 786000, 1008000], 4: [75000, 135000, 362000, 480000, 677000], 5: [114000, 206000, 396000, 485000, 666000], 6: [152000, 273000, 638000, 700000, 970000], 7: [231000, 415000, 749000, 1051000, 1382000], 8: [356000, 641000, 1183000, 1451000, 2012000], 9: [403000, 725000, 1243000, 1499000, 2096000], 10: [312000, 562000, 772000, 968000, 1168000] },
+  3: { 1: [220000, 397000, 429000, 830000, 1005000], 2: [88000, 159000, 555000, 894000, 1189000], 3: [136000, 244000, 426000, 602000, 839000], 4: [174000, 313000, 361000, 423000, 570000], 5: [101000, 181000, 245000, 320000, 483000], 6: [157000, 282000, 484000, 693000, 918000], 7: [58000, 105000, 301000, 564000, 820000], 8: [135000, 244000, 390000, 768000, 1072000], 9: [203000, 366000, 626000, 817000, 1079000], 10: [314000, 566000, 970000, 1131000, 1438000] },
 };
-// 0.4.0: galaxies 2 and 3. A level sets its own minimums in its module (`style: { A: [c, d], S: [...], DEGENERATE:
-// [...] }`, sized from its human bot runs the way galaxy 1's were); a level that does not uses its galaxy's default
-// here. As roll demand rises (the plan's §5.3), the deflect minimum rises with it.
-export const STYLE_G = {
-  1: STYLE,
-  2: { A: [3, 4], S: [5, 7], DEGENERATE: [8, 11] },
-  3: { A: [3, 5], S: [5, 8], DEGENERATE: [8, 13] },
-};
-const styleOf = (n, rank, g = 1) => {
-  const L = cache[g + ':' + n];
-  if (L && L.style && L.style[rank]) return L.style[rank];
-  if (g === 1) return (STYLE[n] || STYLE[1])[rank] || [0, 0];
-  return (STYLE_G[g] || STYLE_G[2])[rank] || [0, 0];
-};
-// A LEVEL'S OWN RING SHARES (0.3.0, Evrtek 11-06: "Make them easier"), where the global ones ask for rings nobody can
-// catch: on levels 9 and 10 even the autopilot takes only 86% (its runs: 324 of 376 and 310 of 358). Levels 1-8 use
-// GATES. Style is not touched. Each entry: the share for C, B, A, S and DEGENERATE. DEGENERATE sits just under the
-// autopilot (320 and 305 rings needed). The good human bot caught 77% of level 9 on three seeds out of three and 84% of
-// level 10, so five stars ask 75% and 80%: a good run clears them by about the same few rings.
-export const RING_SHARES = {
-  9: { C: 0.25, B: 0.5, A: 0.65, S: 0.75, DEGENERATE: 0.85 },
-  10: { C: 0.25, B: 0.5, A: 0.7, S: 0.8, DEGENERATE: 0.85 },
-};
-// 0.4.0: galaxies 2 and 3 (the plan's §5.2), stepping down late where the human bot shows the global gates are out of
-// reach. Starting points: before a galaxy ships the good human bot flies each level on three seeds and these are
-// re-sized from that, as 0.3.0 did for levels 9 and 10. Caches and other extras never count (they are not in the total).
-const SH = (C, B, A, S, DEGENERATE) => ({ C, B, A, S, DEGENERATE });
-// Sized by shares.js (CLU-I2, 11-07, the MCP's rules): five stars just under the good bot's worse run with every power-up
-// ignored, DEGENERATE above the decent bot's better run (two seeds each, on the final code). A level not listed takes the
-// global gates; the Weftwork keeps them by the MCP's word (the good bot's worse run there was 91%).
-export const RING_SHARES_G = {
-  1: RING_SHARES,
-  2: { 4: SH(0.28, 0.57, 0.76, 0.86, 0.95), 7: SH(0.28, 0.56, 0.75, 0.85, 0.9), 8: SH(0.28, 0.57, 0.77, 0.87, 0.92), 9: SH(0.27, 0.54, 0.73, 0.83, 0.88),
-    10: SH(0.29, 0.59, 0.79, 0.89, 0.94) },
-  3: { 3: SH(0.28, 0.57, 0.77, 0.87, 0.92), 4: SH(0.26, 0.53, 0.71, 0.81, 0.86), 5: SH(0.26, 0.53, 0.71, 0.81, 0.88), 6: SH(0.21, 0.42, 0.57, 0.67, 0.78),
-    7: SH(0.27, 0.55, 0.74, 0.84, 0.89), 8: SH(0.26, 0.53, 0.71, 0.81, 0.86), 9: SH(0.29, 0.58, 0.78, 0.88, 0.93) },
-};
-export const shareOf = (gate, n, g = 1) => { const T = RING_SHARES_G[g] || RING_SHARES; return T[n] && T[n][gate.rank] !== undefined ? T[n][gate.rank] : gate.rings; };
+const FALLBACK = [40000, 90000, 150000, 220000, 320000];
+export const starScores = (n, g = 1) => (STAR_SCORES[g] || {})[n] || FALLBACK;
 export const rankAtLeast = (r, want) => RANK_ORDER.indexOf(r || '') >= RANK_ORDER.indexOf(want || '');
 export const rankForStars = (s) => ['', '', 'C', 'B', 'A', 'S'][Math.max(0, Math.min(5, s))];
 const starText = (n) => '★'.repeat(n);
-const pctFloor = (f) => Math.floor(f * 100 + 1e-9);
-
-// what a gate still wants from this run ([] when it is met), on level n of galaxy g (its own ring shares, if it has
-// them). The ring share is a whole number of rings: 90% of 187 rings is 169 (168.3 rounded up).
-export function missing(run, gate, n, g = 1) {
-  const out = [];
-  if (!run.cleared) out.push({ what: 'clear' });
-  const share = shareOf(gate, n, g), total = run.ringTotal || 0, need = Math.ceil(total * share - 1e-9);
-  if (run.rings < need) out.push({ what: 'rings', pct: Math.round(share * 100), got: total ? pctFloor(run.rings / total) : 0, more: need - run.rings });
-  if (gate.style) {
-    const [close, defl] = styleOf(n, gate.rank, g), haveClose = (run.grazes || 0) + (run.scrapes || 0);
-    if (haveClose < close) out.push({ what: 'close', more: close - haveClose });
-    if ((run.deflects || 0) < defl) out.push({ what: 'deflects', more: defl - (run.deflects || 0) });
-  }
-  return out;
-}
-// what is missing, the way a person would say it
-function sayMissing(m) {
-  const parts = [];
-  for (const x of m) {
-    if (x.what === 'rings') parts.push('CATCH ' + x.pct + '% OF THE RINGS (YOU GOT ' + x.got + '%)');
-    else if (x.what === 'close') parts.push(x.more + ' MORE ' + (x.more === 1 ? 'GRAZE OR CLOSE CALL' : 'GRAZES OR CLOSE CALLS'));
-    else if (x.what === 'deflects') parts.push('ROLL ' + x.more + ' MORE ' + (x.more === 1 ? 'SHOT' : 'SHOTS') + ' BACK');
-  }
-  return parts.length > 1 ? parts.slice(0, -1).join(', ') + ' AND ' + parts[parts.length - 1] : parts[0] || '';
+// Where a score stands on level n: the tier it has reached (as if the level were cleared), the score the next tier asks,
+// and how far along the stretch between the two it is (0..1). The HUD's star meter and the end card both read this.
+export function starProgress(total, n, g = 1) {
+  const S = starScores(n, g), t = Math.floor(total || 0);
+  let i = 0; while (i < S.length && t >= S[i]) i++;
+  const from = i ? S[i - 1] : 0, to = i < S.length ? S[i] : null;
+  return { tier: TIERS[i], stars: TIERS[i].stars, next: i < S.length ? TIERS[i + 1] : null, from, to, more: to === null ? 0 : to - t, k: to === null ? 1 : Math.max(0, Math.min(1, (t - from) / Math.max(1, to - from))) };
 }
 // The line under a DEGENERATE rank: one per level, supportive with a jab (Evrtek 11-07: "glued to your phone ... go touch
 // some grass ... what are you doing with your life"). His own words close the game, on the last level of galaxy 3.
@@ -335,19 +280,95 @@ export const DEGENERATE_LINES = {
 };
 export function degenerateLine(n, g = 1) { return (DEGENERATE_LINES[g] || DEGENERATE_LINES[1])[(n - 1) % 10] || 'YOU BEAUTIFUL DEGENERATE HUMAN, YOU.'; }
 // A finished run, cleared or not -> its stars (0..5), its rank letter, and the next thing to aim for in plain words.
-// run: { cleared, rings, ringTotal, grazes, scrapes, deflects }; n = the level, in play order; g = its galaxy.
+// run: { cleared, total }; n = the level, in play order; g = its galaxy. A run that did not finish earns no star,
+// whatever it scored.
 export function grade(run, n, g = 1) {
-  let top = null;
-  for (const q of GATES) if (!missing(run, q, n, g).length) top = q;
-  const stars = top ? top.stars : 0, rank = top ? top.rank : '';
-  // the next gate up: the next star, or DEGENERATE once all five are won
-  const next = GATES.find((q) => q.stars > stars) || (rank !== 'DEGENERATE' ? GATES[GATES.length - 1] : null);
+  const total = Math.floor(run.total || 0), p = starProgress(total, n, g);
+  const stars = run.cleared ? p.stars : 0, rank = run.cleared ? p.tier.rank : '';
   let hint;
   if (!run.cleared) hint = 'MAKE IT TO THE END FOR YOUR FIRST ★';
-  else if (!next) hint = degenerateLine(n, g);
-  else if (next.rank === 'DEGENERATE') hint = 'ALL FIVE STARS. FOR DEGENERATE: ' + sayMissing(missing(run, next, n, g));
-  else hint = sayMissing(missing(run, next, n, g)) + ' FOR ' + starText(next.stars);
-  return { stars, rank, have: Array.from({ length: MAX_STARS }, (_, i) => i < stars), next: hint, nextGate: next };
+  else if (!p.next) hint = degenerateLine(n, g);
+  else if (p.next.rank === 'DEGENERATE') hint = 'ALL FIVE STARS. ' + fmt(p.more) + ' MORE FOR DEGENERATE';
+  else hint = fmt(p.more) + ' MORE FOR ' + starText(p.next.stars) + '. BUILD YOUR MULTIPLIER AND HOLD IT';
+  return { stars, rank, have: Array.from({ length: MAX_STARS }, (_, i) => i < stars), next: hint, nextGate: run.cleared ? p.next : TIERS[0], need: p.to, more: p.more, total };
+}
+
+// ---- 0.6.0, the player pass: what the engine lays on every level's course after the level's own build (levels never
+// place these themselves, so all thirty follow one rule and check-levels can hold it).
+const ringEvent = (e) => { const k = getKind(e.type); return !!(k && k.countsAsRing && !e.cache && !e.decor); };
+// the flight box on a wide screen and on a tall phone (main.js resize): course positions are normalised (nx, ny), so a
+// distance in metres has to hold in both
+export const BOXES = [{ name: 'wide', x: 7.5, y: 4.3 }, { name: 'phone', x: 4.1, y: 5.6 }];
+
+// CHECKPOINTS (Evrtek 11-10: "Checkpoints on ALL levels ... a symbolic checkpoint you grab ... You restart from it if you
+// fail the level"; "at about 50% of most levels and about 80% of boss levels"). One a level, ON the ring line (so it is
+// in the flight path): beside the ring nearest the mark, a calm stretch of the beat sheet first. On a boss level the mark
+// is a few seconds before the boss arrives, which is about four fifths of the level by the clock (the fight is the rest).
+// A level may say where itself (checkpoint: { d, nx, ny }) or opt out (checkpoint: false: the proving levels).
+export const CHECKPOINT = { half: 0.5, span: 0.06, bossLead: 2.6, bossSpan: [4.2, 1.8] };
+function layCheckpoint(L, lay) {
+  if (L.checkpoint === false || lay.events.some((e) => e.type === 'checkpoint')) return null;
+  if (L.checkpoint && L.checkpoint.d) return lay.add(L.checkpoint.d, 'checkpoint', { nx: L.checkpoint.nx || 0, ny: L.checkpoint.ny || 0 });
+  const end = L.boss ? L.boss.at : L.length, v = L.speed(end);
+  let want = L.boss ? end - CHECKPOINT.bossLead * v : CHECKPOINT.half * end;
+  let lo = L.boss ? end - CHECKPOINT.bossSpan[0] * v : (CHECKPOINT.half - CHECKPOINT.span) * end; const hi = L.boss ? end - CHECKPOINT.bossSpan[1] * v : (CHECKPOINT.half + CHECKPOINT.span) * end;
+  // a Shield Cell at the boss's door comes BEFORE the checkpoint (a restart there has a full shield, so a cell after it would
+  // be wasted): the checkpoint waits until the cell is behind, where the door leaves room (else the cell moves: below)
+  if (L.boss) for (const c of lay.events) if (c.type === 'shield-cell' && c.d < end && c.d + CELL.beforeCheckpoint * v <= hi) lo = Math.max(lo, c.d + CELL.beforeCheckpoint * v);
+  want = Math.max(want, lo);
+  const beats = (L.beats || []).slice().sort((a, b) => a.d - b.d), heat = { calm: 0, rising: 1, peak: 2 };
+  const tagAt = (d) => { let t = 'calm'; for (const b of beats) { if (b.d <= d) t = b.tag; else break; } return heat[t] ?? 1; };
+  let best = null, score = 1e18;
+  for (const r of lay.events) {
+    if (!ringEvent(r) || r.d < lo || r.d > hi || r.nx === undefined) continue;
+    const s = tagAt(r.d) * (hi - lo) + Math.abs(r.d - want); // a calmer beat beats a nearer ring
+    if (s < score) { score = s; best = r; }
+  }
+  if (best) return lay.add(best.d + 8, 'checkpoint', { nx: best.nx, ny: best.ny });
+  // no ring in the window (a bare approach to a boss): on the line the last ring before it left
+  let last = null; for (const r of lay.events) if (ringEvent(r) && r.nx !== undefined && r.d <= want && r.d > want - 6 * v && (!last || r.d > last.d)) last = r;
+  return lay.add(want, 'checkpoint', { nx: last ? last.nx : 0, ny: last ? last.ny : 0 });
+}
+
+// SHIELD CELLS sit OFF the ring line (Evrtek 11-10: "useful right before or during a boss fight, but never in the normal
+// ring path. Place them off-line, so taking one means breaking the ring run: a real choice between health and
+// multiplier"). Wherever a level put a cell, the engine slides it sideways until the ship cannot take it and the rings
+// passing at that moment together: at least CELL_OFF past the two catch radii, on a wide screen and a phone alike, and
+// clear of whatever else is on the course there. It moves as little as it can, so it stays where the level meant it
+// (the same stretch, the same side when that side is free). ev.onLine keeps one where it is (none does).
+// Two more things, so the choice is always a real one: a cell with no ring passing in its moment is slid along the course
+// to the nearest ring run within CELL.reach seconds (a cell beside nothing costs nothing); and on a boss level a cell at
+// the boss's door sits before the checkpoint, never after it (a restart there comes back with a full shield: main.js).
+export const CELL = { off: 0.6, window: 0.35, clear: 3.2, reach: 1.6, beforeCheckpoint: 0.9 };
+function moveCellsOffLine(L, events) {
+  const rings = events.filter((e) => ringEvent(e) && e.nx !== undefined), ease = easeOf(L.n, L.g || 1);
+  const need = PICK_R + RING_R * ease.ring + CELL.off;
+  for (const c of events) {
+    if (c.type !== 'shield-cell' || c.onLine) continue;
+    const v = L.speed(c.d), W = Math.max(40, CELL.window * v), cp = events.find((e) => e.type === 'checkpoint');
+    const doorMax = L.boss && cp && c.d > cp.d - 6 * v && c.d < L.boss.at ? cp.d - CELL.beforeCheckpoint * v : Infinity; // the last place a door cell may sit
+    if (c.d > doorMax) { c.wasD = c.d; c.d = doorMax; }
+    let near = rings.filter((r) => Math.abs(r.d - c.d) <= W);
+    if (!near.length && !(L.boss && c.d > L.boss.at)) {
+      // beside nothing: slide to the nearest ring run within reach (still before the checkpoint if it is a door cell)
+      let to = null; for (const r of rings) if (Math.abs(r.d - c.d) <= CELL.reach * v && r.d <= doorMax && (!to || Math.abs(r.d - c.d) < Math.abs(to.d - c.d))) to = r;
+      if (to) { c.wasD = c.wasD ?? c.d; c.d = to.d; near = rings.filter((r) => Math.abs(r.d - c.d) <= W); }
+    }
+    const things = events.filter((e) => e !== c && Math.abs(e.d - c.d) <= 60 && e.nx !== undefined && !e.decor && !ringEvent(e) && ['obstacle', 'enemy'].includes((getKind(e.type) || {}).role));
+    c.cost = near.length; // the rings its moment holds: what taking it puts at risk (check-levels reports it)
+    if (!near.length) { c.off = Infinity; continue; }
+    const far = (nx, ny, list) => { let m = 1e9; for (const B of BOXES) for (const r of list) m = Math.min(m, Math.hypot((nx - r.nx) * B.x, (ny - r.ny) * B.y)); return m; };
+    let best = null, widest = null;
+    for (let j = -15; j <= 15; j++) for (let i = -17; i <= 17; i++) {
+      const nx = i * 0.05, ny = j * 0.05;
+      if (things.length && far(nx, ny, things) < CELL.clear) continue;
+      const off = far(nx, ny, near), move = Math.hypot((nx - (c.nx || 0)) * 7.5, (ny - (c.ny || 0)) * 4.3);
+      if (!widest || off > widest.off) widest = { nx, ny, off, move };
+      if (off >= need && (!best || move < best.move - 1e-9)) best = { nx, ny, off, move };
+    }
+    const to = best || widest; if (!to) { c.off = far(c.nx || 0, c.ny || 0, near); continue; }
+    c.was = [c.nx || 0, c.ny || 0]; c.nx = +to.nx.toFixed(2); c.ny = +to.ny.toFixed(2); c.off = to.off; c.need = need;
+  }
 }
 
 // ---- loading. loadLevel(n) is galaxy 1's level n (as before); loadLevel(g, n) any galaxy's. A level module's path:
@@ -377,6 +398,11 @@ export function prepareLevel(L) {
     for (const [d, type, nx, ny] of L.powerups) lay.add(d, type, { nx, ny });
     for (const k of POWERUP_KINDS) if (L.powerups.some((p) => p[1] === k.name) && !L.kinds.includes(k)) L.kinds.push(k);
   }
+  // 0.6.0, the player pass: the level's checkpoint, on its ring line; every Shield Cell off it; and a boss level can always
+  // show a Shield Cell (one drifts in mid-fight: boss.js), so its kind is warmed with the rest
+  if (layCheckpoint(L, lay) && !L.kinds.includes(checkpointKind)) L.kinds.push(checkpointKind);
+  if (L.boss && !L.kinds.includes(shieldCell)) L.kinds.push(shieldCell);
+  moveCellsOffLine(L, lay.events);
   if (L.boss) lay.add(L.boss.at, 'boss', {});
   else if (!lay.events.some((e) => e.type === 'end')) lay.add(L.length, 'end', {});
   const events = lay.events.sort((a, b) => a.d - b.d);
@@ -397,7 +423,9 @@ export function prepareLevel(L) {
   for (const e of events) { const k = getKind(e.type); if (k && k.countsAsRing && !e.decor) { if (e.cache) { cacheTotal++; continue; } ringTotal++; const s = sectionAt(e.d).id; ringTotals[s] = (ringTotals[s] || 0) + 1; } }
   const powerups = events.filter((e) => { const k = getKind(e.type); return k && k.powerup; }).length;
   // the human pass (0.3.0): how gentle this level is (EASE, by its place in the play order; 0.4.0: and its galaxy); 0.3.1: its roll-or-hit fire
-  return Object.assign(L, { events, line, now, ringTotal, ringTotals, cacheTotal, powerups, sectionAt, spawnD: SPAWN_D, ease: easeOf(L.n, L.g || 1), fire: fireOf(L.n, L.g || 1) });
+  const cp = events.find((e) => e.type === 'checkpoint');
+  return Object.assign(L, { events, line, now, ringTotal, ringTotals, cacheTotal, powerups, sectionAt, spawnD: SPAWN_D, ease: easeOf(L.n, L.g || 1), fire: fireOf(L.n, L.g || 1),
+    checkpointAt: cp ? cp.d : null, gates: starScores(L.n, L.g || 1) });
 }
 const MARKERS = new Set(['banner', 'end', 'boss', 'music', 'call']);
 export function isNow(type) { if (MARKERS.has(type)) return true; const k = getKind(type); return !!(k && k.spawnAt === 'now'); }
@@ -450,16 +478,17 @@ export const Progress = {
   // every call takes (g, n), or (n) alone for galaxy 1
   get(a, b) { return Object.assign({}, EMPTY, store(key(a, b)) || {}); },
   cleared(a, b) { return this.get(a, b).cleared; },
-  // A galaxy opens when the one before it has its level 10 finished (a timed-out finale still finishes the level, so
-  // nobody is walled off by one boss), and an opened galaxy stays open: any record in it keeps it open.
+  // A galaxy opens when the one before it has its level 10 finished, and an opened galaxy stays open: any record in it
+  // keeps it open. (0.6.0: no boss retreats on a clock any more, so a finale is finished by beating it; its checkpoint sits
+  // at the boss's door, so nobody has to fly the whole level again to try.)
   galaxyOpen(g) {
     if (g === 1) return true;
-    if (!galaxy(g)) return false;
+    if (!galaxy(g) || (DEMO && g > 1)) return false; // (0.6.0: a demo is galaxy 1's first three levels, whatever the save holds)
     return this.cleared(g - 1, catalogueOf(g - 1).length) || catalogueOf(g).some((c) => { const r = this.get(g, c.n); return r.cleared || r.score > 0; });
   },
   // clearing N puts N on the select for replay and opens N+1; anything past that stays locked
   // a cleared level always stays replayable, even if the one before it is not cleared (the swap moved records)
-  unlocked(a, b) { const [g, n] = gn(a, b); if (!this.galaxyOpen(g)) return false; return n === 1 || this.cleared(g, n) || this.cleared(g, n - 1); },
+  unlocked(a, b) { const [g, n] = gn(a, b); if (!this.galaxyOpen(g) || !inDemo(g, n)) return false; return n === 1 || this.cleared(g, n) || this.cleared(g, n - 1); },
   // the furthest level open in one galaxy (furthestIn), and in the whole game: the furthest galaxy open, its furthest
   // level. furthest() is galaxy 1's level number (as 0.3); furthestAt() is [g, n] (CONTINUE).
   furthestIn(g) { let f = 1; for (const c of catalogueOf(g)) if (this.unlocked(g, c.n)) f = c.n; return f; },

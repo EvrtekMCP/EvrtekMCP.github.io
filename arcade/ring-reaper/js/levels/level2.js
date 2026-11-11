@@ -8,14 +8,14 @@
 // The sections, the bar lines, the speed, the Shield Cell and its ring line are where they were.
 // Authored in MUSIC TIME (rule 30): the sections and the peak sit on bar lines of the level's track (138 bpm,
 // 1.739 s a bar), converted to metres through the speed curve at base speed.
-import { defineLevel, clamp } from '../api.js?v=0.5.0';
-import ring from '../pickups/ring/index.js?v=0.5.0';
-import boostRing from '../pickups/boost-ring/index.js?v=0.5.0';
-import boulder from '../obstacles/boulder/index.js?v=0.5.0';
-import pod from '../enemies/pod/index.js?v=0.5.0';
-import shrike from '../enemies/shrike/index.js?v=0.5.0';
-import { chunk, slab, dust, chunks, slabs, canyon, dustRivers, brokenMoon, sunShafts } from './level2/scenery.js?v=0.5.0';
-import { tutorPod } from './level2/tutor.js?v=0.5.0';
+import { defineLevel, clamp } from '../api.js?v=0.6.0';
+import ring from '../pickups/ring/index.js?v=0.6.0';
+import boostRing from '../pickups/boost-ring/index.js?v=0.6.0';
+import boulder from '../obstacles/boulder/index.js?v=0.6.0';
+import pod from '../enemies/pod/index.js?v=0.6.0';
+import shrike from '../enemies/shrike/index.js?v=0.6.0';
+import { chunk, slab, dust, chunks, slabs, canyon, dustRivers, brokenMoon, sunShafts } from './level2/scenery.js?v=0.6.0';
+import { tutorPod } from './level2/tutor.js?v=0.6.0';
 
 const LEN = 16400, V0 = 64, V1 = 150;
 const speed = (d) => V0 + (V1 - V0) * Math.pow(clamp(d / LEN, 0, 1), 0.85);
@@ -60,7 +60,7 @@ export default defineLevel({
   beats: [
     { d: 0, tag: 'calm', what: 'the moon breaks open ahead; rings in the open: FOLLOW THE RINGS (steering, alone)' },
     { d: D(9), tag: 'calm', what: 'the first boost chain, alone, nothing near it (the headline, taught safe)' },
-    { d: D(15.2), tag: 'calm', what: 'the roll lesson (once, until the player has sent a shot back)' },
+    { d: D(16.4), tag: 'calm', what: 'the roll lesson, staged (once, until the player has sent a shot back)' },
     { d: D(22), tag: 'rising', what: 'the first boulder, alone and slow, crossing wide of the rings: STEER AROUND THE ROCK' },
     { d: D(33), tag: 'rising', what: 'one pod, one slow shot: the roll, practised' },
     { d: S2, tag: 'rising', what: 'the dust rivers: chains, sines and the odd boulder; no shooting for a while' },
@@ -85,21 +85,20 @@ export default defineLevel({
     //      the boulder alone, and one slow shot to roll
     {
       line(D(2.5), -0.5, 0, 0.5, 0);
-      add(D(4.2), 'call', { text: 'FOLLOW THE RINGS', cls: '' }); // the ramp (11-07): steering first, alone; after the banner
+      // (0.6.0: the level's four teaching call-outs are gone. Each said, every run, what a first-time card now says once:
+      // STEERING and RINGS, BOOST RINGS, BOULDER, LANTERN POD: js/tutorials.js)
       sine(D(5.5), 6, 24, 0.4, 0.35);
-      add(D(7), 'call', { text: 'FLY THE AMBER CHAIN: BOOST!', cls: '' }); // the opener teaches (Evrtek's swap, 11-05)
       chain(D(9), 0, -0.2, 0, 0.3, 4, 34);                 // the first chain: straight down the middle, nothing else
-      line(D(14), 0.6, 0.4, -0.6, 0.4);
-      // the roll lesson (0.3.0, Evrtek 11-06): its pod, low and left, clear of the rings; asks for the lesson about 12 s
-      // in, after the first chain. Only there until the player has sent a shot back once (main.js, the roll lesson).
-      add(D(15.2), 'l2-tutor-pod', { nx: -0.35, ny: -0.5 });
-      chain(D(18), -0.6, 0, 0.6, 0, 4, 34);
-      add(D(20.4), 'call', { text: 'STEER AROUND THE ROCK', cls: '' });
+      line(D(13.2), 0.6, 0.4, -0.6, 0.4);                  // (0.6.0: 0.8 s sooner, so the lesson has the lane to itself)
+      // the roll lesson (0.3.0; restaged 0.6.0, Evrtek 11-10: "stage the first roll so the player clearly SEES a roll deflect a
+      // shot back into an enemy"): its pod settles close ahead, up and to the right of the ship, in the gap between the ring
+      // line and the next chain. Only there until the player has sent a shot back once (main.js, the roll lesson).
+      add(D(16.4), 'l2-tutor-pod', { nx: 0.2, ny: 0.4 });
+      chain(D(19.2), -0.6, 0, 0.6, 0, 4, 34);             // (0.6.0: 1.2 s later, clear of the lesson's last line)
       rock(D(22), 1, 0.85, -0.3, 2.4, 380);                // alone and slow, crossing at the edge; rings sit opposite
       line(D(21.4), -0.6, 0.2, -0.5, -0.2, 4, 22);
       sine(D(26), 8, 28, 0.45, 0.38);                      // 0.3.0: a turn the ship can follow (was 24 m apart, 0.55 x 0.45)
       chain(D(31), 0.5, 0.5, -0.5, -0.4, 5, 32);
-      add(D(30.5), 'call', { text: 'ROLL INTO ITS FIRE', cls: 'c-cyan' }); // short enough to read in the call's moment
       add(D(33), 'pod', { nx: -0.5, ny: 0.6, drift: 1, bursts: 1, shots: 1 });
       rock(D(37), -1, -0.2, 0.4, 2.4, 400);                // the ramp: smaller and slower (was 2.8, 340)
       line(D(36.5), 0.6, -0.4, 0.4, 0.3, 4, 22);

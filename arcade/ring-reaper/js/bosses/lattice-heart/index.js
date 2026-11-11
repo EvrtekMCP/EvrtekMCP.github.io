@@ -9,10 +9,9 @@
 //  PHASE 3 THE LAST PLATES   the piston wall (one gap, its edges red, white at the last moment), then a volley
 // Each loop is four bars of the core track (150 bpm, 1.6 s a bar), so the rhythm is the music's (rule 28, 30).
 // The beam's sides and the wall's gaps run in a fixed order, so the third time round you know what comes next.
-// Rule 26: it gives up only on a ship that stops hurting it. escapeAfter is 105 s, and every hit buys 4.5 s more
-// (24 hits, up to 108 s), so a never-roll bot sees it tear itself apart at 105 s while a slow fighter keeps going.
-import { THREE, defineBoss, buildModel, clamp } from '../../api.js?v=0.5.0';
-import { MESH } from './mesh.js?v=0.5.0';
+// 0.6.0 (Evrtek 11-10: no level has a timer): it no longer tears itself apart on a clock. The fight ends when it is beaten.
+import { THREE, defineBoss, buildModel, clamp } from '../../api.js?v=0.6.0';
+import { MESH } from './mesh.js?v=0.6.0';
 
 const SCALE = 2.2, N = 8, PLATE_R = 11.5, EYE_R = 9;
 const BAR = 1.6, BEAT = 0.4;
@@ -106,8 +105,7 @@ function spill(b, api, n, fromW) {
 }
 export default defineBoss({
   name: 'lattice-heart', title: 'THE LATTICE HEART',
-  hold: 125, y: 0.4, scale: SCALE, enterTime: 7.4, escapeAfter: 105, defeatTime: 3.4,
-  escapeCall: 'IT IS TEARING ITSELF APART: RUN!',
+  hold: 125, y: 0.4, scale: SCALE, enterTime: 7.4, defeatTime: 3.4,
   bonus: 100000, hitPts: 3000, pointDown: 'HINGE DOWN!', downCall: 'THE HEART IS BREAKING!',
   build(api, b) {
     const root = new THREE.Group(), inner = new THREE.Group();
@@ -163,7 +161,7 @@ export default defineBoss({
       }
     }
     placePlates(b);
-    for (const w of b.weak) { hingeAt(b, w.i, w.at); if (w.lastHp !== undefined && w.hp < w.lastHp && b.state === 'fight') { if (w.hp > 0) spill(b, api, 1, w); b.fightT = Math.max(0, b.fightT - 4.5); api.game.sfx('boss-hit', { vol: 0.9 }); } w.lastHp = w.hp; }
+    for (const w of b.weak) { hingeAt(b, w.i, w.at); if (w.lastHp !== undefined && w.hp < w.lastHp && b.state === 'fight') { if (w.hp > 0) spill(b, api, 1, w); api.game.sfx('boss-hit', { vol: 0.9 }); } w.lastHp = w.hp; }
     // the eye: it watches you; the pupil shrinks for the beam; the white goes whiter as it breaks
     b.socketKick = Math.max(0, b.socketKick - dt * 3);
     const look = 0.06;

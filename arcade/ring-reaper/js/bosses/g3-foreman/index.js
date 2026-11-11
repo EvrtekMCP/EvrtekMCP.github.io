@@ -14,12 +14,12 @@
 //   PHASE 3  THE RUSH JOB  it gives the cage up (every panel falls; the core stays lit), backs off and builds walls in
 //                          your lane at speed from blueprints, firing everything from its open core. The shortest phase
 //   DEFEAT                 its cage collapses in on it and the crane arms fold, in a shower of sparks
-// Safety net (rule 26): not beaten in 110 s, it packs up and rises out of reach, with no bonus.
-import { THREE, defineBoss, buildModel, clamp, damp, smoothstep, SPAWN_D } from '../../api.js?v=0.5.0';
-import { MESH } from './mesh.js?v=0.5.0';
-import { MESH as P } from './parts.js?v=0.5.0';
-import { beatClock } from '../../levels/level3/beat.js?v=0.5.0';
-import { follow } from '../../enemies/g3-shuttler/index.js?v=0.5.0';
+// (0.6.0, Evrtek 11-10: no level has a timer. It no longer leaves on a clock; the fight ends when it is beaten.)
+import { THREE, defineBoss, buildModel, clamp, damp, smoothstep, SPAWN_D } from '../../api.js?v=0.6.0';
+import { MESH } from './mesh.js?v=0.6.0';
+import { MESH as P } from './parts.js?v=0.6.0';
+import { beatClock } from '../../levels/level3/beat.js?v=0.6.0';
+import { follow } from '../../enemies/g3-shuttler/index.js?v=0.6.0';
 
 const TAU = Math.PI * 2;
 const SCALE = 1.9, HOLD = 110, HOLD_RUSH = 190;   // the Warden's size: enormous and exact, you feel small
@@ -182,7 +182,6 @@ function rebuild(b, api, i) {
 export default defineBoss({
   name: 'g3-foreman', title: 'THE FOREMAN',
   hold: HOLD, enterTime: ENTER_T, scale: SCALE, y: -1,
-  escapeAfter: 110, escapeCall: 'THE FOREMAN PACKS UP AND LEAVES',
   bonus: 70000, hitPts: 1800, pointDown: 'KEYSTONE DOWN!', downCall: 'THE FOREMAN FALLS!', defeatTime: 3.0,
   build,
   // rule 25: keystones are lit while the cage is shut; the core while a side is open (and always in the rush job)

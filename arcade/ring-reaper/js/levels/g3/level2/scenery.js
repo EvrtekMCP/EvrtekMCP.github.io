@@ -5,9 +5,9 @@
 //  - g3-l2-floor   a set piece: the woven plain, tiled under the lane to the horizon and sliding by
 //  - g3-l2-spool   a spool post standing on the plain beside the lane, its thread running down to the weave
 //  - g3-l2-rail    a section of shuttle rail on its legs, along the lane's edge (where the shuttlers ride)
-import { THREE, defineScenery, defineDecor, Instanced, material } from '../../../api.js?v=0.5.0';
-import { MESH } from './mesh.js?v=0.5.0';
-import { MESH as RAIL } from './rail.js?v=0.5.0';
+import { THREE, defineScenery, defineDecor, Instanced, material } from '../../../api.js?v=0.6.0';
+import { MESH } from './mesh.js?v=0.6.0';
+import { MESH as RAIL } from './rail.js?v=0.6.0';
 
 export const FLOOR_Y = -16;              // the plain, metres under the lane's middle
 const tmpQ = new THREE.Quaternion(), eul = new THREE.Euler(), IDQ = new THREE.Quaternion();

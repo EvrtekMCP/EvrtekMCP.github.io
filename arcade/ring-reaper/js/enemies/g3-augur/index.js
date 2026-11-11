@@ -14,9 +14,9 @@
 //          shots: 1, gap: 0.5 (s between a bolt landing and the next crosshair), r: 0.95 (the crosshair's radius, m),
 //          orbit: { r, w, a0, ky } (it rides an orrery arm: its perch turns round the lane at r metres, w rad/s) }
 // Warning (rule 12): from the crosshair to the bolt's arrival is charge + 1.2 s = 2.4 s; from the white lock, 1.2 s.
-import { THREE, defineEnemy, buildModel, clamp, SHIP_R } from '../../api.js?v=0.5.0';
-import { MESH } from './mesh.js?v=0.5.0';
-import { SightLines } from '../sniper/sight.js?v=0.5.0';
+import { THREE, defineEnemy, buildModel, clamp, SHIP_R } from '../../api.js?v=0.6.0';
+import { MESH } from './mesh.js?v=0.6.0';
+import { SightLines } from '../sniper/sight.js?v=0.6.0';
 
 export const CHARGE = 1.2, FLIGHT = 1.2;
 const SCALE = 2.0, EYE = [0, 1.35, 0];

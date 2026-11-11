@@ -5,10 +5,12 @@
 // while the lesson runs, shows the charge the lesson asks for, and never fires on its own. When the lesson is over
 // without its shot coming home (missed twice, or skipped) it climbs away out of the lane, so it never rams anyone.
 // Once the lesson is done it is never born at all (it dies at the spawn line, at zero size, before it is ever drawn).
-import { defineEnemy } from '../../api.js?v=0.5.0';
-import pod from '../../enemies/pod/index.js?v=0.5.0';
+import { defineEnemy } from '../../api.js?v=0.6.0';
+import pod from '../../enemies/pod/index.js?v=0.6.0';
 
-const ASK = 3.6; // seconds out when it asks for the lesson (a pod's first burst is at 3.4)
+// 0.6.0 (the lesson restaged): it settles HOLD metres ahead, close enough for its shot and its end to be seen, and asks for
+// the lesson a little before it gets there, so the world is already slowing as it arrives
+const HOLD = 24, ASK = 0.5; // metres ahead it holds; seconds before that when it asks
 export const tutorPod = defineEnemy({
   name: 'l2-tutor-pod',
   // the lesson's shot: 0.9 s of charge and 1.1 s of flight, in slow motion, and it cannot hurt; declared for rule 12
@@ -18,13 +20,15 @@ export const tutorPod = defineEnemy({
     if (!ev.warm && !api.game.tutorWants('roll')) { e.alive = false; return; }
     pod.spawn(e, Object.assign({}, ev, { bursts: 0, shots: 0, drift: 0 }), api);
     e.bursts = 0; e.shotsPer = 0; // set after: the pod reads 0 as "one"; this pod never fires on its own
+    e.sx = e.sy = e.sz = 1.7;     // 0.6.0: the lesson's pod is drawn large (a pod is 1.1), so its charge, its shot and its end are plain to see
     e.asked = false; e.hold = undefined; e.chargeK = 0; e.leave = false; e.leaveV = 0;
   },
   update(e, dt, api) {
     if (!e.obj) { e.alive = false; return; }
     if (e.hold !== undefined) e.z = e.hold; // holds station while the lesson runs
     if (e.leave) { e.leaveV = Math.min(16, (e.leaveV || 0) + dt * 24); e.y += e.leaveV * dt; } // done with: it climbs away, out of the lane
-    if (!e.asked && !e.ev.warm && -e.z / Math.max(1, api.v) < ASK) { e.asked = true; api.game.tutorReady(e); }
+    if (!e.asked && !e.ev.warm && -e.z < HOLD + Math.max(1, api.v) * ASK) { e.asked = true; if (!api.game.tutorReady(e)) e.leave = true; }
+    if (e.asked && !e.leave && e.hold === undefined && e.z >= -HOLD) e.hold = -HOLD; // on station: the lesson takes it from here
     pod.update(e, dt, api); // the pod's own pose, aim, spin and ram check; with no bursts it never fires
     const ud = e.obj.userData, k = e.chargeK || 0;
     if (k > 0) {

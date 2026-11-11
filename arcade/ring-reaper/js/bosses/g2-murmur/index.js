@@ -11,12 +11,12 @@
 //   3. THE STOOP (the shortest): the whole flock dives at you as one wave with her riding its crest, wide open: three
 //      volleys and it is over.
 // FREED: her graft burns out and she is a white moth again; the flock scatters into a sky of drifting lights (the stars
-// of the finale's approach). If she is not freed in about 110 s, the flock disperses with no bonus (rule 26).
+// of the finale's approach). (0.6.0, Evrtek 11-10: no level has a timer. It no longer leaves on a clock; the fight ends when it is beaten.)
 // Music: g2/bosses/murmur (145.03 bpm, C minor, the level's key; a stand-in plays until the sound branch's switch).
-import { THREE, defineBoss, clamp, rng } from '../../api.js?v=0.5.0';
-import { MESH } from './mesh.js?v=0.5.0';
-import { morphModel, setMorph, setLook } from '../../enemies/g2-bloomer/morph.js?v=0.5.0';
-import { moth, outline, MOTH } from '../../enemies/g2-flock/index.js?v=0.5.0';
+import { THREE, defineBoss, clamp, rng } from '../../api.js?v=0.6.0';
+import { MESH } from './mesh.js?v=0.6.0';
+import { morphModel, setMorph, setLook } from '../../enemies/g2-bloomer/morph.js?v=0.6.0';
+import { moth, outline, MOTH } from '../../enemies/g2-flock/index.js?v=0.6.0';
 
 const QSCALE = 1.6, WALL_N = 300, HOLE = 3.6, WALL_FLY = 1.5, FUNNEL_R = 7.4, DENT_R = 3.0, DENT_W = 0.75;
 const lerpTo = (a, b, k) => a + (b - a) * k;
@@ -40,7 +40,6 @@ const tmpV = new THREE.Vector3();
 export default defineBoss({
   name: 'g2-murmur', title: 'THE MURMUR',
   hold: 95, enterTime: 4.5, scale: 1, y: 0,
-  escapeAfter: 110, escapeCall: 'THE FLOCK SCATTERS',
   bonus: 80000, hitPts: 2500, defeatTime: 3.0,
   build(api, b) {
     const root = new THREE.Group();

@@ -11,9 +11,9 @@
 //   PHASE 3  THE LOCK    the hub lock fires a ring of eight bolts round you and one straight at you: hold still and
 //                        roll, and all nine go home into the last core (MULTI-DEFLECT x9). The shortest phase.
 //   THE CRACK            the lock goes white, the spokes go dark, and you fly through the gate
-import { THREE, defineBoss, buildModel, material, clamp, SPAWN_D } from '../../api.js?v=0.5.0';
-import { MESH } from './mesh.js?v=0.5.0';
-import { beatClock } from '../../levels/level3/beat.js?v=0.5.0';
+import { THREE, defineBoss, buildModel, material, clamp, SPAWN_D } from '../../api.js?v=0.6.0';
+import { MESH } from './mesh.js?v=0.6.0';
+import { beatClock } from '../../levels/level3/beat.js?v=0.6.0';
 
 const TAU = Math.PI * 2;
 const CORE_R = 11, HP = 5, SCALE = 2.0;
@@ -124,7 +124,6 @@ const enterPhase = (b) => { b.sch = { origin: null, last: null }; closeAll(b); b
 export default defineBoss({
   name: 'warden', title: 'THE WARDEN',
   hold: HOLD, enterTime: ENTER_T, scale: SCALE, y: 0.6,
-  escapeAfter: 150, escapeCall: 'THE WARDEN SEALS ITS DOOR',
   bonus: 60000, hitPts: 2500, pointDown: 'CORE DOWN!', downCall: 'THE WARDEN FALLS!', defeatTime: 2.8,
   build,
   exposed(b, w) { return b.cores[w.i].open > 0.6; },

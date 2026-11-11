@@ -4,9 +4,9 @@
 // on it (her phaseCrack: the clue that never changes), sparks of amber drifting out of the crack and a glow bleeding
 // round it (the reward's own colour: something is back there). The reef, the kelp, the motes and the shafts are
 // Tideway's (level1/scenery.js).
-import { THREE, defineObstacle, defineScenery, modelGroups, buildModel, rng, clamp, smoothstep, SHIP_R } from '../../../api.js?v=0.5.0';
-import { MESH } from './mesh.js?v=0.5.0';
-import { makeShafts } from '../level1/scenery.js?v=0.5.0';
+import { THREE, defineObstacle, defineScenery, modelGroups, buildModel, rng, clamp, smoothstep, SHIP_R } from '../../../api.js?v=0.6.0';
+import { MESH } from './mesh.js?v=0.6.0';
+import { makeShafts } from '../level1/scenery.js?v=0.6.0';
 
 export const shafts = makeShafts('g2-l2-shafts', 0xf0fff4, 23);
 

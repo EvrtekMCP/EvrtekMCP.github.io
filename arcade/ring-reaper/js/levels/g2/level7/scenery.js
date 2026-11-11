@@ -4,9 +4,9 @@
 // petal drift. Plus THE MEADOW's one obstacle: her meadow walls turned in along the lane so they make a corridor, and
 // dodging a fan wide is no longer an answer (the plan's twist: roll it in its middle).
 // Rule 9: orchid, pale orchid, jade and white. The seeds are the only red here, and they hurt.
-import { THREE, defineScenery, defineDecor, defineObstacle, Instanced, modelGroups, material, clamp } from '../../../api.js?v=0.5.0';
-import { MESH } from './mesh.js?v=0.5.0';
-import { morphModel, setMorph } from '../../../enemies/g2-bloomer/morph.js?v=0.5.0';
+import { THREE, defineScenery, defineDecor, defineObstacle, Instanced, modelGroups, material, clamp } from '../../../api.js?v=0.6.0';
+import { MESH } from './mesh.js?v=0.6.0';
+import { morphModel, setMorph } from '../../../enemies/g2-bloomer/morph.js?v=0.6.0';
 
 const tmpQ = new THREE.Quaternion(), eul = new THREE.Euler();
 const side = (R) => R.sign();
