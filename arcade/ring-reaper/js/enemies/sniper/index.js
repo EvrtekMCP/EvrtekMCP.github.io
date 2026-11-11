@@ -11,9 +11,9 @@
 //          shots: 1, sight: 0.8, at: 2.8 (seconds out when it first sights), gap: 0.45 (between shots),
 //          miss: 0 (metres off you on purpose: the teaching shot grazes), hang: false (legs up, under a lamp) }
 // It brings no perch of its own: level 5 stands each one on an ion pylon's lamp (js/levels/level5/storm.js).
-import { THREE, defineEnemy, buildModel, clamp, SHIP_R } from '../../api.js?v=0.6.0';
-import { MESH } from './mesh.js?v=0.6.0';
-import { SightLines } from './sight.js?v=0.6.0';
+import { THREE, defineEnemy, buildModel, clamp, SHIP_R } from '../../api.js?v=0.6.1';
+import { MESH } from './mesh.js?v=0.6.1';
+import { SightLines } from './sight.js?v=0.6.1';
 
 export const SIGHT = 0.8, SIGHT_FIRST = 1.2, LOCK = 0.3, BOLT_T = 0.3;
 const SCALE = 1.7;

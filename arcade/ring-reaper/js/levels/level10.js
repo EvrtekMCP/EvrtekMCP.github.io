@@ -8,16 +8,16 @@
 //  ACT 3  THE CORE      core track, bars 1-36 loop  THE LATTICE HEART; its great beam is the one unreflectable thing
 //  OUT    THE ESCAPE    core track from bar 37      outrun the shockwave down the breaking shaft
 //  HOME   THE RUN HOME  core track, bars 69-90      a sunrise over a quiet blue planet; nothing can hurt you
-import { defineLevel, clamp } from '../api.js?v=0.6.0';
-import ring from '../pickups/ring/index.js?v=0.6.0';
-import pod from '../enemies/pod/index.js?v=0.6.0';
-import shrike from '../enemies/shrike/index.js?v=0.6.0';
-import mines from '../obstacles/mines/index.js?v=0.6.0';
-import crystal from '../obstacles/crystal/index.js?v=0.6.0';
-import { defenceRing, ram, iris, wall, beam, debris, energy } from './level10/kinds.js?v=0.6.0';
-import { sphere, strut, struts_, arc, arcs, segment, tunnel, tunnelGlow, chamber, mote, motes, breach, shaftRing, shaft, sunrise, wisp, wisps } from './level10/scenery.js?v=0.6.0';
-import { CAMEOS, cameoKinds } from './level10/cameos.js?v=0.6.0';
-import heart from '../bosses/lattice-heart/index.js?v=0.6.0';
+import { defineLevel, clamp } from '../api.js?v=0.6.1';
+import ring from '../pickups/ring/index.js?v=0.6.1';
+import pod from '../enemies/pod/index.js?v=0.6.1';
+import shrike from '../enemies/shrike/index.js?v=0.6.1';
+import mines from '../obstacles/mines/index.js?v=0.6.1';
+import crystal from '../obstacles/crystal/index.js?v=0.6.1';
+import { defenceRing, ram, iris, wall, beam, debris, energy } from './level10/kinds.js?v=0.6.1';
+import { sphere, strut, struts_, arc, arcs, segment, tunnel, tunnelGlow, chamber, mote, motes, breach, shaftRing, shaft, sunrise, wisp, wisps } from './level10/scenery.js?v=0.6.1';
+import { CAMEOS, cameoKinds } from './level10/cameos.js?v=0.6.1';
+import heart from '../bosses/lattice-heart/index.js?v=0.6.1';
 
 // ---------------------------------------------------------------------------------------------------------------------
 // THE SCHEDULE. Section starts are the tracks' own bar lines (audio/levels/level10/*.json).
@@ -77,7 +77,7 @@ export default defineLevel({
   // the fight loops Core one and Core two. After it, each section of the run out jumps the take to its own section on
   // the next bar line (from the Collapse on, once, to the end): the music re-syncs at the escape and at the sunrise.
   bossMusic: { track: CORE_TRACK, loop: [CORE.core1, CORE.collapse] },
-  boss: { at: BOSS_AT, def: heart, then: 'continue' },
+  boss: { at: BOSS_AT, def: heart, then: 'continue', cell: 'hail-mary' }, // 0.6.1: galaxy 1's only mid-fight cell (boss.js midCell)
   sfx: [{ id: 'boss-warning', gain: 0.61 }, { id: 'boss-hit', gain: 1 }, { id: 'boss-phase', gain: 0.65 }, { id: 'boss-defeat', gain: 1 }],
   boostMul: 1.4,   // level 2's boost chain comes back in act 1, so the warning check runs at the boosted speed too
   // 0.2.0 ranked by score from a NON-god autopilot run (414,047) of the whole level (NOGOD=1 run.js popin: 307 of 358 rings, 14 hits,

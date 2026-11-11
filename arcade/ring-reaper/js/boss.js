@@ -8,15 +8,27 @@
 //  - 0.6.0 (Evrtek 11-10: "No level has a timer"): a boss never retreats on a clock. The fight ends when the boss is beaten
 //    (or the ship is down). The watchdog below still takes over a boss that stops fighting, so a fight can always be won.
 // While a boss is up the course holds (no new course events), the scenery keeps streaming and its own music plays.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.6.0';
-import { clamp } from './util.js?v=0.6.0';
-import { defineEnemy, defineWeakPoint } from './registry.js?v=0.6.0';
-import { SPAWN_D } from './space.js?v=0.6.0';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.6.1';
+import { clamp } from './util.js?v=0.6.1';
+import { defineEnemy, defineWeakPoint } from './registry.js?v=0.6.1';
+import { SPAWN_D } from './space.js?v=0.6.1';
 
 const tmpV = new THREE.Vector3();
 // ---- attack helpers: (b, api, o) with o = the pattern step. `from` = a muzzle index (default 0).
 const muzzle = (b, i) => { const m = b.muzzles[(i || 0) % b.muzzles.length]; tmpV.set(m[0], m[1], m[2]); b.root.localToWorld(tmpV); return { x: tmpV.x, y: tmpV.y, z: tmpV.z }; };
 const aimAt = (api, lead = 0.3) => [clamp(api.ship.x + api.ship.vx * lead, -api.box.x, api.box.x), clamp(api.ship.y + api.ship.vy * lead, -api.box.y, api.box.y)];
+// 0.6.1 (Evrtek 11-11): WHICH FIGHTS SEND A SHIELD CELL MID-FIGHT. Galaxies 2 and 3: every boss, at half health (0.6.0's
+// rule). Galaxy 1: none, except its final fight, the Lattice Heart (level 10, boss.cell 'hail-mary'), which sends one at
+// half health only to a ship under HAIL_MARY shield (his words: "a Hail Mary moment"). Decided once, at half health: a
+// ship over the line then gets none later. A level's boss.cell: false sends none, true always sends one.
+export const HAIL_MARY = 20;
+export function midCell(level, galaxy, shield) {
+  const c = level && level.boss ? level.boss.cell : undefined;
+  if (c === false) return false;
+  if (c === 'hail-mary') return shield < HAIL_MARY;
+  if (c === true) return true;
+  return (galaxy || 1) > 1;
+}
 export const ATTACKS = {
   // n shots at where the ship is heading, gap s apart, each T s to the ship's plane
   aimed(b, api, o) { for (let i = 0; i < (o.n || 1); i++) b.later(i * (o.gap ?? 0.18), () => { const [tx, ty] = aimAt(api); api.fire(muzzle(b, o.from), tx, ty, { T: o.T || 1.3, owner: b, noReflect: o.noReflect }); }); },
@@ -202,11 +214,13 @@ function hit(b, w, api, shot) {
   api.game.boss({ frac: f });
   // 0.6.0 (Evrtek 11-10: Shield Cells are "useful right before or during a boss fight"): once a fight, when the boss is down
   // to half (def.cellAt), a Shield Cell drifts in out of the haze, off to the far side from where you are flying: leave your
-  // ground to fetch it, or stay and keep rolling. A level opts out with boss.cell: false.
-  if (!b.cellSent && f > 0 && f <= (b.def.cellAt ?? 0.5) && api.level && api.level.boss && api.level.boss.cell !== false) {
+  // ground to fetch it, or stay and keep rolling. 0.6.1: which fights send one, midCell above (Evrtek 11-11).
+  if (!b.cellSent && f > 0 && f <= (b.def.cellAt ?? 0.5) && api.level && api.level.boss) {
     b.cellSent = true;
-    const cell = api.spawn({ type: 'shield-cell', nx: (api.ship.x > 0 ? -1 : 1) * 0.72, ny: (api.ship.y > 0 ? -1 : 1) * 0.6, bossCell: true }, -SPAWN_D);
-    if (api.game.tip) api.game.tip('boss-cell', cell);
+    if (midCell(api.level, api.galaxy, api.shield ?? 100)) {
+      const cell = api.spawn({ type: 'shield-cell', nx: (api.ship.x > 0 ? -1 : 1) * 0.72, ny: (api.ship.y > 0 ? -1 : 1) * 0.6, bossCell: true }, -SPAWN_D);
+      if (api.game.tip) api.game.tip('boss-cell', cell);
+    }
   }
   if (f <= 0) { b.state = 'dying'; b.t = 0; api.game.hitstop(0.25); api.game.shake(1.2); api.game.flash(); api.game.call(b.def.downCall || (b.freed ? 'FREED!' : 'BOSS DOWN!'), 'c-cyan'); if (b.def.defeat) b.def.defeat(b, api); return; }
   const next = b.def.phases[b.pi + 1];

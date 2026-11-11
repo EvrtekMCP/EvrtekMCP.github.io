@@ -5,8 +5,8 @@
 // while the lesson runs, shows the charge the lesson asks for, and never fires on its own. When the lesson is over
 // without its shot coming home (missed twice, or skipped) it climbs away out of the lane, so it never rams anyone.
 // Once the lesson is done it is never born at all (it dies at the spawn line, at zero size, before it is ever drawn).
-import { defineEnemy } from '../../api.js?v=0.6.0';
-import pod from '../../enemies/pod/index.js?v=0.6.0';
+import { defineEnemy } from '../../api.js?v=0.6.1';
+import pod from '../../enemies/pod/index.js?v=0.6.1';
 
 // 0.6.0 (the lesson restaged): it settles HOLD metres ahead, close enough for its shot and its end to be seen, and asks for
 // the lesson a little before it gets there, so the world is already slowing as it arrives

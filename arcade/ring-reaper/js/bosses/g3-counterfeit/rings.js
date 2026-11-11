@@ -3,7 +3,7 @@
 // (galaxy 1's fights have none either). Caught, one pays as a ring does: points with the combo, a step of combo,
 // shield. Taken by the Counterfeit first (it flies ahead of you), one mends its hull a third of a crack.
 // In the Photo Finish they are boost rings: fly a whole chain and it fires a speed burst, as galaxy 1's do.
-import { THREE, definePickup, RING_R } from '../../api.js?v=0.6.0';
+import { THREE, definePickup, RING_R } from '../../api.js?v=0.6.1';
 
 let geo, mat, glow, chev;
 const chains = new Map();

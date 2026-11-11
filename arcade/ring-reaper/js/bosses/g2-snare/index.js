@@ -14,8 +14,8 @@
 // FREED: the graft burns out, armour and nodes gone, and a silver star-eel flees into the dark. The mother sings and the
 // herd turns for home. MOTHER SAFE if no tether held her for long. (0.6.0, Evrtek 11-10: no level has a timer. It no longer leaves on a clock; the fight ends when it is beaten.)
 // Music: audio/g2/bosses/snare, 140 bpm, B minor (the level's key); the circle is four bars, the binding six.
-import { THREE, defineBoss, buildModel, clamp, damp, SPAWN_D } from '../../api.js?v=0.6.0';
-import { MESH } from './mesh.js?v=0.6.0';
+import { THREE, defineBoss, buildModel, clamp, damp, SPAWN_D } from '../../api.js?v=0.6.1';
+import { MESH } from './mesh.js?v=0.6.1';
 
 const BAR = 240 / 140.003;
 export const SNARE = { hold: 40, segs: 8, nodes: 8, nose: 5.4, L1: 4 * BAR, D1: 3.4, L2: 6 * BAR, D2: 5.4, cycle3: 2 * BAR, safe: 4, grace: 0.9 };

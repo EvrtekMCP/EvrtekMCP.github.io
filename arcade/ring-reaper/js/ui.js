@@ -1,12 +1,12 @@
 // STARWAKE 0.4.0: the screens around the flying: the loading screen, the launcher (NEW GAME, CONTINUE, LEVEL
 // SELECT, OPTIONS), the galaxy chart (0.4.0), each galaxy's sector map with stars, the end card's stars, pause, and the
 // hidden dev menu (a tab a galaxy). Every level shares them; nothing here knows any one level.
-import { fmt, store, V } from './util.js?v=0.6.0';
-import { loadLevel, RANK_ORDER, MAX_STARS, GALAXIES, galaxy, catalogueOf, entryOf, levelLabel } from './levels.js?v=0.6.0';
-import { keyLabel, codeOf } from './input.js?v=0.6.0';
-import { param } from './params.js?v=0.6.0';
-import { tipsSetting, setTipsSetting } from './tutorials.js?v=0.6.0';
-import { DEMO, DEMO_BUILD, DEMO_TEXT, DEMO_LEVELS, demoEnds } from './demo.js?v=0.6.0';
+import { fmt, store, V } from './util.js?v=0.6.1';
+import { loadLevel, RANK_ORDER, MAX_STARS, GALAXIES, galaxy, catalogueOf, entryOf, levelLabel } from './levels.js?v=0.6.1';
+import { keyLabel, codeOf } from './input.js?v=0.6.1';
+import { param } from './params.js?v=0.6.1';
+import { tipsSetting, setTipsSetting } from './tutorials.js?v=0.6.1';
+import { DEMO, DEMO_BUILD, DEMO_TEXT, DEMO_LEVELS, demoEnds } from './demo.js?v=0.6.1';
 
 const $ = (id) => document.getElementById(id);
 const SCREENS = ['title', 'galaxies', 'select', 'options', 'confirm', 'dev', 'paused', 'end', 'credits', 'demo'];
@@ -375,7 +375,7 @@ export class UI {
     for (const t of DEMO_TEXT.lines) { const d = document.createElement('p'); d.textContent = t; box.appendChild(d); }
     this.demoEnd = false; this.show('demo'); this.o.menuMusic();
   }
-  // ---- the CREDITS (0.4.0, g3-d): from CREDITS.md, in a person's voice. Headings in Yori's lettering where she has drawn
+  // ---- the CREDITS (0.4.0, g3-d): from CREDITS.md, in a person's voice. Headings in Kalakar's lettering where she has drawn
   // them (the wordmark, the three galaxy names), plain styled text otherwise. The menu's track keeps playing under it.
   rollThen(then) { if (this.finalClear) { this.finalClear = false; this.credits(then); } else then(); }
   credits(then) {
@@ -391,13 +391,13 @@ export class UI {
       add('div', 'cr-name', 'Evrtek');
       add('p', 'cr-say', 'The idea, the rulings, and the one who played every level and said "make it easier" when it needed it.');
       add('div', 'cr-head', 'THE PROGRAMS');
-      add('div', 'cr-name', 'The MCP');
+      add('div', 'cr-name', 'Dirigent');
       add('p', 'cr-say', 'Planned the first galaxy, kept the night on schedule and checked everything before you saw it.');
-      add('div', 'cr-name', 'CLU');
+      add('div', 'cr-name', 'Fundi');
       add('p', 'cr-say', 'Wrote the game: the engine, the power-ups and every level, one builder to a few levels, and the sound.');
-      add('div', 'cr-name', 'Yori');
+      add('div', 'cr-name', 'Kalakar');
       add('p', 'cr-say', 'Drew everything you see: the Wake, every creature and machine, the twelve bosses, the three galaxies and all the lettering.');
-      add('div', 'cr-name', 'Quorra');
+      add('div', 'cr-name', 'Indaga');
       add('p', 'cr-say', 'Read up on how great levels are made and wrote the checklist every one of these was built to.');
       add('div', 'cr-head', 'THE GALAXIES');
       for (const x of GALAXIES) { if (x.has.label) pic('ui/chart/name-g' + x.g + '.png', 'cr-galaxy', x.name); else add('div', 'cr-name', x.name); }

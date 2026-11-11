@@ -3,24 +3,24 @@
 // 2 and 3 need (a push on the ship, a roll that answers things that are not shots, GREED lit by a boss).
 // Levels, kinds, scenery and bosses are modules (js/levels, js/pickups, js/obstacles, js/enemies, js/bosses);
 // this file runs whichever level is loaded and owns every rule that scores.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.6.0';
-import { VERSION, clamp, damp, lerp, isTouch, fmt, store } from './util.js?v=0.6.0';
-import { Input } from './input.js?v=0.6.0';
-import { Audio, canonTrack, multRate } from './audio.js?v=0.6.0';
-import { buildShip } from './ship.js?v=0.6.0';
-import { Backdrop } from './backdrop.js?v=0.6.0';
-import { Course } from './course.js?v=0.6.0';
-import { Scenery } from './scenery.js?v=0.6.0';
-import { Particles } from './fx.js?v=0.6.0';
-import { Hud, artUrl } from './hud.js?v=0.6.0';
-import { CATALOGUE, GALAXIES, galaxy, entryOf, catalogueOf, gn, levelLabel, loadLevel, isMarker, Progress, grade, easeOf, starProgress } from './levels.js?v=0.6.0';
-import { POWERUPS, POWERUP_IDS } from './powerups.js?v=0.6.0';
-import { appear, DEFLECT_R } from './space.js?v=0.6.0';
-import { bossKind, weakPointKind } from './boss.js?v=0.6.0';
-import { Quality } from './quality.js?v=0.6.0';
-import { Post } from './post.js?v=0.6.0';
-import { UI } from './ui.js?v=0.6.0';
-import { Tips } from './tutorials.js?v=0.6.0';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.6.1';
+import { VERSION, clamp, damp, lerp, isTouch, fmt, store } from './util.js?v=0.6.1';
+import { Input } from './input.js?v=0.6.1';
+import { Audio, canonTrack, multRate } from './audio.js?v=0.6.1';
+import { buildShip } from './ship.js?v=0.6.1';
+import { Backdrop } from './backdrop.js?v=0.6.1';
+import { Course } from './course.js?v=0.6.1';
+import { Scenery } from './scenery.js?v=0.6.1';
+import { Particles } from './fx.js?v=0.6.1';
+import { Hud, artUrl } from './hud.js?v=0.6.1';
+import { CATALOGUE, GALAXIES, galaxy, entryOf, catalogueOf, gn, levelLabel, loadLevel, isMarker, Progress, grade, easeOf, starProgress } from './levels.js?v=0.6.1';
+import { POWERUPS, POWERUP_IDS } from './powerups.js?v=0.6.1';
+import { appear, DEFLECT_R } from './space.js?v=0.6.1';
+import { bossKind, weakPointKind } from './boss.js?v=0.6.1';
+import { Quality } from './quality.js?v=0.6.1';
+import { Post } from './post.js?v=0.6.1';
+import { UI } from './ui.js?v=0.6.1';
+import { Tips } from './tutorials.js?v=0.6.1';
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -158,7 +158,7 @@ function onCheckpoint(e) {
   const m = audio.music && audio.music.name !== MENU.track ? { track: audio.music.name, from: Math.max(0, audio.position()), loop: audio.music.opts ? audio.music.opts.loop : undefined } : null;
   G.cp = { g: level.g || 1, n: level.n, d, keep, secGot: Object.assign({}, G.secGot), secMiss: Object.assign({}, G.secMiss), perfect: G.perfect.slice(), bonuses: G.bonuses.map((b) => b.slice()), puGot: Object.assign({}, G.puGot),
     greed: G.greedOn ? 0 : G.greed, jumped: G.jumped, restarts: G.restarts || 0, music: m };
-  callText('CHECKPOINT', 'c-check'); audio.play('level-unlock', { vol: 0.8 });
+  callText('CHECKPOINT', 'c-check'); audio.play('checkpoint'); // 0.6.1: its own sound (js/audio.js)
   if (e) fx.burst(e.x, e.y, 0, Math.round(46 * quality.particleScale), { speed: 13, life: 0.7, s0: 1.3, r: 0.75, g: 0.9, b: 1, carry: 1, flatZ: 0.3 });
 }
 function onCheckpointMiss(e) {
@@ -363,6 +363,7 @@ const api = {
   // a screen-space lens (a gravity well's warp): call every frame; the high tier draws up to four, lower tiers none
   lens: (x, y, z, r, k) => lensAt(x, y, z, r, k),
   get galaxy() { return level ? level.g : 1; },
+  get shield() { return G.shield; }, // 0.6.1: the boss framework's Hail Mary cell (boss.js midCell)
   get magnetR() { return G.pu && G.pu.magnet ? POWERUPS.magnet.reach : 0; },
   get phasing() { return !!ship.phasing; },
   get timeScale() { return G.timeScale ?? 1; },
@@ -1163,7 +1164,7 @@ window.__sw.retry = () => (level && G.cp ? start(level.g || 1, level.n, { checkp
   const art = () => hud.preloadArt().then(() => { audio.held = 0; });
   audio.loadTrack(openingOf(level).track).then(art, art);
   window.__sw.warm = true;
-  if (params.has('test')) import('./testhooks.js?v=0.6.0').then((m) => m.install(window.__sw));
+  if (params.has('test')) import('./testhooks.js?v=0.6.1').then((m) => m.install(window.__sw));
   if (G.state !== 'boot') return; // a test or a dev link already started a run
   if (!BOOT_OLD) { openMenu(); return; }
   ui.pressToStart(() => {

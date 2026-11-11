@@ -8,9 +8,9 @@
 // Event: { len (m), nx, nx2 (centre at the near and far ends), snake (amplitude), waves, ph, w (half-width),
 //          ny (height), from: 'below' | 'above', slide (it drifts in from this far aside and settles on its line
 //          by the time it is 250 m out, so the course is the same on every run) }
-import { THREE, defineObstacle, Instanced, modelGroups, clamp, smoothstep, appear, SHIP_R, SPAWN_D } from '../../api.js?v=0.6.0';
-import { MESH } from './mesh.js?v=0.6.0';
-import { rafts } from './shade.js?v=0.6.0';
+import { THREE, defineObstacle, Instanced, modelGroups, clamp, smoothstep, appear, SHIP_R, SPAWN_D } from '../../api.js?v=0.6.1';
+import { MESH } from './mesh.js?v=0.6.1';
+import { rafts } from './shade.js?v=0.6.1';
 
 const CAP = 420, SEG = 40;
 export const RAFT_LOW = -0.85, RAFT_HIGH = 1.5;

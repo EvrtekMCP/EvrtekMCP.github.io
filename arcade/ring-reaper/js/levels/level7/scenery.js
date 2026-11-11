@@ -3,8 +3,8 @@
 // and teal the starboard, the distant traffic streams by in lines of small lights, and far ahead the Spindle, the
 // station's spine, waits with the tunnel through it. Her tunnel rings are the set piece (laid by the course, not a
 // stream, so the tunnel starts and ends on its bar lines). Nothing here collides; everything stays outside the box.
-import { THREE, defineScenery, defineDecor, Instanced, GlowPoints, modelGroups, clamp, smoothstep, rng } from '../../api.js?v=0.6.0';
-import { MESH } from './mesh.js?v=0.6.0';
+import { THREE, defineScenery, defineDecor, Instanced, GlowPoints, modelGroups, clamp, smoothstep, rng } from '../../api.js?v=0.6.1';
+import { MESH } from './mesh.js?v=0.6.1';
 
 const tmpQ = new THREE.Quaternion(), eul = new THREE.Euler(), tmpC = new THREE.Color();
 const side = (R, lo, hi) => R.sign() * R.range(lo, hi);

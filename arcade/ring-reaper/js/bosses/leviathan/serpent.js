@@ -4,8 +4,8 @@
 // serpent's scale) back from the snout, in the coordinates of `root`'s parent. Every part sits on the spine and turns
 // along it, so the body bends. Parts that animate on their own (the lower jaw, the throat, each lens, each joint's
 // ring, the tail tips) are split out of her colour groups here by position.
-import { THREE, material } from '../../api.js?v=0.6.0';
-import { MESH } from './mesh.js?v=0.6.0';
+import { THREE, material } from '../../api.js?v=0.6.1';
+import { MESH } from './mesh.js?v=0.6.1';
 
 // split each colour group's triangles into parts by a test on the triangle's three corners
 function split(groups, partOf) {

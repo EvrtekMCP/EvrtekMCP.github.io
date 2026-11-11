@@ -4,13 +4,13 @@
 // cables: send a sniper's bolt home and its sheet of lightning shorts out. The finish is the lightning wall.
 // The course is authored in BARS of the level's take (plan.js: B(bar) -> metres), so every set piece, speed step
 // and pattern change sits on a bar line of the music (rule 30). Beat sheet and spawn tables: level5/DESIGN.md.
-import { defineLevel } from '../api.js?v=0.6.0';
-import ring from '../pickups/ring/index.js?v=0.6.0';
-import sniper from '../enemies/sniper/index.js?v=0.6.0';
-import { pylon, pair, arc, sheet, wall } from './level5/storm.js?v=0.6.0';
-import { field, sky, crown } from './level5/scenery.js?v=0.6.0';
-import { PATTERNS } from './level5/arcs.js?v=0.6.0';
-import { B, LENGTH, speed, END_BAR } from './level5/plan.js?v=0.6.0';
+import { defineLevel } from '../api.js?v=0.6.1';
+import ring from '../pickups/ring/index.js?v=0.6.1';
+import sniper from '../enemies/sniper/index.js?v=0.6.1';
+import { pylon, pair, arc, sheet, wall } from './level5/storm.js?v=0.6.1';
+import { field, sky, crown } from './level5/scenery.js?v=0.6.1';
+import { PATTERNS } from './level5/arcs.js?v=0.6.1';
+import { B, LENGTH, speed, END_BAR } from './level5/plan.js?v=0.6.1';
 
 // Yori's level-5 palette (art-incoming/yori/levels/palettes.js): sky 0a0a2a, gas 4a2aa0 / e8e0ff / 2a1a6a,
 // fog 2a2060, key f0ecff, fill 4a30a0, accent c0a8ff. Violet and white only: the arcs are white, your bolt cyan.

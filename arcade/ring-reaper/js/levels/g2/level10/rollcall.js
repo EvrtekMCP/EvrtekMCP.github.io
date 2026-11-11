@@ -5,12 +5,12 @@
 // (it has merged into `galaxies` and its folder name is checked), so nothing missing is ever asked of the server. Until
 // a slot's kind lands, the slot flies a galaxy 1 stand-in that keeps the music's time and asks the same thing of you
 // (roll this, slip that), so the level always loads and plays.
-import pod from '../../../enemies/pod/index.js?v=0.6.0';
-import shrike from '../../../enemies/shrike/index.js?v=0.6.0';
-import seeker from '../../../enemies/seeker-drone/index.js?v=0.6.0';
-import swarm from '../../../enemies/swarm-unit/index.js?v=0.6.0';
-import mines from '../../../obstacles/mines/index.js?v=0.6.0';
-import crystal from '../../../obstacles/crystal/index.js?v=0.6.0';
+import pod from '../../../enemies/pod/index.js?v=0.6.1';
+import shrike from '../../../enemies/shrike/index.js?v=0.6.1';
+import seeker from '../../../enemies/seeker-drone/index.js?v=0.6.1';
+import swarm from '../../../enemies/swarm-unit/index.js?v=0.6.1';
+import mines from '../../../obstacles/mines/index.js?v=0.6.1';
+import crystal from '../../../obstacles/crystal/index.js?v=0.6.1';
 
 // where each galaxy 2 kind will live (LEVEL-API 12.1's names); checked against the real folder when it merges
 const SRC = {
@@ -33,7 +33,7 @@ export const LANDED = ['g2-current', 'g2-drifter', 'g2-shoal', 'g2-gulper', 'g2-
 const GOT = {}, MOD = {}, EXTRA = [];   // MOD: each landed module whole (its timing constants: the hound's crossAfter, LEECH)
 await Promise.all(LANDED.filter((k) => SRC[k]).map(async (key) => {
   try {
-    const m = await import(SRC[key] + '?v=0.6.0'); if (m.default && m.default.name) { GOT[key] = m.default; MOD[key] = m; }
+    const m = await import(SRC[key] + '?v=0.6.1'); if (m.default && m.default.name) { GOT[key] = m.default; MOD[key] = m; }
     // a module's other kinds go in the level's list too (the thrummer's pulse): anything the registry gave a role
     for (const v of Object.values(m)) if (v && v !== m.default && typeof v === 'object' && typeof v.name === 'string' && v.role && typeof v.update === 'function') EXTRA.push(v);
   } catch (e) { /* listed but not loadable: the stand-in flies */ }

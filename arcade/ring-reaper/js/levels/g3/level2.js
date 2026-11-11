@@ -9,18 +9,18 @@
 //                                SLIPSTREAM right before the first (taught alone); OVERCLOCK before the Loom Bed
 //   Act 4 MASTER     bars 65-88  THE LOOM BED: ten shuttles in a running pattern while walls build; then out along one
 //                                thread to the finish
-import { defineLevel, clamp } from '../../api.js?v=0.6.0';
-import ring from '../../pickups/ring/index.js?v=0.6.0';
-import boostRing from '../../pickups/boost-ring/index.js?v=0.6.0';
-import { overclock, slipstream } from '../../pickups/powerups/index.js?v=0.6.0';
-import pod from '../../enemies/pod/index.js?v=0.6.0';
-import seeker from '../../enemies/seeker-drone/index.js?v=0.6.0';
-import swarm from '../../enemies/swarm-unit/index.js?v=0.6.0';
-import mines from '../../obstacles/mines/index.js?v=0.6.0';
-import wall from '../../obstacles/g3-blueprint-wall/index.js?v=0.6.0';
-import shuttler from '../../enemies/g3-shuttler/index.js?v=0.6.0';
-import { loomFloor, spool, spools, rail, rails, railsUnder } from './level2/scenery.js?v=0.6.0';
-import { timeline } from './level1/time.js?v=0.6.0';
+import { defineLevel, clamp } from '../../api.js?v=0.6.1';
+import ring from '../../pickups/ring/index.js?v=0.6.1';
+import boostRing from '../../pickups/boost-ring/index.js?v=0.6.1';
+import { overclock, slipstream } from '../../pickups/powerups/index.js?v=0.6.1';
+import pod from '../../enemies/pod/index.js?v=0.6.1';
+import seeker from '../../enemies/seeker-drone/index.js?v=0.6.1';
+import swarm from '../../enemies/swarm-unit/index.js?v=0.6.1';
+import mines from '../../obstacles/mines/index.js?v=0.6.1';
+import wall from '../../obstacles/g3-blueprint-wall/index.js?v=0.6.1';
+import shuttler from '../../enemies/g3-shuttler/index.js?v=0.6.1';
+import { loomFloor, spool, spools, rail, rails, railsUnder } from './level2/scenery.js?v=0.6.1';
+import { timeline } from './level1/time.js?v=0.6.1';
 
 // audio/g3/level2/music.json (take g3l2-t3): the kick grid fitted to the take
 const TL = timeline({ name: 'g3/level2/music', bpm: 142.011, firstBeat: 0.1614, barSec: 1.69001 },

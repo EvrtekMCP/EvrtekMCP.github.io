@@ -1,6 +1,6 @@
 // STARWAKE (0.4.0: the power-up strip): the DOM layer over the canvas: numbers, bars, pop-ups and call-outs. Loud and generous (ruling 4).
-import { fmt, V } from './util.js?v=0.6.0';
-import { POWERUPS } from './powerups.js?v=0.6.0';
+import { fmt, V } from './util.js?v=0.6.1';
+import { POWERUPS } from './powerups.js?v=0.6.1';
 
 // Yori's call-out sprites (art/, glow baked in). Preloaded so the first GRAZE never waits on a decode.
 export const ART = ['graze', 'multi-deflect', 'greed', 'perfect', 'no-hit', 'level-clear', 'rank-c', 'rank-b', 'rank-a', 'rank-s', 'rank-degenerate', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7', 'x8'];

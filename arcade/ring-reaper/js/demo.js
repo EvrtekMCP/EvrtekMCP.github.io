@@ -12,7 +12,7 @@
 // both say where they are (IN THE FULL VERSION). Beating level 3 ends on the demo card (index.html #demo): what you did,
 // and what the full version holds. No price, no shop, no link.
 // Saves are the full game's own (the same keys), so a demo player's stars are there if the full game ever loads them.
-import { param } from './params.js?v=0.6.0';
+import { param } from './params.js?v=0.6.1';
 
 export const DEMO_BUILD = false; // tools/stage.js --demo writes true here in the staged copy; in the source it stays false
 export const DEMO = DEMO_BUILD || param('demo') !== null;

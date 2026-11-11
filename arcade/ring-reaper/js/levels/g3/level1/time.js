@@ -6,8 +6,8 @@
 //
 // Until galaxy 3's music is switched on (levels.js GALAXIES has.music), a galaxy 1 take stands in: it plays under our
 // track's NAME with ITS OWN beat grid, so the lean only runs when the playing grid's tempo is ours.
-import { clamp, smooth } from '../../../api.js?v=0.6.0';
-import { beatClock, boundApi } from '../../level3/beat.js?v=0.6.0';
+import { clamp, smooth } from '../../../api.js?v=0.6.1';
+import { beatClock, boundApi } from '../../level3/beat.js?v=0.6.1';
 
 const LAG = 0.05; // the music starts 50 ms into a run (audio.startMusic)
 

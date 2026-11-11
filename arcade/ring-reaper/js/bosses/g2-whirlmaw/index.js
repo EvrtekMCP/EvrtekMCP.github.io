@@ -12,8 +12,8 @@
 //    the shoal it was feeding on pours out of its mouth past you: catch them and your shield comes back (rule 7).
 // Freed: the graft cracks and falls away (her freed(): silver, seams gone), it rolls over and swims off into the deep.
 // Every phase loops on whole bars of its take (g2/bosses/whirlmaw, 136 bpm, 1.765 s a bar): rule 28.
-import { THREE, defineBoss, defineDecor, buildModel, GlowPoints, clamp, damp, smoothstep, SHIP_R } from '../../api.js?v=0.6.0';
-import { MESH } from './mesh.js?v=0.6.0';
+import { THREE, defineBoss, defineDecor, buildModel, GlowPoints, clamp, damp, smoothstep, SHIP_R } from '../../api.js?v=0.6.1';
+import { MESH } from './mesh.js?v=0.6.1';
 
 const BAR = 1.76473;                                  // the take's bar (its .json): every loop is whole bars
 const GILL_DARK = new THREE.Color(0x1e6a44), GILL_LIT = new THREE.Color(0xd6ffe3);

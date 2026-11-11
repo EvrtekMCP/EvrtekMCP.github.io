@@ -12,8 +12,8 @@
 // direction, three in every four bars (g2-roll, 11-07; it was one every two), the whips and the bands in a fixed
 // order, so the third time round you know what is next (rules 24, 28). Every struck knot spills sap-light (shield) and every loop spills one more (rule 7).
 // 0.6.0 (Evrtek 11-10: no level has a timer): it no longer tears itself free on a clock. The fight ends when it is freed.
-import { THREE, defineBoss, buildModel, clamp, smoothstep } from '../../api.js?v=0.6.0';
-import { MESH } from './mesh.js?v=0.6.0';
+import { THREE, defineBoss, buildModel, clamp, smoothstep } from '../../api.js?v=0.6.1';
+import { MESH } from './mesh.js?v=0.6.1';
 
 const BAR = 1.6, BEAT = 0.4;
 const X0 = 42, Y0 = -4.5, HOLD = 128, N = 8, STAR_R = 20, SCALE = 0.85;

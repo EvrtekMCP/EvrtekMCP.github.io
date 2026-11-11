@@ -7,21 +7,21 @@
 // Written in BARS of its take (g2/level3/music, 136.02 bpm, 1.764 s a bar; level3/time.js): the take keeps its kick
 // through every build and breakdown (the sound branch's beat-locked track), so every pulse sits on the grid. Holes open
 // on the box's axes (right, up, left, down), so a ring in one is in it on a wide screen and a phone alike.
-import { defineLevel, defineScenery } from '../../api.js?v=0.6.0';
-import ring from '../../pickups/ring/index.js?v=0.6.0';
-import pod from '../../enemies/pod/index.js?v=0.6.0';
-import seeker from '../../enemies/seeker-drone/index.js?v=0.6.0';
-import mines from '../../obstacles/mines/index.js?v=0.6.0';
-import { shieldCell, overclock } from '../../pickups/powerups/index.js?v=0.6.0';
-import current from '../../obstacles/g2-current/index.js?v=0.6.0';
-import shoalFish from '../../pickups/g2-shoal/index.js?v=0.6.0';
-import gulper from '../../enemies/g2-gulper/index.js?v=0.6.0';
-import thrummer, { pulse } from '../../enemies/g2-thrummer/index.js?v=0.6.0';
-import whirlmaw, { maw } from '../../bosses/g2-whirlmaw/index.js?v=0.6.0';
-import { coral, motes, reef, plankton } from './level1/scenery.js?v=0.6.0';
-import { shafts, drumCoral, cliff, drums, cliffs, heart } from './level3/scenery.js?v=0.6.0';
-import { CLK } from './level3/time.js?v=0.6.0';
-import { GRID } from './level1/clock.js?v=0.6.0';
+import { defineLevel, defineScenery } from '../../api.js?v=0.6.1';
+import ring from '../../pickups/ring/index.js?v=0.6.1';
+import pod from '../../enemies/pod/index.js?v=0.6.1';
+import seeker from '../../enemies/seeker-drone/index.js?v=0.6.1';
+import mines from '../../obstacles/mines/index.js?v=0.6.1';
+import { shieldCell, overclock } from '../../pickups/powerups/index.js?v=0.6.1';
+import current from '../../obstacles/g2-current/index.js?v=0.6.1';
+import shoalFish from '../../pickups/g2-shoal/index.js?v=0.6.1';
+import gulper from '../../enemies/g2-gulper/index.js?v=0.6.1';
+import thrummer, { pulse } from '../../enemies/g2-thrummer/index.js?v=0.6.1';
+import whirlmaw, { maw } from '../../bosses/g2-whirlmaw/index.js?v=0.6.1';
+import { coral, motes, reef, plankton } from './level1/scenery.js?v=0.6.1';
+import { shafts, drumCoral, cliff, drums, cliffs, heart } from './level3/scenery.js?v=0.6.1';
+import { CLK } from './level3/time.js?v=0.6.1';
+import { GRID } from './level1/clock.js?v=0.6.1';
 
 const B = CLK.barD;
 const BOSS_AT = Math.round(B(84.75));                // a beat before bar 85: the Whirlmaw's take cuts in on bar 85's line

@@ -1,14 +1,14 @@
 // STARWAKE 0.4.0: three galaxies of levels: the catalogues, loading a level module, laying out its course, and the
 // player's progress (unlocks, stars, best score and rank per level). All progress is in localStorage on the
 // device; dev runs never write any of it.
-import { V, rng, store, fmt } from './util.js?v=0.6.0';
-import { getKind } from './registry.js?v=0.6.0';
-import { layout } from './layout.js?v=0.6.0';
-import { SPAWN_D, LEGACY_LINE, RING_R } from './space.js?v=0.6.0';
-import { POWERUP_KINDS, shieldCell } from './pickups/powerups/index.js?v=0.6.0'; // 0.4.0: a level's `powerups` field (the galaxy 1 retrofit)
-import { PICK_R } from './powerups.js?v=0.6.0';
-import checkpointKind from './pickups/checkpoint/index.js?v=0.6.0'; // 0.6.0: the engine lays one on every level
-import { DEMO, inDemo } from './demo.js?v=0.6.0';                    // 0.6.0: the demo switch (off unless a demo build or ?demo)
+import { V, rng, store, fmt } from './util.js?v=0.6.1';
+import { getKind } from './registry.js?v=0.6.1';
+import { layout } from './layout.js?v=0.6.1';
+import { SPAWN_D, LEGACY_LINE, RING_R } from './space.js?v=0.6.1';
+import { POWERUP_KINDS, shieldCell } from './pickups/powerups/index.js?v=0.6.1'; // 0.4.0: a level's `powerups` field (the galaxy 1 retrofit)
+import { PICK_R } from './powerups.js?v=0.6.1';
+import checkpointKind from './pickups/checkpoint/index.js?v=0.6.1'; // 0.6.0: the engine lays one on every level
+import { DEMO, inDemo } from './demo.js?v=0.6.1';                    // 0.6.0: the demo switch (off unless a demo build or ?demo)
 
 // The PLAY ORDER (n is the number a player sees). `file` is the module, js/levels/level<file>.js, when it differs;
 // `art` is Yori's name lettering (art/ui/name-<art>.png) when it differs. Evrtek, 11-05: "let's swap level one and
@@ -220,10 +220,13 @@ export const TIERS = [
 // Galaxy 1's levels 1 and 2 are a rung gentler, the on-ramp (Evrtek 11-06, still standing: "levels 1 and 2 must feel rewarding
 // and encouraging"): ★★ 0.35, ★★★ 0.70 and ★★★★ 0.90 of the newcomer's median, ★★★★★ 0.90 of the decent bot's.
 // Rounded to the nearest thousand. A level with no row yet uses FALLBACK (the proving levels).
+// 0.6.1: G3-6 THE FORGERY re-flown on its new boss fight (the Counterfeit's opening; tools/test/_results/p061a,p061b: the
+// newcomer bot's two runs, the decent and good bots' four), its row sized by the same rule; the newcomer clears it now, so
+// its ★★ and ★★★ are its own, no longer borrowed from the decent bot's.
 export const STAR_SCORES = {
   1: { 1: [66000, 132000, 169000, 273000, 389000], 2: [39000, 79000, 101000, 127000, 313000], 3: [238000, 428000, 626000, 772000, 1035000], 4: [117000, 211000, 355000, 436000, 577000], 5: [141000, 253000, 529000, 571000, 831000], 6: [111000, 199000, 285000, 388000, 497000], 7: [66000, 118000, 320000, 433000, 619000], 8: [155000, 279000, 523000, 609000, 956000], 9: [340000, 613000, 720000, 883000, 1351000], 10: [349000, 628000, 678000, 758000, 1331000] },
   2: { 1: [130000, 234000, 325000, 453000, 603000], 2: [115000, 207000, 386000, 702000, 968000], 3: [136000, 245000, 526000, 786000, 1008000], 4: [75000, 135000, 362000, 480000, 677000], 5: [114000, 206000, 396000, 485000, 666000], 6: [152000, 273000, 638000, 700000, 970000], 7: [231000, 415000, 749000, 1051000, 1382000], 8: [356000, 641000, 1183000, 1451000, 2012000], 9: [403000, 725000, 1243000, 1499000, 2096000], 10: [312000, 562000, 772000, 968000, 1168000] },
-  3: { 1: [220000, 397000, 429000, 830000, 1005000], 2: [88000, 159000, 555000, 894000, 1189000], 3: [136000, 244000, 426000, 602000, 839000], 4: [174000, 313000, 361000, 423000, 570000], 5: [101000, 181000, 245000, 320000, 483000], 6: [157000, 282000, 484000, 693000, 918000], 7: [58000, 105000, 301000, 564000, 820000], 8: [135000, 244000, 390000, 768000, 1072000], 9: [203000, 366000, 626000, 817000, 1079000], 10: [314000, 566000, 970000, 1131000, 1438000] },
+  3: { 1: [220000, 397000, 429000, 830000, 1005000], 2: [88000, 159000, 555000, 894000, 1189000], 3: [136000, 244000, 426000, 602000, 839000], 4: [174000, 313000, 361000, 423000, 570000], 5: [101000, 181000, 245000, 320000, 483000], 6: [113000, 203000, 427000, 642000, 863000], 7: [58000, 105000, 301000, 564000, 820000], 8: [135000, 244000, 390000, 768000, 1072000], 9: [203000, 366000, 626000, 817000, 1079000], 10: [314000, 566000, 970000, 1131000, 1438000] },
 };
 const FALLBACK = [40000, 90000, 150000, 220000, 320000];
 export const starScores = (n, g = 1) => (STAR_SCORES[g] || {})[n] || FALLBACK;

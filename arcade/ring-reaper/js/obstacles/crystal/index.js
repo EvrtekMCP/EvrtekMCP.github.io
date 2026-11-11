@@ -1,5 +1,5 @@
 // CRYSTALS (level 1, the Halcyon Drift): slow violet spires to slip round. decor: true = scenery, no contact.
-import { THREE, defineObstacle, Instanced, SHIP_R } from '../../api.js?v=0.6.0';
+import { THREE, defineObstacle, Instanced, SHIP_R } from '../../api.js?v=0.6.1';
 
 const tmpQ = new THREE.Quaternion(), tmpA = new THREE.Vector3(0, 1, 0);
 let L;

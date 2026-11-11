@@ -10,8 +10,8 @@
 // lays on a beat; once it is past, the glow dies in a quarter of a second. Visible from 1.0 s out, strong from 0.8 s.
 //   add(d, 'g2-gulper', { from: -1 | 1, cross: nx where it meets the ship's plane, ny, span: 220, shots: 2,
 //                         glow: the level's beat in seconds (or true: 0.45 s) })
-import { THREE, defineEnemy, buildModel, clamp, damp, smoothstep, SHIP_R, READ_D, SPAWN_D } from '../../api.js?v=0.6.0';
-import { MESH } from './mesh.js?v=0.6.0';
+import { THREE, defineEnemy, buildModel, clamp, damp, smoothstep, SHIP_R, READ_D, SPAWN_D } from '../../api.js?v=0.6.1';
+import { MESH } from './mesh.js?v=0.6.1';
 
 const S = 1.3;                                          // her gulper is 6 long; it flies at about 8
 const EYE_DARK = new THREE.Color(0x2a2730), EYE_LIT = new THREE.Color(0xff99aa);

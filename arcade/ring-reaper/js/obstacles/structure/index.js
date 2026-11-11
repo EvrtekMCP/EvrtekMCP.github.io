@@ -1,6 +1,6 @@
 // THE DERELICT'S STRUCTURE (level 1, the Quiet Colossus): girders across the lane (over or under), pylons
 // (left or right), and ribs that arch over the whole lane (scenery you fly through). Three kinds, one hull.
-import { THREE, defineObstacle, TX, SHIP_R } from '../../api.js?v=0.6.0';
+import { THREE, defineObstacle, TX, SHIP_R } from '../../api.js?v=0.6.1';
 
 let hullMat, warnMat, stripeMat;
 function mats() {

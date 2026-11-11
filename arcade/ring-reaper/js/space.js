@@ -1,8 +1,8 @@
 // STARWAKE 0.2.0: the space the course lives in, and the numbers every kind shares.
 // SHIP-RELATIVE: the ship sits at z = 0 flying toward -Z; the course streams toward it at the current speed.
 // x and y are metres inside the flight box (box.x, box.y); events are authored in the normalised box (nx, ny).
-import * as THREE from '../vendor/three/three.module.min.js?v=0.6.0';
-import { smoothstep } from './util.js?v=0.6.0';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.6.1';
+import { smoothstep } from './util.js?v=0.6.1';
 
 // ---- ruling 5 (no pop-in). The fog is fully opaque at 760 m of depth. Everything on the course is born at
 // SPAWN_D, past that, at zero size, and grows to full size by APPEAR_D, where it is still about 80 % fog. So no

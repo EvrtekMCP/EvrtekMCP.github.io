@@ -3,8 +3,8 @@
 // it reaches you. A side arrow and a low rumble as it enters the lane region; a trail of dust behind it.
 // Its fissures glow the hurts red (rule 9), where the drifting scenery chunks glow Yori's warm sun edge.
 //   add(d, 'boulder', { from: -1 | 1, cross: nx where it meets the ship's plane, ny, r: 2..4, span: 320 })
-import { THREE, defineObstacle, Instanced, modelGroups, SHIP_R, READ_D } from '../../api.js?v=0.6.0';
-import { MESH } from './mesh.js?v=0.6.0';
+import { THREE, defineObstacle, Instanced, modelGroups, SHIP_R, READ_D } from '../../api.js?v=0.6.1';
+import { MESH } from './mesh.js?v=0.6.1';
 
 const VARIANTS = ['a', 'b', 'c'];
 let layers;

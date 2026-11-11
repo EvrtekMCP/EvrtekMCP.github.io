@@ -2,9 +2,9 @@
 // (triangles of triangles, steel where built and white plan where not) stand either side of the lane at every angle,
 // her loose scrap plates lie tilted below it, and far ahead a giant triangle of triangles is still being built: the
 // landmark. Cold slate-teal light, everything three-sided. Nothing here collides; everything stays outside the box.
-import { THREE, defineScenery, defineDecor, clamp } from '../../../api.js?v=0.6.0';
-import { MESH } from './mesh.js?v=0.6.0';
-import { layersOf, begin, end, farModel } from '../level7/layers.js?v=0.6.0';
+import { THREE, defineScenery, defineDecor, clamp } from '../../../api.js?v=0.6.1';
+import { MESH } from './mesh.js?v=0.6.1';
+import { layersOf, begin, end, farModel } from '../level7/layers.js?v=0.6.1';
 
 const tmpQ = new THREE.Quaternion(), eul = new THREE.Euler();
 

@@ -21,9 +21,9 @@
 //
 // This file owns the cards and the clock; main.js owns the game it slows (the same frame scale the roll lesson uses) and
 // tells it what just happened (tips.event); hud.js draws the card and the bracket.
-import { store } from './util.js?v=0.6.0';
-import { param } from './params.js?v=0.6.0';
-import { POWERUPS } from './powerups.js?v=0.6.0';
+import { store } from './util.js?v=0.6.1';
+import { param } from './params.js?v=0.6.1';
+import { POWERUPS } from './powerups.js?v=0.6.1';
 
 export const TIP = {
   ease: 0.25,    // seconds into a dip's slow motion
@@ -163,7 +163,7 @@ export const CARDS = {
   'boss-g2-murmur': boss('THE MURMUR', "You can't hurt the flock, only the Queen inside it.", 'When an eye opens round her, roll her shots back.'),
   'boss-g2-rootmind': boss('THE ROOTMIND', 'Its knots swing round to you one at a time.', 'When one goes white and fires, roll the fan back into it.'),
   'boss-g3-foreman': boss('THE FOREMAN', 'Roll its shots into the lit keystones to knock a panel out.', 'With a side open, the next shot you send back hits the core.'),
-  'boss-g3-counterfeit': boss('THE COUNTERFEIT', 'It rolls your shots straight back at you.', 'Roll that one home again while the white ring above it refills.'),
+  'boss-g3-counterfeit': boss('THE COUNTERFEIT', 'It rolls your shots straight back at you.', 'When its ring burns out orange, one roll sends the turret pair home.'),
   'boss-g3-high-roller': boss('THE HIGH ROLLER', 'Its core only opens while your GREED is lit.', 'Graze its fire to fill the meter, cash in, then roll its shots back.'),
   'boss-g3-weftwork': boss('THE WEFTWORK', 'It shows its pattern in white, then fires it in the same rhythm.', 'Roll on the notes, and the shots fly to the lit roots.'),
 };

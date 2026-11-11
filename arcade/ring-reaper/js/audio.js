@@ -6,8 +6,8 @@
 // 0.2.0: one track per level (and per boss), named by path stem under audio/ (e.g. 'music' for level 1,
 // 'levels/level2/music', 'bosses/warden'), each with its .json of loop points and beat grid beside it. Only
 // the playing level's tracks stay decoded (a decoded take is ~55 MB). A boss track cuts in on a bar line.
-import { V, store } from './util.js?v=0.6.0';
-import { param } from './params.js?v=0.6.0';
+import { V, store } from './util.js?v=0.6.1';
+import { param } from './params.js?v=0.6.1';
 
 // 0.3.1: bytes of a track at which its first stretches are decoded, before the whole (about 15 s, then a minute)
 const STEPS = [512 * 1024, 2 * 1024 * 1024];
@@ -41,8 +41,13 @@ export const multRate = (mult) => (MULT_RISE ? Math.pow(2, Math.min(6, Math.max(
 const REWARDS = { 1: ['sfx/reward-1', 0.56], 2: ['sfx/reward-2', 0.76], 3: ['sfx/reward-3', 1], old: ['combo', 0.6] };
 const REWARD_Q = param('reward');
 const REWARD = /^([123]|old)$/.test(REWARD_Q || '') ? REWARDS[REWARD_Q] : REWARDS[1];
-const PICKED = { streak: STREAK[0], reward: REWARD[0] }; // the boot effects whose file is a pick, not their own name
-const SFX_GAIN = { ring: 0.55, combo: 0.6, roll: 0.55, deflect: 0.7, hit: 0.8, fire: 0.35, boom: 0.75, over: 0.8, streak: STREAK[1], reward: REWARD[1] };
+// 0.6.1: 'checkpoint', the CHECKPOINT's own sound (Evrtek 11-11: "let's give it its own sound"; his pick of four: LOCK-IN,
+// softened). One whole ElevenLabs take (Kalakar's cp-1) with its highs cut, at the gain that matches it to the cue it
+// replaces (level-unlock at 0.98 x 0.8; tools/sound/checkpoint.js, audio-src/masters-checkpoint.json). It plays the moment
+// the checkpoint is taken, as every effect here does (only tracks wait for a bar).
+// the boot effects whose file is not their own name: the two picks, and the checkpoint's own (in audio/sfx/)
+const PICKED = { streak: STREAK[0], reward: REWARD[0], checkpoint: 'sfx/checkpoint' };
+const SFX_GAIN = { ring: 0.55, combo: 0.6, roll: 0.55, deflect: 0.7, hit: 0.8, fire: 0.35, boom: 0.75, over: 0.8, streak: STREAK[1], reward: REWARD[1], checkpoint: 0.99 };
 const MUSIC_LEVEL = 0.62;
 // 0.4.0, SLIPSTREAM's music (the MCP's default 5): a muffled low-pass on the whole take plus a small duck, from the nearest
 // beat to a bar line. The track itself never slows. SLIP_FILTER false is the fallback Evrtek may rule: a plain duck only.

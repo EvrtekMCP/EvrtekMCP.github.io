@@ -1,9 +1,9 @@
 // LEVEL 2 scenery: Yori's Shattered Moon (art-incoming/yori/levels/looks/level-02-shattered-moon.png).
 // Brown-grey rock with one warm sun edge, a hard sun from the upper right, a cold blue fill, dust rivers as
 // drifting bands, crack slabs that close in to canyon walls for the core dash, and the broken moon itself.
-import { THREE, defineScenery, defineDecor, Instanced, modelGroups, GlowPoints, rng, clamp } from '../../api.js?v=0.6.0';
-import { MESH as CHUNK } from '../../obstacles/boulder/mesh.js?v=0.6.0';
-import { MESH as SLAB } from './mesh.js?v=0.6.0';
+import { THREE, defineScenery, defineDecor, Instanced, modelGroups, GlowPoints, rng, clamp } from '../../api.js?v=0.6.1';
+import { MESH as CHUNK } from '../../obstacles/boulder/mesh.js?v=0.6.1';
+import { MESH as SLAB } from './mesh.js?v=0.6.1';
 
 const tmpQ = new THREE.Quaternion(), tmpE = new THREE.Euler(), ax = new THREE.Vector3();
 const side = (R, lo, hi) => R.sign() * R.range(lo, hi);
