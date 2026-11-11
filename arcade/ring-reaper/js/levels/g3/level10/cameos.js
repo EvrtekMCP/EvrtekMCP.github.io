@@ -31,7 +31,7 @@ const SRC = {
 };
 const GOT = {};
 await Promise.all(Object.keys(SRC).filter((k) => LANDED[k]).map(async (k) => {
-  try { const m = await import(SRC[k] + '?v=0.6.1'); if (m.default && m.default.name) GOT[k] = m.default; } catch (e) { /* listed as landed but not loadable: the placeholder plays */ }
+  try { const m = await import(SRC[k] + '?v=0.6.2'); if (m.default && m.default.name) GOT[k] = m.default; } catch (e) { /* listed as landed but not loadable: the placeholder plays */ }
 }));
 export const cameoKinds = () => Object.values(GOT);
 export const cameosPresent = () => Object.keys(GOT);

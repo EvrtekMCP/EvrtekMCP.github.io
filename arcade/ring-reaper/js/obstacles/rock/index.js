@@ -1,6 +1,6 @@
 // ROCKS (level 1, the Shatter Belt): lumpy tumbling asteroids. In the lane they cost a hit and break; with
 // decor: true they are scenery outside the flight box and never collide.
-import { THREE, defineObstacle, Instanced, SHIP_R } from '../../api.js?v=0.6.1';
+import { THREE, defineObstacle, Instanced, SHIP_R } from '../../api.js?v=0.6.2';
 
 export function rockGeometry() {
   const g = new THREE.IcosahedronGeometry(1, 1), p = g.attributes.position;

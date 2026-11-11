@@ -16,9 +16,9 @@
 //          off with what it took), lat: 7 (m/s it can slide across the lane), rolls: 0, enter: 2.4,
 //          want: 'boost' (it goes for boost rings first: the Heist), cap: 3 (its cradle: full, it makes off with them,
 //          slowly enough that a keyed bolt still catches it on its way) }
-import { THREE, defineEnemy, buildModel, clamp, SPAWN_D } from '../../api.js?v=0.6.1';
-import { MESH } from './mesh.js?v=0.6.1';
-import { SightLines } from '../sniper/sight.js?v=0.6.1';
+import { THREE, defineEnemy, buildModel, clamp, SPAWN_D } from '../../api.js?v=0.6.2';
+import { MESH } from './mesh.js?v=0.6.2';
+import { SightLines } from '../sniper/sight.js?v=0.6.2';
 
 const SCALE = 3.3, COOL = 2.6, ROLL_T = 0.45, BACK_T = 1.25, EAT_R = 2.2;
 let lines = null;

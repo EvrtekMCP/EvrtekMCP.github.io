@@ -1,6 +1,6 @@
 # CREDITS
 
-**RING REAPER**, an arcade space-runner by **REIMERTEK STUDIOS**. Version 0.6.1, the player pass: three galaxies of ten levels, twelve bosses and six power-ups.
+**RING REAPER**, an arcade space-runner by **REIMERTEK STUDIOS**. Version 0.6.2, the player pass: three galaxies of ten levels, twelve bosses and six power-ups.
 
 *Formerly STARWAKE, renamed 2026-11-08.*
 

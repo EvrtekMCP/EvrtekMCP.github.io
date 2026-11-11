@@ -10,8 +10,8 @@
 // the three reserved hues (rule 9: red hurts, amber is collected, cyan is what you send back). It is bigger than a ring
 // and far more forgiving: CHECKPOINT_R, more than twice a ring's reach.
 // A checkpoint you fly past does not count (main.js T.checkpointMissCounts): it says so, stands dimmed, and the run carries on.
-import { definePickup, lerp, smooth } from '../../api.js?v=0.6.1';
-import { LINE } from './line.js?v=0.6.1';
+import { definePickup, lerp, smooth } from '../../api.js?v=0.6.2';
+import { LINE } from './line.js?v=0.6.2';
 
 export const CHECKPOINT_R = 4.2;
 const MISSED = 0.3;             // how much of its light a checkpoint flown past keeps

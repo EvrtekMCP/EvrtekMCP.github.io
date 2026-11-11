@@ -22,14 +22,14 @@
 //                                                                  rings (RING MAGNET just before); the drive a step less
 //   (outro 89-91: a last corkscrew to the line)
 // The difficulty is the engine's (EASE_G[3][4]: dmg 0.95, heal 1.05, shot 1.0, ring 1.0; pressure 0.90).
-import { defineLevel, clamp } from '../../api.js?v=0.6.1';
-import ring from '../../pickups/ring/index.js?v=0.6.1';
-import pod from '../../enemies/pod/index.js?v=0.6.1';
-import sniper from '../../enemies/sniper/index.js?v=0.6.1';
-import { shieldCell, ringMagnet, slipstream } from '../../pickups/powerups/index.js?v=0.6.1';
-import augur from '../../enemies/g3-augur/index.js?v=0.6.1';
-import { musicClock } from './level4/clock.js?v=0.6.1';
-import { pylon, smallOrrery, pylons, orbits, orrery } from './level4/scenery.js?v=0.6.1';
+import { defineLevel, clamp } from '../../api.js?v=0.6.2';
+import ring from '../../pickups/ring/index.js?v=0.6.2';
+import pod from '../../enemies/pod/index.js?v=0.6.2';
+import sniper from '../../enemies/sniper/index.js?v=0.6.2';
+import { shieldCell, ringMagnet, slipstream } from '../../pickups/powerups/index.js?v=0.6.2';
+import augur from '../../enemies/g3-augur/index.js?v=0.6.2';
+import { musicClock } from './level4/clock.js?v=0.6.2';
+import { pylon, smallOrrery, pylons, orbits, orrery } from './level4/scenery.js?v=0.6.2';
 
 // ---- the clock: the plan's 145 bpm (nominal first beat 0.16 s, as the galaxy's mastered takes have), speed on bars
 const C = musicClock(145, 0.16, [[1, 82], [9, 90], [25, 102], [33, 116], [57, 124], [65, 138], [81, 150], [85, 158]], 91);

@@ -7,9 +7,9 @@
 //  l10-debris        the escape: a torn armour plate tumbling across the lane
 // Every hazard is timed by its time to arrival (-z / speed), never by the clock, so its state when it reaches you is
 // the one the course was laid out for at any speed, GREED included, and its tell always runs for its full length.
-import { THREE, defineObstacle, definePickup, buildModel, modelGroups, smoothstep, SHIP_R, READ_D, RING_R, Instanced } from '../../api.js?v=0.6.1';
-import { MESH } from './mesh.js?v=0.6.1';
-import { MESH as HEART } from '../../bosses/lattice-heart/mesh.js?v=0.6.1';
+import { THREE, defineObstacle, definePickup, buildModel, modelGroups, smoothstep, SHIP_R, READ_D, RING_R, Instanced } from '../../api.js?v=0.6.2';
+import { MESH } from './mesh.js?v=0.6.2';
+import { MESH as HEART } from '../../bosses/lattice-heart/mesh.js?v=0.6.2';
 
 const RED = 0xff3355, PLATE = 0x4a5070, DARK = 0x2a1018, TRUSS = 0x2a2e44;
 const TAU = Math.PI * 2;

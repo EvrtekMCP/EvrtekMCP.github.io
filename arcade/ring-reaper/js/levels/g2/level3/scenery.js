@@ -4,10 +4,10 @@
 // face, by her own placement loop). Ungrafted drum corals crowd the reef and beat in time with the take (the red
 // skins, the thrummers, are the only red, and they are the enemy). The reef's heart is a cathedral of great drums ringing
 // the lane, beating on the beat. The reef, the motes and the shafts are Tideway's.
-import { THREE, defineDecor, defineScenery, Instanced, modelGroups, rng, clamp, smoothstep } from '../../../api.js?v=0.6.1';
-import { MESH } from './mesh.js?v=0.6.1';
-import { makeShafts } from '../level1/scenery.js?v=0.6.1';
-import { beatNow } from './time.js?v=0.6.1';
+import { THREE, defineDecor, defineScenery, Instanced, modelGroups, rng, clamp, smoothstep } from '../../../api.js?v=0.6.2';
+import { MESH } from './mesh.js?v=0.6.2';
+import { makeShafts } from '../level1/scenery.js?v=0.6.2';
+import { beatNow } from './time.js?v=0.6.2';
 
 export const shafts = makeShafts('g2-l3-shafts', 0xffe8c0, 37);
 const tmpQ = new THREE.Quaternion(), tmpE = new THREE.Euler(), M = new THREE.Matrix4(), P = new THREE.Vector3(), Q = new THREE.Quaternion(), Sv = new THREE.Vector3();

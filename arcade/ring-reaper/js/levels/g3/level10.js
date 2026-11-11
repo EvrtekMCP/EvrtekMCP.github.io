@@ -8,22 +8,22 @@
 //  ACT 3  THE WEFTWORK weftwork take, Call and Beat looping   the boss: call and response; THE SHEAR
 //  MASTER THE UNRAVEL  weftwork take from bar 37 to its end  the loom comes apart, the unmade stars light again, and
 //                                               the run home under all three galaxies' landmarks
-import { defineLevel, clamp } from '../../api.js?v=0.6.1';
-import ring from '../../pickups/ring/index.js?v=0.6.1';
-import pod from '../../enemies/pod/index.js?v=0.6.1';
-import shrike from '../../enemies/shrike/index.js?v=0.6.1';
-import mines from '../../obstacles/mines/index.js?v=0.6.1';
-import crystal from '../../obstacles/crystal/index.js?v=0.6.1';
-import rock from '../../obstacles/rock/index.js?v=0.6.1';
-import { shieldCell, overclock, mirrorShell, phase, ringMagnet, slipstream } from '../../pickups/powerups/index.js?v=0.6.1';
-import warpThread from '../../obstacles/g3-warp-thread/index.js?v=0.6.1';
-import heddle from '../../obstacles/g3-heddle/index.js?v=0.6.1';
-import { threadWall } from './level10/kinds.js?v=0.6.1';
-import { loom, warpSeg, warp, spool, spools, beam, beams, shedSeg, shed, frame, frames, shuttle, shuttles, snapSeg, snap, suns, star } from './level10/scenery.js?v=0.6.1';
-import { sunrise, wisp, wisps } from '../level10/scenery.js?v=0.6.1';   // galaxy 1's sunrise over the quiet blue planet
-import { CAMEOS, cameoKinds } from './level10/cameos.js?v=0.6.1';
-import weftwork, { kinds as weftKinds } from '../../bosses/g3-weftwork/index.js?v=0.6.1';
-import { TRACK, barT } from './level10/grid.js?v=0.6.1';
+import { defineLevel, clamp } from '../../api.js?v=0.6.2';
+import ring from '../../pickups/ring/index.js?v=0.6.2';
+import pod from '../../enemies/pod/index.js?v=0.6.2';
+import shrike from '../../enemies/shrike/index.js?v=0.6.2';
+import mines from '../../obstacles/mines/index.js?v=0.6.2';
+import crystal from '../../obstacles/crystal/index.js?v=0.6.2';
+import rock from '../../obstacles/rock/index.js?v=0.6.2';
+import { shieldCell, overclock, mirrorShell, phase, ringMagnet, slipstream } from '../../pickups/powerups/index.js?v=0.6.2';
+import warpThread from '../../obstacles/g3-warp-thread/index.js?v=0.6.2';
+import heddle from '../../obstacles/g3-heddle/index.js?v=0.6.2';
+import { threadWall } from './level10/kinds.js?v=0.6.2';
+import { loom, warpSeg, warp, spool, spools, beam, beams, shedSeg, shed, frame, frames, shuttle, shuttles, snapSeg, snap, suns, star } from './level10/scenery.js?v=0.6.2';
+import { sunrise, wisp, wisps } from '../level10/scenery.js?v=0.6.2';   // galaxy 1's sunrise over the quiet blue planet
+import { CAMEOS, cameoKinds } from './level10/cameos.js?v=0.6.2';
+import weftwork, { kinds as weftKinds } from '../../bosses/g3-weftwork/index.js?v=0.6.2';
+import { TRACK, barT } from './level10/grid.js?v=0.6.2';
 
 // ---------------------------------------------------------------------------------------------------------------------
 // THE SCHEDULE, in seconds of the run, from bars of each take

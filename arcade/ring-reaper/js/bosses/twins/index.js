@@ -11,11 +11,11 @@
 //   3 GHOST SPLIT   the field shows four twins: two are pink phantoms with no core glow, and their bolts are ghosts
 //                   that arrive first. The real two fire after. The level's lesson, one last time. (Shortest phase.)
 // The rhythm is the music's: the Twins' track is 136 bpm, a bar is 1.765 s, and every loop is whole bars (rule 28).
-import { THREE, defineBoss, SPAWN_D, clamp } from '../../api.js?v=0.6.1';
-import { TWIN } from './mesh.js?v=0.6.1';
-import { buildParts } from '../../enemies/crystal-emitter/parts.js?v=0.6.1';
-import { Ghosts } from '../../enemies/crystal-emitter/ghosts.js?v=0.6.1';
-import hull, { hullState } from './hull.js?v=0.6.1';
+import { THREE, defineBoss, SPAWN_D, clamp } from '../../api.js?v=0.6.2';
+import { TWIN } from './mesh.js?v=0.6.2';
+import { buildParts } from '../../enemies/crystal-emitter/parts.js?v=0.6.2';
+import { Ghosts } from '../../enemies/crystal-emitter/ghosts.js?v=0.6.2';
+import hull, { hullState } from './hull.js?v=0.6.2';
 
 const BAR = 240 / 136, GAP = 4.6, SCALE = 1.3, HOLD = 48;
 const CORE_Z = -0.7 * SCALE, MUZZLE_Z = -1.25 * SCALE, PLATE = [0, 0.25, -0.5];

@@ -1,6 +1,6 @@
 // STARWAKE: every texture is drawn on a canvas at load time. No image files are fetched.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.6.1';
-import { rng } from './util.js?v=0.6.1';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.6.2';
+import { rng } from './util.js?v=0.6.2';
 
 // Chrome's canvas dithers every gradient with the same ordered pattern; a hundred additive blobs stack it into a
 // visible lattice once the texture is magnified. Two box blurs of radius 2 take it out (the stars go on after).

@@ -1,7 +1,7 @@
 // THE TWINS' bodies as a course thing: draws nothing, but it is what hurts when the Twins dive through the lane
 // (the SCISSOR PASS), and it tells the test autopilot where not to fly (avoid). The boss (index.js) sets `live` to
 // itself while it fights; this entity reads the twins' positions from it every frame.
-import { defineObstacle, SHIP_R, SPAWN_D } from '../../api.js?v=0.6.1';
+import { defineObstacle, SHIP_R, SPAWN_D } from '../../api.js?v=0.6.2';
 
 export const hullState = { boss: null };
 export default defineObstacle({

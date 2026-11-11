@@ -1,14 +1,14 @@
 // STARWAKE 0.4.0: three galaxies of levels: the catalogues, loading a level module, laying out its course, and the
 // player's progress (unlocks, stars, best score and rank per level). All progress is in localStorage on the
 // device; dev runs never write any of it.
-import { V, rng, store, fmt } from './util.js?v=0.6.1';
-import { getKind } from './registry.js?v=0.6.1';
-import { layout } from './layout.js?v=0.6.1';
-import { SPAWN_D, LEGACY_LINE, RING_R } from './space.js?v=0.6.1';
-import { POWERUP_KINDS, shieldCell } from './pickups/powerups/index.js?v=0.6.1'; // 0.4.0: a level's `powerups` field (the galaxy 1 retrofit)
-import { PICK_R } from './powerups.js?v=0.6.1';
-import checkpointKind from './pickups/checkpoint/index.js?v=0.6.1'; // 0.6.0: the engine lays one on every level
-import { DEMO, inDemo } from './demo.js?v=0.6.1';                    // 0.6.0: the demo switch (off unless a demo build or ?demo)
+import { V, rng, store, fmt } from './util.js?v=0.6.2';
+import { getKind } from './registry.js?v=0.6.2';
+import { layout } from './layout.js?v=0.6.2';
+import { SPAWN_D, LEGACY_LINE, RING_R } from './space.js?v=0.6.2';
+import { POWERUP_KINDS, shieldCell } from './pickups/powerups/index.js?v=0.6.2'; // 0.4.0: a level's `powerups` field (the galaxy 1 retrofit)
+import { PICK_R } from './powerups.js?v=0.6.2';
+import checkpointKind from './pickups/checkpoint/index.js?v=0.6.2'; // 0.6.0: the engine lays one on every level
+import { DEMO, inDemo } from './demo.js?v=0.6.2';                    // 0.6.0: the demo switch (off unless a demo build or ?demo)
 
 // The PLAY ORDER (n is the number a player sees). `file` is the module, js/levels/level<file>.js, when it differs;
 // `art` is Yori's name lettering (art/ui/name-<art>.png) when it differs. Evrtek, 11-05: "let's swap level one and
@@ -521,7 +521,8 @@ export const Progress = {
   // one-time lessons (0.3.0: 'roll', the barrel-roll lesson on level 1), kept beside the records
   tip(name) { return !!(store('ringreaper.tips') || {})[name]; },
   setTip(name, on = true) { const t = store('ringreaper.tips') || {}; if (on) t[name] = 1; else delete t[name]; store('ringreaper.tips', t); },
-  // 0.4.0: the first-time tips (js/tutorials.js): every card this player has seen, by its id, kept beside the records
+  // 0.4.0: the first-time tips (js/tutorials.js): every line this player has seen, by its id, kept beside the records
+  // (0.6.2: 'greed', the power-ups' kind names, and 'incoming-1..3' for the roll line's showings)
   seen(id) { return !!(store('ringreaper.seen') || {})[id]; },
   see(id) { const t = store('ringreaper.seen') || {}; t[id] = 1; store('ringreaper.seen', t); },
   // NEW GAME's erase: every record in all three galaxies, and the lessons and the tips come back too

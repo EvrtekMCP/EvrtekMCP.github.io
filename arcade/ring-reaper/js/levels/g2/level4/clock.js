@@ -4,7 +4,7 @@
 // galaxy 1's level 6 counts them: B(n) is where the manifest's bar n + 1 starts.
 //   const C = clock({ bpm: 138.01, firstBeat: 0.172, v0: 76, steps: [[24, 19], [48, 19]] });
 //   C.speed(d)  C.B(32)  C.barAt(d)  C.at(bar, secondsLater)
-import { smoothstep } from '../../../api.js?v=0.6.1';
+import { smoothstep } from '../../../api.js?v=0.6.2';
 
 export function clock({ bpm, firstBeat = 0, v0, steps = [], ramp = 150, max = 30000 }) {
   const BAR = 240 / bpm;

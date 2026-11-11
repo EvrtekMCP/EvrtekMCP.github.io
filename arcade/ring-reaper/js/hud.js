@@ -1,6 +1,6 @@
 // STARWAKE (0.4.0: the power-up strip): the DOM layer over the canvas: numbers, bars, pop-ups and call-outs. Loud and generous (ruling 4).
-import { fmt, V } from './util.js?v=0.6.1';
-import { POWERUPS } from './powerups.js?v=0.6.1';
+import { fmt, V } from './util.js?v=0.6.2';
+import { POWERUPS } from './powerups.js?v=0.6.2';
 
 // Yori's call-out sprites (art/, glow baked in). Preloaded so the first GRAZE never waits on a decode.
 export const ART = ['graze', 'multi-deflect', 'greed', 'perfect', 'no-hit', 'level-clear', 'rank-c', 'rank-b', 'rank-a', 'rank-s', 'rank-degenerate', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7', 'x8'];
@@ -61,7 +61,6 @@ export class Hud {
     this.thEl = $('threats'); this.th = [];
     for (let i = 0; i < 6; i++) { const d = document.createElement('div'); d.className = 'th'; this.thEl.appendChild(d); this.th.push(d); }
     this.thShown = 0; this.thT = 0;
-    this.tutorEl = $('tutor'); this.tutorKey = $('tutor-key'); this.tutorSay = $('tutor-say'); this.tutorSkip = $('tutor-skip');
     this.popsEl = $('pops');
     this.pops = []; this.popI = 0;
     for (let i = 0; i < 18; i++) { const d = document.createElement('div'); d.className = 'p'; this.popsEl.appendChild(d); this.pops.push(d); }
@@ -85,7 +84,7 @@ export class Hud {
   }
   // hidden by visibility, not display, so its layout is done on the title screen and not in the run's first frame
   show(on) { this.el.classList.toggle('off', !on); }
-  reset() { this.shown = 0; this.lastMult = 1; this.last = {}; this.banner.getAnimations().forEach((a) => a.cancel()); this.banner.style.opacity = 0; for (const p of this.pops) p.getAnimations().forEach((a) => a.cancel()); this.threats([], 0); this.tutor(null); this.tip(null); }
+  reset() { this.shown = 0; this.lastMult = 1; this.last = {}; this.banner.getAnimations().forEach((a) => a.cancel()); this.banner.style.opacity = 0; for (const p of this.pops) p.getAnimations().forEach((a) => a.cancel()); this.threats([], 0); this.tip(null); }
   // a number that rolls up to the real score instead of jumping
   update(dt, g) {
     const target = g.score;
@@ -169,58 +168,20 @@ export class Hud {
     }
     this.thShown = list.length;
   }
-  // the roll lesson's panel: { key, say, skip } or null to hide it
-  tutor(o) {
-    if (!this.tutorEl) return;
-    this.tutorEl.classList.toggle('now', !!(o && o.now)); // 0.6.0: the world has stopped on the moment: the prompt pulses
-    if (!o) { this.tutorEl.hidden = true; return; }
-    this.tutorKey.textContent = ''; this.tutorKey.hidden = !o.key;
-    const K = this.tutorKey, el = (tag, cls, text) => { const d = document.createElement(tag); if (cls) d.className = cls; if (text) d.textContent = text; K.appendChild(d); return d; };
-    if (typeof o.key === 'string') el('span', 't-line', o.key);
-    else if (o.key && o.key.tap) { el('span', 't-tap'); el('span', 't-line', o.key.text); }        // two rings pulsing, as a double tap
-    else if (o.key) {                                                                                // PRESS [SPACE] OR (mouse) LEFT-CLICK TO ROLL
-      el('span', 't-line', 'PRESS');
-      o.key.keys.forEach((k, i) => { if (i) el('span', 't-line', 'OR'); el('kbd', 't-cap', k); });
-      if (o.key.mouse) { el('span', 't-line', 'OR'); el('span', 't-mouse'); el('span', 't-line', 'LEFT-CLICK'); }
-      el('span', 't-line', 'TO ROLL');
-    }
-    // the whole line in words, for screen readers and the tests: PRESS SPACE OR LEFT-CLICK TO ROLL
-    K.setAttribute('aria-label', typeof o.key === 'string' ? o.key : !o.key ? '' : o.key.tap ? o.key.text : 'PRESS ' + o.key.keys.join(' OR ') + (o.key.mouse ? ' OR LEFT-CLICK' : '') + ' TO ROLL');
-    this.tutorSay.textContent = o.say || ''; this.tutorSay.hidden = !o.say;
-    this.tutorSkip.hidden = !o.skip;
-    this.tutorEl.hidden = !(o.key || o.say);
-  }
-  // 0.4.0, the first-time tips (js/tutorials.js): a card { name, say: [what it is, what to do], icon, art, glyph, color },
-  // or null to put it away. The title is Yori's lettering where she has lettered that name (art/<art>-glow.png), else
-  // the name in the banner's chrome; the icon is her HUD icon (art/<icon>.png), else a placeholder glyph.
+  // 0.6.2 (Evrtek 11-11: "the explanation box ... usually overlay[s] the thing you're supposed to be paying attention
+  // to"): the one-line explanation (js/tutorials.js) { name, say, icon, color }, or null to fade it out. Low on the
+  // screen, above the ROLL meter; no panel, nothing to press, nothing it marks.
   tip(o) {
     const T = this.tipEl || (this.tipEl = $('tip'));
     if (!T) return;
-    this.el.classList.toggle('tip-on', !!o);
-    if (!o) { T.hidden = true; this.tipK = -1; this.tipMark(null); return; }
-    T.classList.toggle('note', o.kind === 'note'); // 0.6.0: a NOTE (a rule of the game) is the smaller card
-    const icon = $('tip-icon'), name = $('tip-name'), say = $('tip-say');
-    icon.textContent = ''; icon.className = 'tip-icon' + (o.icon ? '' : ' g-' + (o.glyph || 'hurt'));
-    icon.style.setProperty('--c', o.color || '');
-    if (o.icon) { const i = new Image(); i.src = 'art/' + o.icon + '.png' + V; i.srcset = 'art/' + o.icon + '@2x.png' + V + ' 2x'; i.alt = ''; icon.appendChild(i); }
-    name.textContent = '';
-    if (o.art && this.imgs[o.art]) { const i = this.imgs[o.art].cloneNode(); i.alt = o.name; name.appendChild(i); }
-    else { const s = document.createElement('span'); s.textContent = o.name; name.appendChild(s); }
-    say.textContent = '';
-    for (const line of o.say || []) { const d = document.createElement('div'); d.textContent = line; say.appendChild(d); }
-    T.setAttribute('aria-label', o.name + '. ' + (o.say || []).join(' '));
-    T.hidden = false;
-    T.animate([{ opacity: 0, transform: 'translateY(-10px) scale(0.96)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.2,.9,.3,1.1)' });
-    this.tipK = -1; this.tipLeft(1);
-  }
-  // the auto-resume's time left on the SKIP button, 1 to 0
-  tipLeft(k) { const r = Math.round(k * 100) / 100; if (r === this.tipK || !this.tipEl) return; this.tipK = r; this.tipEl.style.setProperty('--k', r); }
-  // 0.6.0: the bracket on the thing the card is about: [x, y] on the screen, or null to put it away
-  tipMark(pos) {
-    const M = this.markEl || (this.markEl = $('tip-mark')); if (!M) return;
-    if (!pos) { if (!M.hidden) M.hidden = true; return; }
-    if (M.hidden) M.hidden = false;
-    M.style.transform = 'translate(' + pos[0].toFixed(1) + 'px,' + pos[1].toFixed(1) + 'px)';
+    if (!o) { T.classList.remove('on'); return; }
+    T.textContent = '';
+    if (o.icon) { const i = new Image(); i.src = 'art/' + o.icon + '.png' + V; i.srcset = 'art/' + o.icon + '@2x.png' + V + ' 2x'; i.alt = ''; i.className = 'tip-icon'; T.appendChild(i); }
+    const n = document.createElement('b'); n.textContent = o.name; n.style.color = o.color || ''; T.appendChild(n);
+    const w = document.createElement('span'); w.textContent = o.say || ''; T.appendChild(w);
+    T.dataset.id = o.id || '';
+    T.setAttribute('aria-label', o.name + ': ' + (o.say || ''));
+    T.classList.remove('on'); void T.offsetWidth; T.classList.add('on'); // (re)start the fade in
   }
   pop(text, x, y, cls = '') {
     const d = this.pops[this.popI++ % this.pops.length];

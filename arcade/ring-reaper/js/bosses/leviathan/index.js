@@ -15,8 +15,8 @@
 // its rhythm stays on the bar lines; THE SHARDS throws one beat earlier so its ice has landed before the breather; the
 // maw's fan, its harshest volley, flies 15% slower; and each lens takes LENS_HP hits (was 8), so the fight, with fewer
 // volleys to send back, is no longer than it was.
-import { THREE, defineBoss, clamp, damp, smoothstep, SPAWN_D } from '../../api.js?v=0.6.1';
-import { Serpent, LEV } from './serpent.js?v=0.6.1';
+import { THREE, defineBoss, clamp, damp, smoothstep, SPAWN_D } from '../../api.js?v=0.6.2';
+import { Serpent, LEV } from './serpent.js?v=0.6.2';
 
 const BAR = 4 * 60 / 135, BEAT = BAR / 4;
 const BREATHER = 1; // bars of calm at the end of every loop (0.3.0)

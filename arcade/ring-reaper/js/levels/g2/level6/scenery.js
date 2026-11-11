@@ -9,9 +9,9 @@
 // and the level's one obstacle of its own:
 //  - g2-l6-wall:     her coral wall across part of the lane with her violet crack on it (the clue that never changes:
 //                    "Phase gets you through here"); solid, but PHASE takes you through, to a cache behind it
-import { THREE, defineScenery, defineDecor, defineObstacle, Instanced, modelGroups, material, buildModel, rng } from '../../../api.js?v=0.6.1';
-import { MESH } from './mesh.js?v=0.6.1';
-import { moteStream, motes as moteKind } from '../level4/scenery.js?v=0.6.1';
+import { THREE, defineScenery, defineDecor, defineObstacle, Instanced, modelGroups, material, buildModel, rng } from '../../../api.js?v=0.6.2';
+import { MESH } from './mesh.js?v=0.6.2';
+import { moteStream, motes as moteKind } from '../level4/scenery.js?v=0.6.2';
 
 const q = new THREE.Quaternion(), eul = new THREE.Euler();
 export const motes = moteStream('g2-l6-motes', 0xa0c040, 0xc8e0b0, [40, 80]);

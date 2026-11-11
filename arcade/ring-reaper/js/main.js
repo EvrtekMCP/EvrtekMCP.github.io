@@ -3,24 +3,24 @@
 // 2 and 3 need (a push on the ship, a roll that answers things that are not shots, GREED lit by a boss).
 // Levels, kinds, scenery and bosses are modules (js/levels, js/pickups, js/obstacles, js/enemies, js/bosses);
 // this file runs whichever level is loaded and owns every rule that scores.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.6.1';
-import { VERSION, clamp, damp, lerp, isTouch, fmt, store } from './util.js?v=0.6.1';
-import { Input } from './input.js?v=0.6.1';
-import { Audio, canonTrack, multRate } from './audio.js?v=0.6.1';
-import { buildShip } from './ship.js?v=0.6.1';
-import { Backdrop } from './backdrop.js?v=0.6.1';
-import { Course } from './course.js?v=0.6.1';
-import { Scenery } from './scenery.js?v=0.6.1';
-import { Particles } from './fx.js?v=0.6.1';
-import { Hud, artUrl } from './hud.js?v=0.6.1';
-import { CATALOGUE, GALAXIES, galaxy, entryOf, catalogueOf, gn, levelLabel, loadLevel, isMarker, Progress, grade, easeOf, starProgress } from './levels.js?v=0.6.1';
-import { POWERUPS, POWERUP_IDS } from './powerups.js?v=0.6.1';
-import { appear, DEFLECT_R } from './space.js?v=0.6.1';
-import { bossKind, weakPointKind } from './boss.js?v=0.6.1';
-import { Quality } from './quality.js?v=0.6.1';
-import { Post } from './post.js?v=0.6.1';
-import { UI } from './ui.js?v=0.6.1';
-import { Tips } from './tutorials.js?v=0.6.1';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.6.2';
+import { VERSION, clamp, damp, lerp, isTouch, fmt, store } from './util.js?v=0.6.2';
+import { Input } from './input.js?v=0.6.2';
+import { Audio, canonTrack, multRate } from './audio.js?v=0.6.2';
+import { buildShip } from './ship.js?v=0.6.2';
+import { Backdrop } from './backdrop.js?v=0.6.2';
+import { Course } from './course.js?v=0.6.2';
+import { Scenery } from './scenery.js?v=0.6.2';
+import { Particles } from './fx.js?v=0.6.2';
+import { Hud, artUrl } from './hud.js?v=0.6.2';
+import { CATALOGUE, GALAXIES, galaxy, entryOf, catalogueOf, gn, levelLabel, loadLevel, isMarker, Progress, grade, easeOf, starProgress } from './levels.js?v=0.6.2';
+import { POWERUPS, POWERUP_IDS } from './powerups.js?v=0.6.2';
+import { appear, DEFLECT_R } from './space.js?v=0.6.2';
+import { bossKind, weakPointKind } from './boss.js?v=0.6.2';
+import { Quality } from './quality.js?v=0.6.2';
+import { Post } from './post.js?v=0.6.2';
+import { UI } from './ui.js?v=0.6.2';
+import { Tips } from './tutorials.js?v=0.6.2';
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -109,14 +109,15 @@ function setChain(c) {
   const before = G.mult;
   G.chain = Math.max(0, c); G.mult = multOf(G.chain);
   G.bestChain = Math.max(G.bestChain, G.chain); G.bestMult = Math.max(G.bestMult, G.mult);
-  if (G.mult > before) { audio.play('streak', { rate: multRate(G.mult) }); hud.callArt(['x' + G.mult]); tips.event('mult'); } // rate 1 unless #multrise
+  if (G.mult > before) { audio.play('streak', { rate: multRate(G.mult) }); hud.callArt(['x' + G.mult]); } // rate 1 unless #multrise
 }
 function stepDown() { setChain(Math.max(0, (G.mult - 2) * 5)); }
 function addGreed(n) {
   if (G.greedOn) return;
   const was = G.greed;
   G.greed = Math.min(100, G.greed + n);
-  if (was < 100 && G.greed >= 100) { G.greedReadyT = 0; hud.call(input.mode === 'touch' ? 'GREED READY: TAP IT' : 'GREED READY: ' + input.say('greed'), ''); tips.event('greed'); }
+  // 0.6.2: the first time, the explanation line says it (and what GREED does); after that the call-out as before
+  if (was < 100 && G.greed >= 100) { G.greedReadyT = 0; if (!tips.event('greed')) hud.call(input.mode === 'touch' ? 'GREED READY: TAP IT' : 'GREED READY: ' + input.say('greed'), ''); }
 }
 function heal(n) { if (!G.greedOn) G.shield = Math.min(100, G.shield + n); }
 // the one heal that works during GREED (the MCP's default 7): a Shield Cell, never past full
@@ -130,7 +131,7 @@ function onRing(e) {
   setChain(G.chain + 1);
   const roll = G.rolling;
   gain(T.ringPts * G.mult * (roll ? 2 : 1), e.x, e.y + 1.2, 0, roll ? 'cyan' : '', roll ? 'ROLL-RING' : '');
-  if (roll) { addGreed(5); tips.event('roll-ring'); }
+  if (roll) addGreed(5);
   heal(T.ringShield * level.ease.heal);
   audio.play('ring', { rate: 1 + Math.min(G.chain, 24) * 0.012, pan: e.x / box.x * 0.5 });
   fx.burst(e.x, e.y, 0, Math.round(26 * quality.particleScale), { speed: 9, life: 0.5, s0: 0.9, r: 1, g: 0.8, b: 0.25, carry: 1, flatZ: 0.3 });
@@ -142,7 +143,7 @@ function onMiss(e) {
   stepDown();
 }
 function onScrape() {
-  G.scrapes++; tips.event('close');
+  G.scrapes++;
   gain(T.scrapePts * G.mult, ship.x, ship.y + 1, 0, 'cyan', 'CLOSE');
   addGreed(4);
 }
@@ -177,7 +178,7 @@ function damage(dmg, big) {
   dmg *= level.ease.dmg; // the human pass: early levels hit softer (EASE, levels.js)
   if (G.hold) dmg *= level.ease.boss; // 0.6.0: ...and a boss fight has a dial of its own (no rings heal you there: levels.js)
   if (G.god) dmg = 0;
-  G.shield -= dmg; G.hits++; if (dmg > 0) tips.event('shield');
+  G.shield -= dmg; G.hits++;
   ship.invuln = big ? 0.8 : 0.6;
   hud.flash(); G.shake = Math.max(G.shake, big ? 0.9 : 0.5);
   audio.play('hit');
@@ -185,7 +186,7 @@ function damage(dmg, big) {
   if (G.shield <= 0) die();
 }
 function onShot(s) {
-  if (s.tutor) return; // the lesson's shot never hurts
+  if (s.tutor) return; // a teaching shot never hurts (the G2 hound's first bolt)
   if (ship.invuln > 0) return;
   damage(s.dmg ?? T.shotDmg, false);
   fx.burst(ship.x, ship.y, 0, Math.round(18 * quality.particleScale), { speed: 8, life: 0.35, s0: 1, r: 1, g: 0.3, b: 0.2, carry: 0.2 });
@@ -213,14 +214,15 @@ function phased(e) {
 function onGraze(s, d, a, b) {
   if (s.tutor) return;
   const c = clamp(1 - (d - a) / (b - a), 0, 1);
-  G.grazes++; tips.event('graze');
+  G.grazes++;
   gain((50 + 250 * c * c) * G.mult, ship.x + (s.x - ship.x) * 0.5, ship.y + 1, 0, c > 0.7 ? 'mag big' : 'mag', 'GRAZE');
   addGreed(6 + 14 * c);
   if (c > 0.75) { hud.callArt(['graze']); G.hitstop = Math.max(G.hitstop, 0.04); }
 }
 function onDeflect(s) {
   G.deflects++; G.rollDeflects++;
-  if (!Progress.tip('roll')) Progress.setTip('roll'); // any shot sent back means the roll is learned: no lesson again
+  if (!Progress.tip('roll')) Progress.setTip('roll'); // any shot sent back means the roll is learned: no roll line again
+  tips.deflected();
   const n = G.rollDeflects;
   G.multiMax = Math.max(G.multiMax, n);
   gain(T.deflectPts * G.mult * n, ship.x, ship.y + 1.4, 0, 'cyan', n > 1 ? 'DEFLECT x' + n : 'DEFLECT');
@@ -229,7 +231,7 @@ function onDeflect(s) {
   if (G.pu.mirror) audio.play('pu-mirror-ping', { rate: 1 + Math.min(8, n) * 0.05, gap: 0.03 });
   if (s && s.label) callText(s.label, 'c-cyan');
   fx.burst(ship.x, ship.y, -0.5, Math.round(16 * quality.particleScale), { speed: 14, life: 0.3, s0: 0.8, r: 0.5, g: 0.95, b: 1, carry: 0 });
-  if (n >= 2) { hud.callArt(['multi-deflect', 'x' + Math.min(8, n)]); G.hitstop = Math.max(G.hitstop, Math.min(0.15, 0.05 * n)); G.shake = Math.max(G.shake, 0.3); tips.event('multi'); }
+  if (n >= 2) { hud.callArt(['multi-deflect', 'x' + Math.min(8, n)]); G.hitstop = Math.max(G.hitstop, Math.min(0.15, 0.05 * n)); G.shake = Math.max(G.shake, 0.3); }
 }
 // 0.4.0 (g2-c): galaxy 2's creatures are FREED, not killed: the graft cracks, pearl motes, `g2-graft-crack` and FREED!. A
 // kind says so with `freed: true` (every g2- enemy is freed unless it says `freed: false`); score and GREED are the same.
@@ -258,7 +260,6 @@ function onFired(s) {
   // the human pass (Evrtek 11-06: "more of a visual warning when incoming weapons fire is coming"): every shot leaves
   // its shooter with a red flash at the muzzle, whoever fired it, on top of each shooter's own charge-up glow
   fx.burst(s.x, s.y, s.z, Math.round(9 * quality.particleScale), { speed: 3.5, life: 0.26, s0: 2.8, r: 1, g: 0.3, b: 0.38, carry: s.carry ? 1 : 0.5, drag: 2 });
-  if (s.net) tips.event('net', s); else if (s.noReflect && !s.tutor) tips.event('white-hot', s);
 }
 // 0.4.0: lit by the game itself (a boss's call: `api.game.greedStart()`), whatever the meter holds. greedStart(secs) longer than GREED's own
 // time holds it lit that long (g3-c: the High Roller's ALL IN): the bar stays full, then drains over the last stretch
@@ -281,9 +282,8 @@ const GAME = {
   checkpoint: onCheckpoint, checkpointMiss: onCheckpointMiss,
   shot: onShot, graze: onGraze, deflect: onDeflect, kill: onKill, fired: onFired,
   telegraph: () => {}, mineArm: () => {},
-  tutorWants: (name) => tutorWants(name), tutorReady: (e) => tutorReady(e),
-  // 0.6.0: a rule of the game or a boss announces itself the first time (js/tutorials.js CARDS; `at`: what to put the bracket on)
-  tip: (id, at) => tips.event(id, at),
+  // 0.6.0: a thing announces itself the first time (0.6.2: only a boss's dropped Shield Cell still does: js/tutorials.js)
+  tip: (id) => tips.event(id),
   minePop: (m, z) => { audio.play('fire', { rate: 0.7, vol: 0.8, pan: m.x / box.x * 0.6 }); fx.burst(m.x, m.y, z, 14, { speed: 8, life: 0.4, s0: 1.4, r: 1, g: 0.3, b: 0.3, carry: 1 }); },
   warn: (side, t) => hud.warn(side, t),
   // generic
@@ -323,6 +323,7 @@ function counter(o) {
   const x = o.x ?? ship.x, y = o.y ?? ship.y, z = o.z ?? 0;
   G.deflects++; G.rollDeflects++; G.counters++;
   if (!Progress.tip('roll')) Progress.setTip('roll');
+  tips.deflected();
   const n = G.rollDeflects; G.multiMax = Math.max(G.multiMax, n);
   gain((o.pts ?? T.deflectPts) * G.mult * n, x, y + 1.4, z, 'cyan', o.label ? o.label.replace(/!$/, '') : 'DEFLECT');
   addGreed(o.greed ?? 8);
@@ -381,10 +382,10 @@ function lensAt(x, y, z, r, k) {
 const course = new Course(api);
 const scenery = new Scenery(api);
 course.use([bossKind, weakPointKind]);
-// 0.4.0: the first-time tips (js/tutorials.js). A thing counts as in view when it is in front of the camera and on the screen.
+// 0.4.0: the explanations (js/tutorials.js; 0.6.2: the roll, GREED and the power-ups). A thing counts as in view when it is in front of the camera and on the screen.
 const tmpTip = new THREE.Vector3();
 const onScreen = (x, y, z) => { tmpTip.set(x, y, z).project(camera); return tmpTip.z < 1 && Math.abs(tmpTip.x) < 1.1 && Math.abs(tmpTip.y) < 1.1; };
-const tips = new Tips({ hud, audio, input, Progress, G, onScreen });
+const tips = new Tips({ hud, input, Progress, G, ship, onScreen });
 window.__sw.course = course; window.__sw.scenery = scenery; window.__sw.api = api; window.__sw.tips = tips;
 resize();
 window.addEventListener('resize', resize);
@@ -467,7 +468,7 @@ function newRun(opts = {}, fromTitle = false) {
   // every start opens out of a short fade from black onto its opening already in place (the launcher is opaque, so
   // even a start from it is a cut; and nothing ever grows in as play begins)
   document.getElementById('cut').animate([{ opacity: 1 }, { opacity: 1, offset: 0.25 }, { opacity: 0 }], { duration: 450, easing: 'ease-out', fill: 'forwards' });
-  course.reset(seamless); fx.clear(); hud.reset(); input.reset(); hud.boss({ show: false }); tutorOff(); tips.reset();
+  course.reset(seamless); fx.clear(); hud.reset(); input.reset(); hud.boss({ show: false }); tips.reset();
   if (!seamless) scenery.setLevel(L, sec, true);
   backdrop.setLook(sec.look || sec.id, true);
   quality.resetWindow();
@@ -630,117 +631,17 @@ function showEnd() {
   prefetchNext();
 }
 
-// ---------------------------------------------------------------- the roll lesson
-// 0.6.0, the player pass (Evrtek 11-10: "Everything introduced well ... even back to the first roll: stage it so the
-// player clearly SEES a roll deflect a shot back into an enemy. Currently this is not done well"). Once, early on level
-// 1, until the player has sent a shot back with a roll (any deflect anywhere counts, and so does SKIP).
-// What was wrong with 0.3.0's: its pod hung 250 m off, low and to the left, a speck; the roll had to be timed by the
-// player, twice at most, and a miss ended the lesson with nothing shown; and the kill, when it came, happened far away
-// while a text plate covered the top of the screen.
-// Now it is STAGED, and it cannot be missed:
-//   in     the lesson's pod (js/levels/level2/tutor.js) flies in and settles close ahead, up and to the right of the ship,
-//          where the camera shows both; the world eases into slow motion
-//   look   a line says what is about to happen
-//   charge the pod glows red to white, as every shooter in the game does before it fires
-//   shot   ONE red shot, in slow motion, steering onto the ship. Rolls pressed now are kept back: the only roll is the right one
-//   wait   as the shot reaches the ship THE WORLD STOPS, and the prompt says ROLL NOW in the player's own controls. It waits
-//          as long as it takes. A roll begun here always meets the shot
-//   back   the roll turns, the shot goes cyan and flies home in slow motion, and the pod bursts in plain view
-//   out    one line names what just happened; the world comes back up to speed
-// The music dips while it runs; no first-time card shows over it (tips.stage).
-const LESSON = {
-  watch: 'That pod is about to fire. Roll just as the red shot reaches you.',
-  now: 'Now. Roll!',
-  done: "That's the move. Roll into any red shot and it flies straight back.",
-  inT: 0.5, look: 1.4, charge: 0.9, slow: 0.3, shotT: 1.0,
-  stopAt: 0.13,   // the world stops with the shot this many (game) seconds from the ship: a roll lasts 0.45 s, so it cannot miss
-  back: 0.16,     // the world's speed from the roll until the shot is home (a quarter second of the world's time), so the hit is seen
-  backMax: 3.2,   // ...and for no longer than this (real seconds), whatever becomes of the shot
-  after: 2.6,     // real seconds on the last line while the world comes back up to speed
-};
-const TUTOR = { on: false, phase: '', t: 0, pod: null, shot: null, scale: 1, say: '' };
-window.__sw.tutor = TUTOR;
-// the key line follows how the player is playing right now (input.mode) and the keys they have bound: a double tap
-// drawn on the screen, or PRESS [SPACE] OR (mouse) LEFT-CLICK TO ROLL
-function lessonKey() { return input.mode === 'touch' ? { tap: true, text: 'DOUBLE-TAP TO ROLL' } : { keys: input.labels('roll'), mouse: input.binds.mouse }; }
-function lessonSay(say, skip, now = false) { TUTOR.say = say; hud.tutor({ key: lessonKey(), say, skip, now }); }
-function tutorWants(name) { return name === 'roll' && !Progress.tip('roll') && G.state === 'play'; }
-function tutorReady(pod) {
-  if (TUTOR.on || !tutorWants('roll')) return false;
-  tips.stage(true); // whatever card is up goes; none shows until the lesson is done
-  Object.assign(TUTOR, { on: true, phase: 'in', t: 0, pod, shot: null, scale: 1 });
-  lessonSay(LESSON.watch, true);
-  audio.musicLevel(0.5, 0.3);
-  return true;
-}
-function tutorFire() {
-  const p = TUTOR.pod;
-  TUTOR.shot = course.fire(p, ship.x, ship.y, { T: LESSON.shotT, owner: p, dmg: 0, noEase: true });
-  TUTOR.shot.tutor = true; TUTOR.shot.home = true;
-  TUTOR.phase = 'shot'; TUTOR.t = 0; p.chargeK = 0;
-}
-// the lesson is over: say the last thing for a moment while the world comes back up to speed
-function tutorEnd(say) {
-  const p = TUTOR.pod;
-  if (p) { p.chargeK = 0; if (p.alive && !p.dead) { p.hold = undefined; p.leave = true; } } // not burst (a skip): it climbs away out of the lane
-  TUTOR.phase = 'out'; TUTOR.t = 0;
-  hud.tutor(say ? { key: 'NICE ROLL!', say, skip: false } : null);
-  audio.musicLevel(G.greedOn ? 1.12 : 1, 0.6);
-}
-function tutorSkip() { if (!TUTOR.on || TUTOR.phase === 'out') return; Progress.setTip('roll'); if (TUTOR.shot) TUTOR.shot.alive = false; tutorEnd(''); TUTOR.t = LESSON.after - 0.7; }
-function tutorOff() {
-  if (TUTOR.on && TUTOR.phase !== 'out') audio.musicLevel(1, 0.3);
-  if (TUTOR.pod) { TUTOR.pod.hold = undefined; TUTOR.pod.chargeK = 0; }
-  const was = TUTOR.on;
-  Object.assign(TUTOR, { on: false, phase: '', pod: null, shot: null, scale: 1 }); hud.tutor(null);
-  if (was) tips.stage(false);
-}
-// what the lesson wants looked at: its pod, until it fires (the bracket the cards use)
-function tutorMark() { const ph = TUTOR.phase, p = TUTOR.pod; return (ph === 'in' || ph === 'look' || ph === 'charge') && p && p.alive ? p : null; }
-// real seconds in; the time scale for this frame out
-function tutorTick(dt) {
-  TUTOR.t += dt;
-  const p = TUTOR.pod, ph = TUTOR.phase;
-  if (ph !== 'wait' && ph !== 'back' && ph !== 'out') input.take('roll'); // a roll pressed early is kept back: the only roll is the right one
-  if (ph === 'in') {
-    TUTOR.scale = lerp(1, LESSON.slow, Math.min(1, TUTOR.t / LESSON.inT));
-    if (TUTOR.t >= LESSON.inT && (p.hold !== undefined || !p.alive)) { TUTOR.phase = 'look'; TUTOR.t = 0; }
-  } else if (ph === 'look') {
-    TUTOR.scale = LESSON.slow;
-    if (TUTOR.t >= LESSON.look) { TUTOR.phase = 'charge'; TUTOR.t = 0; }
-  } else if (ph === 'charge') {
-    TUTOR.scale = LESSON.slow;
-    p.chargeK = Math.min(1, TUTOR.t / LESSON.charge);
-    if (TUTOR.t >= LESSON.charge) tutorFire();
-  } else if (ph === 'shot') {
-    TUTOR.scale = LESSON.slow;
-    const s = TUTOR.shot, tArr = -s.z / Math.max(1, s.vz);
-    if (tArr <= LESSON.stopAt || !course.shots.includes(s)) { TUTOR.phase = 'wait'; TUTOR.t = 0; lessonSay(LESSON.now, true, true); }
-  } else if (ph === 'wait') {
-    // the world has stopped on the moment. The frame loop does not step while the scale is 0, so the roll is read here
-    TUTOR.scale = 0;
-    const r = input.take('roll');
-    if (r) { tryRoll(r); if (G.rolling) { TUTOR.phase = 'back'; TUTOR.t = 0; TUTOR.scale = LESSON.back; hud.tutor(null); } }
-  } else if (ph === 'back') {
-    TUTOR.scale = LESSON.back;
-    const s = TUTOR.shot, home = !p.alive || p.dead;
-    if (home || (s.reflected && TUTOR.t >= LESSON.backMax)) { Progress.setTip('roll'); tutorEnd(LESSON.done); }
-    else if (!s.reflected && (!course.shots.includes(s) || TUTOR.t >= LESSON.backMax)) tutorEnd(''); // (it cannot be missed; if it ever is, nothing is claimed and the lesson comes back next time)
-  } else if (ph === 'out') {
-    TUTOR.scale = Math.min(1, LESSON.back + TUTOR.t / 0.7);
-    if (TUTOR.t >= LESSON.after) tutorOff();
-  }
-  return TUTOR.scale;
-}
-window.addEventListener('keydown', (e) => { if (TUTOR.on && e.key === 'Enter') { e.preventDefault(); tutorSkip(); } });
-// the player changed how they play (a touch, or a key or the mouse): every control text follows, the lesson too
+// ---------------------------------------------------------------- the roll
+// 0.6.2 (Evrtek 11-11): the staged roll lesson of 0.3.0 and 0.6.0 is gone (its pod, the world slowing and then stopping on
+// the moment, its plate over the top of the screen). The roll is taught by js/tutorials.js's INCOMING line on the first
+// real shots, timed so a roll begun when it appears meets the shot. Nothing stops the world for it.
+
+// the player changed how they play (a touch, or a key or the mouse): every control text follows (the next INCOMING line too)
 input.onMode = (m) => {
   document.body.classList.toggle('touch', m === 'touch');
-  if (TUTOR.on && !['out', 'back'].includes(TUTOR.phase)) lessonSay(TUTOR.say, true, TUTOR.phase === 'wait');
   if (ui) ui.controlsChanged();
 };
-input.onBinds = () => { if (TUTOR.on && !['out', 'back'].includes(TUTOR.phase)) lessonSay(TUTOR.say, true, TUTOR.phase === 'wait'); if (ui) ui.controlsChanged(); };
-$('tutor-skip').addEventListener('click', (e) => { e.preventDefault(); tutorSkip(); });
+input.onBinds = () => { if (ui) ui.controlsChanged(); };
 
 // ---------------------------------------------------------------- incoming fire, off the screen
 // 0.3.0 (Evrtek 11-06): a shot that will cross your plane close to you and that you cannot see (off the edge of the
@@ -797,7 +698,7 @@ function step(dt) {
   const sec = level.sectionAt(G.courseD);
   if (sec.id !== G.section) {
     const prev = level.sections.find((s) => s.id === G.section);
-    if (prev && (level.ringTotals[prev.id] || 0) && (G.secGot[prev.id] || 0) >= level.ringTotals[prev.id]) { hud.callArt(['perfect'], prev.sub); G.perfect.push(prev.id); tips.event('perfect'); }
+    if (prev && (level.ringTotals[prev.id] || 0) && (G.secGot[prev.id] || 0) >= level.ringTotals[prev.id]) { hud.callArt(['perfect'], prev.sub); G.perfect.push(prev.id); }
     G.section = sec.id; backdrop.setLook(sec.look || sec.id);
     if (sec.music) audio.switchTrack(sec.music);
   }
@@ -936,28 +837,20 @@ function frame(now) {
   if (G.state === 'play') {
     quality.sample(dt);
     let sdt = dt;
-    // the roll lesson stops the world, then runs it in slow motion (its own clock is real time)
-    if (TUTOR.on) sdt *= tutorTick(dt);
-    else sdt *= tips.tick(dt); // 0.6.0: a first-time card's dip into slow motion (player and world alike); 1 when none is up
+    tips.tick(dt); // 0.6.2: the explanation line's clock (it never slows the game)
     const k = sdt / dt; // how fast the world runs this frame, for the parts that move by real time
     if (G.hitstop > 0) { G.hitstop -= dt; sdt = 0; }
     const p0 = performance.now();
     // dev speed: whole extra steps (stable), or a half step
     const reps = G.dev ? G.devSpeed : 1;
     if (sdt > 0) { if (reps < 1) step(sdt * reps); else for (let i = 0; i < reps && G.state === 'play'; i++) step(sdt); }
-    if (G.state === 'play' && !TUTOR.on) {
-      tips.scan(course.list, G.v);
-      // the rules of the game, the first time each happens (tips.event is a no-op once a card has been seen)
-      if (G.time > 0.8) tips.event('steer');
-      if (G.star && G.star.stars >= 2) tips.event('stars');
-    }
-    { const m = TUTOR.on ? tutorMark() : tips.mark(); hud.tipMark(m && G.state === 'play' ? screenOf(m.x, m.y, m.z) : null); }
+    if (G.state === 'play') tips.scan(course.list, course.shots, G.v); // the first shots at you, power-ups coming into view
     const p1 = performance.now();
     const ws = G.timeScale ?? 1; // Slipstream: the streaming stars slow with the world
     backdrop.update(dt, sdt > 0 ? G.v * k * ws : 0, G.dist, G.greedOn ? 1 : 0, camera, G.boostK);
     const p2 = performance.now();
     fx.update(sdt * ws, sdt > 0 ? G.v : 0);
-    { const th = G.state === 'play' ? threats() : []; if (th.length) tips.event('edge'); hud.threats(th, dt); }
+    { const th = G.state === 'play' ? threats() : []; hud.threats(th, dt); }
     const p3 = performance.now();
     G.banked = G.score + G.perfect.length * T.perfectBonus + G.bonuses.reduce((a, b) => a + b[1], 0);
     G.star = starProgress(G.banked, level.n, level.g);
@@ -1094,7 +987,7 @@ function openMenu() {
   if (window.__splash) window.__splash.menuReady();
 }
 function toTitle() {
-  G.state = 'title'; hud.show(false); input.enabled = false; hud.boss({ show: false }); tutorOff(); tips.reset();
+  G.state = 'title'; hud.show(false); input.enabled = false; hud.boss({ show: false }); tips.reset();
   course.reset(false); if (level) scenery.setLevel(level, level.sections[0], true); if (level) backdrop.setLook(level.sections[0].look || level.sections[0].id);
   S.root.visible = true;
   ui.launcher();
@@ -1164,7 +1057,7 @@ window.__sw.retry = () => (level && G.cp ? start(level.g || 1, level.n, { checkp
   const art = () => hud.preloadArt().then(() => { audio.held = 0; });
   audio.loadTrack(openingOf(level).track).then(art, art);
   window.__sw.warm = true;
-  if (params.has('test')) import('./testhooks.js?v=0.6.1').then((m) => m.install(window.__sw));
+  if (params.has('test')) import('./testhooks.js?v=0.6.2').then((m) => m.install(window.__sw));
   if (G.state !== 'boot') return; // a test or a dev link already started a run
   if (!BOOT_OLD) { openMenu(); return; }
   ui.pressToStart(() => {

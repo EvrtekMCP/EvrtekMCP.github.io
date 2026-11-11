@@ -78,75 +78,20 @@ body { position: fixed; inset: 0; }
 .threats { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .th { position: absolute; left: -14px; top: -14px; width: 28px; height: 28px; opacity: 0; will-change: transform, opacity;
   background: var(--red); clip-path: polygon(100% 50%, 0 0, 26% 50%, 0 100%); filter: drop-shadow(0 0 6px rgba(255, 51, 85, 0.9)); }
-/* the roll lesson (0.3.0): a plate over the top of the play field, its key line big; SKIP beside it */
-.tutor { position: absolute; left: 50%; top: calc(env(safe-area-inset-top) + max(56px, 8vh)); translate: -50% 0; width: min(560px, 92vw);
-  display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; }
-.tutor[hidden] { display: none; }
-.tutor .t-plate { width: 100%; padding: 12px 18px 14px; text-align: center; background: linear-gradient(180deg, rgba(14, 16, 44, 0.95), rgba(6, 7, 22, 0.95));
-  border: 2px solid rgba(208, 220, 255, 0.6); border-radius: 8px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55); }
-.tutor .t-key { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 10px; }
-.tutor .t-line { font-size: clamp(20px, 4.4vmin, 36px); font-weight: 800; font-style: italic; letter-spacing: 0.05em; color: #f2f6ff;
-  background: linear-gradient(180deg, #ffffff 0%, #dfe8ff 45%, #9fb0d8 58%, #eef4ff 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 2px 0 #0a0c26); }
-/* a key as a keycap, the key the player has bound (input.js) */
-.tutor .t-cap { font: 800 clamp(15px, 3vmin, 22px) var(--mono); letter-spacing: 0.08em; color: #0b0a1c; background: linear-gradient(180deg, #f4f7ff, #c4cfe8);
-  border-radius: 7px; padding: 4px 12px 6px; box-shadow: 0 4px 0 #6d7aa0, 0 0 14px rgba(208, 220, 255, 0.45); animation: keypress 1.1s ease-in-out infinite; }
-@keyframes keypress { 0%, 60%, 100% { transform: translateY(0); box-shadow: 0 4px 0 #6d7aa0, 0 0 14px rgba(208, 220, 255, 0.45); } 75% { transform: translateY(3px); box-shadow: 0 1px 0 #6d7aa0, 0 0 22px rgba(208, 220, 255, 0.8); } }
-/* a mouse, its left button lit */
-.tutor .t-mouse { position: relative; width: 24px; height: 36px; border: 3px solid #dfe8ff; border-radius: 12px 12px 13px 13px; }
-.tutor .t-mouse::before { content: ''; position: absolute; left: 0; top: 0; width: 50%; height: 45%; border-radius: 9px 0 0 0; background: #dfe8ff; animation: prompt 1.1s ease-in-out infinite; }
-.tutor .t-mouse::after { content: ''; position: absolute; left: 50%; top: 0; width: 2px; height: 45%; margin-left: -1px; background: #dfe8ff; }
-/* a double tap: two rings ringing out from one point, twice, then a rest */
-.tutor .t-tap { position: relative; width: 36px; height: 36px; }
-.tutor .t-tap::before, .tutor .t-tap::after { content: ''; position: absolute; inset: 0; border: 3px solid #dfe8ff; border-radius: 50%; opacity: 0; animation: tap2 1.4s ease-out infinite; }
-.tutor .t-tap::after { animation-delay: 0.22s; }
-@keyframes tap2 { 0% { transform: scale(0.35); opacity: 1; } 30% { transform: scale(1.05); opacity: 0; } 100% { opacity: 0; } }
-.tutor .t-say { margin-top: 6px; font-size: clamp(13px, 2.6vmin, 18px); line-height: 1.4; color: var(--ink); letter-spacing: 0.02em; }
-.tutor .t-key[hidden], .tutor .t-say[hidden], .tutor .t-skip[hidden] { display: none; }
-.tutor .t-skip { pointer-events: auto; font: 700 12px var(--mono); letter-spacing: 0.25em; color: var(--dim); background: rgba(10, 8, 30, 0.7);
-  border: 1px solid rgba(143, 163, 196, 0.5); border-radius: 8px; padding: 7px 16px; cursor: pointer; }
-@media (max-width: 700px) { .tutor { top: calc(env(safe-area-inset-top) + 128px); } }
-/* 0.4.0, the first-time tips (js/tutorials.js): the roll lesson's plate, high on the screen and clear of the flight path's
-   middle; the icon beside the name and two short lines; SKIP under it, big enough for a thumb, its bar the auto-resume.
-   A section banner in the same spot waits behind it (hidden while the card is up). */
-.tip { position: absolute; left: 50%; top: calc(env(safe-area-inset-top) + max(56px, 8vh)); translate: -50% 0; width: min(540px, calc(100vw - 32px));
-  display: flex; flex-direction: column; align-items: center; gap: 10px; pointer-events: none; }
-.tip[hidden] { display: none; }
-#hud.tip-on .banner { visibility: hidden; }
-.tip-plate { width: 100%; display: flex; align-items: center; gap: 16px; padding: 14px 18px 15px; background: linear-gradient(180deg, rgba(14, 16, 44, 0.95), rgba(6, 7, 22, 0.95));
-  border: 2px solid rgba(208, 220, 255, 0.6); border-radius: 8px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55); }
-.tip-icon { flex: none; width: 60px; height: 60px; border-radius: 50%; display: grid; place-items: center; position: relative;
-  background: rgba(6, 6, 18, 0.9); box-shadow: 0 0 0 2px var(--c, #dfe8ff), 0 0 16px var(--c, transparent); }
-.tip-icon img { width: 40px; height: 40px; filter: drop-shadow(0 0 5px var(--c)); }
-/* placeholder glyphs until Yori draws card icons: an amber ring (collect), a red warning (hurts), a soft blue disc (ally) */
-.tip-icon.g-collect { --c: var(--amber); }
-.tip-icon.g-collect::before { content: ''; width: 28px; height: 28px; border-radius: 50%; border: 5px solid var(--amber); box-shadow: 0 0 10px rgba(255, 204, 51, 0.8); }
-.tip-icon.g-hurt { --c: var(--red); }
-.tip-icon.g-hurt::before { content: '!'; font: 900 34px/1 var(--mono); color: var(--red); text-shadow: 0 0 10px rgba(255, 51, 85, 0.9); }
-.tip-icon.g-ally { --c: #9fd8ff; }
-.tip-icon.g-ally::before { content: ''; width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle, #eaf6ff 0%, #9fd8ff 60%, rgba(159, 216, 255, 0) 72%); }
-.tip-body { flex: 1; min-width: 0; text-align: left; }
-.tip-name img { display: block; height: clamp(28px, 5.6vmin, 44px); width: auto; max-width: 100%; margin: -4px 0 2px -6px; }
-.tip-name span { display: block; font-size: clamp(20px, 4.6vmin, 34px); font-weight: 800; font-style: italic; letter-spacing: 0.05em; line-height: 1.15;
-  color: #f2f6ff; background: linear-gradient(180deg, #ffffff 0%, #dfe8ff 45%, #9fb0d8 58%, #eef4ff 100%); -webkit-background-clip: text; background-clip: text;
-  -webkit-text-fill-color: transparent; filter: drop-shadow(0 2px 0 #0a0c26); margin-bottom: 4px; }
-.tip-say { font-size: clamp(14px, 2.8vmin, 19px); line-height: 1.38; color: var(--ink); letter-spacing: 0.01em; }
-.tip-say div + div { margin-top: 3px; color: #c9d8f2; }
-.tip-skip { pointer-events: auto; position: relative; overflow: hidden; min-width: 148px; min-height: 52px; padding: 0 26px; display: inline-flex; align-items: center; justify-content: center; gap: 12px;
-  font: 800 16px var(--mono); letter-spacing: 0.25em; color: var(--ink); background: rgba(10, 8, 30, 0.85); border: 2px solid rgba(208, 220, 255, 0.6);
-  border-radius: 10px; cursor: pointer; touch-action: manipulation; }
-.tip-skip:hover { border-color: #fff; }
-.tip-skip:active { transform: scale(0.97); }
-.tip-skip::after { content: ''; position: absolute; left: 0; bottom: 0; height: 3px; width: calc(var(--k, 1) * 100%); background: rgba(208, 220, 255, 0.55); }
-.tip-key { font: 700 11px var(--mono); letter-spacing: 0.1em; color: #0b0a1c; background: linear-gradient(180deg, #f4f7ff, #c4cfe8); border-radius: 5px; padding: 3px 7px 4px; box-shadow: 0 2px 0 #6d7aa0; }
-body.touch .tip-key { display: none; }
-/* a phone held upright: below the shield, GREED and pause column (on a tall phone), clear of the horizon */
-@media (max-width: 700px) { .tip { top: calc(env(safe-area-inset-top) + min(166px, 20vh)); } .tip-plate { gap: 12px; padding: 12px 14px 13px; } .tip-icon { width: 52px; height: 52px; } .tip-icon img { width: 34px; height: 34px; } }
-/* a wide screen: one row, SKIP beside the plate, so the card is shallow and stays above the horizon, where new things
-   come into view; narrow enough to clear the HUD's corners */
-@media (orientation: landscape) and (min-width: 701px) { .tip { flex-direction: row; align-items: stretch; width: min(780px, calc(100vw - 320px)); } .tip-skip { min-width: 132px; padding: 0 18px; flex-direction: column; gap: 6px; } }
-/* a short landscape phone: the whole width, as high as it goes */
-@media (max-height: 500px) and (orientation: landscape) { .tip { flex-direction: row; align-items: stretch; top: calc(env(safe-area-inset-top) + 48px); width: calc(100vw - 128px); } .tip-plate { padding: 10px 14px; } .tip-skip { min-width: 112px; padding: 0 16px; } }
+/* 0.6.2, the explanations (js/tutorials.js; Evrtek 11-11: the old box covered "the thing you're supposed to be paying
+   attention to"): one line, no panel, low on the screen. Measured on level 1: rings, shots and enemies come in through the
+   middle of the screen (40-60% of its height) and the ship rides at 55-80%; nothing flies in the band above the ROLL
+   meter, so the line sits there. A quick fade in, a quick fade out; it never takes a touch or a click. */
+.tip { position: absolute; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 46px); translate: -50% 0; max-width: calc(100vw - 32px);
+  display: flex; align-items: center; justify-content: center; gap: 0.5em; white-space: nowrap; pointer-events: none;
+  font-size: clamp(13px, 2.5vmin, 18px); font-weight: 700; letter-spacing: 0.04em; color: #eef3ff;
+  text-shadow: 0 0 3px #05061a, 0 0 8px rgba(5, 6, 26, 0.95), 0 1px 0 #05061a; opacity: 0; transition: opacity 0.3s ease-in; }
+.tip.on { opacity: 1; transition: opacity 0.12s ease-out; }
+.tip b { font-weight: 800; letter-spacing: 0.12em; text-shadow: 0 0 6px currentColor, 0 0 3px #05061a, 0 1px 0 #05061a; }
+.tip b::after { content: ':'; }
+.tip .tip-icon { width: 1.5em; height: 1.5em; flex: none; }
+@media (max-width: 420px) { .tip { white-space: normal; text-align: center; flex-wrap: wrap; row-gap: 0; } }
+
 .warn { position: absolute; top: 45%; font-size: clamp(22px, 6vmin, 44px); color: var(--red); text-shadow: 0 0 12px rgba(255, 51, 85, 0.9); opacity: 0; }
 .warn.left { left: calc(10px + env(safe-area-inset-left)); }
 .warn.right { right: calc(10px + env(safe-area-inset-right)); }
@@ -333,17 +278,17 @@ body.hot #view { filter: saturate(1.35) contrast(1.06); }
 /* ---------- Yori's screens (art/ui, 2026-11-05): launcher, sector map, loading ---------- */
 .ui-screen { padding: 0; background: #0b0a1c; display: block; overflow: hidden; }
 .ui-bg { position: absolute; inset: 0; background-size: cover; background-position: center; pointer-events: none; }
-.bg-launcher { background-image: url('../art/ui/launcher-bg-landscape.png?v=0.6.1'); }
-.constellation { background-image: url('../art/ui/constellation-landscape.png?v=0.6.1'); }
-.bg-select { background-image: url('../art/ui/levelselect-bg-landscape.png?v=0.6.1'); }
-.bg-loading { background-image: url('../art/ui/loading-bg-landscape.png?v=0.6.1'); }
-.streaks { background-image: url('../art/ui/loading-streaks-landscape.png?v=0.6.1'); mix-blend-mode: screen; animation: streak 1.1s linear infinite; }
+.bg-launcher { background-image: url('../art/ui/launcher-bg-landscape.png?v=0.6.2'); }
+.constellation { background-image: url('../art/ui/constellation-landscape.png?v=0.6.2'); }
+.bg-select { background-image: url('../art/ui/levelselect-bg-landscape.png?v=0.6.2'); }
+.bg-loading { background-image: url('../art/ui/loading-bg-landscape.png?v=0.6.2'); }
+.streaks { background-image: url('../art/ui/loading-streaks-landscape.png?v=0.6.2'); mix-blend-mode: screen; animation: streak 1.1s linear infinite; }
 @media (orientation: portrait) {
-  .bg-launcher { background-image: url('../art/ui/launcher-bg-portrait.png?v=0.6.1'); }
-  .constellation { background-image: url('../art/ui/constellation-portrait.png?v=0.6.1'); }
-  .bg-select { background-image: url('../art/ui/levelselect-bg-portrait.png?v=0.6.1'); }
-  .bg-loading { background-image: url('../art/ui/loading-bg-portrait.png?v=0.6.1'); }
-  .streaks { background-image: url('../art/ui/loading-streaks-portrait.png?v=0.6.1'); }
+  .bg-launcher { background-image: url('../art/ui/launcher-bg-portrait.png?v=0.6.2'); }
+  .constellation { background-image: url('../art/ui/constellation-portrait.png?v=0.6.2'); }
+  .bg-select { background-image: url('../art/ui/levelselect-bg-portrait.png?v=0.6.2'); }
+  .bg-loading { background-image: url('../art/ui/loading-bg-portrait.png?v=0.6.2'); }
+  .streaks { background-image: url('../art/ui/loading-streaks-portrait.png?v=0.6.2'); }
 }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 /* her buttons: 600 x 140, the plate inside; hover lights it, pressed sits 4 px lower and fills cyan */
@@ -351,21 +296,21 @@ body.hot #view { filter: saturate(1.35) contrast(1.06); }
   width: clamp(220px, 30vw, 520px); aspect-ratio: 600 / 140; filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.4)); }
 .img-btn[hidden] { display: none; }
 .img-btn.small { width: clamp(160px, 22vw, 300px); margin: 12px auto 0; }
-.b-new-game { background-image: url('../art/ui/btn-new-game-normal.png?v=0.6.1'); }
-.b-new-game:hover, .b-new-game:focus-visible { background-image: url('../art/ui/btn-new-game-hover.png?v=0.6.1'); }
-.b-new-game:active { background-image: url('../art/ui/btn-new-game-pressed.png?v=0.6.1'); }
-.b-continue { background-image: url('../art/ui/btn-continue-normal.png?v=0.6.1'); }
-.b-continue:hover, .b-continue:focus-visible { background-image: url('../art/ui/btn-continue-hover.png?v=0.6.1'); }
-.b-continue:active { background-image: url('../art/ui/btn-continue-pressed.png?v=0.6.1'); }
-.b-level-select { background-image: url('../art/ui/btn-level-select-normal.png?v=0.6.1'); }
-.b-level-select:hover, .b-level-select:focus-visible { background-image: url('../art/ui/btn-level-select-hover.png?v=0.6.1'); }
-.b-level-select:active { background-image: url('../art/ui/btn-level-select-pressed.png?v=0.6.1'); }
-.b-options { background-image: url('../art/ui/btn-options-normal.png?v=0.6.1'); }
-.b-options:hover, .b-options:focus-visible { background-image: url('../art/ui/btn-options-hover.png?v=0.6.1'); }
-.b-options:active { background-image: url('../art/ui/btn-options-pressed.png?v=0.6.1'); }
-.b-back { background-image: url('../art/ui/btn-back-normal.png?v=0.6.1'); }
-.b-back:hover, .b-back:focus-visible { background-image: url('../art/ui/btn-back-hover.png?v=0.6.1'); }
-.b-back:active { background-image: url('../art/ui/btn-back-pressed.png?v=0.6.1'); }
+.b-new-game { background-image: url('../art/ui/btn-new-game-normal.png?v=0.6.2'); }
+.b-new-game:hover, .b-new-game:focus-visible { background-image: url('../art/ui/btn-new-game-hover.png?v=0.6.2'); }
+.b-new-game:active { background-image: url('../art/ui/btn-new-game-pressed.png?v=0.6.2'); }
+.b-continue { background-image: url('../art/ui/btn-continue-normal.png?v=0.6.2'); }
+.b-continue:hover, .b-continue:focus-visible { background-image: url('../art/ui/btn-continue-hover.png?v=0.6.2'); }
+.b-continue:active { background-image: url('../art/ui/btn-continue-pressed.png?v=0.6.2'); }
+.b-level-select { background-image: url('../art/ui/btn-level-select-normal.png?v=0.6.2'); }
+.b-level-select:hover, .b-level-select:focus-visible { background-image: url('../art/ui/btn-level-select-hover.png?v=0.6.2'); }
+.b-level-select:active { background-image: url('../art/ui/btn-level-select-pressed.png?v=0.6.2'); }
+.b-options { background-image: url('../art/ui/btn-options-normal.png?v=0.6.2'); }
+.b-options:hover, .b-options:focus-visible { background-image: url('../art/ui/btn-options-hover.png?v=0.6.2'); }
+.b-options:active { background-image: url('../art/ui/btn-options-pressed.png?v=0.6.2'); }
+.b-back { background-image: url('../art/ui/btn-back-normal.png?v=0.6.2'); }
+.b-back:hover, .b-back:focus-visible { background-image: url('../art/ui/btn-back-hover.png?v=0.6.2'); }
+.b-back:active { background-image: url('../art/ui/btn-back-pressed.png?v=0.6.2'); }
 .img-btn .cap { position: absolute; left: 0; right: 0; bottom: 6%; font: 700 clamp(8px, 0.9vw, 12px) var(--mono); letter-spacing: 0.3em; color: var(--cyan); text-align: center; }
 /* the launcher (0.3.0; Evrtek's iPhone, 11-06: in Safari the foot sat on the buttons and OPTIONS fell off the screen).
    0.2.0 placed the foot absolutely and sized things in vh, which iOS Safari measures with its toolbars hidden, so on the
@@ -414,8 +359,8 @@ body.touch .launcher .foot .hint .pc { display: none; }
 }
 /* the sector map: one box at the art's aspect, contained, so every node lands where Yori drew it */
 .map { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
-.map-route { position: absolute; inset: 0; background: url('../art/ui/levelselect-route-landscape.png?v=0.6.1') center / 100% 100% no-repeat; }
-.map.portrait .map-route { background-image: url('../art/ui/levelselect-route-portrait.png?v=0.6.1'); }
+.map-route { position: absolute; inset: 0; background: url('../art/ui/levelselect-route-landscape.png?v=0.6.2') center / 100% 100% no-repeat; }
+.map.portrait .map-route { background-image: url('../art/ui/levelselect-route-portrait.png?v=0.6.2'); }
 .map-tiles { position: absolute; inset: 0; }
 .select-title { position: absolute; left: 4vw; top: 4vh; width: clamp(200px, 26vw, 508px); height: auto; }
 .select-back { position: absolute; right: 3vw; top: 4vh; width: clamp(140px, 15vw, 290px); }
@@ -423,9 +368,9 @@ body.touch .launcher .foot .hint .pc { display: none; }
 @media (orientation: portrait) { .totals { top: auto; bottom: 2vh; } }
 /* a tile is laid out at its native 350 x 230 and scaled to the map */
 .mtile { position: absolute; width: 350px; height: 230px; transform-origin: 50% 0; border: 0; padding: 0; background: center / 100% 100% no-repeat; cursor: pointer; }
-.mtile.locked { background-image: url('../art/ui/tile-locked.png?v=0.6.1'); cursor: default; }
-.mtile.open { background-image: url('../art/ui/tile-unlocked.png?v=0.6.1'); }
-.mtile.cleared { background-image: url('../art/ui/tile-cleared.png?v=0.6.1'); }
+.mtile.locked { background-image: url('../art/ui/tile-locked.png?v=0.6.2'); cursor: default; }
+.mtile.open { background-image: url('../art/ui/tile-unlocked.png?v=0.6.2'); }
+.mtile.cleared { background-image: url('../art/ui/tile-cleared.png?v=0.6.2'); }
 .mtile .n { position: absolute; left: 30px; top: 18px; height: 44px; }
 .mtile .nm { position: absolute; left: 96px; top: 22px; height: 38px; }
 .mtile.locked .n, .mtile.locked .nm { opacity: 0.55; }
@@ -585,13 +530,13 @@ body.slip .slip-edge { opacity: 1; }
 
 /* 0.4.0: the GALAXY SELECT chart with Yori's art (art/ui/chart/): her starfield and route, her emblems on her nodes
    (galaxy-nodes.json), her lettering for each name and lock line, her pips. Contained at her aspect like the sector map. */
-.bg-chart { background: #05040f url('../art/ui/chart/galaxychart-bg-landscape.png?v=0.6.1') center / cover no-repeat; }
-@media (orientation: portrait) { .bg-chart { background-image: url('../art/ui/chart/galaxychart-bg-portrait.png?v=0.6.1'); } }
+.bg-chart { background: #05040f url('../art/ui/chart/galaxychart-bg-landscape.png?v=0.6.2') center / cover no-repeat; }
+@media (orientation: portrait) { .bg-chart { background-image: url('../art/ui/chart/galaxychart-bg-portrait.png?v=0.6.2'); } }
 .chart-title { display: none; }
 .chart-title-img { position: absolute; left: 4vw; top: 4vh; width: clamp(200px, 26vw, 517px); height: auto; z-index: 2; }
 .chart, .chart.portrait { position: absolute; inset: auto; left: 50%; top: 50%; transform: translate(-50%, -50%); display: block; }
-.chart-route { position: absolute; inset: 0; background: url('../art/ui/chart/galaxychart-route-landscape.png?v=0.6.1') center / 100% 100% no-repeat; }
-.chart.portrait .chart-route { background-image: url('../art/ui/chart/galaxychart-route-portrait.png?v=0.6.1'); }
+.chart-route { position: absolute; inset: 0; background: url('../art/ui/chart/galaxychart-route-landscape.png?v=0.6.2') center / 100% 100% no-repeat; }
+.chart.portrait .chart-route { background-image: url('../art/ui/chart/galaxychart-route-portrait.png?v=0.6.2'); }
 .chart .gal { position: absolute; left: 0; top: 0; width: 0; height: 0; max-width: none; padding: 0; display: block; }
 .chart .gal .emblem { position: absolute; left: calc(var(--x) * var(--w)); top: calc(var(--y) * var(--h)); width: calc(var(--h) * 0.4); transform: translate(-50%, -50%); }
 .chart.portrait .gal .emblem { width: calc(var(--w) * 0.5); }
@@ -612,22 +557,22 @@ body.slip .slip-edge { opacity: 1; }
 .select-galaxy img { height: auto; width: clamp(150px, 21vw, 420px); max-height: none; }
 .gal-arrow { top: auto; transform: none; bottom: calc(3vh + env(safe-area-inset-bottom)); width: clamp(56px, 6.5vw, 120px); height: auto; aspect-ratio: 1; border: 0; border-radius: 0;
   background: center / contain no-repeat; font-size: 0; }
-.gal-arrow.prev { background-image: url('../art/ui/chart/arrow-prev-normal.png?v=0.6.1'); left: calc(2vw + env(safe-area-inset-left)); }
-.gal-arrow.prev:hover, .gal-arrow.prev:focus-visible { background-image: url('../art/ui/chart/arrow-prev-hover.png?v=0.6.1'); }
-.gal-arrow.prev:active { background-image: url('../art/ui/chart/arrow-prev-pressed.png?v=0.6.1'); }
-.gal-arrow.next { background-image: url('../art/ui/chart/arrow-next-normal.png?v=0.6.1'); right: calc(2vw + env(safe-area-inset-right)); }
-.gal-arrow.next:hover, .gal-arrow.next:focus-visible { background-image: url('../art/ui/chart/arrow-next-hover.png?v=0.6.1'); }
-.gal-arrow.next:active { background-image: url('../art/ui/chart/arrow-next-pressed.png?v=0.6.1'); }
+.gal-arrow.prev { background-image: url('../art/ui/chart/arrow-prev-normal.png?v=0.6.2'); left: calc(2vw + env(safe-area-inset-left)); }
+.gal-arrow.prev:hover, .gal-arrow.prev:focus-visible { background-image: url('../art/ui/chart/arrow-prev-hover.png?v=0.6.2'); }
+.gal-arrow.prev:active { background-image: url('../art/ui/chart/arrow-prev-pressed.png?v=0.6.2'); }
+.gal-arrow.next { background-image: url('../art/ui/chart/arrow-next-normal.png?v=0.6.2'); right: calc(2vw + env(safe-area-inset-right)); }
+.gal-arrow.next:hover, .gal-arrow.next:focus-visible { background-image: url('../art/ui/chart/arrow-next-hover.png?v=0.6.2'); }
+.gal-arrow.next:active { background-image: url('../art/ui/chart/arrow-next-pressed.png?v=0.6.2'); }
 /* galaxies 2 and 3's sector maps: her starfield and route for each (galaxy 1's stays exactly as approved) */
-#select[data-g="2"] .bg-select { background-image: url('../art/ui/g2/levelselect-bg-landscape.png?v=0.6.1'); }
-#select[data-g="3"] .bg-select { background-image: url('../art/ui/g3/levelselect-bg-landscape.png?v=0.6.1'); }
-#select[data-g="2"] .map-route { background-image: url('../art/ui/g2/levelselect-route-landscape.png?v=0.6.1'); }
-#select[data-g="3"] .map-route { background-image: url('../art/ui/g3/levelselect-route-landscape.png?v=0.6.1'); }
-#select[data-g="2"] .map.portrait .map-route { background-image: url('../art/ui/g2/levelselect-route-portrait.png?v=0.6.1'); }
-#select[data-g="3"] .map.portrait .map-route { background-image: url('../art/ui/g3/levelselect-route-portrait.png?v=0.6.1'); }
+#select[data-g="2"] .bg-select { background-image: url('../art/ui/g2/levelselect-bg-landscape.png?v=0.6.2'); }
+#select[data-g="3"] .bg-select { background-image: url('../art/ui/g3/levelselect-bg-landscape.png?v=0.6.2'); }
+#select[data-g="2"] .map-route { background-image: url('../art/ui/g2/levelselect-route-landscape.png?v=0.6.2'); }
+#select[data-g="3"] .map-route { background-image: url('../art/ui/g3/levelselect-route-landscape.png?v=0.6.2'); }
+#select[data-g="2"] .map.portrait .map-route { background-image: url('../art/ui/g2/levelselect-route-portrait.png?v=0.6.2'); }
+#select[data-g="3"] .map.portrait .map-route { background-image: url('../art/ui/g3/levelselect-route-portrait.png?v=0.6.2'); }
 @media (orientation: portrait) {
-  #select[data-g="2"] .bg-select { background-image: url('../art/ui/g2/levelselect-bg-portrait.png?v=0.6.1'); }
-  #select[data-g="3"] .bg-select { background-image: url('../art/ui/g3/levelselect-bg-portrait.png?v=0.6.1'); }
+  #select[data-g="2"] .bg-select { background-image: url('../art/ui/g2/levelselect-bg-portrait.png?v=0.6.2'); }
+  #select[data-g="3"] .bg-select { background-image: url('../art/ui/g3/levelselect-bg-portrait.png?v=0.6.2'); }
 }
 /* the end card: her GALAXY CLEAR stamp, and the IS OPEN card under it */
 .end-head img.stamp { height: clamp(40px, 8vmin, 84px); width: auto; display: block; margin: 0 auto; }
@@ -666,31 +611,6 @@ body.slip .slip-edge { opacity: 1; }
 #star-fill { height: 100%; width: 0; background: linear-gradient(90deg, #ffb020, #ffe9a0); box-shadow: 0 0 6px rgba(255, 204, 51, 0.8); }
 .callout.c-check { color: #eaf6ff; text-shadow: 0 0 12px #9fd8ff, 0 0 26px rgba(159, 216, 255, 0.7); letter-spacing: 0.12em; }
 .end-stars .need.cp { color: #cfe6ff; }
-
-/* ---- 0.6.0, the introductions: a card never stops the game (no SKIP): a bar along its foot runs down as it goes; a NOTE
-   (a rule of the game) is the smaller card; a pale bracket marks the thing a card is about; the lesson's NOW pulses */
-.tip-plate { position: relative; overflow: hidden; }
-.tip-plate::after { content: ''; position: absolute; left: 0; bottom: 0; height: 3px; width: calc(var(--k, 1) * 100%); background: rgba(208, 220, 255, 0.5); }
-.tip.note { width: min(440px, calc(100vw - 32px)); }
-.tip.note .tip-plate { padding: 9px 14px 11px; gap: 12px; border-width: 1px; }
-.tip.note .tip-icon { width: 38px; height: 38px; }
-.tip.note .tip-icon img { width: 26px; height: 26px; }
-.tip.note .tip-name span { font-size: clamp(15px, 3.2vmin, 22px); margin-bottom: 2px; }
-.tip.note .tip-name img { height: clamp(20px, 4vmin, 30px); }
-.tip.note .tip-say { font-size: clamp(12px, 2.4vmin, 16px); }
-.tip-icon.g-rule { --c: #dfe8ff; }
-.tip-icon.g-rule::before { content: ''; width: 12px; height: 12px; border-radius: 50%; background: #dfe8ff; box-shadow: 0 0 10px #dfe8ff; }
-.tip.note .tip-icon.g-hurt::before { font-size: 22px; }
-.tip.note .tip-icon.g-collect::before { width: 16px; height: 16px; border-width: 4px; }
-@media (orientation: landscape) and (min-width: 701px) { .tip { width: min(640px, calc(100vw - 360px)); } .tip.note { width: min(440px, calc(100vw - 360px)); } }
-@media (max-height: 500px) and (orientation: landscape) { .tip, .tip.note { width: min(560px, calc(100vw - 300px)); } }
-.tip-mark { position: absolute; left: 0; top: 0; width: 70px; height: 70px; margin: -35px 0 0 -35px; border: 2px solid rgba(234, 246, 255, 0.9); border-radius: 50%; pointer-events: none;
-  box-shadow: 0 0 12px rgba(159, 216, 255, 0.7), inset 0 0 10px rgba(159, 216, 255, 0.35); animation: tipmark 0.9s ease-in-out infinite; }
-.tip-mark[hidden] { display: none; }
-@keyframes tipmark { 0%, 100% { scale: 1; opacity: 0.95; } 50% { scale: 1.22; opacity: 0.55; } }
-.tutor.now .t-plate { border-color: #fff; box-shadow: 0 0 0 3px rgba(83, 230, 255, 0.55), 0 6px 30px rgba(0, 0, 0, 0.6); animation: tutornow 0.7s ease-in-out infinite; }
-.tutor.now .t-say { font-size: clamp(18px, 3.8vmin, 28px); font-weight: 800; color: #fff; }
-@keyframes tutornow { 0%, 100% { scale: 1; } 50% { scale: 1.05; } }
 
 /* ---- 0.6.0: the demo card (js/demo.js): the wordmark, one head, two plain lines, two buttons */
 .demo-card { max-width: 520px; padding: 22px 22px 18px; text-align: center; }

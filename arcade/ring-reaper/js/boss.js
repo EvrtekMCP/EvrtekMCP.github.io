@@ -8,10 +8,10 @@
 //  - 0.6.0 (Evrtek 11-10: "No level has a timer"): a boss never retreats on a clock. The fight ends when the boss is beaten
 //    (or the ship is down). The watchdog below still takes over a boss that stops fighting, so a fight can always be won.
 // While a boss is up the course holds (no new course events), the scenery keeps streaming and its own music plays.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.6.1';
-import { clamp } from './util.js?v=0.6.1';
-import { defineEnemy, defineWeakPoint } from './registry.js?v=0.6.1';
-import { SPAWN_D } from './space.js?v=0.6.1';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.6.2';
+import { clamp } from './util.js?v=0.6.2';
+import { defineEnemy, defineWeakPoint } from './registry.js?v=0.6.2';
+import { SPAWN_D } from './space.js?v=0.6.2';
 
 const tmpV = new THREE.Vector3();
 // ---- attack helpers: (b, api, o) with o = the pattern step. `from` = a muzzle index (default 0).
@@ -114,7 +114,7 @@ function tick(b, dt, api) {
     // boss tens of metres in a step); it starts from rest, peaks mid-flight, and settles onto its station
     const T = def.enterTime || 4, k = Math.min(1, b.t / T), ease = k * k * k * (k * (k * 6 - 15) + 10);
     b.z = -SPAWN_D + (SPAWN_D - b.hold) * ease;
-    if (k >= 1) { b.state = 'fight'; b.t = 0; startPhase(b, 0, api); if (api.game.tip) api.game.tip('boss-' + def.name, b); } // 0.6.0: its first-time card
+    if (k >= 1) { b.state = 'fight'; b.t = 0; startPhase(b, 0, api); } // (0.6.2: a boss no longer has a first-time card)
   } else if (b.state === 'fight') {
     b.fightT += dt;
     runPattern(b, dt, api);
@@ -204,7 +204,7 @@ function hit(b, w, api, shot) {
   if (!b.exposed(w)) {
     // a boss may answer an unlit hit itself (lv-9: the Twins bounce it off a raised plate); return true to skip the CLANG
     if (b.def.onClang && b.def.onClang(b, w, shot, api) === true) return;
-    api.game.burst(w.ent.x, w.ent.y, w.ent.z, 14, { speed: 10, life: 0.3, s0: 0.8, r: 0.6, g: 0.9, b: 1, carry: 0 }); api.game.pop('CLANG', w.ent.x, w.ent.y + 1.5, w.ent.z, 'red'); if (api.game.tip) api.game.tip('clang'); return; }
+    api.game.burst(w.ent.x, w.ent.y, w.ent.z, 14, { speed: 10, life: 0.3, s0: 0.8, r: 0.6, g: 0.9, b: 1, carry: 0 }); api.game.pop('CLANG', w.ent.x, w.ent.y + 1.5, w.ent.z, 'red'); return; }
   w.hp--; w.flash = 1;
   api.game.score(b.def.hitPts ?? 2500, w.ent.x, w.ent.y + 2, w.ent.z, 'big', 'WEAK POINT');
   api.game.hitstop(0.06); api.game.shake(0.4); api.game.sfx('boom', { vol: 0.7, rate: 1.3 });

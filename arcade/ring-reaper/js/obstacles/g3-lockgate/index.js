@@ -14,9 +14,9 @@
 //   add(d, 'g3-lockgate', { id: 'g1', keys: 1, fire: [3.6], wide: 0, side: 1, dy: 0, duct: 110, great: false, turret: true })
 //     turret: false for a gate keyed only by a shuttler's weave (no turret of its own)
 //     fire: seconds out each volley leaves (each telegraphs 0.75 s first); wide: how many of the first volleys aim wide
-import { THREE, defineObstacle, defineDecor, buildModel, clamp, smoothstep } from '../../api.js?v=0.6.1';
-import { MESH } from './mesh.js?v=0.6.1';
-import { MESH as DUCT } from './duct.js?v=0.6.1';
+import { THREE, defineObstacle, defineDecor, buildModel, clamp, smoothstep } from '../../api.js?v=0.6.2';
+import { MESH } from './mesh.js?v=0.6.2';
+import { MESH as DUCT } from './duct.js?v=0.6.2';
 
 const D = 3.6;                 // the duct's inside, metres (her 5 across, scaled): tight, but a person's line fits it
 const SHIP_IN = 0.5;           // the ship's radius against walls (rule 14: the walls favour you)

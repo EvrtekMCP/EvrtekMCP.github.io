@@ -9,9 +9,9 @@
 //   SPARKS      amber motes drifting out of its edges: "it's close"
 //   RING TRAIL  laid by the level: three cache rings running into it
 //   Event: { nx, ny (its middle), crack (the front slab) }
-import { THREE, defineObstacle, buildModel, SHIP_R } from '../../../api.js?v=0.6.1';
-import { MESH } from './wall-mesh.js?v=0.6.1';
-import { MESH as CRACK } from './crack-mesh.js?v=0.6.1';
+import { THREE, defineObstacle, buildModel, SHIP_R } from '../../../api.js?v=0.6.2';
+import { MESH } from './wall-mesh.js?v=0.6.2';
+import { MESH as CRACK } from './crack-mesh.js?v=0.6.2';
 
 export const WSC = 0.42, HW = 24 * WSC / 2, HH = 14 * WSC / 2;   // 10.1 x 5.9 m
 let glowMat = null;

@@ -2,10 +2,10 @@
 // level's events at the spawn line, streams them down the track, and runs every shot in flight: aimed fire, the
 // graze, the hit and the deflect. What each thing looks like and does lives in its kind (js/pickups, js/obstacles,
 // js/enemies, js/levels/*); what it scores lives in the game (main.js), reached through api.game.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.6.1';
-import { GlowPoints } from './fx.js?v=0.6.1';
-import { getKind } from './registry.js?v=0.6.1';
-import { appear, Instanced, HIT_R, GRAZE_R, DEFLECT_R, SHOT_T, NET_S, NET_T, LEGACY_LINE } from './space.js?v=0.6.1';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.6.2';
+import { GlowPoints } from './fx.js?v=0.6.2';
+import { getKind } from './registry.js?v=0.6.2';
+import { appear, Instanced, HIT_R, GRAZE_R, DEFLECT_R, SHOT_T, NET_S, NET_T, LEGACY_LINE } from './space.js?v=0.6.2';
 
 // While a level warms up (shaders compiling on a loading screen) its kinds run against this: every game call
 // does nothing, so a sample shrike does not flash a warning and a sample ring does not score.
@@ -275,8 +275,6 @@ export class Course {
         if (this.fields.length) this._move(s, dt, v, false); else { s.x += s.vx * dt; s.y += s.vy * dt; s.z += s.vz * dt; }
         if (s.z < -900 || s.age > 4) s.alive = false;
       } else {
-        // the roll lesson's shot steers onto the ship, so it always arrives where the roll has to meet it
-        if (s.home) { const tr = -s.z / Math.max(1, s.vz + (s.carry ? v : 0)); if (tr > 0.05) { s.vx = (ship.x - s.x) / tr; s.vy = (ship.y - s.y) / tr; } }
         if (s.steer || s.weave || this.fields.length) this._move(s, dt, v, false);
         else { s.x += s.vx * dt; s.y += s.vy * dt; s.z += (s.vz + (s.carry ? v : 0)) * dt; }
         if (s.bent) s.bent = Math.max(0, s.bent - dt);

@@ -4,9 +4,9 @@
 // well off cyan's 190) and white; the only red is the plotters' mines, and they hurt.
 // Also here: the CACHE CLUE (the plan's 6.4): a green glow bleeding round a finished mine line and green and amber
 // sparks drifting out of it, so a Shield Cell and a cache behind the line are never a secret without a sign.
-import { THREE, defineScenery, defineDecor, GlowPoints, clamp } from '../../../api.js?v=0.6.1';
-import { MESH } from './mesh.js?v=0.6.1';
-import { meshDecor, pieceGroup, fadeTo, side } from '../level4/kit.js?v=0.6.1';
+import { THREE, defineScenery, defineDecor, GlowPoints, clamp } from '../../../api.js?v=0.6.2';
+import { MESH } from './mesh.js?v=0.6.2';
+import { meshDecor, pieceGroup, fadeTo, side } from '../level4/kit.js?v=0.6.2';
 
 // ---- decor: the standing sheets (two of her seeds), edge-on beside the lane
 export const sheet = meshDecor('g3-l5-sheet', [MESH.plane, MESH.plane2], { cap: 40, keep: 80 });

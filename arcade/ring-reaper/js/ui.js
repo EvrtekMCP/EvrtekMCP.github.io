@@ -1,12 +1,12 @@
 // STARWAKE 0.4.0: the screens around the flying: the loading screen, the launcher (NEW GAME, CONTINUE, LEVEL
 // SELECT, OPTIONS), the galaxy chart (0.4.0), each galaxy's sector map with stars, the end card's stars, pause, and the
 // hidden dev menu (a tab a galaxy). Every level shares them; nothing here knows any one level.
-import { fmt, store, V } from './util.js?v=0.6.1';
-import { loadLevel, RANK_ORDER, MAX_STARS, GALAXIES, galaxy, catalogueOf, entryOf, levelLabel } from './levels.js?v=0.6.1';
-import { keyLabel, codeOf } from './input.js?v=0.6.1';
-import { param } from './params.js?v=0.6.1';
-import { tipsSetting, setTipsSetting } from './tutorials.js?v=0.6.1';
-import { DEMO, DEMO_BUILD, DEMO_TEXT, DEMO_LEVELS, demoEnds } from './demo.js?v=0.6.1';
+import { fmt, store, V } from './util.js?v=0.6.2';
+import { loadLevel, RANK_ORDER, MAX_STARS, GALAXIES, galaxy, catalogueOf, entryOf, levelLabel } from './levels.js?v=0.6.2';
+import { keyLabel, codeOf } from './input.js?v=0.6.2';
+import { param } from './params.js?v=0.6.2';
+import { tipsSetting, setTipsSetting } from './tutorials.js?v=0.6.2';
+import { DEMO, DEMO_BUILD, DEMO_TEXT, DEMO_LEVELS, demoEnds } from './demo.js?v=0.6.2';
 
 const $ = (id) => document.getElementById(id);
 const SCREENS = ['title', 'galaxies', 'select', 'options', 'confirm', 'dev', 'paused', 'end', 'credits', 'demo'];
@@ -60,7 +60,7 @@ export class UI {
     $('greed-btn').addEventListener('click', (e) => { e.preventDefault(); this.o.greedGo(); });
     for (const b of document.querySelectorAll('[data-back]')) b.addEventListener('click', () => this.launcher());
     for (const b of document.querySelectorAll('[data-tog]')) b.addEventListener('click', () => { this.audio.unlock(); this.audio.toggle(b.dataset.tog); this.syncToggles(); });
-    // 0.4.0: the first-time tips (js/tutorials.js), on by default; a setting, so NEW GAME leaves it as it is
+    // 0.4.0: the first-time tips (js/tutorials.js; 0.6.2: the roll, GREED, the power-ups), on by default; a setting, so NEW GAME leaves it as it is
     $('tips-tog').addEventListener('click', () => { setTipsSetting(!tipsSetting()); this.syncToggles(); });
     // the dev gestures: type "dev" on the launcher, or tap the studio name five times inside two seconds
     let typed = '';
@@ -78,7 +78,8 @@ export class UI {
     $('dev-speed').addEventListener('click', () => { const s = [0.5, 1, 2, 4]; this.G.devSpeed = s[(s.indexOf(this.G.devSpeed) + 1) % s.length]; this.syncDev(); });
     $('dev-fps-btn').addEventListener('click', () => { this.fpsOn = !this.fpsOn; this.syncDev(); });
     // the roll lesson (0.3.0) shows until the first shot sent back; this brings it back for the next level 1
-    $('dev-tip').addEventListener('click', () => { this.Progress.setTip('roll', !this.Progress.tip('roll')); this.syncDev(); });
+    // 0.6.2: the INCOMING line (js/tutorials.js): DONE marks the roll learned; WILL SHOW also clears its three showings
+    $('dev-tip').addEventListener('click', () => { const learn = !this.Progress.tip('roll'); this.Progress.setTip('roll', learn); if (!learn) { const s = store('ringreaper.seen') || {}; for (const k of ['incoming-1', 'incoming-2', 'incoming-3']) delete s[k]; store('ringreaper.seen', s); } this.syncDev(); });
     $('dev-off').addEventListener('click', () => { this.toggleDev(); this.launcher(); });
     this.syncDev();
   }
@@ -455,7 +456,7 @@ export class UI {
     $('dev-god').textContent = 'GOD: ' + (G.devGod ? 'ON' : 'OFF');
     $('dev-speed').textContent = 'SPEED: ' + G.devSpeed + 'x';
     $('dev-fps-btn').textContent = 'FPS: ' + (this.fpsOn ? 'ON' : 'OFF');
-    $('dev-tip').textContent = 'ROLL LESSON: ' + (this.Progress.tip('roll') ? 'DONE' : 'WILL SHOW');
+    $('dev-tip').textContent = 'ROLL LINE: ' + (this.Progress.tip('roll') ? 'DONE' : 'WILL SHOW');
     $('dev-badge').hidden = !this.devOn;
     $('dev-fps').textContent = '';
   }

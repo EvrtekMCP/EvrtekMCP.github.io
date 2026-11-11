@@ -10,9 +10,9 @@
 //   add(d, 'g2-leech', { side: 1, ny: 0, z: -7, tries: 2, gap: 1.6, first: false, target: 'ship' })
 //     d      where it has swum in beside you (out of the haze, FLY seconds before that); its aim starts `wait` s later
 //     tries  how many times it shoots its tether (a glance-off or a tear-loose uses one; a snap ends it)
-import { THREE, defineEnemy, buildModel, clamp, damp, smoothstep, SPAWN_D, HIT_R, GRAZE_R } from '../../api.js?v=0.6.1';
-import { MESH } from './mesh.js?v=0.6.1';
-import { Freed } from '../../levels/g2/level4/freed.js?v=0.6.1';
+import { THREE, defineEnemy, buildModel, clamp, damp, smoothstep, SPAWN_D, HIT_R, GRAZE_R } from '../../api.js?v=0.6.2';
+import { MESH } from './mesh.js?v=0.6.2';
+import { Freed } from '../../levels/g2/level4/freed.js?v=0.6.2';
 
 export const LEECH = { fly: 2.6, z: -7, nx: 1.3, wait: 0.4, tel: 1.0, telFirst: 1.3, reach: 0.4, reachFirst: 0.7, hold: 3.2, holdWhale: 5, bite: 4, drain: 4, drag: 3.6, nose: 2.6, snapR: 2.3 };
 const FREE = new Freed(MESH.freed);

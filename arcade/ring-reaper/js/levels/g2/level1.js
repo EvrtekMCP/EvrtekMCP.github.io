@@ -6,17 +6,17 @@
 // Written in BARS of its take (g2/level1/music, 131.98 bpm, 1.818 s a bar; level1/clock.js), so the sections, the speed
 // steps, the tide's turns and the Tide Race all sit on bar lines (rule 30): intro 1-8, groove 9-24, build one 25-32,
 // drop one 33-48, breakdown 49-56, build two 57-64, drop two 65-80.
-import { defineLevel, defineScenery } from '../../api.js?v=0.6.1';
-import ring from '../../pickups/ring/index.js?v=0.6.1';
-import boostRing from '../../pickups/boost-ring/index.js?v=0.6.1';
-import pod from '../../enemies/pod/index.js?v=0.6.1';
-import shrike from '../../enemies/shrike/index.js?v=0.6.1';
-import seeker from '../../enemies/seeker-drone/index.js?v=0.6.1';
-import { shieldCell } from '../../pickups/powerups/index.js?v=0.6.1';
-import current, { simulateDrift } from '../../obstacles/g2-current/index.js?v=0.6.1';
-import drifter from '../../enemies/g2-drifter/index.js?v=0.6.1';
-import { coral, kelp, motes, reef, kelpBanks, plankton, shafts, reefArch, ARCH } from './level1/scenery.js?v=0.6.1';
-import { musicTime, GRID } from './level1/clock.js?v=0.6.1';
+import { defineLevel, defineScenery } from '../../api.js?v=0.6.2';
+import ring from '../../pickups/ring/index.js?v=0.6.2';
+import boostRing from '../../pickups/boost-ring/index.js?v=0.6.2';
+import pod from '../../enemies/pod/index.js?v=0.6.2';
+import shrike from '../../enemies/shrike/index.js?v=0.6.2';
+import seeker from '../../enemies/seeker-drone/index.js?v=0.6.2';
+import { shieldCell } from '../../pickups/powerups/index.js?v=0.6.2';
+import current, { simulateDrift } from '../../obstacles/g2-current/index.js?v=0.6.2';
+import drifter from '../../enemies/g2-drifter/index.js?v=0.6.2';
+import { coral, kelp, motes, reef, kelpBanks, plankton, shafts, reefArch, ARCH } from './level1/scenery.js?v=0.6.2';
+import { musicTime, GRID } from './level1/clock.js?v=0.6.2';
 
 // the speed steps on bar lines: 66 m/s on the opener, 146 in the Tide Race (the plan: 66 to 146)
 const CLK = musicTime(Object.assign({ speeds: [[1, 66], [9, 74], [25, 84], [33, 96], [49, 90], [57, 104], [65, 122], [69, 134], [73, 146]] }, GRID[1]));

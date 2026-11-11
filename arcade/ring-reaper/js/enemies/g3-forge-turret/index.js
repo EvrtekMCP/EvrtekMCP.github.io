@@ -8,8 +8,8 @@
 // its last chance, 1.9 s out), so its bolt is worth something when it reaches you.
 // Event: { nx, ny (its perch, outside the box: |nx| > 1.15 or |ny| > 1.15), at: 3.0 (seconds out it may first fire),
 //          shots: 1 (or 2, at least 1.2 s apart), T: 1.35 }
-import { THREE, defineEnemy, buildModel, clamp } from '../../api.js?v=0.6.1';
-import { SightLines } from '../sniper/sight.js?v=0.6.1';
+import { THREE, defineEnemy, buildModel, clamp } from '../../api.js?v=0.6.2';
+import { SightLines } from '../sniper/sight.js?v=0.6.2';
 
 const TEL = 0.75, SHOT_T = 1.35;
 let lines = null, keyGeo = null, keyMat = null;

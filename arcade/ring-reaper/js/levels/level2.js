@@ -8,14 +8,13 @@
 // The sections, the bar lines, the speed, the Shield Cell and its ring line are where they were.
 // Authored in MUSIC TIME (rule 30): the sections and the peak sit on bar lines of the level's track (138 bpm,
 // 1.739 s a bar), converted to metres through the speed curve at base speed.
-import { defineLevel, clamp } from '../api.js?v=0.6.1';
-import ring from '../pickups/ring/index.js?v=0.6.1';
-import boostRing from '../pickups/boost-ring/index.js?v=0.6.1';
-import boulder from '../obstacles/boulder/index.js?v=0.6.1';
-import pod from '../enemies/pod/index.js?v=0.6.1';
-import shrike from '../enemies/shrike/index.js?v=0.6.1';
-import { chunk, slab, dust, chunks, slabs, canyon, dustRivers, brokenMoon, sunShafts } from './level2/scenery.js?v=0.6.1';
-import { tutorPod } from './level2/tutor.js?v=0.6.1';
+import { defineLevel, clamp } from '../api.js?v=0.6.2';
+import ring from '../pickups/ring/index.js?v=0.6.2';
+import boostRing from '../pickups/boost-ring/index.js?v=0.6.2';
+import boulder from '../obstacles/boulder/index.js?v=0.6.2';
+import pod from '../enemies/pod/index.js?v=0.6.2';
+import shrike from '../enemies/shrike/index.js?v=0.6.2';
+import { chunk, slab, dust, chunks, slabs, canyon, dustRivers, brokenMoon, sunShafts } from './level2/scenery.js?v=0.6.2';
 
 const LEN = 16400, V0 = 64, V1 = 150;
 const speed = (d) => V0 + (V1 - V0) * Math.pow(clamp(d / LEN, 0, 1), 0.85);
@@ -55,7 +54,7 @@ export default defineLevel({
     cracks: { seed: 203, sky: ['#0a080c', 'rgba(90,62,40,A)', 'rgba(42,58,106,A)', 'rgba(216,184,144,A)'], fog: 0x1e140e, hemiSky: 0x2a3a6a, hemiGround: 0x120c08, sun: 0xffe0b0, sunDir: [0.9, 0.7, 0.2], sunPower: 3.2, hemiPower: 1.0, band: 0.55, gas: 0.5, cloud: 0x4a3a30, clouds: 0.08 },
     core: { seed: 204, sky: ['#08070c', 'rgba(42,58,106,A)', 'rgba(58,30,22,A)', 'rgba(216,160,112,A)'], fog: 0x14100e, hemiSky: 0x34488a, hemiGround: 0x0e0a08, sun: 0xffc890, sunDir: [0.5, 1, 0.1], sunPower: 2.4, hemiPower: 1.4, band: 0.5, gas: 0.55, cloud: 0x2a3a6a, clouds: 0.12 },
   },
-  kinds: [ring, boostRing, boulder, pod, shrike, chunk, slab, dust, tutorPod],
+  kinds: [ring, boostRing, boulder, pod, shrike, chunk, slab, dust],
   scenery: [brokenMoon, chunks, slabs, canyon, dustRivers, sunShafts],
   beats: [
     { d: 0, tag: 'calm', what: 'the moon breaks open ahead; rings in the open: FOLLOW THE RINGS (steering, alone)' },
@@ -81,19 +80,16 @@ export default defineLevel({
     // a boost chain of n rings from (x0, y0) to (x1, y1), step metres apart
     const chain = (d, x0, y0, x1, y1, n = 4, step = 34) => { const id = 'c' + (++chainN); return line(d, x0, y0, x1, y1, n, step, 'boost-ring', (i, k) => ({ chain: id, idx: i, of: k })); };
     const rock = (d, from, cross, ny, r = 2.6, span = 320) => add(d, 'boulder', { from, cross, ny, r, span, variant: R.int(0, 2) });
-    // ---- SECTOR 1, THE BREAKING (introduce): open slow; steering alone; the headline alone; the roll lesson; then
+    // ---- SECTOR 1, THE BREAKING (introduce): open slow; steering alone; the headline alone; a breather; then
     //      the boulder alone, and one slow shot to roll
     {
       line(D(2.5), -0.5, 0, 0.5, 0);
-      // (0.6.0: the level's four teaching call-outs are gone. Each said, every run, what a first-time card now says once:
-      // STEERING and RINGS, BOOST RINGS, BOULDER, LANTERN POD: js/tutorials.js)
+      // (0.6.0: the level's four teaching call-outs are gone; 0.6.2, Evrtek 11-11: so are the first-time cards that replaced
+      // them. Rings, boulders and pods explain themselves; the first shot at you says how to roll: js/tutorials.js)
       sine(D(5.5), 6, 24, 0.4, 0.35);
       chain(D(9), 0, -0.2, 0, 0.3, 4, 34);                 // the first chain: straight down the middle, nothing else
       line(D(13.2), 0.6, 0.4, -0.6, 0.4);                  // (0.6.0: 0.8 s sooner, so the lesson has the lane to itself)
-      // the roll lesson (0.3.0; restaged 0.6.0, Evrtek 11-10: "stage the first roll so the player clearly SEES a roll deflect a
-      // shot back into an enemy"): its pod settles close ahead, up and to the right of the ship, in the gap between the ring
-      // line and the next chain. Only there until the player has sent a shot back once (main.js, the roll lesson).
-      add(D(16.4), 'l2-tutor-pod', { nx: 0.2, ny: 0.4 });
+      // (0.6.2: the roll lesson's pod sat here, 16.4; it and the lesson are gone, and the gap it had is a breather)
       chain(D(19.2), -0.6, 0, 0.6, 0, 4, 34);             // (0.6.0: 1.2 s later, clear of the lesson's last line)
       rock(D(22), 1, 0.85, -0.3, 2.4, 380);                // alone and slow, crossing at the edge; rings sit opposite
       line(D(21.4), -0.6, 0.2, -0.5, -0.2, 4, 22);

@@ -9,10 +9,10 @@
 //         g2-l10-opening  the canopy again, freed: silver roots lifting out of your way (stream)
 //         g2-l10-current  the flare's current: long green streaks (stream)
 //         g2-l10-herd     the Deep you set free swims home with you: star-whales, the Whirlmaw, the Snare, the moths
-import { THREE, defineScenery, defineDecor, Instanced, modelGroups, clamp, smoothstep } from '../../../api.js?v=0.6.1';
-import { MESH } from './mesh.js?v=0.6.1';
-import { MESH as BOSS } from '../../../bosses/g2-rootmind/mesh.js?v=0.6.1';
-import { ROOTMIND_AT as RM } from '../../../bosses/g2-rootmind/index.js?v=0.6.1';
+import { THREE, defineScenery, defineDecor, Instanced, modelGroups, clamp, smoothstep } from '../../../api.js?v=0.6.2';
+import { MESH } from './mesh.js?v=0.6.2';
+import { MESH as BOSS } from '../../../bosses/g2-rootmind/mesh.js?v=0.6.2';
+import { ROOTMIND_AT as RM } from '../../../bosses/g2-rootmind/index.js?v=0.6.2';
 
 const TAU = Math.PI * 2;
 const tmpQ = new THREE.Quaternion(), tmpE = new THREE.Euler(), ID_Q = new THREE.Quaternion();

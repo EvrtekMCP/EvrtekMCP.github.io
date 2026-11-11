@@ -6,16 +6,16 @@
 //  ACT 2  THE TAPROOT   taproot bars 1-48    the dive down the main root at 205 m/s: whips, sap knots, the crossfire
 //  ACT 3  THE ROOTMIND  rootmind bars 5-36   the boss, looping its fight (it turns beside the lane: you orbit it)
 //  OUT    THE RELEASE   rootmind bars 37-90  its first breath; the flare carries you out; the Deep swims home with you
-import { defineLevel, clamp } from '../../api.js?v=0.6.1';
-import ring from '../../pickups/ring/index.js?v=0.6.1';
-import { shieldCell, overclock, mirrorShell, phase } from '../../pickups/powerups/index.js?v=0.6.1';
-import whip from '../../obstacles/g2-root-whip/index.js?v=0.6.1';
-import knot from '../../enemies/g2-sap-knot/index.js?v=0.6.1';
-import rootmind from '../../bosses/g2-rootmind/index.js?v=0.6.1';
-import { starfire, sap } from '../../bosses/g2-rootmind/kinds.js?v=0.6.1';
-import { rootWall } from './level10/kinds.js?v=0.6.1';
-import { far, arch, canopy, archFree, opening, mote, plankton, current, seg, tunnel, chamber, freed, herd } from './level10/scenery.js?v=0.6.1';
-import { ROLL, rollKinds } from './level10/rollcall.js?v=0.6.1';
+import { defineLevel, clamp } from '../../api.js?v=0.6.2';
+import ring from '../../pickups/ring/index.js?v=0.6.2';
+import { shieldCell, overclock, mirrorShell, phase } from '../../pickups/powerups/index.js?v=0.6.2';
+import whip from '../../obstacles/g2-root-whip/index.js?v=0.6.2';
+import knot from '../../enemies/g2-sap-knot/index.js?v=0.6.2';
+import rootmind from '../../bosses/g2-rootmind/index.js?v=0.6.2';
+import { starfire, sap } from '../../bosses/g2-rootmind/kinds.js?v=0.6.2';
+import { rootWall } from './level10/kinds.js?v=0.6.2';
+import { far, arch, canopy, archFree, opening, mote, plankton, current, seg, tunnel, chamber, freed, herd } from './level10/scenery.js?v=0.6.2';
+import { ROLL, rollKinds } from './level10/rollcall.js?v=0.6.2';
 
 // ---------------------------------------------------------------------------------------------------------------------
 // THE SCHEDULE. Each part's bar grid: { bpm, firstBeat }. The three parts (audio/g2/level10/canopy, taproot, rootmind)

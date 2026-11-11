@@ -30,11 +30,11 @@
 // into that same reed and spark on it without cutting, so a chord is one hit on the loom, never seven. They are the
 // loom's own bolts (the boss owns them: born inside 150 m, they come from a shooter on screen, the popin rule); sent
 // home, the boss's update turns each one from the lit weak point to the reed's spark point before it can get there.
-import { THREE, defineBoss, buildModel, clamp, smoothstep, NET_S } from '../../api.js?v=0.6.1';
-import { MESH } from './mesh.js?v=0.6.1';
-import { MESH as SHUTTLE } from './shuttle-mesh.js?v=0.6.1';
-import { pick, REED_X, comb, shear, light } from './kinds.js?v=0.6.1';
-import { GRID, barT, beatOf } from '../../levels/g3/level10/grid.js?v=0.6.1';
+import { THREE, defineBoss, buildModel, clamp, smoothstep, NET_S } from '../../api.js?v=0.6.2';
+import { MESH } from './mesh.js?v=0.6.2';
+import { MESH as SHUTTLE } from './shuttle-mesh.js?v=0.6.2';
+import { pick, REED_X, comb, shear, light } from './kinds.js?v=0.6.2';
+import { GRID, barT, beatOf } from '../../levels/g3/level10/grid.js?v=0.6.2';
 
 export const kinds = [comb, shear, light];
 const S = 2.4, NR = REED_X.length;                       // her units x 2.4; ten reeds

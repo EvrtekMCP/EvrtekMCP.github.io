@@ -23,11 +23,11 @@
 //     its cheek low on one side: the rings lead out through it).
 //   add(d, 'g2-angler', { key, kind: 'side', side: 1, slow: false, lx, ly })   d = the mouth's middle; the level lays
 //   the lure ring itself (an extra) at d - LURE_LEAD with { cache: true, lureOf: key } at the lure point (lurePoint()).
-import { THREE, defineObstacle, clamp, SHIP_R } from '../../api.js?v=0.6.1';
-import { MESH } from './mesh.js?v=0.6.1';
-import { MESH as BAR } from './bar.js?v=0.6.1';
-import { MESH as CRACK } from './crack.js?v=0.6.1';
-import { morphModel, setMorph } from '../g2-bloomer/morph.js?v=0.6.1';
+import { THREE, defineObstacle, clamp, SHIP_R } from '../../api.js?v=0.6.2';
+import { MESH } from './mesh.js?v=0.6.2';
+import { MESH as BAR } from './bar.js?v=0.6.2';
+import { MESH as CRACK } from './crack.js?v=0.6.2';
+import { morphModel, setMorph } from '../g2-bloomer/morph.js?v=0.6.2';
 
 // her proportions: rib radius 11, teeth reach 2.5 (open) to 9 (shut) from 10.6, the cheek gap at angle 0 (no teeth
 // within 0.6 rad of it), the lure ring 7 above the axis and 67 ahead of the mouth's middle, the mouth 70 long

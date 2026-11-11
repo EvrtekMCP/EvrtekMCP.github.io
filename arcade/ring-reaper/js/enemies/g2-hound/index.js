@@ -13,10 +13,10 @@
 //     flank   how far from the calf's middle its bolts land (1.8; the crossfire uses its flanks, 2.6)
 //     first   the teaching hound: a longer tell, a slower bolt, and its bolt can only ever graze you
 // Each bolt is timed to cross the middle of the lane HOUND.cross seconds after its tell starts (see crossAfter).
-import { THREE, defineEnemy, buildModel, clamp, damp, smoothstep, SPAWN_D } from '../../api.js?v=0.6.1';
-import { MESH } from './mesh.js?v=0.6.1';
-import { calfOf, calfAim, flinch } from '../../allies/g2-calf/index.js?v=0.6.1';
-import { Freed } from '../../levels/g2/level4/freed.js?v=0.6.1';
+import { THREE, defineEnemy, buildModel, clamp, damp, smoothstep, SPAWN_D } from '../../api.js?v=0.6.2';
+import { MESH } from './mesh.js?v=0.6.2';
+import { calfOf, calfAim, flinch } from '../../allies/g2-calf/index.js?v=0.6.2';
+import { Freed } from '../../levels/g2/level4/freed.js?v=0.6.2';
 
 export const HOUND = { fly: 2.6, z: -0.6, nx: 1.25, tel: 0.7, telFirst: 1.0, T: 1.8, TFirst: 2.1, wait: 0.4, gap: 2.2, dmg: 6, nose: 2.75 };
 // seconds from its arrival beside you to the moment its n-th bolt crosses the middle of the lane (for laying rings on
