@@ -3,8 +3,8 @@
 // and pooled, with its own materials (so one pickup fading never fades another). A ring is a hoop you fly through; a
 // power-up is a SOLID thing you fly into, so the two never read alike (rule 8).
 //   node tools/art/export-model.js art-incoming/yori/g2/powerups.js js/pickups/powerups/mesh.js shieldCell=shield overclock=overclock "mirrorShell=mirror([0])" "mirrorShell=mirrorFlash([1])" phase=phase ringMagnet=magnet slipstream=slip "halo=halo([1.25])"
-import { buildModel } from '../../api.js?v=0.6.3';
-import { MESH } from './mesh.js?v=0.6.3';
+import { buildModel } from '../../api.js?v=0.6.4';
+import { MESH } from './mesh.js?v=0.6.4';
 
 const keysOf = (m) => m.map((g) => g.color + (g.glow ? '*' : ''));
 // a model with materials of its own, every one able to fade

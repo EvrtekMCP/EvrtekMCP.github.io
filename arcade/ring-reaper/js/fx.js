@@ -1,6 +1,6 @@
 // STARWAKE: glowing points. One draw call each for every particle on screen and for every shot in flight.
 // Points are sized in world units and drawn additively, so overlapping light reads as heat.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.6.3';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.6.4';
 
 const VS = `
 attribute float size; attribute vec4 col; varying vec4 vC; uniform float uScale; uniform vec2 uFar;

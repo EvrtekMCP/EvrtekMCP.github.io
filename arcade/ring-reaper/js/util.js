@@ -1,5 +1,5 @@
 // STARWAKE: small shared helpers.
-export const VERSION = '0.6.3';
+export const VERSION = '0.6.4';
 export const V = '?v=' + VERSION;
 
 // Mulberry32 (Tommy Ettinger, public domain): the level is authored from a fixed seed, so every run flies the

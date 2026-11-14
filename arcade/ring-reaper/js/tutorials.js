@@ -16,9 +16,9 @@
 // What has been seen is kept beside the records (levels.js Progress: 'ringreaper.seen', and the roll's own
 // 'ringreaper.tips'), so a returning player is never taught again. NEW GAME's erase clears both; nothing else does.
 // Options' TIPS switch turns them all off; ?test and the autopilot never see them; ?tips=1 or #tips-1 forces them on.
-import { store } from './util.js?v=0.6.3';
-import { param } from './params.js?v=0.6.3';
-import { POWERUPS } from './powerups.js?v=0.6.3';
+import { store } from './util.js?v=0.6.4';
+import { param } from './params.js?v=0.6.4';
+import { POWERUPS } from './powerups.js?v=0.6.4';
 
 export const TIP = {
   lead: 0.42,     // the roll line shows when the shot is this many seconds (the ship's time) from the ship

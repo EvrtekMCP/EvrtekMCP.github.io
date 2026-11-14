@@ -15,11 +15,11 @@
 //                          your lane at speed from blueprints, firing everything from its open core. The shortest phase
 //   DEFEAT                 its cage collapses in on it and the crane arms fold, in a shower of sparks
 // (0.6.0, Evrtek 11-10: no level has a timer. It no longer leaves on a clock; the fight ends when it is beaten.)
-import { THREE, defineBoss, buildModel, clamp, damp, smoothstep, SPAWN_D } from '../../api.js?v=0.6.3';
-import { MESH } from './mesh.js?v=0.6.3';
-import { MESH as P } from './parts.js?v=0.6.3';
-import { beatClock } from '../../levels/level3/beat.js?v=0.6.3';
-import { follow } from '../../enemies/g3-shuttler/index.js?v=0.6.3';
+import { THREE, defineBoss, buildModel, clamp, damp, smoothstep, SPAWN_D } from '../../api.js?v=0.6.4';
+import { MESH } from './mesh.js?v=0.6.4';
+import { MESH as P } from './parts.js?v=0.6.4';
+import { beatClock } from '../../levels/level3/beat.js?v=0.6.4';
+import { follow } from '../../enemies/g3-shuttler/index.js?v=0.6.4';
 
 const TAU = Math.PI * 2;
 const SCALE = 1.9, HOLD = 110, HOLD_RUSH = 190;   // the Warden's size: enormous and exact, you feel small

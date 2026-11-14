@@ -11,9 +11,9 @@
 //     wide   metres off you, toward its swing side, that its bolts land (0: at you; the Binary's crossfire lands one
 //            wide, so only the Mirror Shell's reach takes both in one roll)
 // It fires round the nearest well between it and you; with none, it fires its swing round an empty point instead.
-import { THREE, defineEnemy, buildModel, clamp, smoothstep } from '../../api.js?v=0.6.3';
-import { MESH } from './mesh.js?v=0.6.3';
-import { Freed } from '../../levels/g2/level4/freed.js?v=0.6.3';
+import { THREE, defineEnemy, buildModel, clamp, smoothstep } from '../../api.js?v=0.6.4';
+import { MESH } from './mesh.js?v=0.6.4';
+import { Freed } from '../../levels/g2/level4/freed.js?v=0.6.4';
 
 export const SLINGER = { T: 1.5, tel: 0.7, at: 300, gap: 1.6, s: 1.5 };
 const RED = new THREE.Color(0xff3355), HOT = new THREE.Color(0xfff0f0);

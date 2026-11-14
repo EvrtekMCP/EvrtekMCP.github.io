@@ -20,9 +20,9 @@
 //          first        the first one you meet: a slower bolt
 //          from {x,y,z} born at a point instead of out of the haze (the Breeder's release): it grows in as it leaves
 //          big 1        size }
-import { THREE, defineEnemy, buildModel, clamp, damp, SPAWN_D } from '../../api.js?v=0.6.3';
-import { MESH } from './mesh.js?v=0.6.3';
-import { bookNote } from '../g3-riveter/clock.js?v=0.6.3';
+import { THREE, defineEnemy, buildModel, clamp, damp, SPAWN_D } from '../../api.js?v=0.6.4';
+import { MESH } from './mesh.js?v=0.6.4';
+import { bookNote } from '../g3-riveter/clock.js?v=0.6.4';
 
 const IN = 2.8, SCALE = 2.5, CAP = 8, TEL = 0.5;
 const T_GEN = [1.15, 1.05, 0.95, 0.9], GAP_GEN = [2.0, 1.7, 1.45, 1.3], PTS_GEN = [0, 500, 1000, 1500];

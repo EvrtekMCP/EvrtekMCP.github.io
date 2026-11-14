@@ -3,7 +3,7 @@
 // starts (bars are the music's own numbers, 1-based) and every speed step, act and set piece sits on a bar line.
 // Until the level's own take lands, the grid is the plan's tempo (the sound branch's manifest: bpm and the bar map
 // every level track shares) with a nominal first beat; check-levels reports bars from the real grid once it is in.
-import { clamp, smooth } from '../../../api.js?v=0.6.3';
+import { clamp, smooth } from '../../../api.js?v=0.6.4';
 
 // bpm, firstBeat (s), steps [[bar, m/s], ...] (each reached ON its bar, eased over the half bar before), lastBar
 export function musicClock(bpm, firstBeat, steps, lastBar) {

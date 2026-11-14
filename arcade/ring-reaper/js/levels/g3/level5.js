@@ -27,15 +27,15 @@
 // My call where the plan is silent: the plan puts the Slipstream right before the Drafting Table AND says never before
 // the level's final mastery test. Both hold here: the table is the set piece, and the final test is the Fair Copy
 // after it, flown at full speed.
-import { defineLevel } from '../../api.js?v=0.6.3';
-import ring from '../../pickups/ring/index.js?v=0.6.3';
-import pod from '../../enemies/pod/index.js?v=0.6.3';
-import mines from '../../obstacles/mines/index.js?v=0.6.3';
-import { shieldCell, phase, slipstream } from '../../pickups/powerups/index.js?v=0.6.3';
-import plotter from '../../enemies/g3-plotter/index.js?v=0.6.3';
-import augur from '../../enemies/g3-augur/index.js?v=0.6.3';
-import { musicClock } from './level4/clock.js?v=0.6.3';
-import { sheet, hall, floor, endless, clue } from './level5/scenery.js?v=0.6.3';
+import { defineLevel } from '../../api.js?v=0.6.4';
+import ring from '../../pickups/ring/index.js?v=0.6.4';
+import pod from '../../enemies/pod/index.js?v=0.6.4';
+import mines from '../../obstacles/mines/index.js?v=0.6.4';
+import { shieldCell, phase, slipstream } from '../../pickups/powerups/index.js?v=0.6.4';
+import plotter from '../../enemies/g3-plotter/index.js?v=0.6.4';
+import augur from '../../enemies/g3-augur/index.js?v=0.6.4';
+import { musicClock } from './level4/clock.js?v=0.6.4';
+import { sheet, hall, floor, endless, clue } from './level5/scenery.js?v=0.6.4';
 
 const C = musicClock(146, 0.16, [[1, 86], [9, 94], [25, 106], [33, 120], [57, 128], [65, 140], [81, 152], [85, 160]], 91);
 export const B = C.B, BAR = C.BAR;

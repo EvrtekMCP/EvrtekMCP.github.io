@@ -5,8 +5,8 @@
 // than `max`, at least `gap` seconds apart, then climbs away into the haze.
 //   Event: { nx, ny (her station, above the box), hold 240, dur 17 (seconds she watches), after 4, gap 2.4, max 4,
 //            kidShots 1 (bolts each piece of one she makes fires if it is left alone), pair (its pieces fire together) }
-import { THREE, defineEnemy, buildModel, clamp, damp, SPAWN_D } from '../../../api.js?v=0.6.3';
-import { MESH } from '../../../enemies/g3-fractal/mesh.js?v=0.6.3';
+import { THREE, defineEnemy, buildModel, clamp, damp, SPAWN_D } from '../../../api.js?v=0.6.4';
+import { MESH } from '../../../enemies/g3-fractal/mesh.js?v=0.6.4';
 
 const SCALE = 9, IN = 3.2;
 let glowMat = null;

@@ -7,9 +7,9 @@
 //  - streams          towers either side, floors in the Framework
 //  - g3-l1-grid       a set piece: the faint blueprint grid on the dark below the lane, sliding by
 //  - g3-l1-halfstar   the landmark: a half-built star hanging in its scaffold, its finished half burning lilac-white
-import { THREE, defineScenery, defineDecor, Instanced, material, clamp, smoothstep } from '../../../api.js?v=0.6.3';
-import { MESH } from './mesh.js?v=0.6.3';
-import { MESH as F } from './frame.js?v=0.6.3';
+import { THREE, defineScenery, defineDecor, Instanced, material, clamp, smoothstep } from '../../../api.js?v=0.6.4';
+import { MESH } from './mesh.js?v=0.6.4';
+import { MESH as F } from './frame.js?v=0.6.4';
 
 const tmpQ = new THREE.Quaternion(), eul = new THREE.Euler(), IDQ = new THREE.Quaternion();
 const geoOf = (g) => { const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(g.p, 3)); geo.computeVertexNormals(); geo.computeBoundingSphere(); return geo; };

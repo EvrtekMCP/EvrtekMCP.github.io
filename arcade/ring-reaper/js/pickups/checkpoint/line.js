@@ -13,7 +13,7 @@
 //   make(api) -> a Group (built once, pooled)      reset(g)  as new      idle(g, e, dt, api, a)  standing in the lane, a: 0..1
 //   taken(g, e, k, dt, api)  k: 0..1 over T seconds; g rides with the ship; the place itself has gone by e.z metres
 // (The other two drawings, the Reaped Ring and the Snapshot, are in git history: branch checkpoint-art, 3cc216f.)
-import { THREE, clamp, lerp, smooth } from '../../api.js?v=0.6.3';
+import { THREE, clamp, lerp, smooth } from '../../api.js?v=0.6.4';
 
 const WHITE = 0xffffff, PALE = 0xeaf6ff, BLUE = 0x9fd8ff, DEEP = 0x3f7fe0;
 

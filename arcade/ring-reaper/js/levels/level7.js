@@ -9,11 +9,11 @@
 // arrangement Intro 8 bars, Groove 16, Build 8, Drop 16, Breakdown 8, Build 8, Drop 16, Drive 8. Speed steps and
 // the set piece sit on bar lines (rule 30): the speed is a function of time stepped on bars, integrated once into
 // distance, so B(bar) is where bar `bar` starts on the course at the nominal speed.
-import { defineLevel, clamp, smooth } from '../api.js?v=0.6.3';
-import ring from '../pickups/ring/index.js?v=0.6.3';
-import swarm from '../enemies/swarm-unit/index.js?v=0.6.3';
-import { freighter, COL_X, DECK_Y } from './level7/traffic.js?v=0.6.3';
-import { tower, sign, tunnelRing, blast, towers, signs, traffic, trafficHigh, lanes, spindle, zones } from './level7/scenery.js?v=0.6.3';
+import { defineLevel, clamp, smooth } from '../api.js?v=0.6.4';
+import ring from '../pickups/ring/index.js?v=0.6.4';
+import swarm from '../enemies/swarm-unit/index.js?v=0.6.4';
+import { freighter, COL_X, DECK_Y } from './level7/traffic.js?v=0.6.4';
+import { tower, sign, tunnelRing, blast, towers, signs, traffic, trafficHigh, lanes, spindle, zones } from './level7/scenery.js?v=0.6.4';
 
 // ---------------------------------------------------------------- the music's clock, and the speed on it
 const BPM = 142.017, FIRST = 0.0996, BAR = 240 / BPM;   // l7 take 1's measured grid (audio-src/music-takes-levels.json)

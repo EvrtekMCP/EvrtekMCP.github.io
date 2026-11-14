@@ -8,11 +8,11 @@
 //             send the sniper's bolt home and the sheet shorts out for good.
 //   l5-wall   the lightning wall: arcs across the whole lane but for one gap. Always live. The finale.
 // The tell, for every arc (Yori): an arc about to fire has both lamps lit, red going white-hot, for a whole bar.
-import { THREE, defineDecor, defineObstacle, Instanced, appear, clamp, SHIP_R } from '../../api.js?v=0.6.3';
-import { MESH } from './mesh.js?v=0.6.3';
-import { ArcLayer, PATTERNS, CHARGE_BEATS, checkPattern, arcState } from './arcs.js?v=0.6.3';
-import { TRACK, beatAt } from './track.js?v=0.6.3';
-import { tAtD, speed } from './plan.js?v=0.6.3';
+import { THREE, defineDecor, defineObstacle, Instanced, appear, clamp, SHIP_R } from '../../api.js?v=0.6.4';
+import { MESH } from './mesh.js?v=0.6.4';
+import { ArcLayer, PATTERNS, CHARGE_BEATS, checkPattern, arcState } from './arcs.js?v=0.6.4';
+import { TRACK, beatAt } from './track.js?v=0.6.4';
+import { tAtD, speed } from './plan.js?v=0.6.4';
 
 export const HIT_BAND = 0.9;    // metres from a live arc's line to the ship's centre that hurts (core 0.12 + SHIP_R, generous)
 export const CLOSE_BAND = 2.4;  // a live arc this close pays CLOSE (the risk line, rule 31)

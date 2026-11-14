@@ -7,8 +7,8 @@
 //  - a SET PIECE (def.init + def.update) is one persistent thing (a planet, a floor, a skyline) that gets its
 //    weight every frame and fades itself in and out by it.
 // Scenery keeps its own odometer, so it streams on the title screen and carries straight into a run.
-import { rng } from './util.js?v=0.6.3';
-import { SPAWN_D } from './space.js?v=0.6.3';
+import { rng } from './util.js?v=0.6.4';
+import { SPAWN_D } from './space.js?v=0.6.4';
 
 export class Scenery {
   constructor(api) {

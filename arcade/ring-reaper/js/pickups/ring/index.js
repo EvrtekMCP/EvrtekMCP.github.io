@@ -1,5 +1,5 @@
 // THE RING (level 1 on): amber, the collect hue (rule 9). Fly through its middle for points, combo and shield.
-import { THREE, definePickup, RING_R } from '../../api.js?v=0.6.3';
+import { THREE, definePickup, RING_R } from '../../api.js?v=0.6.4';
 
 let geo, mat, glow;
 export default definePickup({

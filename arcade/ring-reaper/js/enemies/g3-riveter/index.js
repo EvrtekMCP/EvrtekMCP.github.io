@@ -21,9 +21,9 @@
 //          seam           its bolts bend after you (the later strings: a roll is the answer, not a drift)
 //          sync           a key shared by riveters that start together
 //          first          the level's first string: a longer tell }
-import { THREE, defineEnemy, buildModel, clamp, damp, SPAWN_D } from '../../api.js?v=0.6.3';
-import { MESH } from './mesh.js?v=0.6.3';
-import { MIN_GAP, beatNow, bookNote } from './clock.js?v=0.6.3';
+import { THREE, defineEnemy, buildModel, clamp, damp, SPAWN_D } from '../../api.js?v=0.6.4';
+import { MESH } from './mesh.js?v=0.6.4';
+import { MIN_GAP, beatNow, bookNote } from './clock.js?v=0.6.4';
 
 export const BOLT_T = 1.0, TEL = 0.5, CURTAIN_T = 1.15;
 const IN = 3.0, SCALE = 2.7, RED = new THREE.Color(0xff3355), HOT = new THREE.Color(0xfff2f2), DIM = new THREE.Color(0x2a2730);

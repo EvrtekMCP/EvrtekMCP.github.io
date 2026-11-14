@@ -2,7 +2,7 @@
 // the haze and off to its side, and swoops in over 2.5 s, braking onto the start of its pass (0.2.0: it used to blink
 // into being 150 m out, and Evrtek saw it); a side arrow warns 1 s before the pass, as before. It crosses the lane
 // firing shots with a red nose flash before each, then climbs away ahead and back into the fog. Two make a pair.
-import { THREE, defineEnemy, buildModel, clamp, SPAWN_D, NET_T } from '../../api.js?v=0.6.3';
+import { THREE, defineEnemy, buildModel, clamp, SPAWN_D, NET_T } from '../../api.js?v=0.6.4';
 
 const qA = new THREE.Quaternion(), qB = new THREE.Quaternion(), eul = new THREE.Euler();
 // 0.3.0, the human pass (Evrtek 11-06: "more of a visual warning when incoming weapons fire is coming"): the red nose

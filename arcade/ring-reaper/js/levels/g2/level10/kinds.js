@@ -6,9 +6,9 @@
 //                    out of it, and a ring trail running in (the level lays the trail and the cache).
 //   ev: side (+1: it covers the right of the lane; -1 the left), edge (nx where it stops; the rest is open),
 //       cx, cy (the crack's middle, normalised)
-import { THREE, defineObstacle, buildModel, SHIP_R } from '../../../api.js?v=0.6.3';
-import { MESH } from './mesh.js?v=0.6.3';
-import { MESH as WHIP } from '../../../obstacles/g2-root-whip/mesh.js?v=0.6.3';
+import { THREE, defineObstacle, buildModel, SHIP_R } from '../../../api.js?v=0.6.4';
+import { MESH } from './mesh.js?v=0.6.4';
+import { MESH as WHIP } from '../../../obstacles/g2-root-whip/mesh.js?v=0.6.4';
 
 const crash = (api, e, dmg) => api.game.crash({ x: api.ship.x, y: api.ship.y, type: e.type, kind: e.kind }, dmg);
 const glowSprite = (api, color, s, o) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: api.glowTex, color, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, opacity: o })); sp.scale.setScalar(s); return sp; };

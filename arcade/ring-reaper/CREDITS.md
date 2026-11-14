@@ -1,6 +1,6 @@
 # CREDITS
 
-**RING REAPER**, an arcade space-runner by **REIMERTEK STUDIOS**. Version 0.6.3, the player pass: three galaxies of ten levels, twelve bosses and six power-ups.
+**RING REAPER**, an arcade space-runner by **REIMERTEK STUDIOS**. Version 0.6.4, the player pass: three galaxies of ten levels, twelve bosses and six power-ups.
 
 *Formerly STARWAKE, renamed 2026-11-08.*
 
@@ -28,7 +28,7 @@ Dirigent planned the first ten levels; Fundi planned galaxies 2 and 3 and the po
 - The Verdant Deep's creatures and its bosses (the Whirlmaw, the Snare, the Murmur, the Rootmind), and the Unmade's machines and its bosses (the Foreman, the Counterfeit, the High Roller, the Weftwork).
 - The six power-ups, their icons and the galaxies' call-outs.
 - Every level's look and scenery.
-- The REIMERTEK STUDIOS logo (The Portal) on the opening splash.
+- The REIMERTEK STUDIOS logo (The Portal mark and the chrome wordmark, approved 2026-11-09) on the opening splash.
 - The launcher, the loading screen, the galaxy chart, each galaxy's sector map and level select, the icons, the share card and the cabinet art.
 - The checkpoint (0.6.1): THE LINE, two spires with a tape of light between them that streams back as a wake when you break it (Evrtek's pick of her three designs).
 - Her 2D art is drawn in code by her own renderer. Her ship, enemy, boss and scenery designs are vertex lists that the game builds into 3D at run time. No model files are loaded.

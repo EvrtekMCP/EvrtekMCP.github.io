@@ -17,12 +17,12 @@
 //          THE DRY DOCK       bars 80-93  158/166  the drive, a step lighter; the outro, rings only
 // Re-uses the plan names (plotters, forgeries, augurs, shuttlers, blueprint walls) belong to g3-a and g3-b and have not
 // landed on `galaxies`; the places they go are marked RE-USE below, and the level stands on its own headline without them.
-import { defineLevel } from '../../api.js?v=0.6.3';
-import ring from '../../pickups/ring/index.js?v=0.6.3';
-import { shieldCell, overclock, mirrorShell } from '../../pickups/powerups/index.js?v=0.6.3';
-import riveter from '../../enemies/g3-riveter/index.js?v=0.6.3';
-import { musicGrid, ringRun } from './level7/grid.js?v=0.6.3';
-import { gantry, gantries, hull, deck, deckWide, arcs, dreadnought } from './level7/scenery.js?v=0.6.3';
+import { defineLevel } from '../../api.js?v=0.6.4';
+import ring from '../../pickups/ring/index.js?v=0.6.4';
+import { shieldCell, overclock, mirrorShell } from '../../pickups/powerups/index.js?v=0.6.4';
+import riveter from '../../enemies/g3-riveter/index.js?v=0.6.4';
+import { musicGrid, ringRun } from './level7/grid.js?v=0.6.4';
+import { gantry, gantries, hull, deck, deckWide, arcs, dreadnought } from './level7/scenery.js?v=0.6.4';
 
 const { BAR, speed, BAR_S } = musicGrid({ bpm: 148, steps: [[0, 90], [24, 112], [48, 128], [62, 148], [80, 158], [88, 166]] });
 const A1 = BAR(24), A2 = BAR(48), A3 = BAR(64), DRIVE = BAR(80), LEN = BAR(93);

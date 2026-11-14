@@ -5,9 +5,9 @@
 // instanced so it flaps and turns. The Murmur rises out of it. (The plan's other landmark, a pale nebula shaped like a
 // pair of wings, is not among her pieces yet: the sky's own pearl gas stands in for it. A note for Yori.)
 // Rule 9: pearl and lavender only. The one red point in the sky is a conductor, and it hurts.
-import { THREE, defineScenery, defineDecor, Instanced, modelGroups, material, rng, clamp } from '../../../api.js?v=0.6.3';
-import { MESH } from './mesh.js?v=0.6.3';
-import { MESH as MOTHS } from '../../../enemies/g2-flock/mesh.js?v=0.6.3';
+import { THREE, defineScenery, defineDecor, Instanced, modelGroups, material, rng, clamp } from '../../../api.js?v=0.6.4';
+import { MESH } from './mesh.js?v=0.6.4';
+import { MESH as MOTHS } from '../../../enemies/g2-flock/mesh.js?v=0.6.4';
 
 const tmpQ = new THREE.Quaternion(), eul = new THREE.Euler();
 

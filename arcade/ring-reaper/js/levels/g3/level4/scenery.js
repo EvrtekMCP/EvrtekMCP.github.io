@@ -2,9 +2,9 @@
 // you; thin orchid rings and arms against deep indigo, small worlds on their ends, prism pylons, quiet and exact,
 // everything moving in arcs). Her signature pieces from g3-scenery.js: orreryRing(r), orreryHub(), prismPylon(h).
 // Rule 9: no red, amber or cyan anywhere as large flat colour; the hollow red rings in the air are the augurs' (they hurt).
-import { THREE, defineScenery, clamp } from '../../../api.js?v=0.6.3';
-import { MESH } from './mesh.js?v=0.6.3';
-import { meshDecor, pieceGroup, fadeTo, side } from './kit.js?v=0.6.3';
+import { THREE, defineScenery, clamp } from '../../../api.js?v=0.6.4';
+import { MESH } from './mesh.js?v=0.6.4';
+import { meshDecor, pieceGroup, fadeTo, side } from './kit.js?v=0.6.4';
 
 // ---- decor
 // the prism pylons: Yori's graphite column with a lilac prism on top; they stand in rows beside and below the lane,

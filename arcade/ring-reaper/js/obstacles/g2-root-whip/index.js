@@ -11,8 +11,8 @@
 //       of its anchor over half a second instead of growing in with distance)
 // Every moment is timed by its time to arrival (-z / speed), so at any speed (GREED included) the lash always ends
 // `lead` seconds before it reaches you and its tell runs its full length.
-import { THREE, defineObstacle, buildModel, clamp, SHIP_R } from '../../api.js?v=0.6.3';
-import { MESH } from './mesh.js?v=0.6.3';
+import { THREE, defineObstacle, buildModel, clamp, SHIP_R } from '../../api.js?v=0.6.4';
+import { MESH } from './mesh.js?v=0.6.4';
 
 const LEN = 30, SY = 0.6, STROKE = 0.28, SWING = { h: 0.8, v: 1.0 };
 const WAVE = 1.2 * SY, HALF = 0.62;                 // the root's wave across its length, and its half-thickness (inside the drawn bark)

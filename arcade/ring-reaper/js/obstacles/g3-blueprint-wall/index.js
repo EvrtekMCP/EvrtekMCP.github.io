@@ -13,11 +13,11 @@
 // gap close to its edge is a CLOSE call.
 //   add(d, 'g3-blueprint-wall', { gap: [nx, ny, halfW, halfH], lead: 2.0, revise: [nx, ny, halfW, halfH], crack: [nx, ny] })
 //   (grow: true for one spawned in view, as the Foreman's rush job does: it draws in over half a second)
-import { THREE, defineObstacle, Instanced, material, clamp, smoothstep, READ_D } from '../../api.js?v=0.6.3';
-import { beatClock } from '../../levels/level3/beat.js?v=0.6.3';
-import { MESH } from './mesh.js?v=0.6.3';
-import { MESH as ARM } from './arm.js?v=0.6.3';
-import { MESH as CRACK } from './crack.js?v=0.6.3';
+import { THREE, defineObstacle, Instanced, material, clamp, smoothstep, READ_D } from '../../api.js?v=0.6.4';
+import { beatClock } from '../../levels/level3/beat.js?v=0.6.4';
+import { MESH } from './mesh.js?v=0.6.4';
+import { MESH as ARM } from './arm.js?v=0.6.4';
+import { MESH as CRACK } from './crack.js?v=0.6.4';
 
 export const SPAN = [1.32, 1.36];        // the wall's half-size in the normalised box: past the box on every side
 export const LEAD = 1.4, LEAD_NEW = 2.0;  // seconds out the build starts (the plan's 4.1)

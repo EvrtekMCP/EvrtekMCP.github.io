@@ -1,7 +1,7 @@
 // THE SNIPER's sight-lines: thin glowing ribbons from a muzzle to the ship's plane, and the reticle where the shot
 // will land. One draw call for every sniper on screen. Widened in the vertex shader so a line 300 m long never
 // thins below about 1.5 pixels at its far end (a world-width line would vanish into the haze).
-import { THREE } from '../../api.js?v=0.6.3';
+import { THREE } from '../../api.js?v=0.6.4';
 
 const VS = `
 attribute vec3 perp; attribute float side; attribute float wid; attribute vec4 col;

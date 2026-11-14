@@ -9,8 +9,8 @@
 //     default the middle), gh (its height, metres; default 3.4), a (the frame's angle: 0 = layers above and below, PI/2 =
 //     layers left and right), tel, move, lead.
 // Timed by time to arrival (-z / speed), never the clock, so it reaches you as the course laid it at any speed.
-import { THREE, defineObstacle, buildModel, clamp, smoothstep, SHIP_R } from '../../api.js?v=0.6.3';
-import { MESH } from './mesh.js?v=0.6.3';
+import { THREE, defineObstacle, buildModel, clamp, smoothstep, SHIP_R } from '../../api.js?v=0.6.4';
+import { MESH } from './mesh.js?v=0.6.4';
 
 const W = 26, TOP = 14, PITCH = 1.3;                    // her layer: 26 wide, pitch 1.3; her frame's beams at +-14
 const arriveOf = (e, api) => -e.z / Math.max(1, api.v);

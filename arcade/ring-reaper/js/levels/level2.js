@@ -8,13 +8,13 @@
 // The sections, the bar lines, the speed, the Shield Cell and its ring line are where they were.
 // Authored in MUSIC TIME (rule 30): the sections and the peak sit on bar lines of the level's track (138 bpm,
 // 1.739 s a bar), converted to metres through the speed curve at base speed.
-import { defineLevel, clamp } from '../api.js?v=0.6.3';
-import ring from '../pickups/ring/index.js?v=0.6.3';
-import boostRing from '../pickups/boost-ring/index.js?v=0.6.3';
-import boulder from '../obstacles/boulder/index.js?v=0.6.3';
-import pod from '../enemies/pod/index.js?v=0.6.3';
-import shrike from '../enemies/shrike/index.js?v=0.6.3';
-import { chunk, slab, dust, chunks, slabs, canyon, dustRivers, brokenMoon, sunShafts } from './level2/scenery.js?v=0.6.3';
+import { defineLevel, clamp } from '../api.js?v=0.6.4';
+import ring from '../pickups/ring/index.js?v=0.6.4';
+import boostRing from '../pickups/boost-ring/index.js?v=0.6.4';
+import boulder from '../obstacles/boulder/index.js?v=0.6.4';
+import pod from '../enemies/pod/index.js?v=0.6.4';
+import shrike from '../enemies/shrike/index.js?v=0.6.4';
+import { chunk, slab, dust, chunks, slabs, canyon, dustRivers, brokenMoon, sunShafts } from './level2/scenery.js?v=0.6.4';
 
 const LEN = 16400, V0 = 64, V1 = 150;
 const speed = (d) => V0 + (V1 - V0) * Math.pow(clamp(d / LEN, 0, 1), 0.85);

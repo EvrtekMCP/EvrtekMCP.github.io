@@ -6,8 +6,8 @@
 //   A PAYOUT    { payout: true, cache: true, x, y, tx, ty }: spawned by the High Roller's amber segments and its JACKPOT.
 //               An extra (a cache: score, combo and shield, never part of a star). It flies out of the wheel toward its
 //               spot in the lane, growing in from nothing as it leaves (never popping into view).
-import { THREE, definePickup, RING_R, clamp } from '../../api.js?v=0.6.3';
-import { VAULTS } from '../../obstacles/g3-vault/index.js?v=0.6.3';
+import { THREE, definePickup, RING_R, clamp } from '../../api.js?v=0.6.4';
+import { VAULTS } from '../../obstacles/g3-vault/index.js?v=0.6.4';
 
 let geo, mat, glow;
 function make() {

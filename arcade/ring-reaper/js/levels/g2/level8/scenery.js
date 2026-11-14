@@ -5,9 +5,9 @@
 // its size, its lure a star), built here from the angler's parts so it costs no second copy of the mesh.
 // Plankton motes, dim bio-green (hue 145, never cyan), drift past all the time (the galaxy's ambient stream).
 // Rule 9: her amber ring is left off the stalk, so the only amber in the deep is a ring you can really take.
-import { THREE, defineScenery, defineDecor, Instanced, modelGroups, material, GlowPoints, rng, clamp } from '../../../api.js?v=0.6.3';
-import { MESH } from './mesh.js?v=0.6.3';
-import { buildAngler } from '../../../enemies/g2-angler/index.js?v=0.6.3';
+import { THREE, defineScenery, defineDecor, Instanced, modelGroups, material, GlowPoints, rng, clamp } from '../../../api.js?v=0.6.4';
+import { MESH } from './mesh.js?v=0.6.4';
+import { buildAngler } from '../../../enemies/g2-angler/index.js?v=0.6.4';
 
 const tmpQ = new THREE.Quaternion(), eul = new THREE.Euler();
 const layers = (api, groups, cap, skip = []) => modelGroups(groups).filter((g) => !skip.includes(g.color + (g.glow ? '*' : ''))).map((g) => new Instanced(api.scene, g.geo, material(g.color, g.glow), cap));

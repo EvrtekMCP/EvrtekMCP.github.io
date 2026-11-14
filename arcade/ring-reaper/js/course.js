@@ -2,10 +2,10 @@
 // level's events at the spawn line, streams them down the track, and runs every shot in flight: aimed fire, the
 // graze, the hit and the deflect. What each thing looks like and does lives in its kind (js/pickups, js/obstacles,
 // js/enemies, js/levels/*); what it scores lives in the game (main.js), reached through api.game.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.6.3';
-import { GlowPoints } from './fx.js?v=0.6.3';
-import { getKind } from './registry.js?v=0.6.3';
-import { appear, Instanced, HIT_R, GRAZE_R, DEFLECT_R, SHOT_T, NET_S, NET_T, LEGACY_LINE } from './space.js?v=0.6.3';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.6.4';
+import { GlowPoints } from './fx.js?v=0.6.4';
+import { getKind } from './registry.js?v=0.6.4';
+import { appear, Instanced, HIT_R, GRAZE_R, DEFLECT_R, SHOT_T, NET_S, NET_T, LEGACY_LINE } from './space.js?v=0.6.4';
 
 // While a level warms up (shaders compiling on a loading screen) its kinds run against this: every game call
 // does nothing, so a sample shrike does not flash a warning and a sample ring does not score.
