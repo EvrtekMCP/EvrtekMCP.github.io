@@ -1,0 +1,263 @@
+{
+ "pad": 0.1,
+ "crossfade": 0.004,
+ "tracks": {
+  "garage": {
+   "label": "Garage and menus",
+   "once": false,
+   "bpm": 99.99,
+   "lufs": -16,
+   "loopFrom": 2,
+   "chunks": [
+    {
+     "file": "garage/00",
+     "start": 0,
+     "dur": 19.261833,
+     "samples": 924568,
+     "fileSamples": 934168
+    },
+    {
+     "file": "garage/01",
+     "start": 19.261833,
+     "dur": 19.201875,
+     "samples": 921690,
+     "fileSamples": 931290
+    },
+    {
+     "file": "garage/02",
+     "start": 38.463708,
+     "dur": 19.201875,
+     "samples": 921690,
+     "fileSamples": 931290
+    },
+    {
+     "file": "garage/03",
+     "start": 57.665583,
+     "dur": 19.201875,
+     "samples": 921690,
+     "fileSamples": 931290
+    },
+    {
+     "file": "garage/04",
+     "start": 76.867458,
+     "dur": 19.201875,
+     "samples": 921690,
+     "fileSamples": 931290
+    },
+    {
+     "file": "garage/05",
+     "start": 96.069333,
+     "dur": 9.600958,
+     "samples": 460846,
+     "fileSamples": 470446
+    }
+   ],
+   "loop": {
+    "bars": 28,
+    "fromBar": 17,
+    "start": 38.46371,
+    "end": 105.670281
+   },
+   "take": "music-garage-t1.wav",
+   "kb": {
+    "ogg": 1367,
+    "mp4": 1707
+   }
+  },
+  "race1": {
+   "label": "Race A (coastal switchbacks)",
+   "once": false,
+   "bpm": 121.993,
+   "lufs": -14,
+   "loopFrom": 2,
+   "chunks": [
+    {
+     "file": "race1/00",
+     "start": 0,
+     "dur": 15.806458,
+     "samples": 758710,
+     "fileSamples": 768310
+    },
+    {
+     "file": "race1/01",
+     "start": 15.806458,
+     "dur": 15.738604,
+     "samples": 755453,
+     "fileSamples": 765053
+    },
+    {
+     "file": "race1/02",
+     "start": 31.545063,
+     "dur": 15.738604,
+     "samples": 755453,
+     "fileSamples": 765053
+    },
+    {
+     "file": "race1/03",
+     "start": 47.283667,
+     "dur": 15.738625,
+     "samples": 755454,
+     "fileSamples": 765054
+    },
+    {
+     "file": "race1/04",
+     "start": 63.022292,
+     "dur": 15.738604,
+     "samples": 755453,
+     "fileSamples": 765053
+    },
+    {
+     "file": "race1/05",
+     "start": 78.760896,
+     "dur": 15.738604,
+     "samples": 755453,
+     "fileSamples": 765053
+    },
+    {
+     "file": "race1/06",
+     "start": 94.4995,
+     "dur": 15.738625,
+     "samples": 755454,
+     "fileSamples": 765054
+    },
+    {
+     "file": "race1/07",
+     "start": 110.238125,
+     "dur": 15.738604,
+     "samples": 755453,
+     "fileSamples": 765053
+    },
+    {
+     "file": "race1/08",
+     "start": 125.976729,
+     "dur": 15.738604,
+     "samples": 755453,
+     "fileSamples": 765053
+    }
+   ],
+   "loop": {
+    "bars": 56,
+    "fromBar": 17,
+    "start": 31.545061,
+    "end": 141.71534
+   },
+   "take": "music-race1-t1.wav",
+   "kb": {
+    "ogg": 1780,
+    "mp4": 2327
+   }
+  },
+  "race2": {
+   "label": "Race B (midnight circuit)",
+   "once": false,
+   "bpm": 127.981,
+   "lufs": -14,
+   "loopFrom": 2,
+   "chunks": [
+    {
+     "file": "race2/00",
+     "start": 0,
+     "dur": 15.069396,
+     "samples": 723331,
+     "fileSamples": 732931
+    },
+    {
+     "file": "race2/01",
+     "start": 15.069396,
+     "dur": 15.002187,
+     "samples": 720105,
+     "fileSamples": 729705
+    },
+    {
+     "file": "race2/02",
+     "start": 30.071583,
+     "dur": 15.002187,
+     "samples": 720105,
+     "fileSamples": 729705
+    },
+    {
+     "file": "race2/03",
+     "start": 45.073771,
+     "dur": 15.002187,
+     "samples": 720105,
+     "fileSamples": 729705
+    },
+    {
+     "file": "race2/04",
+     "start": 60.075958,
+     "dur": 15.002187,
+     "samples": 720105,
+     "fileSamples": 729705
+    },
+    {
+     "file": "race2/05",
+     "start": 75.078146,
+     "dur": 15.002208,
+     "samples": 720106,
+     "fileSamples": 729706
+    },
+    {
+     "file": "race2/06",
+     "start": 90.080354,
+     "dur": 15.002187,
+     "samples": 720105,
+     "fileSamples": 729705
+    },
+    {
+     "file": "race2/07",
+     "start": 105.082542,
+     "dur": 15.002187,
+     "samples": 720105,
+     "fileSamples": 729705
+    },
+    {
+     "file": "race2/08",
+     "start": 120.084729,
+     "dur": 15.002187,
+     "samples": 720105,
+     "fileSamples": 729705
+    },
+    {
+     "file": "race2/09",
+     "start": 135.086917,
+     "dur": 7.501104,
+     "samples": 360053,
+     "fileSamples": 369653
+    }
+   ],
+   "loop": {
+    "bars": 60,
+    "fromBar": 17,
+    "start": 30.07158,
+    "end": 142.588017
+   },
+   "take": "music-race2-t1.wav",
+   "kb": {
+    "ogg": 1746,
+    "mp4": 2336
+   }
+  },
+  "results": {
+   "label": "Results sting (plays once)",
+   "once": true,
+   "bpm": 110,
+   "lufs": -14,
+   "loopFrom": null,
+   "chunks": [
+    {
+     "file": "results/00",
+     "start": 0,
+     "dur": 15.4,
+     "samples": 739200,
+     "fileSamples": 748800
+    }
+   ],
+   "loop": null,
+   "take": "music-results-t1.wav",
+   "kb": {
+    "ogg": 189,
+    "mp4": 255
+   }
+  }
+ }
+}

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 79.7 22" role="img" aria-label="DEGEN DRIFT"><defs>
+  <linearGradient id="gNeon" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#36f2ff"/><stop offset="1" stop-color="#ff3fa4"/></linearGradient>
+  <linearGradient id="gHot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe08a"/><stop offset="1" stop-color="#ff3fa4"/></linearGradient>
+  <linearGradient id="gChrome" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="0.3" stop-color="#bff6ff"/><stop offset="0.37" stop-color="#2b3d8f"/><stop offset="0.4" stop-color="#ff7ad1"/><stop offset="1" stop-color="#ffd1ec"/></linearGradient>
+  <linearGradient id="gGold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3b0"/><stop offset="0.55" stop-color="#ffb347"/><stop offset="1" stop-color="#ff3fa4"/></linearGradient>
+  <linearGradient id="gPanel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a1250"/><stop offset="1" stop-color="#0d0620"/></linearGradient>
+  <filter id="fGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="fBloom" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur stdDeviation="3"/></filter>
+</defs>
+    <g transform="translate(7 3) skewX(-14)">
+      <path d="M0.00 0H3.20L5.00 1.8V8.2L3.20 10H0.00ZM11.75 0H6.75V10H11.75M6.75 5H10.35M18.50 2.2V0H13.50V10H18.50V5.4H15.70M25.25 0H20.25V10H25.25M20.25 5H23.85M27.00 10V0L32.00 10V0M37.70 0H40.90L42.70 1.8V8.2L40.90 10H37.70ZM44.45 10V0H48.45L49.45 1V4L48.45 5H44.45M46.85 5L49.45 10M51.20 0V10M57.95 0H52.95V10M52.95 5H56.55M59.70 0H65.70M62.70 0V10" fill="none" stroke="#ff3fa4" stroke-width="3.4" stroke-linejoin="miter" stroke-linecap="square" filter="url(#fBloom)" opacity="0.85"/>
+      <path d="M0.00 0H3.20L5.00 1.8V8.2L3.20 10H0.00ZM11.75 0H6.75V10H11.75M6.75 5H10.35M18.50 2.2V0H13.50V10H18.50V5.4H15.70M25.25 0H20.25V10H25.25M20.25 5H23.85M27.00 10V0L32.00 10V0M37.70 0H40.90L42.70 1.8V8.2L40.90 10H37.70ZM44.45 10V0H48.45L49.45 1V4L48.45 5H44.45M46.85 5L49.45 10M51.20 0V10M57.95 0H52.95V10M52.95 5H56.55M59.70 0H65.70M62.70 0V10" fill="none" stroke="#1a0b33" stroke-width="2.6" stroke-linejoin="miter" stroke-linecap="square"/>
+      <path d="M0.00 0H3.20L5.00 1.8V8.2L3.20 10H0.00ZM11.75 0H6.75V10H11.75M6.75 5H10.35M18.50 2.2V0H13.50V10H18.50V5.4H15.70M25.25 0H20.25V10H25.25M20.25 5H23.85M27.00 10V0L32.00 10V0M37.70 0H40.90L42.70 1.8V8.2L40.90 10H37.70ZM44.45 10V0H48.45L49.45 1V4L48.45 5H44.45M46.85 5L49.45 10M51.20 0V10M57.95 0H52.95V10M52.95 5H56.55M59.70 0H65.70M62.70 0V10" fill="none" stroke="url(#gChrome)" stroke-width="1.9" stroke-linejoin="miter" stroke-linecap="square"/>
+      <path d="M0.00 0H3.20L5.00 1.8V8.2L3.20 10H0.00ZM11.75 0H6.75V10H11.75M6.75 5H10.35M18.50 2.2V0H13.50V10H18.50V5.4H15.70M25.25 0H20.25V10H25.25M20.25 5H23.85M27.00 10V0L32.00 10V0M37.70 0H40.90L42.70 1.8V8.2L40.90 10H37.70ZM44.45 10V0H48.45L49.45 1V4L48.45 5H44.45M46.85 5L49.45 10M51.20 0V10M57.95 0H52.95V10M52.95 5H56.55M59.70 0H65.70M62.70 0V10" fill="none" stroke="#ffffff" stroke-width="0.25" stroke-linejoin="miter" opacity="0.7" transform="translate(-0.25 -0.25)"/>
+    </g>
+    <path d="M6.376 18.8 C 27.895 20.8, 49.414 20.6, 77.309 16.4" fill="none" stroke="url(#gNeon)" stroke-width="0.9" stroke-linecap="round" filter="url(#fGlow)"/>
+  </svg>

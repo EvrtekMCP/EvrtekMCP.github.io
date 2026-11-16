@@ -1,0 +1,164 @@
+{
+ "pad": 0.1,
+ "sounds": {
+  "hit-scrape-1": {
+   "dur": 1.03,
+   "ch": 1,
+   "group": "scrape",
+   "take": 1
+  },
+  "hit-scrape-2": {
+   "dur": 0.669,
+   "ch": 1,
+   "group": "scrape",
+   "take": 1
+  },
+  "hit-scrape-3": {
+   "dur": 0.86,
+   "ch": 1,
+   "group": "scrape",
+   "take": 1
+  },
+  "hit-swipe-1": {
+   "dur": 1.48,
+   "ch": 1,
+   "group": "swipe",
+   "take": 1
+  },
+  "hit-swipe-2": {
+   "dur": 0.664,
+   "ch": 1,
+   "group": "swipe",
+   "take": 1
+  },
+  "hit-swipe-3": {
+   "dur": 1.48,
+   "ch": 1,
+   "group": "swipe",
+   "take": 1
+  },
+  "hit-crunch-1": {
+   "dur": 2,
+   "ch": 1,
+   "group": "crunch",
+   "take": 1
+  },
+  "hit-crunch-2": {
+   "dur": 1.695,
+   "ch": 1,
+   "group": "crunch",
+   "take": 1
+  },
+  "hit-crunch-3": {
+   "dur": 1.44,
+   "ch": 1,
+   "group": "crunch",
+   "take": 2
+  },
+  "nos-fire": {
+   "dur": 0.834,
+   "ch": 2,
+   "group": "nos",
+   "take": 2
+  },
+  "nos-hiss": {
+   "dur": 4.2,
+   "ch": 2,
+   "group": "nos",
+   "take": 1,
+   "loop": true,
+   "loopStart": 0.1,
+   "loopEnd": 4.1
+  },
+  "shift-1": {
+   "dur": 0.485,
+   "ch": 1,
+   "group": "shift",
+   "take": 1
+  },
+  "shift-2": {
+   "dur": 0.529,
+   "ch": 1,
+   "group": "shift",
+   "take": 2
+  },
+  "ui-click-1": {
+   "dur": 0.48,
+   "ch": 2,
+   "group": "ui",
+   "take": 1
+  },
+  "ui-click-2": {
+   "dur": 0.48,
+   "ch": 2,
+   "group": "ui",
+   "take": 1
+  },
+  "ui-purchase": {
+   "dur": 1,
+   "ch": 2,
+   "group": "ui",
+   "take": 1
+  },
+  "ui-upgrade": {
+   "dur": 1.48,
+   "ch": 2,
+   "group": "ui",
+   "take": 1
+  },
+  "ui-zone": {
+   "dur": 0.59,
+   "ch": 2,
+   "group": "ui",
+   "take": 2
+  },
+  "ui-sweet": {
+   "dur": 0.6,
+   "ch": 2,
+   "group": "ui",
+   "take": 1
+  },
+  "ui-link": {
+   "dur": 0.6,
+   "ch": 2,
+   "group": "ui",
+   "take": 1
+  },
+  "ui-bank": {
+   "dur": 1.05,
+   "ch": 2,
+   "group": "ui",
+   "take": 1
+  },
+  "ui-lost": {
+   "dur": 1.48,
+   "ch": 2,
+   "group": "ui",
+   "take": 2
+  },
+  "ui-count": {
+   "dur": 0.6,
+   "ch": 2,
+   "group": "ui",
+   "take": 1
+  },
+  "ui-go": {
+   "dur": 1,
+   "ch": 2,
+   "group": "ui",
+   "take": 1
+  },
+  "fanfare-star": {
+   "dur": 2.48,
+   "ch": 2,
+   "group": "fanfare",
+   "take": 1
+  },
+  "fanfare-degenerate": {
+   "dur": 3.195,
+   "ch": 2,
+   "group": "fanfare",
+   "take": 2
+  }
+ }
+}

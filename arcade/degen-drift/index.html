@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DEGEN DRIFT">
+<meta name="theme-color" content="#0b0618">
+<meta name="format-detection" content="telephone=no">
+<title>DEGEN DRIFT</title>
+<meta name="robots" content="noindex, nofollow"><!-- unlisted test build (Evrtek 11-16: private link for now); remove at go-live -->
+<meta name="description" content="Grip is for quitters. A drift game from REIMERTEK STUDIOS.">
+<!-- Every URL here is relative and stamped (orders/arcade-releases.md); every module import inside js/ carries the same
+     stamp. ES modules, so it needs a server (tools/serve.mjs on 127.0.0.1), not a file://. No outside requests. -->
+<!-- Icons, key art and share image: painted by Portero (Exchange job 001), commissioned by Evrtek. -->
+<link rel="icon" href="icon-64.png?v=0.1.0" type="image/png">
+<link rel="apple-touch-icon" href="icon-180.png?v=0.1.0">
+<link rel="manifest" href="manifest.webmanifest?v=0.1.0">
+<!-- Share card. Meta only: scrapers fetch these, the page never does. The address is the Arcade cabinet's expected
+     home; Dirigent confirms it at go-live (every URL named here must answer 200 live). -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="DEGEN DRIFT">
+<meta property="og:description" content="Grip is for quitters. Drift the zones, link the corners, chase DEGENERATE. A drift game from REIMERTEK STUDIOS.">
+<meta property="og:url" content="https://reimertek.com/arcade/degen-drift/">
+<meta property="og:image" content="https://reimertek.com/arcade/degen-drift/og-degen-drift.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="css/driftline.css?v=0.1.0">
+</head>
+<body>
+<canvas id="view" aria-label="DEGEN DRIFT"></canvas>
+
+<!-- the driving HUD: js/hud.js draws it in here -->
+<div id="hud" class="hud off"></div>
+<div id="touch" class="touch" hidden></div>
+<div id="fps" class="fps" hidden></div>
+
+<!-- screens (filled by js/ui.js) -->
+<div id="screen" class="screen"></div>
+<div id="rotate" class="rotate" hidden><div><svg viewBox="0 0 64 64"><rect x="20" y="8" width="24" height="44" rx="4" fill="none" stroke="currentColor" stroke-width="3"/><path d="M10 44 a24 24 0 0 0 30 12" fill="none" stroke="currentColor" stroke-width="3"/><path d="M40 50 l2 7 -7 1" fill="none" stroke="currentColor" stroke-width="3"/></svg><p>Turn your phone sideways to drive.</p></div></div>
+<!-- The loading screen and the title's backdrop: Portero's key art (Exchange job 001), the top third calm for the
+     wordmark, the lowest strip on a soft dark gradient for the bar (the painting's road has bright reflections there).
+     WebP, 151 KB (85 KB for phones); the gradient underneath shows until it decodes, before any script runs. -->
+<div id="boot" class="boot">
+  <div class="boot-art"></div>
+  <picture><source media="(max-width: 900px)" srcset="art/key-art-1280.webp?v=0.1.0"><img class="boot-art boot-paint" src="art/key-art-1920.webp?v=0.1.0" alt="" decoding="async" fetchpriority="high" onload="this.classList.add('in')"></picture>
+  <div class="boot-top"><img class="boot-wm" src="art/wordmark.svg?v=0.1.0" alt="DEGEN DRIFT"><div class="boot-tag">GRIP IS FOR QUITTERS.</div></div>
+  <div class="boot-low"><div class="boot-what" id="boot-what" role="status" aria-live="polite"></div><div class="boot-bar"><div id="boot-fill"></div></div><div class="boot-mark">REIMERTEK STUDIOS</div></div>
+</div>
+<div id="debug" class="debug" hidden></div>
+<noscript><p style="color:#fff;padding:2em">DEGEN DRIFT needs JavaScript.</p></noscript>
+<!-- the box first (js/fit.js, 11-16): the boot screen sits in the part of the frame that is on the screen before the
+     game's modules have arrived; main.js imports the same module -->
+<script type="module" src="js/fit.js?v=0.1.0"></script>
+<script type="module" src="js/main.js?v=0.1.0"></script>
+</body>
+</html>
