@@ -2,6 +2,7 @@
 // hot-pink neon on deep violet). The wordmark is built from its own stroke letterforms (never a system font), and the
 // same letters spell the DEGENERATE badge. Part illustrations are neon line drawings. One hidden <svg> holds the shared
 // gradients and the glow filter, so every icon stays a few hundred bytes.
+import { outlineOf } from './carbodies.js?v=0.1.0'; // 11-16 (cars builder, Portero 002): the profiles follow the rebuilt bodies
 
 // stroke letterforms on a 5 x 10 grid (I is 0 wide, T is 6)
 const GLYPH = {
@@ -181,25 +182,30 @@ export const PART_ART = {
   repair: `<path d="M42 8 A12 12 0 0 0 30 24 L9 45 A5 5 0 0 0 16 52 L37 31 A12 12 0 0 0 53 19 L46 24 L40 22 L38 16Z" ${MET}/><circle cx="12.5" cy="48.5" r="2" ${DARK}/><path d="M18 14 L46 42" stroke="#ff3fa4" stroke-width="6" stroke-linecap="round"/><path d="M18 14 L46 42" stroke="#ffd1ec" stroke-width="1.6" stroke-linecap="round" opacity="0.8"/><circle cx="16" cy="12" r="5" fill="none" stroke="#ff3fa4" stroke-width="3"/>`,
 };
 
-// a car from the side, drawn from its body (carbodies.js numbers, read only): the paint as a two-tone gradient, the
-// glass with a sunset reflection, wheels with rims, a neon line underneath; the pinstripe if it has one. 240 x 84.
+// a car from the side, drawn from its body (carbodies.js outlineOf, read only; 11-16, the cars builder: the bodies
+// rebuilt from Portero's 002 sheets): the paint as a two-tone gradient, the side glass with a sunset reflection, wheels
+// with rims in their arches, the wing, the livery's bands and pinstripes, a neon line underneath. 240 x 84.
 export function carSide(B, paint = '#4a1f8f', cls = 'carside', key = 'c') {
-  const W = 240, Hh = 84, g = 76, s = 220 / B.L, X = (z) => (W / 2 + z * s).toFixed(1), Y = (h) => (g - h * s).toFixed(1);
-  const fz = B.L / 2, rz = -B.L / 2, ride = B.ride || 0.24, tail = (B.tailStart ?? rz + 0.3);
-  const body = [[rz, ride + 0.12], [rz, B.deckH + (B.tailKick || 0) * 0.6], [tail, B.deckH], [B.zGlassEnd, B.deckH], [B.zRoofR, B.roofH], [B.zRoofF, B.roofH], [B.zScreen, B.cowlH], [fz - 0.25, B.noseH + 0.06], [fz, B.noseH - 0.06], [fz, ride + 0.1], [B.axleF + B.wheelR * 1.35, ride], [B.axleF - B.wheelR * 1.35, ride], [B.axleR + B.wheelR * 1.35, ride], [B.axleR - B.wheelR * 1.35, ride]];
-  const d = 'M' + body.map(([z, h]) => X(z) + ' ' + Y(h)).join('L') + 'Z';
-  const gl = [[B.zGlassEnd + 0.08, B.deckH + 0.03], [B.zRoofR + 0.02, B.roofH - 0.04], [B.zRoofF - 0.02, B.roofH - 0.04], [B.zScreen - 0.08, B.cowlH + 0.04]];
-  const gd = 'M' + gl.map(([z, h]) => X(z) + ' ' + Y(h)).join('L') + 'Z';
-  const wheel = (z) => { const cx = X(z), cy = Y(B.wheelR), r = (B.wheelR * s).toFixed(1), r2 = (B.wheelR * s * 0.62).toFixed(1); return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#gRubber)" stroke="#0a0612" stroke-width="1.4"/><circle cx="${cx}" cy="${cy}" r="${r2}" fill="url(#gMetal)" stroke="#12081f" stroke-width="1"/><circle cx="${cx}" cy="${cy}" r="${(B.wheelR * s * 0.16).toFixed(1)}" fill="#1d1230"/>`; };
-  const wing = B.wing === 'raised' || B.wing === 'gt' ? `<path d="M${X(rz + 0.05)} ${Y(B.deckH + 0.32)} H${X(rz + 0.55)} M${X(rz + 0.4)} ${Y(B.deckH + 0.3)} V${Y(B.deckH)}" stroke="#12081f" stroke-width="3.2" stroke-linecap="round"/>` : B.wing === 'spoiler' || B.wing === 'lip' ? `<path d="M${X(rz + 0.02)} ${Y(B.deckH + 0.1)} L${X(rz + 0.4)} ${Y(B.deckH)}" stroke="#12081f" stroke-width="3" stroke-linecap="round"/>` : '';
-  const pin = B.pinstripe ? `<path d="M${X(rz + 0.25)} ${Y(B.deckH - 0.12)} L${X(fz - 0.35)} ${Y(B.noseH - 0.02)}" stroke="${B.pinstripe}" stroke-width="1.4" opacity="0.9"/>` : '';
+  const O = outlineOf(B), W = 240, Hh = 84, g = 76, s = 220 / B.L, X = (z) => (W / 2 + z * s).toFixed(1), Y = (h) => (g - h * s).toFixed(1);
+  const path = (pts, close = true) => 'M' + pts.map(([z, h]) => X(z) + ' ' + Y(h)).join('L') + (close ? 'Z' : '');
+  const d = path(O.body), gd = path(O.glass);
+  const wheel = ([z, R]) => { const cx = X(z), cy = Y(R), r = (R * s).toFixed(1), r2 = (B.wheels.rim * s).toFixed(1); return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#gRubber)" stroke="#0a0612" stroke-width="1.4"/><circle cx="${cx}" cy="${cy}" r="${r2}" fill="url(#gMetal)" stroke="#12081f" stroke-width="1"/><circle cx="${cx}" cy="${cy}" r="${(R * s * 0.16).toFixed(1)}" fill="#1d1230"/>`; };
+  const Wg = B.wing, deck = (z) => O.body.reduce((best, p) => (Math.abs(p[0] - z) < Math.abs(best[0] - z) ? p : best), O.body[0])[1];
+  const wing = !Wg ? '' : Wg.t === 'lip' ? `<path d="M${X(Wg.z0)} ${Y(deck(Wg.z0))} L${X(Wg.z1)} ${Y(Wg.y1)}" stroke="#12081f" stroke-width="3" stroke-linecap="round"/>`
+    : `<path d="M${X(Wg.z0)} ${Y(Wg.y0)} L${X(Wg.z1)} ${Y(Wg.y1)} M${X((Wg.z0 + Wg.z1) / 2)} ${Y((Wg.y0 + Wg.y1) / 2)} V${Y(deck((Wg.z0 + Wg.z1) / 2))}" stroke="${Wg.plateCol || '#12081f'}" stroke-width="3.2" stroke-linecap="round"/>`;
+  const liv = (B.livery || []).map((l) => {
+    if (l.t === 'line') return `<path d="${path(l.pts, false)}" stroke="${l.col}" stroke-width="1.4" fill="none" opacity="0.9"/>`;
+    if (l.t === 'flank') return `<path d="${path([...l.lo, ...l.hi.slice().reverse()])}" fill="${l.col}" opacity="0.95"/>`;
+    return '';
+  }).join('');
+  const nose = O.body[0], tail = O.body.find((p) => Math.abs(p[0] + B.L / 2) < 0.03) || O.body[O.body.length / 2 - 1];
   const id = 'cp' + key;
   return `<svg class="${cls}" viewBox="0 0 ${W} ${Hh}" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="0.55"/><stop offset="0.18" stop-color="${paint}"/><stop offset="0.7" stop-color="${paint}"/><stop offset="1" stop-color="#05020c"/></linearGradient></defs>
     <ellipse cx="${W / 2}" cy="${g + 2}" rx="${(B.L * s * 0.52).toFixed(1)}" ry="4" fill="#36f2ff" opacity="0.28"/>
     <path d="${d}" fill="${paint}" stroke="#0a0612" stroke-width="2" stroke-linejoin="round"/><path d="${d}" fill="url(#${id})" opacity="0.85"/>
-    <path d="${gd}" fill="#140a26" stroke="#0a0612" stroke-width="1.2"/><path d="${gd}" fill="url(#gSun)" opacity="0.28"/>${pin}${wing}
-    <path d="M${X(fz - 0.06)} ${Y(B.noseH - 0.12)} h-6" stroke="#ffe7a8" stroke-width="2.6" stroke-linecap="round"/><path d="M${X(rz + 0.04)} ${Y(B.deckH - 0.12)} h5" stroke="#ff2a5a" stroke-width="2.6" stroke-linecap="round"/>
-    ${wheel(B.axleF)}${wheel(B.axleR)}</svg>`;
+    <path d="${gd}" fill="#140a26" stroke="#0a0612" stroke-width="1.2"/><path d="${gd}" fill="url(#gSun)" opacity="0.28"/>${liv}${wing}
+    <path d="M${X(nose[0] - 0.06)} ${Y(nose[1] - 0.1)} h-6" stroke="#ffe7a8" stroke-width="2.6" stroke-linecap="round"/><path d="M${X(-B.L / 2 + 0.04)} ${Y(tail[1] - 0.14)} h5" stroke="#ff2a5a" stroke-width="2.6" stroke-linecap="round"/>
+    ${O.wheels.map(wheel).join('')}</svg>`;
 }
 
 export function partArt(id) { return `<svg class="art" viewBox="0 0 64 64" aria-hidden="true">${PLATE}${PART_ART[id] || PART_ART.engine}</svg>`; }

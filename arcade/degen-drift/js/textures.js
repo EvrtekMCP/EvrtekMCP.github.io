@@ -79,7 +79,7 @@ export function shadowBlob() {
 export function matcap(kind, hex = '#20d6c7') {
   const S = 256, [c, g] = canvas(S, S), img = g.createImageData(S, S);
   const base = new THREE.Color(hex);
-  const P = { paint: [1.15, 0.55, 0.5], glass: [0.06, 0.72, 0.9], rubber: [0.06, 0.18, 0.12], chrome: [0.25, 1.1, 1.0], gold: [0.4, 1.0, 0.9], dark: [0.12, 0.35, 0.3], trim: [0.15, 0.16, 0.25] }[kind];
+  const P = { paint: [1.15, 0.55, 0.5], glass: [0.06, 0.72, 0.9], rubber: [0.06, 0.18, 0.12], chrome: [0.25, 1.1, 1.0], gold: [0.4, 1.0, 0.9], dark: [0.12, 0.35, 0.3], trim: [0.15, 0.16, 0.25], tint: [0.55, 0.3, 0.5] }[kind];
   const [diff, refl, spec] = P;
   const env = (ry) => { // reflection colour by the reflected ray's height
     if (ry > 0.18) { const t = Math.min(1, (ry - 0.18) / 0.8); return [0.32 * (1 - t) + 0.08 * t, 0.16 * (1 - t) + 0.05 * t, 0.55 * (1 - t) + 0.22 * t]; }

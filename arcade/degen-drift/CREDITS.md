@@ -15,10 +15,12 @@ Dirigent planned the full game, the cars and the economy. Indaga researched what
 
 **Key art, app icon and share image:** painted by **Portero**, commissioned by Evrtek (the studio's outside hand, Exchange job 001, 2026-11-15). Made with built-in image generation from the studio's brief; the provenance record is `art/incoming/portero-001-key-art/MANIFEST.md`.
 
+**Car designs:** **Portero**, commissioned by Evrtek (the studio's outside hand, Exchange job 002, 2026-11-16): a turnaround sheet for each of the six cars, side, front, rear, top and three-quarter. Made with built-in image generation from the studio's brief; the provenance record is `art/incoming/portero-002-car-turnarounds/MANIFEST.md`. The cars in the game are built in code from his sheets.
+
 **Art:** drawn in code by Fundi:
 - the DEGEN DRIFT wordmark and its letterforms;
 - the DEGENERATE badge, the stars and the part illustrations;
-- the six cars: KESTREL (matched to Portero's painting), VANTA, HALBERD, ORBIT, SPECTRE and ZENITH;
+- the six cars, KESTREL, VANTA, HALBERD, ORBIT, SPECTRE and ZENITH, modelled in code from Portero's designs (their shapes measured off his sheets);
 - the fifteen courses, their five regions and the scenery.
 
 Textures are drawn at load time; the only image files are Portero's (the key art, icons and share image) and the wordmark.

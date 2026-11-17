@@ -4,7 +4,7 @@
 // Two draws (a see-through body and its edges), no physics, nothing to collide with. Fed by the HUD every frame of a
 // run and told the result by the results screen, so main.js knows nothing of it.
 import * as THREE from '../vendor/three/three.module.min.js?v=0.1.0';
-import { BODIES } from './carbodies.js?v=0.1.0';
+import { BODIES, outlineOf } from './carbodies.js?v=0.1.0';
 
 const KEY = (id) => 'driftline.ghost.v1.' + id;
 const DT = 0.1, TAU = Math.PI * 2;
@@ -27,13 +27,14 @@ export class Ghost {
   shape(id) {
     if (this.bodyId === id) return;
     for (const o of [...this.mesh.children]) { this.mesh.remove(o); o.geometry.dispose(); }
-    const B = BODIES[id] || BODIES.kestrel, rz = -B.L / 2, fz = B.L / 2, sh = new THREE.Shape();
-    const prof = [[rz, B.ride + 0.1], [rz, B.deckH], [B.zGlassEnd, B.deckH], [B.zRoofR, B.roofH], [B.zRoofF, B.roofH], [B.zScreen, B.cowlH], [fz - 0.2, B.noseH], [fz, B.noseH - 0.12], [fz, B.ride + 0.08]];
+    // 11-16 (cars builder, Portero 002): the rebuilt body's own silhouette, arches and all, every 10 cm
+    const B = BODIES[id] || BODIES.kestrel, sh = new THREE.Shape();
+    const prof = outlineOf(B).body.filter((p, k) => k % 2 === 0);
     prof.forEach(([z, h], k) => (k ? sh.lineTo(z, h) : sh.moveTo(z, h)));
-    const W = B.half * 2, body = new THREE.ExtrudeGeometry(sh, { depth: W, bevelEnabled: false });
+    const W = B.W * 0.96, body = new THREE.ExtrudeGeometry(sh, { depth: W, bevelEnabled: false });
     body.rotateY(-Math.PI / 2); body.translate(W / 2, 0, 0);
-    const cab = new THREE.BoxGeometry(W * 0.98, 0.05, B.L * 0.96); cab.translate(0, B.ride + 0.1, 0); // the floor line
-    for (const g of [body, cab]) { this.mesh.add(new THREE.Mesh(g, this.mats[0])); this.mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(g), this.mats[1])); }
+    const cab = new THREE.BoxGeometry(W * 0.98, 0.05, B.L * 0.9); cab.translate(0, 0.2, 0); // the floor line
+    for (const g of [body, cab]) { this.mesh.add(new THREE.Mesh(g, this.mats[0])); this.mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(g, 25), this.mats[1])); }
     this.bodyId = id;
   }
   on() { return this.g.settings.ghost !== false; }

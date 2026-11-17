@@ -68,7 +68,7 @@ export const COSMETICS = [
     { id: 'midnight', name: 'Midnight', price: 900, value: '#1c2440' },
   ] },
   { id: 'rims', name: 'Rims', art: 'rim', options: [
-    { id: 'spoke', name: 'Five-spoke', price: 0, value: 'spoke' },
+    { id: 'spoke', name: 'Stock', price: 0, value: 'spoke' }, // each car's own rims (Portero 002: five, six, fifteen spokes or turbine)
     { id: 'mesh', name: 'Gold mesh', price: 1100, value: 'mesh' },
     { id: 'dish', name: 'Deep dish', price: 1300, value: 'dish' },
   ] },
