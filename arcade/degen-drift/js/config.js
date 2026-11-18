@@ -126,7 +126,17 @@ export const TUNING = {
     sweetBonus: 1.6,         // faster in the sweet spot
   },
   turbo: { spool: 0.6 },     // seconds for the boost to build
-  gearbox: { shiftCut: 0.22 }, // seconds of no drive on an upshift (the short shifter trims it)
+  // the automatic (car.js gearbox, 11-17): it reads the road speed, not the spinning wheels, and waits between shifts
+  gearbox: {
+    shiftCut: 0.22,          // seconds of no drive on an upshift (the short shifter trims it)
+    smooth: 0.25,            // s: how quickly the road speed it reads follows the real one
+    minGap: 0.8,             // s: never two shifts closer than this
+    reverseGap: 1.5,         // s: never the other way this soon after a shift (no up-down-up)
+    bogShare: 0.36,          // on the gas (or in a slide) it changes down only under this share of the redline
+    onThrottle: 0.3,         // throttle past this counts as on the gas
+    slideDeg: 14,            // a slide past this holds the gear
+    overRev: 0.985,          // share of the redline the engine must sit on (a moment) before a slide changes up
+  },
   camera: {
     distance: 6.4, height: 2.15, lookHeight: 0.95, lookAhead: 4.0,
     velocityBlend: 0.62,     // 0 = sits behind the nose, 1 = sits behind the direction of travel

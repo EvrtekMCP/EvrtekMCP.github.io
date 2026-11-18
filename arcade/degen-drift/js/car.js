@@ -35,6 +35,7 @@ export class Car {
     this.steerIn = 0; this.delta = 0;
     this.ax = 0; this.ay = 0;
     this.gear = 1; this.rpm = this.T.car.idleRpm; this.wheelSpin = 0; this.ws = 0; this.reverse = false; this.cut = 0;
+    this.vRoad = 0; this.shiftT = 9; this.lastUp = true; this.overT = 0; // the gearbox (gearbox() below)
     this.spin = 0; this.slipF = 0; this.slipR = 0; this.alphaF = 0; this.alphaR = 0;
     this.loadF = 0.5; this.wheelRot = 0; this.boost = 0; this.nosOn = false;
     this.hint = -1; this.contact = 0; this.scrape = 0; this.noContact = 1; this.touchFired = false;
@@ -239,20 +240,57 @@ export class Car {
     this.gearbox(dt, throttle);
   }
 
+  // The automatic. 11-17 (Evrtek: "the gears keep jumping up and down gears while the gas is down"): it used to choose
+  // from the rear wheels' own speed, which swings with every slide, and with no pause between shifts: a standing start
+  // spun the wheels past the change-up, the shift's cut slowed them, it changed down, and again, five times a second;
+  // every handbrake pull stopped the wheels and dropped it to first, and letting go climbed back. Now it chooses from
+  // the road speed (smoothed), as a good automatic does; the revs you see and hear still follow the wheels in a slide.
+  //   up:   at shiftUpRpm of road speed. Not mid-slide (a drifting car holds its gear), unless the engine has sat on
+  //         the redline a moment and the road speed would carry the next gear (so no kickdown follows).
+  //   down: off the gas, under shiftDownRpm, straight to the gear that fits the speed. On the gas, in a slide or off
+  //         it, only once the speed has dragged the revs under bogShare of the redline (a kickdown), to a gear a little
+  //         over that line.
+  //   never under the handbrake (the engine is clutched out), never two shifts within minGap s, never the other way
+  //   within reverseGap s. A car's shiftUp and shiftDown sit far enough apart that a change lands well inside them.
   gearbox(dt, throttle) {
-    const C = this.T.car;
-    const toRpm = (g) => this.wheelSpin / C.wheelRadius * C.gears[g - 1] * C.finalDrive * 60 / (2 * Math.PI);
+    const C = this.T.car, B = this.T.gearbox, k = 60 / (2 * Math.PI) * C.finalDrive / C.wheelRadius;
+    const toRpm = (g) => this.wheelSpin * C.gears[g - 1] * k;   // the engine, turned by the rear wheels (flares in a slide)
+    this.vRoad += (this.speed - this.vRoad) * Math.min(1, dt / B.smooth);
+    const road = (g) => this.vRoad * C.gears[g - 1] * k;        // the same gear at the road's speed: what the box reads
+    this.shiftT += dt;
     if (this.reverse) { this.gear = -1; this.rpm += (Math.max(C.idleRpm, toRpm(1)) - this.rpm) * Math.min(1, dt * 8); return; }
     if (this.gear < 1) this.gear = 1;
-    let rpm = toRpm(this.gear);
-    // a drifting car holds its gear (no upshift mid-slide), as a driver would
-    const sliding = Math.abs(this.beta) > 14 * DEG;
-    if (rpm > C.shiftUpRpm && this.gear < C.gears.length && (!sliding || rpm > C.redline * 0.985)) { this.gear++; rpm = toRpm(this.gear); this.cut = this.T.gearbox.shiftCut; this.events.push({ type: 'shift', gear: this.gear, up: true, cut: this.T.gearbox.shiftCut }); }
-    else if (rpm < C.shiftDownRpm && this.gear > 1) { const lower = toRpm(this.gear - 1); if (lower < C.shiftUpRpm * 0.92) { this.gear--; rpm = lower; this.events.push({ type: 'shift', gear: this.gear, up: false }); } }
+    const g = this.gear, bog = C.redline * B.bogShare, sliding = Math.abs(this.beta) > B.slideDeg * DEG;
+    this.overT = toRpm(g) >= C.redline * B.overRev ? this.overT + dt : 0;
+    const way = (up) => this.lastUp === up || this.shiftT >= B.reverseGap;
+    // off the redline only while the car is not slowing (a slide scrubbing speed would kick it straight back down),
+    // and only into a gear the road speed carries well clear of the kickdown line
+    const overRev = this.overT > 0.25 && this.speed > this.vRoad - 0.25 && g < C.gears.length && road(g + 1) >= bog * 1.15;
+    let to = g;
+    if (this.handbrake < 0.05 && this.shiftT >= B.minGap) {
+      if (g < C.gears.length && way(true) && ((!sliding && road(g) >= C.shiftUpRpm) || overRev)) to = g + 1;
+      else if (g > 1 && way(false)) {
+        // off the gas it lands at shiftDownRpm or more; a kickdown in the next gear that clears the bog line (the
+        // wheels will spin it up anyway), so neither lands near the change-up, nor a kickdown under an over-rev change
+        const gas = throttle > B.onThrottle || sliding, land = gas ? bog * 1.1 : C.shiftDownRpm;
+        if (road(g) < (gas ? bog : C.shiftDownRpm)) { to = 1; for (let h = g - 1; h > 1; h--) if (road(h) >= land) { to = h; break; } }
+      }
+    }
+    if (to !== g) {
+      const up = to > g; this.gear = to; this.shiftT = 0; this.lastUp = up; this.overT = 0;
+      if (up) { this.cut = B.shiftCut; this.events.push({ type: 'shift', gear: to, up: true, cut: B.shiftCut }); }
+      else this.events.push({ type: 'shift', gear: to, up: false });
+    }
+    const rpm = toRpm(this.gear);
     // revs flare with the pedal when the clutch would slip (standing starts, low speed)
     const free = C.idleRpm + throttle * (C.redline - C.idleRpm) * 0.75;
-    const target = Math.max(rpm, this.speed < 6 ? free * (1 - this.speed / 6) + rpm * (this.speed / 6) : rpm, C.idleRpm);
-    this.rpm += (Math.min(target, C.redline) - this.rpm) * Math.min(1, dt * 14);
+    let target = Math.max(rpm, this.speed < 6 ? free * (1 - this.speed / 6) + rpm * (this.speed / 6) : rpm, C.idleRpm);
+    // 11-17: past the change-up the revs ease toward a ceiling halfway to the redline rather than pin on it. With the
+    // gear held in a slide the spinning wheels would put the engine on the redline for much of a lap, and the sound
+    // module plays its rev-limiter stutter there. The power band and the boost are full up here either way.
+    const knee = C.shiftUpRpm, room = (C.redline - knee) / 2;
+    if (target > knee) target = knee + room * (1 - Math.exp(-(target - knee) / room));
+    this.rpm += (target - this.rpm) * Math.min(1, dt * 14);
   }
 
   // Walls stand at the road's edge plus a shoulder. The car's footprint across the road comes from its heading

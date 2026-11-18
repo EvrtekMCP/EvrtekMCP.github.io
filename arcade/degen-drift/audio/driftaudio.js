@@ -21,9 +21,15 @@
 // strength), nos(on), ui(name), music(track), setMuted(m). Its names are understood: presets i6/v6tt/flat6, hints
 // { exhaust, harsh, turbo, squeal }, impact 'hard'/'scrape', ui count/go/wipe/buy, music menu/race/results. With no
 // shift() call it hears the gear changes in the revs; with no link step it counts the chain itself.
+//
+// 11-17 (Evrtek, after test v10): ENGINE SOUND 'recorded' (the default) plays a car's recorded engine and tyres
+// (audio/recorded.js: whole Eleven takes, crossfaded and pitched by the revs) when its preset has a recorded set,
+// for now the KESTREL's turbo4 only; the synthesised car keeps just its wind. 'classic' is the synthesised car, as
+// before. setEngineSound(mode) switches at any time; the duel's rival follows the same rule (voice()).
 const STAMP = new URL(import.meta.url).search;
-let cfgLoad = null;
+let cfgLoad = null, recLoad = null;
 const loadCfg = () => cfgLoad || (cfgLoad = import(new URL('./car-sounds.js' + STAMP, import.meta.url).href));
+const loadRec = () => recLoad || (recLoad = import(new URL('./recorded.js' + STAMP, import.meta.url).href).catch((e) => { recLoad = null; throw e; }));
 
 const UI = {
   click: ['ui-click-1', 'ui-click-2'], back: ['ui-click-2'], purchase: ['ui-purchase'], upgrade: ['ui-upgrade'],
@@ -54,6 +60,8 @@ export function createDriftAudio(opts = {}) {
   let dirty = false, carSpec = { id: opts.engine || 'six', ups: opts.upgrades || [], over: opts.car || {} };
   let meterFn = null, duckHit = 0, duckFan = 0, duckLevel = 1, nosOn = false, nosSrc = null, nosGain = null;
   let player = null, wantTrack = null, cfg = null, chain = 0, raceTurn = 0, shiftSeen = false, revLast = 0, revT = 0, autoShiftT = 0;
+  let engineMode = opts.engineSound === 'classic' ? 'classic' : 'recorded', recCar = null, recGen = 0, recTimer = null;
+  const recSets = new Map(), voices = new Set(); // voices: each rival's re-sync, run when the mode changes
 
   function load() { try { return JSON.parse(localStorage.getItem(STORE) || '{}'); } catch (e) { return {}; } }
   function save() { try { localStorage.setItem(STORE, JSON.stringify({ vol, muted })); } catch (e) { /* private mode: fine */ } }
@@ -116,6 +124,39 @@ export function createDriftAudio(opts = {}) {
     flush();
   }
 
+  // 11-17: the recorded engine and tyres. A set is fetched once (after the first tap, with the effects) and shared by
+  // the player's car and the rival's; which car plays it is decided here whenever the car or the mode changes.
+  const presetOf = (id) => (cfg && cfg.PRESET_ALIAS && cfg.PRESET_ALIAS[id]) || id;
+  const redlineOf = (spec) => spec.over.redlineRpm || (cfg && cfg.ENGINES[presetOf(spec.id)] || {}).redlineRpm || 7600;
+  function getSet(m, id) {
+    // a set that fails to load (the network) is not remembered: the next car change or mode switch tries again
+    if (!recSets.has(id)) recSets.set(id, m.loadSet(id, async (p) => (await fetch(url(p))).json(), (p) => fetchBuffer(p)).catch(() => { recSets.delete(id); return null; }));
+    return recSets.get(id);
+  }
+  async function recSetFor(preset) { // the loaded set for a preset in 'recorded' mode, or null (play the synthesised car)
+    if (engineMode !== 'recorded' || !nodes) return null;
+    let m; try { m = await loadRec(); } catch (e) { return null; }
+    const id = m.SETS[presetOf(preset)];
+    if (!id) return null;
+    const set = await getSet(m, id);
+    return set ? { m, set } : null;
+  }
+  async function syncRec() {
+    const gen = ++recGen, r = await recSetFor(carSpec.id);
+    if (gen !== recGen || disposed) return;
+    if (r && (!recCar || recCar.set !== r.set)) { if (recCar) recCar.dispose(); recCar = new r.m.RecordedCar(ctx, r.set, nodes.engine, nodes.tyres, { seed: 11171, redline: redlineOf(carSpec) }); }
+    if (!r && recCar) { recCar.dispose(); recCar = null; }
+    if (recCar) { recCar.setRedline(redlineOf(carSpec)); recCar.setActive(active); recCar.update(ctl); }
+    if (carPort) carPort.postMessage({ type: 'parts', engine: !recCar, tyres: recCar ? 'wind' : 'all' });
+    // the loops' easing (load, slide, surfaces) and the limiter run on time: keep them ticking between control changes
+    if (recCar && !recTimer && !opts.offline) recTimer = setInterval(() => { if (recCar && recCar.on) recCar.update({}); }, 40);
+    if (!recCar && recTimer) { clearInterval(recTimer); recTimer = null; }
+  }
+  function preloadRec() { // fetch the sets 'recorded' can play, in the background, so the first run does not wait
+    if (engineMode !== 'recorded') return;
+    loadRec().then((m) => { for (const id of new Set(Object.values(m.SETS))) getSet(m, id); }).catch(() => {});
+  }
+
   // day 5 (Fundi, the duels): a second car, the rival. Its own synthesised engine and tyres (no one-shots, no music,
   // no gesture listeners), out through `out` for the caller to place (distance, pan, Doppler) and connect to `bus`,
   // the car bus, so it pauses, mutes and takes the tunnel's echo with the player's car. update() takes the same
@@ -126,31 +167,44 @@ export function createDriftAudio(opts = {}) {
     const g = (v) => { const n = ctx.createGain(); n.gain.value = v; return n; };
     const out = g(1), eng = g(mix.engine), tyr = g(mix.tyres); eng.connect(out); tyr.connect(out);
     const vc = { rpm: 900, throttle: 0, boost: -1, slip: 0, slipN: -1, spin: 0, lock: 0, front: 0, speed: 0, surface: 'asphalt', view: 0, nos: 0 };
-    let car = null, gone = false, on = true, sp = { id: spec.preset || 'six', ups: [], over: {} };
+    let car = null, rc = null, rgen = 0, gone = false, on = true, sp = { id: spec.preset || 'six', ups: [], over: {} };
     const conf = () => Object.assign({ type: 'config' }, cfg.resolveCarSound(sp.id, sp.ups, sp.over));
-    const kill = () => { try { if (car) car.node.disconnect(); out.disconnect(); } catch (e) { /* gone */ } car = null; };
+    const kill = () => { try { if (car) car.node.disconnect(); out.disconnect(); } catch (e) { /* gone */ } car = null; if (rc) { rc.dispose(); rc = null; } };
+    // 11-17: a rival in a car with a recorded set, in 'recorded' mode, plays that set (its synthesised car is idle)
+    const vsync = async () => {
+      const g = ++rgen, r = await recSetFor(sp.id);
+      if (g !== rgen || gone) return;
+      if (r && (!rc || rc.set !== r.set)) { if (rc) rc.dispose(); rc = new r.m.RecordedCar(ctx, r.set, eng, tyr, { seed: (spec.seed || 77813) + 1, redline: redlineOf(sp) }); }
+      if (!r && rc) { rc.dispose(); rc = null; }
+      if (rc) { rc.setRedline(redlineOf(sp)); rc.setActive(on); rc.update(vc); }
+      if (car) car.port.postMessage({ type: 'active', on: on && !rc });
+    };
+    voices.add(vsync);
     const vready = ready.then(async () => {
       if (gone) return;
       const c = await makeCar(conf(), eng, tyr, { seed: spec.seed || 77813 });
       if (gone) { car = c; kill(); return; }
       car = c; if (!on) car.port.postMessage({ type: 'active', on: false });
       car.port.postMessage({ type: 'ctl', v: vc });
+      await vsync();
     });
     vready.catch((e) => console.warn('driftaudio: voice ' + e.message));
     return {
       ready: vready, out, bus: nodes.car,
+      get recorded() { return rc ? rc.set.id : null; }, // 11-17: the recorded set this rival plays, or null
       async setHints(preset, hints = {}, redline) {
         const c = await loadCfg(); sp = { id: preset || hints.preset || sp.id, ups: c.hintsToUpgrades(hints), over: redline ? { redlineRpm: redline } : {} };
         if (car) car.port.postMessage(conf());
+        await vsync();
       },
       update(s) {
         for (const k of ['rpm', 'throttle', 'boost', 'spin', 'lock', 'front', 'speed', 'surface']) if (s[k] !== undefined) vc[k] = s[k];
         if (s.share !== undefined) { const v = Math.max(0, Math.min(1, +s.share || 0)); vc.slipN = v; vc.slip = v * 45; }
-        if (car && on) car.port.postMessage({ type: 'ctl', v: vc });
+        if (rc) { if (on) rc.update(vc); } else if (car && on) car.port.postMessage({ type: 'ctl', v: vc });
       },
-      shift(cut) { if (car) car.port.postMessage({ type: 'shift', cut: cut == null ? 0.15 : cut }); },
-      setActive(a) { on = !!a; if (car) car.port.postMessage({ type: 'active', on }); },
-      dispose() { gone = true; kill(); },
+      shift(cut) { if (rc) rc.shift(true, cut == null ? 0.15 : cut); else if (car) car.port.postMessage({ type: 'shift', cut: cut == null ? 0.15 : cut }); },
+      setActive(a) { on = !!a; if (rc) rc.setActive(on); if (car) car.port.postMessage({ type: 'active', on: on && !rc }); },
+      dispose() { gone = true; voices.delete(vsync); kill(); },
     };
   }
 
@@ -197,6 +251,7 @@ export function createDriftAudio(opts = {}) {
   function flush() {
     dirty = false;
     if (carPort) carPort.postMessage({ type: 'ctl', v: ctl });
+    if (recCar) recCar.update(ctl);
     duck();
   }
   // the music ducks a little under a big slide at speed, the engine near the limiter, a crash; more under a fanfare
@@ -211,7 +266,7 @@ export function createDriftAudio(opts = {}) {
   // ---- one-shots -----------------------------------------------------------------------------------------------
   function play(id, { bus = nodes.sfx, gain = 1, rate = 1, when = 0, loop = false } = {}) {
     const b = buffers.get(id);
-    if (!b || !ctx || ctx.state !== 'running') return null;
+    if (!b || !ctx || (ctx.state !== 'running' && !opts.offline)) return null; // offline: the demo renderer's context
     const s = ctx.createBufferSource(), gn = ctx.createGain();
     s.buffer = b; s.playbackRate.value = rate; gn.gain.value = gain;
     s.connect(gn).connect(bus);
@@ -240,6 +295,7 @@ export function createDriftAudio(opts = {}) {
   function shift(up = true, cut) { shiftSeen = true; doShift(up, cut); }
   function doShift(up, cut) {
     if (carPort) carPort.postMessage({ type: 'shift', cut: cut == null ? 0.15 : cut });
+    if (recCar) recCar.shift(up, cut == null ? 0.15 : cut);
     const quick = (carSpec.ups || []).includes('shifter');
     play(quick ? 'shift-2' : pick('shift', ['shift-1', 'shift-2']), { gain: mix.shift * (ctl.view ? 1.6 : 1) * (up ? 1 : 0.85), rate: up ? 1 : 0.94 });
   }
@@ -368,7 +424,9 @@ export function createDriftAudio(opts = {}) {
     if (!build()) throw new Error('no Web Audio');
     if (opts.autoUnlock !== false) watchState();
     unlocked = ctx.state === 'running';
+    preloadRec();
     await Promise.all([startCar(), loadSfx()]);
+    await syncRec();
   })();
   ready.catch((e) => console.warn('driftaudio: ' + e.message));
 
@@ -380,15 +438,22 @@ export function createDriftAudio(opts = {}) {
     unlock,
     setCar(id, ups = [], over = {}) {
       carSpec = { id, ups: ups || [], over: over || {} };
-      pushCar();
+      pushCar(); if (nodes && carNode) syncRec();
     },
     configureCar(cfg) { if (carPort) carPort.postMessage(Object.assign({ type: 'config' }, cfg)); }, // a resolved {engine, tyres}, for tuning
     update(s) { for (const k of ['rpm', 'throttle', 'slip', 'spin', 'lock', 'front', 'speed', 'surface', 'boost']) if (s[k] !== undefined) set(k, s[k]); },
     setRPM(v, redline) {
       v = +v || 0; watchRevs(v); set('rpm', v);
-      if (redline && redline !== carSpec.over.redlineRpm) { carSpec.over = Object.assign({}, carSpec.over, { redlineRpm: redline }); pushCar(); }
+      if (redline && redline !== carSpec.over.redlineRpm) { carSpec.over = Object.assign({}, carSpec.over, { redlineRpm: redline }); pushCar(); if (recCar) recCar.setRedline(redline); }
     },
-    async setCarHints(preset, hints = {}) { const c = await loadCfg(); carSpec = { id: preset || hints.preset || carSpec.id, ups: c.hintsToUpgrades(hints), over: carSpec.over }; pushCar(); },
+    async setCarHints(preset, hints = {}) { const c = await loadCfg(); carSpec = { id: preset || hints.preset || carSpec.id, ups: c.hintsToUpgrades(hints), over: carSpec.over }; pushCar(); if (nodes && carNode) syncRec(); },
+    // 11-17: 'recorded' (default) or 'classic'; the player's car and every rival switch at once
+    setEngineSound(mode) {
+      const m = mode === 'classic' ? 'classic' : 'recorded'; if (m === engineMode) return; engineMode = m;
+      preloadRec(); if (nodes && carNode) syncRec(); for (const v of voices) v();
+    },
+    get engineSound() { return engineMode; },
+    get recorded() { return recCar ? recCar.set.id : null; },
     setSlipShare(s, o = {}) { s = Math.max(0, Math.min(1, +s || 0)); set('slipN', s); set('slip', s * 45); set('spin', +o.spin || 0); set('lock', +o.lock || 0); set('front', +o.front || 0); },
     setThrottle: (v) => set('throttle', +v || 0),
     setSlip(deg, o = {}) { set('slipN', -1); set('slip', Math.abs(+deg || 0)); set('spin', +o.spin || 0); set('lock', +o.lock || 0); set('front', +o.front || 0); },
@@ -397,15 +462,15 @@ export function createDriftAudio(opts = {}) {
     setBoost: (v) => set('boost', v == null ? -1 : +v),
     setView: (v) => set('view', v === 'interior' || v === 1 ? 1 : 0),
     setSpace(k) { if (!nodes) return; const t = ctx.currentTime; nodes.tunnel.gain.setTargetAtTime(k === 'tunnel' ? 0.5 : 0, t, 0.25); nodes.bridge.gain.setTargetAtTime(k === 'bridge' ? 0.32 : 0, t, 0.25); },
-    setActive(on) { active = !!on; if (carPort) carPort.postMessage({ type: 'active', on: active }); if (nodes) nodes.car.gain.setTargetAtTime(active && !paused ? 1 : 0, ctx.currentTime, 0.05); },
+    setActive(on) { active = !!on; if (carPort) carPort.postMessage({ type: 'active', on: active }); if (recCar) recCar.setActive(active); if (nodes) nodes.car.gain.setTargetAtTime(active && !paused ? 1 : 0, ctx.currentTime, 0.05); },
     setPaused(p) { paused = !!p; if (nodes) nodes.car.gain.setTargetAtTime(active && !paused ? 1 : 0, ctx.currentTime, 0.08); if (paused) nos(false); duck(); },
     shift, impact, nos, ui, music, voice,
     setVolume, getVolume: (ch) => vol[ch], setMuted, toggleMute() { setMuted(!muted); return muted; }, get muted() { return muted; },
     setMix(k, v) { if (k in mix) { mix[k] = +v; if (nodes && nodes[k]) nodes[k].gain.setTargetAtTime(mix[k], ctx.currentTime, 0.03); } },
-    debug() { return { state: ctx && ctx.state, time: ctx && ctx.currentTime, format: ext, sfx: buffers.size, worklet: !!(carNode && carNode.port), track: player && player.id, nextChunk: player && player.next, scheduledTo: player && player.at, playing: player ? player.srcs.length : 0 }; },
+    debug() { return { state: ctx && ctx.state, time: ctx && ctx.currentTime, format: ext, sfx: buffers.size, worklet: !!(carNode && carNode.port), engineSound: engineMode, recorded: recCar ? recCar.set.id : null, recPlaying: !!(recCar && recCar.on), track: player && player.id, nextChunk: player && player.next, scheduledTo: player && player.at, playing: player ? player.srcs.length : 0 }; },
     onMeter(fn) { meterFn = fn; if (carPort && carPort.postMessage) carPort.postMessage({ type: 'meter', on: !!fn }); },
     dispose() {
-      disposed = true; if (player) player.stop(0); nos(false);
+      disposed = true; if (player) player.stop(0); nos(false); if (recTimer) clearInterval(recTimer); if (recCar) recCar.dispose();
       for (const [el, t, fn, cap] of listeners) el.removeEventListener(t, fn, cap ? { capture: true } : false);
       try { if (carNode) carNode.disconnect(); } catch (e) { /* gone */ }
       if (!opts.context && ctx) ctx.close().catch(() => {});
@@ -435,3 +500,4 @@ export function setMuted(m) { if (inst) inst.setMuted(m); }
 export function setVolume(ch, v) { if (inst) inst.setVolume(ch, v); }
 export function setPaused(p) { if (inst) inst.setPaused(p); }
 export function voice(spec) { return inst ? inst.voice(spec) : null; } // a second car, the duel's rival (day 5)
+export function setEngineSound(mode) { if (inst) inst.setEngineSound(mode); } // 'recorded' | 'classic' (11-17)

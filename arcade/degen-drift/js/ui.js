@@ -230,6 +230,7 @@ export class UI {
         <div class="kicker">PAYOUT</div>
         <div class="stats pay">${r.pay.lines.map(([l, x]) => `<span>${esc(l)}</span><span>+${x.toLocaleString('en-US')}</span>`).join('')}<span><b>Total</b></span><span class="total num">+${r.pay.total.toLocaleString('en-US')}</span></div>
         <div class="stats" style="margin-top:0.6rem"><span>Credits</span><span class="num" style="color:var(--gold)">${this.g.progress.credits.toLocaleString('en-US')}</span><span>Condition</span><span>${G.condition(this.g.progress)}%</span></div>
+        ${this.tips.forResults() /* 11-17 (js/tips.js) */}
       </div></div>
       <div class="pfoot"><button class="btn primary" data-act="duel">Rematch</button><button class="btn" data-act="garage">Garage</button><button class="btn" data-act="drive">Courses</button><button class="btn" data-act="title">Menu</button></div></div>`;
     const badge = this.el.querySelector('.badge-deg'), wrap = this.el.querySelector('.degwrap'), flash = this.el.querySelector('.degflash'), panel = this.el.querySelector('.results');
@@ -311,6 +312,7 @@ export class UI {
       <div class="opt"><label>Quality</label><div>${seg('quality', [['auto', 'Auto'], ['low', 'Low'], ['med', 'Medium'], ['high', 'High']])}<div class="note">Auto starts high on computers and medium on phones, then trims the resolution, and drops to Low if it has to, to hold 60 frames a second.</div></div></div>
       <div class="opt"><label>Sound</label><div>${seg('sound', [[true, 'On'], [false, 'Off']])}<div class="vols">${[['master', 'Everything'], ['music', 'Music'], ['sfx', 'Car and effects']].map(([ch, n]) => `<label class="sl"><span>${n}</span><input type="range" min="0" max="1" step="0.05" value="${(s.vol && s.vol[ch] != null) ? s.vol[ch] : 0.8}" data-vol="${ch}" aria-label="${n} volume"></label>`).join('')}</div></div></div>
       <div class="opt"><label>Tire smoke</label><div>${seg('smoke', [['full', 'Full'], ['less', 'Less'], ['min', 'Light']])}<div class="note">Less smoke is lighter work for an older phone.</div></div></div>
+      ${(() => { const v = s.engineSound === 'classic' ? 'classic' : 'recorded'; return `<div class="opt"><label>Engine sound</label><div><div class="seg">${[['recorded', 'Recorded'], ['classic', 'Classic']].map(([k, l]) => `<button class="${v === k ? 'on' : ''}" data-act="set" data-key="engineSound" data-val="${k}">${l}</button>`).join('')}</div><div class="note">Recorded: real engine and tire recordings (the KESTREL only, for now). Classic: the original engine sound.</div></div></div>`; })()}<!-- 11-17 (sound builder) -->
       <div class="opt"><label>Zone colours</label><div>${seg('palette', [['neon', 'Cyan and pink'], ['safe', 'Blue and amber']])}<div class="note">Blue and amber stay apart for the common kinds of colour blindness.</div></div></div>
       <div class="opt"><label>Ghost</label><div>${seg('ghost', [[true, 'On'], [false, 'Off']])}<div class="note">Your best run on each course drives beside you, see-through.</div></div></div>
       <div class="opt"><label>Tips</label><div><button class="btn small" data-act="tips-again" ${this.tips.done ? '' : 'disabled'}>${this.tips.done ? 'Show the tips again' : 'Tips are on for your next run'}</button></div></div>
@@ -356,6 +358,7 @@ export class UI {
         <div class="kicker">PAYOUT</div>
         <div class="stats pay">${r.pay.lines.map(([l, v]) => `<span>${esc(l)}</span><span>+${fmt(v)}</span>`).join('')}<span><b>Total</b></span><span class="total num" id="r-pay">0</span></div>
         <div class="stats" style="margin-top:0.6rem"><span>Credits</span><span class="num" style="color:var(--gold)">${fmt(p.credits)}</span><span>Damage this run</span><span>${esc(dmg)}</span><span>Condition</span><span>${G.condition(p)}%</span></div>
+        ${this.tips.forResults() /* 11-17: the tips you can play without live here, off the road (js/tips.js) */}
       </div></div>
       <div class="pfoot"><button class="btn primary" data-act="retry">Again</button><button class="btn" data-act="garage">Garage</button><button class="btn" data-act="drive">Courses</button><button class="btn" data-act="title">Menu</button></div></div>`;
     // the score and the pay count up; then the stars pop one by one; then, for the top tier, the badge stamps down

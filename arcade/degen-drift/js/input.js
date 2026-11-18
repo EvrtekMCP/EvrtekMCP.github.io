@@ -191,7 +191,7 @@ export class Input {
       const b = (i) => (gp.buttons[i] ? gp.buttons[i].value || (gp.buttons[i].pressed ? 1 : 0) : 0);
       thr = Math.max(thr, b(7)); brk = Math.max(brk, b(6)); hand = Math.max(hand, b(0), b(5)); if (b(1) > 0.5) nos = true;
       const prev = this.padPrev; const press = (i) => b(i) > 0.5 && !(prev[i] > 0.5);
-      if (press(3)) this.edges.add('PadReset'); if (press(9)) this.edges.add('PadPause');
+      if (press(3)) this.edges.add('PadReset'); if (press(9)) this.edges.add('PadPause'); if (press(0)) this.edges.add('PadA'); // A: a tip's Got it (11-17)
       this.padPrev = gp.buttons.map((x) => x.value || (x.pressed ? 1 : 0));
     }
     // phone

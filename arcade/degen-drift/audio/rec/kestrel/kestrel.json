@@ -1,0 +1,295 @@
+{
+ "id": "kestrel",
+ "preset": "turbo4",
+ "rate": 48000,
+ "pad": 0.1,
+ "files": {
+  "idle": {
+   "take": "eng-idle-t1",
+   "dur": 4,
+   "rmsDb": -12.65,
+   "loopFrom": [
+    0,
+    4
+   ],
+   "seam": {
+    "stepX": 0.65,
+    "levelDb": 0.44,
+    "specDb": 1.84
+   },
+   "loop": true,
+   "loopStart": 0.1,
+   "loopEnd": 4.1,
+   "bytes": {
+    "ogg": 35013,
+    "mp4": 52545
+   }
+  },
+  "low-on": {
+   "take": "eng-2500-on-t1",
+   "dur": 4,
+   "rmsDb": -10.79,
+   "loopFrom": [
+    0,
+    4
+   ],
+   "seam": {
+    "stepX": 0.44,
+    "levelDb": -0.79,
+    "specDb": 1.56
+   },
+   "f0": 114.3,
+   "loop": true,
+   "loopStart": 0.1,
+   "loopEnd": 4.1,
+   "bytes": {
+    "ogg": 45396,
+    "mp4": 52968
+   }
+  },
+  "low-off": {
+   "take": "eng-4500-off-t1",
+   "dur": 3.585,
+   "rmsDb": -11.94,
+   "loopFrom": [
+    0.21,
+    3.795
+   ],
+   "match": -0.464,
+   "seam": {
+    "stepX": 0.17,
+    "levelDb": -2.23,
+    "specDb": 1.41
+   },
+   "loop": true,
+   "loopStart": 0.1,
+   "loopEnd": 3.685,
+   "bytes": {
+    "ogg": 44361,
+    "mp4": 47523
+   }
+  },
+  "mid-on": {
+   "take": "eng-4500-on-t1",
+   "dur": 2.7527,
+   "rmsDb": -10.68,
+   "loopFrom": [
+    0.146,
+    2.8988
+   ],
+   "match": 0.802,
+   "seam": {
+    "stepX": 1.6,
+    "levelDb": 0.14,
+    "specDb": 2.43
+   },
+   "f0": 126.6,
+   "loop": true,
+   "loopStart": 0.1,
+   "loopEnd": 2.85275,
+   "bytes": {
+    "ogg": 30367,
+    "mp4": 37254
+   }
+  },
+  "mid-off": {
+   "take": "eng-7000-off-t1",
+   "dur": 3.9364,
+   "rmsDb": -11.78,
+   "loopFrom": [
+    0.054,
+    3.9904
+   ],
+   "match": 0.825,
+   "seam": {
+    "stepX": 0.77,
+    "levelDb": -1.71,
+    "specDb": 1.98
+   },
+   "f0": 141.6,
+   "loop": true,
+   "loopStart": 0.1,
+   "loopEnd": 4.036396,
+   "bytes": {
+    "ogg": 35248,
+    "mp4": 51729
+   }
+  },
+  "high-on": {
+   "take": "eng-7000-on-t2",
+   "dur": 3.0862,
+   "rmsDb": -7.57,
+   "loopFrom": [
+    0.436,
+    3.5222
+   ],
+   "match": 0.838,
+   "seam": {
+    "stepX": 2.74,
+    "levelDb": 0.51,
+    "specDb": 1.61
+   },
+   "f0": 214.1,
+   "loop": true,
+   "loopStart": 0.1,
+   "loopEnd": 3.186167,
+   "bytes": {
+    "ogg": 34914,
+    "mp4": 41380
+   }
+  },
+  "bov": {
+   "take": "turbo-bov-t1",
+   "dur": 1.45,
+   "rmsDb": -18.1,
+   "bytes": {
+    "ogg": 8826,
+    "mp4": 12962
+   }
+  },
+  "bang": {
+   "take": "exhaust-crackle-t2",
+   "dur": 0.68,
+   "rmsDb": -22.47,
+   "bytes": {
+    "ogg": 4279,
+    "mp4": 6778
+   }
+  },
+  "boom": {
+   "take": "exhaust-crackle-t1",
+   "dur": 0.62,
+   "rmsDb": -19.83,
+   "bytes": {
+    "ogg": 3886,
+    "mp4": 6234
+   }
+  },
+  "squeal-light": {
+   "take": "tyre-squeal-light-t1",
+   "dur": 4,
+   "rmsDb": -14.65,
+   "loopFrom": [
+    0,
+    4
+   ],
+   "seam": {
+    "stepX": 0.53,
+    "levelDb": 1.06,
+    "specDb": 2.15
+   },
+   "loop": true,
+   "loopStart": 0.1,
+   "loopEnd": 4.1,
+   "bytes": {
+    "ogg": 25421,
+    "mp4": 35556
+   }
+  },
+  "squeal-heavy": {
+   "take": "tyre-squeal-heavy-t1",
+   "dur": 1.485,
+   "rmsDb": -11.03,
+   "loopFrom": [
+    0.19,
+    1.675
+   ],
+   "match": -2.378,
+   "rotate": 2.72,
+   "seam": {
+    "stepX": 0.14,
+    "levelDb": 0.3,
+    "specDb": 3.96
+   },
+   "loop": true,
+   "loopStart": 0.1,
+   "loopEnd": 1.585,
+   "bytes": {
+    "ogg": 10412,
+    "mp4": 14903
+   }
+  },
+  "chirp-1": {
+   "take": "tyre-chirp-t1",
+   "dur": 0.16,
+   "rmsDb": -13.46,
+   "bytes": {
+    "ogg": 1398,
+    "mp4": 2494
+   }
+  },
+  "chirp-2": {
+   "take": "tyre-chirp-t1",
+   "dur": 0.32,
+   "rmsDb": -15.24,
+   "bytes": {
+    "ogg": 2068,
+    "mp4": 3798
+   }
+  },
+  "roar": {
+   "take": "tyre-roar-t1",
+   "dur": 3,
+   "rmsDb": -13.06,
+   "loopFrom": [
+    0,
+    3
+   ],
+   "seam": {
+    "stepX": 0.27,
+    "levelDb": -0.72,
+    "specDb": 1.5
+   },
+   "loop": true,
+   "loopStart": 0.1,
+   "loopEnd": 3.1,
+   "bytes": {
+    "ogg": 18214,
+    "mp4": 27454
+   }
+  },
+  "gravel": {
+   "take": "surf-gravel-t1",
+   "dur": 2.325,
+   "rmsDb": -17.98,
+   "loopFrom": [
+    0.19,
+    2.515
+   ],
+   "match": -1.077,
+   "seam": {
+    "stepX": 0.13,
+    "levelDb": -1.44,
+    "specDb": 3.37
+   },
+   "loop": true,
+   "loopStart": 0.1,
+   "loopEnd": 2.425,
+   "bytes": {
+    "ogg": 15265,
+    "mp4": 21827
+   }
+  },
+  "kerb": {
+   "take": "surf-kerb-t2",
+   "dur": 3,
+   "rmsDb": -19.56,
+   "loopFrom": [
+    0,
+    3
+   ],
+   "seam": {
+    "stepX": 0.08,
+    "levelDb": -1.83,
+    "specDb": 1.43
+   },
+   "loop": true,
+   "loopStart": 0.1,
+   "loopEnd": 3.1,
+   "bytes": {
+    "ogg": 18753,
+    "mp4": 27384
+   }
+  }
+ }
+}

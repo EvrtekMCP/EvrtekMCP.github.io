@@ -26,7 +26,8 @@ Dirigent planned the full game, the cars and the economy. Indaga researched what
 Textures are drawn at load time; the only image files are Portero's (the key art, icons and share image) and the wordmark.
 
 **Sound:** built by Fundi (the sound set in `audio/`, switched on in this build; a small placeholder synthesized in the browser remains only as a fallback):
-- the cars (every engine, the turbos, blow-off valves and flutter, overrun pops, the rev limiter, the tires, kerbs, gravel, road and wind) are synthesized in real time, in house, from the numbers in `audio/car-sounds.js`: no recordings;
+- the KESTREL's engine and tires (Settings > Engine sound: Recorded, the default) are recordings: its engine at four rev bands on and off the throttle, its blow-off valve and exhaust pops, and the tire squeal, chirps, road roar, gravel and kerb, generated with **ElevenLabs** sound effects (`eleven_text_to_sound_v2`), 2026-11-17, and used as whole takes (cut and looped only), crossfaded and pitched by the revs as the game plays;
+- the other cars, and every car under Engine sound: Classic (every engine, the turbos, blow-off valves and flutter, overrun pops, the rev limiter, the tires, kerbs, gravel, road), and the wind for all of them, are synthesized in real time, in house, from the numbers in `audio/car-sounds.js`;
 - the recorded effects (wall hits, nitrous, the gearbox clunk, interface sounds, the countdown, the star and DEGENERATE fanfares) were generated with **ElevenLabs** sound effects (`eleven_text_to_sound_v2`), 2026-11-15;
 - the music, four original instrumental tracks, was generated with **ElevenLabs Eleven Music** (`music_v2_5`), 2026-11-15, and is used as whole takes, edited only where each one loops (on bar lines);
 - every request (prompt, length, file) is in `audio-src/generation-log.jsonl`, the music requests in `audio-src/requests/`.
@@ -36,7 +37,7 @@ Textures are drawn at load time; the only image files are Portero's (the key art
 - **Code:** the game's own ES modules (`js/`) and one third-party library, vendored and pinned: **three.js r170** (`vendor/three/three.module.min.js`), © 2010-2024 three.js authors, MIT licence (`vendor/three/LICENSE`).
 - **Images:** Portero's key art as WebP (`art/key-art-1920.webp`, `art/key-art-1280.webp`), icons (`icon-64.png`, `icon-180.png`, `icon-512.png`) and share image (`og-degen-drift.jpg`), all made from his delivery; the wordmark `art/wordmark.svg`, drawn in house.
 - **Type:** whatever fonts the device already has. No font files.
-- **Sound:** `audio/`: the sound module and its synthesis (code), 26 recorded effects and four music tracks (Ogg Opus, with AAC copies for Safari; the music streams in short chunks). The WAV masters stay in `audio-src/` and do not ship.
+- **Sound:** `audio/`: the sound module and its synthesis (code), 26 recorded effects, the KESTREL's 16 recorded engine and tire takes (`audio/rec/kestrel/`) and four music tracks (Ogg Opus, with AAC copies for Safari; the music streams in short chunks). The WAV masters stay in `audio-src/` and do not ship.
 - **No external requests and no analytics.** The game loads nothing from outside its own folder.
 - **Saved data:** progress and settings stay in this browser's local storage.
 

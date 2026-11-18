@@ -526,6 +526,7 @@
         }
         let l = sq0 * 0.8 + sq1 * 0.45 + fr + rl + wl + kb + gv;
         let rt = sq1 * 0.8 + sq0 * 0.45 + fr + rr + wr + kb + gv;
+        if (this.windOnly) { l = wl; rt = wr; } // 11-17: recorded tyres (audio/recorded.js) play all but the wind
         if (view > 0.001) { l += (this.inL.lp(l) - l) * view; rt += (this.inR.lp(rt) - rt) * view; }
         L[i] = clamp(l, -1, 1); R[i] = clamp(rt, -1, 1);
       }
@@ -543,8 +544,10 @@
       if (m.type === 'ctl') Object.assign(this.ctl, m.v);
       else if (m.type === 'config') { if (m.engine) this.engine.configure(m.engine); if (m.tyres) this.tyres.configure(m.tyres); }
       else if (m.type === 'shift') this.engine.shift(m.cut);
+      // 11-17: under a recorded engine and tyres this car keeps only its wind, and no engine is computed at all
+      else if (m.type === 'parts') { this.engineOn = m.engine !== false; this.tyres.windOnly = m.tyres === 'wind'; }
     }
-    render(eng, tl, tr, n) { this.engine.render(eng, n, this.ctl); this.tyres.render(tl, tr, n, this.ctl); }
+    render(eng, tl, tr, n) { if (this.engineOn === false) eng.fill(0); else this.engine.render(eng, n, this.ctl); this.tyres.render(tl, tr, n, this.ctl); }
   }
 
   if (typeof AudioWorkletProcessor !== 'undefined' && typeof registerProcessor === 'function') {

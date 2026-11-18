@@ -1,13 +1,20 @@
-// DEGEN DRIFT: the first-run tips. Three short cards with a moving picture each, shown during the player's first run:
-// how zones score (at the start), the sweet spot (the first time they slide in a zone), linking (the first time a link
-// window opens). Each stays about six seconds; a Skip ends them; once seen or skipped they never come back (Settings
-// can bring them back). They sit under the chain, clear of the road, and never pause the game. Wired through the HUD
-// (hud.attach), so main.js knows nothing of them.
+// DEGEN DRIFT: the first-run tips. Three short cards with a moving picture each. 11-17 (Evrtek, having played the test
+// on his phone: "You can't drop tutorials on top of the game while it's playing. If the tip is critical the game needs
+// to pause while the player reads it."): nothing that teaches shows over live driving any more.
+//   1 DRIFT IN THE ZONE, how a run scores (nobody can play without it): it holds the first run on the line, before its
+//     count. The game stands still under the card (main.js hold(): the car, the run's clock, a rival, the ghost and the
+//     score frozen, the sound quiet as in pause); play comes back only on Got it (a tap, Enter, Space, a pad's A or
+//     Start, and not in the card's first 0.6 s, so a tap already on its way cannot dismiss it), and the start's 3-2-1
+//     runs before the car is the player's.
+//   2 HIT THE SWEET SPOT and 3 LINK THE CORNERS (they add to a score; you can play without them): off the road, on a
+//     results screen, one per screen, in order, once the first has been read.
+// Each shows once per profile (the ones seen are kept: 'done' once all three are); Settings can bring them back. Wired
+// through the HUD (hud.attach) and the results screens, so main.js knows only hold() and unhold().
 import * as ART from './art.js?v=0.1.0';
 
-const KEY = 'driftline.tips.v1';
-const read = () => { try { return localStorage.getItem(KEY) === 'done'; } catch (e) { return false; } };
-const write = (v) => { try { if (v) localStorage.setItem(KEY, 'done'); else localStorage.removeItem(KEY); } catch (e) { /* not kept */ } };
+const KEY = 'driftline.tips.v1', ALL = [0, 1, 2];
+const read = () => { try { const v = localStorage.getItem(KEY); if (v === 'done') return new Set(ALL); const a = JSON.parse(v || '[]'); return new Set(Array.isArray(a) ? a.filter((i) => ALL.includes(i)) : []); } catch (e) { return new Set(); } };
+const write = (s) => { try { if (!s.size) localStorage.removeItem(KEY); else localStorage.setItem(KEY, s.size === ALL.length ? 'done' : JSON.stringify([...s])); } catch (e) { /* not kept */ } };
 const still = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
 
 // the road and a band through a bend, as in the game (a 120 x 74 picture)
@@ -33,41 +40,51 @@ const TEXT = [
   ['HIT THE SWEET SPOT', 'The pink line inside the band pays double. Hold your slide on it as long as you can.'],
   ['LINK THE CORNERS', 'Still sliding as a zone ends? Reach the next one before the ring runs out and the multiplier climbs. Touch a wall and the chain is gone.'],
 ];
+const GUARD = 600; // ms: a held card ignores Got it this soon after it appears
 
 export class Tips {
   constructor(game) {
-    this.g = game; this.el = document.getElementById('h-tips'); this.done = read();
-    this.step = -1; this.since = 0; this.shownAt = 0; this.cur = -1; this.runT = -1;
-    this.el.addEventListener('click', (e) => { if (e.target.closest('[data-tip="skip"]')) { this.g.sound.ui('click'); this.skip(); } });
+    this.g = game; this.el = document.getElementById('h-tips'); this.seen = read(); this.holding = -1; this.shownAt = 0;
+    this.el.addEventListener('click', (e) => { if (e.target.closest('[data-tip="ok"]')) this.confirm(); });
   }
-  again() { write(false); this.done = false; this.step = -1; }
-  skip() { this.done = true; write(true); this.hide(); }
-  // every frame of a run (the HUD calls it)
-  frame(car, sc, run) {
-    if (this.done) return;
-    const g = this.g; if (g.state !== 'run' && g.state !== 'countdown') return;
-    if (run.time < this.runT - 0.5) { this.step = -1; this.hide(); } // a new run (restart): start the tips over
-    this.runT = run.time;
-    const now = performance.now() / 1000, up = this.cur >= 0 ? now - this.shownAt : 0;
-    if (this.cur >= 0 && up > (this.cur === 2 ? 7.5 : 6.2)) { if (this.cur === 2) { this.skip(); return; } this.hide(); }
-    if (this.cur >= 0) return;
-    const wait = now - this.since;
-    if (this.step === -1) this.show(0);
-    else if (this.step === 0 && ((sc.inZone && sc.drifting && wait > 1.5) || wait > 9)) this.show(1);
-    else if (this.step === 1 && ((sc.linkOpen && wait > 1) || wait > 10)) this.show(2);
+  get done() { return this.seen.size === ALL.length; }
+  again() { this.seen = new Set(); write(this.seen); }
+  mark(i) { this.seen.add(i); write(this.seen); }
+  // every frame of a run (the HUD calls it): the first card holds the first run on the line, as its count starts (a
+  // count cut short, as the tests do, or the 2-1 back from a hold, is never held)
+  frame() {
+    if (this.holding >= 0 || this.seen.has(0) || this.g.state !== 'countdown' || this.g.rejoin || this.g.count < 3) return;
+    if (this.g.hold(this)) this.show(0);
   }
-  show(i, force = false) {
-    if (this.done && !force) return;
-    this.step = i; this.cur = i; this.shownAt = performance.now() / 1000;
+  // a held card: in the middle of the screen over a dimmed, frozen game, with one way on
+  show(i) {
+    this.holding = i; this.shownAt = performance.now();
     const [title, text] = TEXT[i];
-    this.el.innerHTML = `<div class="tip" role="status"><svg class="demo" viewBox="0 0 120 74" aria-hidden="true">${DEMOS[i]}</svg>
+    this.el.classList.add('hold');
+    this.el.innerHTML = `<div class="tip big" role="dialog" aria-modal="true" aria-label="${title}"><svg class="demo" viewBox="0 0 120 74" aria-hidden="true">${DEMOS[i]}</svg>
       <div><div class="tk">TIP ${i + 1} OF 3</div>${ART.title(title)}<p>${text}</p>
-        <div class="tb"><span class="dots">${[0, 1, 2].map((k) => `<i class="${k <= i ? 'on' : ''}"></i>`).join('')}</span><button data-tip="skip">${i === 2 ? 'Got it' : 'Skip tips'}</button></div></div></div>`;
+        <div class="tb"><button class="btn primary" data-tip="ok">Got it</button></div></div></div>`;
+  }
+  // Got it: the card goes, the game takes back the run (main.js unhold)
+  confirm() {
+    if (this.holding < 0 || performance.now() - this.shownAt < GUARD) return;
+    const i = this.holding; this.holding = -1; this.mark(i);
+    this.g.sound.ui('click');
+    this.hide();
+    this.g.unhold();
   }
   hide() {
-    const t = this.el.firstElementChild; this.cur = -1; this.since = performance.now() / 1000;
-    if (!t) return; t.classList.add('out'); setTimeout(() => { if (t.parentNode === this.el && this.cur < 0) this.el.innerHTML = ''; }, 360);
+    const t = this.el.firstElementChild; this.el.classList.remove('hold');
+    if (!t) return; t.classList.add('out'); setTimeout(() => { if (t.parentNode === this.el && this.holding < 0) this.el.innerHTML = ''; }, 360);
   }
-  // the HUD shows or hides: tips go with it
-  visible(on) { if (!on) { this.el.innerHTML = ''; this.cur = -1; } }
+  // a results screen (ui.js results, duelResult): the next of the other two not yet seen, as a card in the screen
+  forResults() {
+    const i = [1, 2].find((k) => !this.seen.has(k));
+    if (i === undefined || !this.seen.has(0)) return '';
+    this.mark(i);
+    const [title, text] = TEXT[i];
+    return `<div class="rtip"><svg class="demo" viewBox="0 0 120 74" aria-hidden="true">${DEMOS[i]}</svg><div><div class="tk">TIP ${i + 1} OF 3</div>${ART.title(title)}<p>${text}</p></div></div>`;
+  }
+  // the HUD shows or hides: a card goes with it
+  visible(on) { if (!on) { this.el.innerHTML = ''; this.el.classList.remove('hold'); this.holding = -1; } }
 }

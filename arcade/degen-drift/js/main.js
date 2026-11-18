@@ -51,6 +51,7 @@ class Game {
     this.input = new Input(this.settings);
     this.quality = new Quality(this.settings.quality, this.input.touch);
     this.sound = new Sound();
+    this.sound.setEngineSound(this.settings.engineSound); // 11-17 (sound builder): Settings > Engine sound
     installFog(this.course.sun);
     const canvas = document.getElementById('view');
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: !this.input.touch, powerPreference: 'high-performance', alpha: false, stencil: false });
@@ -192,6 +193,7 @@ class Game {
     if (k === 'quality') this.quality.set(v);
     if (k === 'fps') this.fpsEl.hidden = !v;
     if (k === 'sound') this.sound.setMuted(!v);
+    if (k === 'engineSound') this.sound.setEngineSound(v); // 11-17 (sound builder)
     if (k === 'palette') this.applyPalette();
     if (k === 'steer' && v === 'tilt') this.input.startTilt(true).then((ok) => { if (!ok) { this.settings.steer = 'stick'; this.saveSettings(); this.input.applyLayout(); if (this.ui.name === 'settings') this.ui.settings(this.ui.from); } });
     this.input.applyLayout();
@@ -233,7 +235,7 @@ class Game {
     this.ui.clear();
     this.parkAtStart();
     this.retune();
-    this.state = 'countdown'; this.count = 3.2; this.lastCount = 4; this.quality.hold(2);
+    this.state = 'countdown'; this.count = 3.2; this.lastCount = 4; this.rejoin = false; this.quality.hold(2);
     this.run = { time: 0, progress: 0, lapS: this.car.s, hits: [], wrong: 0, started: performance.now() };
     this.car.nosCharge = 1;
     this.cam.snap(this.car);
@@ -246,6 +248,21 @@ class Game {
     this.acc = 0;
   }
   pause() { if (this.state !== 'run' && this.state !== 'countdown') return; this.pausedFrom = this.state; this.state = 'paused'; this.showTouch(false); this.ui.pause(); this.sound.setPaused(true); }
+  // 11-17 (Evrtek: "If the tip is critical the game needs to pause while the player reads it"): something the player
+  // must read holds the game (js/tips.js, the first run's card). As in pause, the car, the run's clock, a rival, the
+  // ghost and the score stand still (nothing steps them), the sound goes quiet the same way, the touch controls go.
+  // by.confirm() lets go (its Got it, Enter, Space, a pad's A or Start); unhold() gives the car back through a count:
+  // the rest of the start's 3-2-1 if it was held on the line, a 2-1 where it stood if it was held mid-run.
+  hold(by) {
+    if (this.state !== 'run' && this.state !== 'countdown') return false;
+    this.heldFrom = this.state; this.heldBy = by; this.state = 'tip'; this.showTouch(false); this.sound.setPaused(true);
+    return true;
+  }
+  unhold() {
+    if (this.state !== 'tip') return;
+    this.heldBy = null; this.sound.setPaused(false); this.showTouch(true); this.last = performance.now(); this.state = 'countdown';
+    if (this.heldFrom === 'run') { this.rejoin = true; this.count = 2; this.lastCount = 3; }
+  }
   resume() { this.ui.clear(); this.state = this.pausedFrom || 'run'; this.showTouch(true); this.last = performance.now(); this.sound.setPaused(false); }
   finish() {
     if (this.duel && this.duel.lapDone()) return; // a downhill duel takes the lap's end (js/duel/duelui.js, day 4)
@@ -284,6 +301,7 @@ class Game {
       if (this.input.pressed('pause') || this.input.edge('PadPause')) this.pause();
       if ((this.input.pressed('reset') || this.input.edge('PadReset')) && this.state === 'run') this.resetCar();
     } else if (this.state === 'paused' && (this.input.pressed('pause') || this.input.edge('PadPause'))) this.resume();
+    else if (this.state === 'tip' && this.heldBy && this.input.edge('Enter', 'NumpadEnter', 'Space', 'PadA', 'PadPause')) this.heldBy.confirm();
     if (this.input.edge('Backquote')) this.setSetting('fps', !this.settings.fps);
     this.input.endFrame();
 
@@ -294,7 +312,7 @@ class Game {
     // cameras
     if (this.state === 'title' || (this.state === 'paused' && false)) this.titleCam(dt);
     else if (this.state === 'garage') this.garageCam(dt);
-    else if (this.state !== 'paused' && this.state !== 'look') this.cam.update(this.car, dt, this.time);
+    else if (this.state !== 'paused' && this.state !== 'look' && this.state !== 'tip' && !this.rejoin) this.cam.update(this.car, dt, this.time);
     if (this.state !== 'garage' && this.camera.view && this.camera.view.enabled) this.camera.clearViewOffset();
 
     this.world.lightAt(this.car.trackI, this.light);
@@ -332,6 +350,8 @@ class Game {
     const n = Math.ceil(this.count);
     if (n !== this.lastCount && n > 0 && n <= 3) { this.hud.msg(String(n)); this.sound.ui('count'); }
     this.lastCount = n;
+    // back from a tip that held the run (hold above): the car waits exactly where it was until the count is out
+    if (this.rejoin) { if (this.count <= 0) { this.rejoin = false; this.hud.msg('GO'); this.sound.ui('go'); this.state = 'run'; } return; }
     // held on the line: the engine can rev
     this.car.step(dt, { steer: 0, throttle: 0, brake: 1, handbrake: 1 });
     this.car.rpm += ((this.car.T.car.idleRpm + inp.throttle * 5200) - this.car.rpm) * Math.min(1, dt * 6);
@@ -404,7 +424,7 @@ class Game {
     this.smoke.maxDensity = { full: 1, less: 0.8, min: 0.6 }[this.settings.smoke || 'full'];
     const ease = this.smoke.crowd(this.camera.position, this.time) * amount; // less smoke when the camera is already in it, or by choice
     const lx = Math.cos(car.psi), lz = -Math.sin(car.psi);
-    const active = this.state === 'run' || this.state === 'results' || this.state === 'countdown';
+    const active = (this.state === 'run' || this.state === 'results' || this.state === 'countdown') && !this.rejoin;
     for (let k = 0; k < 4; k++) {
       const rear = k >= 2, slip = rear ? car.slipR : car.slipF;
       car.wheelPos(k, p);

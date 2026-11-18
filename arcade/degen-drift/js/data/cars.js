@@ -57,7 +57,9 @@ export const CARS = [
     rating: [48, 82], partScale: 1.35, paint: '#aabc16', // acid lime (Portero's 002 sheet)
     induction: { kind: 'turbo', name: 'Turbo kit' },
     tune: {
-      car: { mass: 1210, powerKW: 265, maxDrive: 8800, topSpeedKmh: 228, redline: 9000, shiftUpRpm: 8600, shiftDownRpm: 5200, wheelbase: 2.43, frontWeight: 0.5, yawInertiaScale: 0.86, band: 0.45, bandLo: 0.45, bandHi: 0.85 },
+      // shiftDownRpm 5200 -> 4700 (11-17): first to second is the box's biggest step (x1.55), and at 5200 a change
+      // up landed only 7% over the change-down point, a change down 7% under the change-up; now 18% and 16%
+      car: { mass: 1210, powerKW: 265, maxDrive: 8800, topSpeedKmh: 228, redline: 9000, shiftUpRpm: 8600, shiftDownRpm: 4700, wheelbase: 2.43, frontWeight: 0.5, yawInertiaScale: 0.86, band: 0.45, bandLo: 0.45, bandHi: 0.85 },
       tires: { muFront: 1.12, muRear: 1.02 },
       steer: { counterAssist: 0.55, rate: 5.2 },
       assist: { driftHold: 0.62, holdD: 3.8, holdK: 34 },
