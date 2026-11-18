@@ -36,6 +36,7 @@ export class Car {
     this.ax = 0; this.ay = 0;
     this.gear = 1; this.rpm = this.T.car.idleRpm; this.wheelSpin = 0; this.ws = 0; this.reverse = false; this.cut = 0;
     this.vRoad = 0; this.shiftT = 9; this.lastUp = true; this.overT = 0; // the gearbox (gearbox() below)
+    this.intent = 0; this.liftT = 9; this.turnT = 0; this.bigT = 0; this.flickT = 9; this.flickSide = 0; this.calmT = 0; this.grip = 0; // launch grip (step)
     this.spin = 0; this.slipF = 0; this.slipR = 0; this.alphaF = 0; this.alphaR = 0;
     this.loadF = 0.5; this.wheelRot = 0; this.boost = 0; this.nosOn = false;
     this.hint = -1; this.contact = 0; this.scrape = 0; this.noContact = 1; this.touchFired = false;
@@ -105,6 +106,43 @@ export class Car {
     }
     this.throttle = throttle; this.brake = brake; this.handbrake = hand;
 
+    // ---- 11-17 (2) launch grip (Evrtek on test v11: "too loose off the starting line, a small touch even at slow
+    // speeds seems to want to spin you out"). The cause: the gas on a phone (and a key) is all or nothing, and flat out
+    // below about 100 km/h every car but ORBIT has more drive than its rear tyres can hold, so the rear wheels spun
+    // at up to six times the road speed (KESTREL's at 122 km/h with the car at 20), the rears had almost no side grip
+    // left, and any touch of the wheel swung the tail; past 9 degrees the drift hold took the slide to its full-throttle
+    // angle. Now a drift is a choice, as in an arcade drift game: below drift speed a traction control holds the
+    // rear wheels' spin under their peak and the drift hold waits, unless the player has asked for a slide: the
+    // handbrake, a stab of the gas with the wheel held turned (the clutch kick), a flick of the wheel one way and the
+    // other, or a big steer at speed. The ask lasts while the car slides, and fades soon after it
+    // straightens. Both the help and the ask fade out with speed (gripFullKmh .. gripOffKmh), so at drift speed and
+    // in every chosen drift the car is exactly what it was. launchGrip 0 (the tuning panel's switch) is the old feel.
+    const LG = A.launchGrip || 0, ab0 = Math.abs(this.beta);
+    let grip = 0;
+    if (LG > 0) {
+      const st = Math.abs(this.steerIn), cart = A.lowSpeedKmh;
+      this.liftT = throttle < 0.25 ? 0 : (this.liftT ?? 9) + dt;      // time since the gas was last off
+      this.turnT = st >= A.kickSteer ? (this.turnT ?? 0) + dt : 0;        // time the wheel has been held turned
+      if (hand > 0.05 && kmh > cart) this.intent = 1;                     // the handbrake (not the line's hold)
+      // the stab: the gas from off to flat quickly, with the wheel held turned (a key tap or a small touch never is)
+      if (throttle > 0.75 && this.liftT < A.kickRise && this.turnT >= A.kickHold && kmh >= A.kickKmh) this.intent = 1;
+      // the flick: the wheel past flickSteer one way, then the other, within flickGap s
+      if (st >= A.flickSteer) {
+        const side = Math.sign(this.steerIn);
+        if (this.flickSide && side !== this.flickSide && this.flickT < A.flickGap && kmh >= A.kickKmh) this.intent = 1;
+        this.flickSide = side; this.flickT = 0;
+      } else this.flickT = (this.flickT ?? 9) + dt;
+      // a big steer held at speed (on the gas a power-over, off it a lift-off): asked for once the tail is out under it
+      this.bigT = st >= A.powerSteer ? (this.bigT ?? 0) + dt : 0;
+      const power = this.bigT >= A.kickHold ? sstep(A.powerSteer, 0.95, st) * sstep(A.kickKmh, A.kickKmh + 20, kmh) : 0;
+      if (power > 0.5 && ab0 > A.holdMinDeg * DEG) this.intent = 1;
+      // the ask lasts while the car slides (or the lever is pulled) and fades intentFade s after it straightens
+      this.calmT = ab0 > A.intentDeg * DEG || hand > 0.05 ? 0 : (this.calmT ?? 0) + dt;
+      if (this.calmT > A.intentKeep || kmh < cart) this.intent = Math.max(0, (this.intent || 0) - dt / A.intentFade);
+      grip = LG * (1 - sstep(A.gripFullKmh, Math.max(A.gripOffKmh, A.gripFullKmh + 1), kmh)) * (1 - (this.intent || 0)) * (1 - power);
+    }
+    this.grip = grip;
+
     // ---- weight transfer: the longitudinal acceleration of the last step loads one axle and unloads the other
     const shift = C.transferScale * m * this.ax * C.cgHeight / L;
     const Fzf = Math.max(m * G * 0.12, m * G * b / L - shift);
@@ -173,6 +211,9 @@ export class Car {
         if (mid - ws0 - dt / M * (demandAt(mid) - force(mid)) > 0) hi = mid; else lo = mid;
       }
       this.ws = (lo + hi) / 2;
+      // 11-17 (2) the traction control (launch grip above): the wheels' spin held under tcSlip of the peak slip ratio,
+      // so the rears keep their side grip; the engine's torque is what gives way
+      if (grip > 0) { const wsMax = rvx + vden * kP * A.tcSlip; if (this.ws > wsMax) this.ws -= (this.ws - wsMax) * grip; }
       Frx = force(this.ws); Fry = fy;
       spin = clamp((this.ws - rvx) / Math.max(rvx, 4) / kP - 1, 0, 3) / 3;
     }
@@ -194,7 +235,9 @@ export class Car {
       const on = sstep(A.holdMinDeg * DEG, (A.holdMinDeg + 7) * DEG, ab) * sstep(A.lowSpeedKmh / 3.6, A.lowSpeedKmh / 3.6 + 5, speed);
       if (on > 0) {
         const sg = Math.sign(beta), into = -sg * this.steerIn;
-        const tgt = clamp(A.holdBaseDeg + A.holdThrottleDeg * throttle + A.holdSteerDeg * into, 0, A.guardDeg) * DEG;
+        // 11-17 (2): a slide nobody asked for, below drift speed, is held toward straight, not toward a drift's angle
+        // (launch grip above: grip is 0 in any chosen drift and at drift speed, so there the target is as it was)
+        const tgt = clamp(A.holdBaseDeg + A.holdThrottleDeg * throttle + A.holdSteerDeg * into, 0, A.guardDeg) * DEG * (1 - grip);
         const bdot = (ab - (this.prevAb ?? ab)) / dt;
         tq += -sg * on * A.driftHold * I * (A.holdK * (tgt - ab) - A.holdD * bdot);
       }

@@ -175,20 +175,25 @@ html { font-size: clamp(13px, calc(0.55vw + 0.9 * var(--vh1, 1vh)), 19px); } /* 
 .tc-btn { position: absolute; border-radius: 50%; border: 2px solid rgba(255,255,255,0.22); background: var(--glass); display: grid; place-items: center; color: #fff; }
 .tc-btn svg { width: 46%; height: 46%; }
 .tc-btn.down, .tc-gas.down { background: rgba(255,63,164,0.4); border-color: var(--pink); box-shadow: 0 0 18px rgba(255,63,164,0.6); }
-.tc-hand { width: 92px; height: 92px; right: 112px; bottom: 74px; border-color: rgba(255,179,71,0.6); color: var(--amber); }
-.tc-brake { width: 76px; height: 76px; right: 206px; bottom: 6px; }
-.tc-nos { width: 60px; height: 60px; right: 118px; bottom: 172px; color: var(--cyan); border-color: rgba(54,242,255,0.6); }
+/* 11-17 (2), Evrtek on test v11: "The brake pedal is too far away from the gas, let's move it closer and move the
+   handbrake a little further away". The brake sits beside the gas at the bottom, 12 px from it, so a thumb rocks
+   between them (it was 106 px away, past the handbrake); the handbrake steps up and to the left, clear of both (it was
+   12 px from the gas and 2 from the brake); the nitrous goes low on the far left. tools/test/pedals.mjs measures it. */
+.tc-hand { width: 88px; height: 88px; right: 150px; bottom: 112px; border-color: rgba(255,179,71,0.6); color: var(--amber); }
+.tc-brake { width: 84px; height: 84px; right: 112px; bottom: 0; }
+.tc-nos { width: 56px; height: 56px; right: 216px; bottom: 8px; color: var(--cyan); border-color: rgba(54,242,255,0.6); }
 .tc-gas { position: absolute; right: 0; bottom: 0; width: 100px; height: 168px; border-radius: 22px; border: 2px solid rgba(93,255,176,0.5); background: var(--glass); overflow: hidden; display: grid; place-items: center; color: var(--good); }
 .tc-gas svg { width: 40%; position: relative; }
 .tc-fill { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: linear-gradient(0deg, rgba(93,255,176,0.55), rgba(93,255,176,0.1)); }
 .tc-slider { position: absolute; right: 8px; bottom: 0; width: 74px; height: 220px; border-radius: 37px; border: 2px solid rgba(93,255,176,0.5); background: var(--glass); overflow: hidden; }
 .tc-grip { position: absolute; left: 6px; right: 6px; height: 28px; bottom: 0; border-radius: 14px; background: linear-gradient(#fff, var(--good)); box-shadow: 0 0 14px var(--good); }
-.tc-gauge { position: absolute; right: 108px; bottom: 0; width: 14px; height: 66px; border-radius: 7px; background: rgba(255,255,255,0.1); overflow: visible; }
+.tc-gauge { position: absolute; right: 43px; bottom: 176px; width: 14px; height: 48px; border-radius: 7px; background: rgba(255,255,255,0.1); overflow: visible; } /* 11-17 (2): above the pad (the brake has its old place) */
 .tc-gfill { position: absolute; left: 0; right: 0; bottom: 0; height: 0; border-radius: 7px; background: linear-gradient(0deg, var(--good), #fff); }
 .tc-gauge.full .tc-gfill { box-shadow: 0 0 14px #fff; }
 .tc-glabel { position: absolute; right: 18px; bottom: 0; font: 700 10px/1.2 ui-monospace, Menlo, monospace; color: var(--good); white-space: nowrap; }
-.touch[data-throttle="slider"] .tc-hand { right: 96px; }
-.touch[data-throttle="slider"] .tc-brake { right: 190px; }
+.touch[data-throttle="slider"] .tc-hand { right: 132px; }
+.touch[data-throttle="slider"] .tc-brake { right: 94px; }
+.touch[data-throttle="slider"] .tc-nos { right: 198px; }
 
 
 /* ---------------------------------------------------------------- screens (day 3 art pass: REIMERTEK synthwave, after

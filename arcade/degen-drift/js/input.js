@@ -8,6 +8,8 @@
 //   buttons  - plain GAS and BRAKE.
 // Steering on a phone: a floating stick under the left thumb, or tilt (the phone turned like a wheel).
 import { view } from './fit.js?v=0.1.0';
+import { TUNING } from './config.js?v=0.1.0';
+import { shapeStick } from './stick.js?v=0.1.0';
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 // Day 4: every keyboard action can be moved (Settings > Keys); the arrows, E, P and Shift always work as well.
 export const ACTIONS = [
@@ -84,13 +86,16 @@ export class Input {
     if (this.tilt.on) this.startTilt(false);
   }
   showNos(on) { if (this.el) this.el.nos.hidden = !on; }
+  // 11-17 (2), with the brake beside the gas: a touch on a control is that control, and the 10 px margin round each
+  // goes to the nearest one (it went to the first in a fixed order, so the brake's margin could take the gas's edge)
   hit(x, y) {
-    const inside = (el) => { if (!el || el.hidden) return false; const r = el.getBoundingClientRect(); const pad = 10; return x >= r.left - pad && x <= r.right + pad && y >= r.top - pad && y <= r.bottom + pad; };
-    if (inside(this.el.nos)) return 'nos';
-    if (inside(this.el.hand)) return 'hand';
-    if (inside(this.el.brake)) return 'brake';
-    if (this.settings.throttle === 'slider' && inside(this.el.slider)) return 'slider';
-    if (this.settings.throttle !== 'slider' && inside(this.el.gas)) return 'gas';
+    const away = (el) => { if (!el || el.hidden) return Infinity; const r = el.getBoundingClientRect(); return Math.hypot(Math.max(r.left - x, 0, x - r.right), Math.max(r.top - y, 0, y - r.bottom)); };
+    const slider = this.settings.throttle === 'slider';
+    let best = null, bd = 10.001;
+    for (const [name, el] of [['nos', this.el.nos], ['hand', this.el.hand], ['brake', this.el.brake], slider ? ['slider', this.el.slider] : ['gas', this.el.gas]]) {
+      const d = away(el); if (d < bd) { bd = d; best = name; }
+    }
+    if (best) return best;
     if (x < view.x + view.w * 0.5 && this.settings.steer === 'stick') return 'stick';
     return null;
   }
@@ -197,7 +202,8 @@ export class Input {
     // phone
     if (this.el) {
       const t = this.t, s = this.settings;
-      if (s.steer === 'stick' && t.steerOn) { steer = t.steer; analog = true; }
+      // 11-17 (2): the stick through its shaping (js/stick.js: a dead zone and a curve; straight with the old feel)
+      if (s.steer === 'stick' && t.steerOn) { steer = shapeStick(t.steer, TUNING.steer, TUNING.assist); analog = true; }
       if (s.steer === 'tilt' && this.tilt.ok && this.tilt.neutral !== null) { steer = clamp(-wrap(this.tilt.angle - this.tilt.neutral) / (28 * Math.PI / 180), -1, 1); if (Math.abs(steer) < 0.04) steer = 0; analog = true; }
       if (s.throttle === 'slider') { thr = Math.max(thr, t.sliderV || 0); this.el.sliderFill.style.height = ((t.sliderV || 0) * 100) + '%'; this.el.grip.style.bottom = `calc(${(t.sliderV || 0) * 100}% - ${(t.sliderV || 0) * 28}px)`; }
       else if (s.throttle === 'buttons') { thr = Math.max(thr, t.gas ? 1 : 0); }

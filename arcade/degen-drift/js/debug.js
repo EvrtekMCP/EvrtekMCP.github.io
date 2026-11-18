@@ -26,6 +26,8 @@ export class Debug {
       if (a === 'close') this.toggle(false);
       if (a === 'copy') { const s = JSON.stringify(diffFromDefaults(), null, 1); try { navigator.clipboard.writeText(s); } catch (err) { /* shown below */ } this.el.querySelector('#dbg-out').textContent = s; }
       if (a === 'reset') { this.resetAll(); }
+      // 11-17 (2): the launch grip's switch (car.js step): off is the handling before it, for a side-by-side
+      if (a === 'feel') { TUNING.assist.launchGrip = TUNING.assist.launchGrip ? 0 : 1; this.save(); this.g.retune(); this.render(); }
       if (a === 'grp') { const g = b.dataset.g; if (this.shut.has(g)) this.shut.delete(g); else this.shut.add(g); this.render(); }
     });
 
@@ -34,7 +36,8 @@ export class Debug {
   resetAll() { for (const g of GROUPS) Object.assign(TUNING[g], JSON.parse(JSON.stringify(DEFAULTS[g]))); this.save(); this.g.retune(); this.render(); }
   toggle(on = !this.open) { this.open = on; this.el.hidden = !on; if (on) this.render(); }
   render() {
-    let h = `<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn small" data-dbg="copy">Copy changes</button><button class="btn small" data-dbg="reset">Reset all</button><button class="btn small" data-dbg="close">Close</button></div><pre id="dbg-tel"></pre><pre id="dbg-out"></pre>`;
+    const lg = TUNING.assist.launchGrip;
+    let h = `<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn small" data-dbg="copy">Copy changes</button><button class="btn small" data-dbg="reset">Reset all</button><button class="btn small" data-dbg="close">Close</button><button class="btn small" data-dbg="feel" id="dbg-feel" aria-pressed="${lg ? 'true' : 'false'}">Launch grip: ${lg ? 'ON' : 'OFF (the old feel)'}</button></div><pre id="dbg-tel"></pre><pre id="dbg-out"></pre>`;
     for (const g of GROUPS) {
       h += `<h4 data-dbg="grp" data-g="${g}">${this.shut.has(g) ? '+' : '-'} ${g}</h4>`;
       if (this.shut.has(g)) continue;
@@ -52,7 +55,7 @@ export class Debug {
     const c = this.g.car, s = this.g.score, el = this.el.querySelector('#dbg-tel'); if (!el || !c) return;
     el.textContent = `speed ${(c.speed * 3.6).toFixed(0)} km/h  slide ${(c.beta * 57.3).toFixed(1)} deg  yaw ${c.r.toFixed(2)}\n` +
       `steer ${c.steerIn.toFixed(2)}  wheels ${(c.delta * 57.3).toFixed(1)} deg  thr ${c.throttle.toFixed(2)} brk ${c.brake.toFixed(2)} hb ${c.handbrake.toFixed(1)}\n` +
-      `front load ${(c.loadF * 100).toFixed(0)}%  slip F ${(c.alphaF * 57.3).toFixed(1)} R ${(c.alphaR * 57.3).toFixed(1)} deg  spin ${c.spin.toFixed(2)}\n` +
+      `front load ${(c.loadF * 100).toFixed(0)}%  slip F ${(c.alphaF * 57.3).toFixed(1)} R ${(c.alphaR * 57.3).toFixed(1)} deg  spin ${c.spin.toFixed(2)}  grip help ${(c.grip || 0).toFixed(2)} ask ${(c.intent || 0).toFixed(2)}\n` +
       `gear ${c.gear} rpm ${c.rpm.toFixed(0)} boost ${c.boost.toFixed(2)} nos ${c.nosCharge.toFixed(2)}\n` +
       `zone ${s.zoneNear ? s.zoneNear.id : '-'} ${s.inZone ? (s.sweet ? 'SWEET' : 'in') : 'out'} off-line ${s.offLine.toFixed(1)} m  rate ${s.rate.toFixed(0)}/s  acc ${s.acc.toFixed(0)} x${s.mult}`;
   }

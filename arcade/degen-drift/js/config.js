@@ -48,6 +48,9 @@ export const TUNING = {
     returnRate: 6.0,         // how fast it centres when let go
     counterAssist: 0.62,     // 0 = none; 1 = front wheels follow the slide on their own
     counterMaxDeg: 44,       // the most lock the assist may add
+    // 11-17 (2) the phone stick's shaping (js/stick.js), off with assist.launchGrip 0
+    stickDead: 0.05,         // share of the stick's travel (62 px) that does nothing: a resting thumb's wander
+    stickCurve: 1.15,        // 1 = straight; more = the first px of a correction give less (full travel is full lock)
   },
   assist: {
     driftHold: 0.8,          // 0 = raw tires only; 1 = the slide's angle follows the target below firmly
@@ -61,6 +64,21 @@ export const TUNING = {
     guardDeg: 62,
     yawDamping: 1400,        // N m per rad/s, steadies the tail
     lowSpeedKmh: 14,         // under this the car steers like a cart (no slides, no jitter)
+    // 11-17 (2) launch grip (car.js step): below drift speed a drift is a choice, never an accident from a small touch
+    launchGrip: 1,           // 1 = on; 0 = the feel before 11-17 (2) (the tuning panel's switch); no player setting
+    gripFullKmh: 50,         // the help is all there up to this speed...
+    gripOffKmh: 95,          // ...and gone by this one
+    tcSlip: 0.5,              // traction control: the rear wheels' spin held under this share of the peak slip ratio
+    kickKmh: 35,             // the asks (a gas stab, a flick, a big steer on the gas) count from this speed up
+    kickRise: 0.3,           // s: the gas flat (over 75%) this soon after it was off (under 25%) is a stab...
+    kickSteer: 0.35,         // ...with the wheel turned at least this far...
+    kickHold: 0.2,           // ...for at least this many s (a key tap of 0.15 s or a 20 px touch never is; a big steer too)
+    flickSteer: 0.45,        // a flick: the wheel past this one way, then the other...
+    flickGap: 0.7,           // ...within this many s
+    powerSteer: 0.6,         // a big steer: from this much wheel (all of it by 0.95), held kickHold s, gas or none
+    intentDeg: 8,            // the ask lasts while the slide is past this angle (or the lever is pulled)...
+    intentKeep: 1.0,         // ...and this many s after it straightens...
+    intentFade: 0.4,         // ...then fades over this many s
   },
   wall: {
     restitution: 0.18,       // bounce off the wall
@@ -168,6 +186,12 @@ export const RANGES = {
   'assist.spinGuard': [0, 2, 0.01], 'assist.guardDeg': [30, 90, 1], 'assist.driftHold': [0, 1.5, 0.01],
   'assist.holdMinDeg': [3, 25, 0.5], 'assist.holdBaseDeg': [0, 40, 0.5], 'assist.holdThrottleDeg': [0, 50, 0.5], 'assist.holdSteerDeg': [0, 40, 0.5],
   'assist.holdK': [0, 80, 0.5], 'assist.holdD': [0, 20, 0.1], 'assist.yawDamping': [0, 4000, 50],
+  // 11-17 (2) launch grip: launchGrip is the switch (1 on, 0 the old feel); the panel's button flips it too
+  'assist.launchGrip': [0, 1, 1], 'assist.gripFullKmh': [0, 120, 1], 'assist.gripOffKmh': [10, 160, 1], 'assist.tcSlip': [0.2, 2, 0.05],
+  'assist.kickKmh': [0, 100, 1], 'assist.kickRise': [0.05, 1, 0.05], 'assist.kickSteer': [0, 1, 0.05], 'assist.kickHold': [0, 1, 0.05],
+  'assist.flickSteer': [0.1, 1, 0.05], 'assist.flickGap': [0.1, 2, 0.05], 'assist.powerSteer': [0.1, 0.95, 0.05],
+  'assist.intentDeg': [0, 30, 0.5], 'assist.intentKeep': [0, 3, 0.05], 'assist.intentFade': [0.05, 2, 0.05],
+  'steer.stickDead': [0, 0.3, 0.01], 'steer.stickCurve': [1, 3, 0.05],
   'wall.restitution': [0, 0.8, 0.01], 'wall.scrub': [0.5, 1, 0.01],
   'scoring.sweetMult': [1, 4, 0.1], 'scoring.speedExp': [0, 3, 0.05], 'scoring.angleWeight': [0, 1, 0.01],
   'scoring.linkWindow': [0.5, 6, 0.1], 'scoring.multStep': [0.25, 2, 0.25], 'scoring.multCap': [1, 12, 1],
