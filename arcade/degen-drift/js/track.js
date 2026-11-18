@@ -10,6 +10,11 @@
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const smooth = (t) => t * t * (3 - 2 * t);
+// 11-18: the drift line's distance in from the painted lane's outside edge (a course's zones.edgeGap overrides it).
+// A car sliding at 34 degrees reaches about 2.0 m to either side of its middle, and the wall stands 0.55 m past the
+// road's edge (car.js walls()), so a car in the middle of the sweet spot clears the wall by 3.25 + 0.55 - 2.0 = 1.8 m:
+// about a car's width. At the sweet spot's outer edge it is 0.6-0.9 m: nerve, with room to hold it.
+const EDGE_GAP = 3.25;
 const sstep = (a, b, x) => smooth(clamp((x - a) / (b - a), 0, 1));
 
 function catmull(p0, p1, p2, p3, t, alpha = 0.5) {
@@ -137,8 +142,8 @@ export class Track {
   headingAt(s) { const i = Math.floor(this.wrapS(s) / this.step) % this.n; return this.psi[i]; }
 
   // Corners: runs of curvature past a threshold, split where the bend changes hands (so an S is two zones), padded
-  // so the zone starts as the car turns in and ends past the exit. Each gets a racing line (outside, apex, outside)
-  // and two bands along it: the zone and, tighter, the sweet spot.
+  // so the zone starts as the car turns in and ends past the exit. Each gets a drift line along the outside of the
+  // bend (zoneLine) and two bands along it: the zone and, tighter, the sweet spot.
   findZones(opt) {
     const { n, step } = this, cs = this.curvSmooth;
     const kMin = opt.minCurv || 1 / 230, pad0 = opt.padIn || 10, pad1 = opt.padOut || 16, minLen = opt.minLen || 30;
@@ -167,22 +172,26 @@ export class Track {
       zones.push({ s0, s1, len: e - b, side: r.side, apexT: clamp((r.apex * step - b) / (e - b), 0.25, 0.75), peak: r.peak, hairpin: r.peak > 1 / 30 });
     }
     zones.sort((a, b) => a.s0 - b.s0);
-    const zh = opt.zoneHalf || 3.0, sh = opt.sweetHalf || 1.15;
-    zones.forEach((zn, k) => { zn.id = k; zn.zoneHalf = zh * (zn.hairpin ? 1.15 : 1); zn.sweetHalf = sh * (zn.hairpin ? 1.15 : 1); });
+    const zh = opt.zoneHalf || 3.0, sh = opt.sweetHalf || 1.15, eg = opt.edgeGap || EDGE_GAP;
+    zones.forEach((zn, k) => { zn.id = k; zn.zoneHalf = zh * (zn.hairpin ? 1.15 : 1); zn.sweetHalf = sh * (zn.hairpin ? 1.15 : 1); zn.edgeGap = eg; });
     return zones;
   }
   // where along a zone s sits: 0..1, or -1 if outside it
   zoneT(zn, s) { const d = this.ds(zn.s0, s); if (d < 0 || d > zn.len) return -1; return d / zn.len; }
-  // the racing line's lateral offset at zone fraction t (from the centre line; it keeps to the painted lane, so a
-  // runoff is room to run wide, not where the line goes). `half` is what callers pass; the lane is read here.
+  // The drift line's lateral offset at zone fraction t (from the centre line): the middle of the zone band and of its
+  // sweet spot. 11-18 (Evrtek, after test v12: "The drift lines should be more on the outside of a turn, so that
+  // you're incentivized to drift a little closer to the wall"): it rides the OUTSIDE of the bend, edgeGap in from the
+  // painted lane's outside edge, from the turn-in to the exit, as the outer clipping zones of competition drifting run
+  // along the wall. Until 11-18 it was the grip racing line (outside, apex, outside): it swung to the inside for the
+  // middle of every bend, the part a slide spends longest in. It keeps to the painted lane (a runoff apron is room to
+  // save a slide, never the line); the band never crosses the road's edge, and the line never passes the lane's middle
+  // toward the inside. `half` is what callers pass (the road's half width there); the lane is read here.
   zoneLine(zn, t, half) {
-    const ta = zn.apexT;
-    const p = t <= ta ? smooth(t / ta) : 1 - smooth((t - ta) / (1 - ta));
     const i = Math.floor(this.wrapS(zn.s0 + t * zn.len) / this.step) % this.n;
     const lh = Math.min(half, this.laneHalf[i]), off = this.laneOff[i];
-    const room = Math.max(0, lh - zn.zoneHalf - 0.4);
-    const entry = Math.min(room, lh * 0.30), apex = Math.min(room, lh * 0.48);
-    return off + zn.side * (-entry + (entry + apex) * p);
+    // how far outside the lane's middle the line sits; the band's outer edge stays on the road
+    const wide = Math.min(lh - zn.edgeGap, half + zn.side * off - zn.zoneHalf);
+    return off - zn.side * Math.max(0, wide);
   }
   // which zone (if any) s is in, starting the search at a hint id
   zoneAt(s) { for (const zn of this.zones) { const t = this.zoneT(zn, s); if (t >= 0) return zn; } return null; }

@@ -11,6 +11,7 @@
 //   - The rival is a car like yours (same physics, its own tune and parts) driven by rival.js: real lines, drifts in
 //     the zones, and the odd mistake you can pounce on. It never gets help from the physics.
 import { TUNING } from '../config.js?v=0.1.0';
+import { Steps } from '../scoring.js?v=0.1.0';
 import * as G from '../garage.js?v=0.1.0';
 import { CATEGORIES } from '../data/upgrades.js?v=0.1.0';
 
@@ -21,13 +22,15 @@ const DEG = 180 / Math.PI;
 // balance (tools/duels.mjs, 48 duels a skill): every pace 1.0 (a rival's strength is its car and how often it gets a
 // zone wrong; pace above 1 only overdrives, and since the hairpin floor was fixed it made TIMBER a second a leg
 // quicker than anyone); won by a weak / decent / good / strong stand-in, out of 48: DUST DEVIL 9/18/36/47, CEDAR
-// 2/8/19/26, CLOUDBREAK 7/11/15/20
+// 2/8/19/26, CLOUDBREAK 7/11/15/20. 11-18: the drift lines moved to the outside and both drivers got eyes for the wall
+// (rival.js), which made SIDEWINDER and HALO harder (out of 40: DUST DEVIL 8/22/25/39 -> 5/12/23/38, CLOUDBREAK
+// 6/15/12/14 -> 3/7/10/8); a few more mistakes each (0.16 -> 0.22, 0.10 -> 0.15) give 10/14/25/35 and 7/12/15/18
 export const DUELS = {
-  'dust-devil': { rival: 'vanta', who: 'SIDEWINDER', paint: '#c03c7c', parts: 0.3, pace: 1.0, angle: 33, mistakes: 0.16, outright: 5.0,
+  'dust-devil': { rival: 'vanta', who: 'SIDEWINDER', paint: '#c03c7c', parts: 0.3, pace: 1.0, angle: 33, mistakes: 0.22, outright: 5.0,
     line: 'Smooth and a touch cautious. Pressure him into the cutbacks.' },
   'cedar-switchbacks': { rival: 'halberd', who: 'TIMBER', paint: '#2f8a6a', parts: 0.4, pace: 1.0, angle: 35, mistakes: 0.12, outright: 4.5,
     line: 'Big smoky slides in a heavy V8. Late on the brakes, slow out of the hairpins.' },
-  'cloudbreak-crown': { rival: 'zenith', who: 'HALO', paint: '#e6e2f2', parts: 0.9, pace: 1.0, angle: 36, mistakes: 0.1, outright: 4.2,
+  'cloudbreak-crown': { rival: 'zenith', who: 'HALO', paint: '#e6e2f2', parts: 0.9, pace: 1.0, angle: 36, mistakes: 0.15, outright: 4.2,
     line: 'The fastest driver on the mountain. Rarely wrong; when she is, take it.' },
 };
 export const RULES = {
@@ -41,23 +44,48 @@ export const RULES = {
   // costs you only if you drove into the rival at hitSpeed or more; a slow lean side by side is a rub and costs nothing
   hitSpeed: 2.0, apart: 0.6, rubMax: 2.5,
   tie: 400,          // two legs closer than this (under half a second of gap) go to a sudden-death third leg
+  // 11-18: a run's hold and switchback steps in the drift meter too (DriftMeter). Built and measured, OFF until Evrtek
+  // rules: on, the weakest stand-in won DUST DEVIL 29 duels in 40 (the stand-in's KESTREL holds the sweet spot longer
+  // than SIDEWINDER's VANTA at every skill, so the steps paid the car, not the driver; the rivals would want retuning
+  // with it). Off, the meter is what it was: zone points at the scoring's rate, no chains, no multiplier.
+  steps: false,
 };
 
-// your drift in the zones, by the scoring's own rate (no chains, no multiplier: this is drift quality)
+// your drift in the zones, by the scoring's own rate (no chains: this is drift quality). 11-18 (Evrtek's multiplier),
+// with RULES.steps on (off until he rules): the same hold and switchback steps a run's chain takes (js/scoring.js
+// Steps) raise each drift's own multiplier, which pays on the points scored after it; no links (a duel was never about
+// linking zones). The drift ending, or a wall touch, puts it back to x1. Both cars are measured the same way, live, so
+// the bars only ever grow. `base` is the points without it, for the tools.
 export class DriftMeter {
-  constructor(track) { this.track = track; this.reset(); }
-  reset() { this.pts = 0; this.zoneTime = 0; this.sweetTime = 0; }
+  constructor(track) { this.track = track; this.steps = new Steps(); this.reset(); }
+  reset() { this.pts = 0; this.base = 0; this.zoneTime = 0; this.sweetTime = 0; this.holds = 0; this.switches = 0; this.maxMult = 1; this.drift = false; this.dropT = 0; this.touch = false; this.end(); }
+  end() { this.mult = 1; this.live = false; this.steps.reset(); }
   step(car, dt) {
     const Sc = TUNING.scoring, tr = this.track, ang = Math.abs(car.beta) * DEG, kmh = car.speed * 3.6;
-    if (ang < Sc.minAngleDeg || kmh < Sc.minSpeedKmh || car.u <= 0) return 0;
-    const zn = tr.zoneAt(car.s); if (!zn) return 0;
-    const t = tr.zoneT(zn, car.s), off = car.lat - tr.zoneLine(zn, t, tr.halfAt(car.trackI, 0));
-    if (Math.abs(off) > zn.zoneHalf) return 0;
-    const sweet = Math.abs(off) <= zn.sweetHalf;
-    const sf = clamp(Math.pow(kmh / Sc.speedRefKmh, Sc.speedExp), 0, Sc.speedFactorMax);
-    const af = 1 - Sc.angleWeight + 2 * Sc.angleWeight * clamp((ang - Sc.minAngleDeg) / (Sc.angleIdealDeg - Sc.minAngleDeg), 0, 1);
-    const r = Sc.zonePointsPerSec * sf * af * (sweet ? Sc.sweetMult : 1);
-    this.pts += r * dt; this.zoneTime += dt; if (sweet) this.sweetTime += dt;
+    if (car.touchFired && !this.touch) this.end(); // the touch that wipes a run's chain
+    this.touch = car.touchFired;
+    const sliding = ang >= Sc.minAngleDeg && kmh >= Sc.minSpeedKmh && car.u > 0;
+    if (sliding) { this.dropT = 0; this.drift = true; } else if (this.drift && (this.dropT += dt) > Sc.dropGrace) { this.drift = false; this.end(); }
+    let r = 0, sweet = false;
+    const zn = sliding ? tr.zoneAt(car.s) : null;
+    if (zn) {
+      const t = tr.zoneT(zn, car.s), off = car.lat - tr.zoneLine(zn, t, tr.halfAt(car.trackI, 0));
+      if (Math.abs(off) <= zn.zoneHalf) {
+        sweet = Math.abs(off) <= zn.sweetHalf;
+        const sf = clamp(Math.pow(kmh / Sc.speedRefKmh, Sc.speedExp), 0, Sc.speedFactorMax);
+        const af = 1 - Sc.angleWeight + 2 * Sc.angleWeight * clamp((ang - Sc.minAngleDeg) / (Sc.angleIdealDeg - Sc.minAngleDeg), 0, 1);
+        const base = Sc.zonePointsPerSec * sf * af * (sweet ? Sc.sweetMult : 1);
+        r = base * this.mult;
+        this.pts += r * dt; this.base += base * dt; this.zoneTime += dt; if (sweet) this.sweetTime += dt; this.live = true;
+      }
+    }
+    const st = this.steps;
+    st.tick(dt, car, sliding, sweet);
+    if (RULES.steps && this.live && (st.hold || st.swap)) {
+      if (st.hold) { this.holds++; this.mult += Sc.holdStep; }
+      if (st.swap) { this.switches++; this.mult += Sc.switchStep; }
+      this.mult = Math.min(Sc.multCap, this.mult); this.maxMult = Math.max(this.maxMult, this.mult);
+    }
     return r;
   }
 }

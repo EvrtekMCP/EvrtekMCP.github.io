@@ -9,8 +9,8 @@ export const EMBER_BAY = {
   region: 'harbour',
   difficulty: 15,           // out of 100; the car's ability rating is weighed against it
   dressing: 'harbour-pass', // the scenery preset (world.js)
-  stars: [9000, 22000, 42000], // day 3: tools/starlines.mjs (zone worth and chain worth); his play retunes them
-  degenerate: 76000,
+  stars: [25000, 61000, 111000], // day 3: tools/starlines.mjs (zone worth and chain worth); his play retunes them
+  degenerate: 196000,
   startOffset: 62,
   points: [
     [230, 0, 0.6, 6.5, 0],

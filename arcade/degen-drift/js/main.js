@@ -7,6 +7,7 @@ import { TUNING, VERSION } from './config.js?v=0.1.0';
 import { installFog, PAL } from './look.js?v=0.1.0';
 import { Track } from './track.js?v=0.1.0';
 import { courseById } from './courses/index.js?v=0.1.0';
+import { DUELS } from './duel/duel.js?v=0.1.0';
 import { Car } from './car.js?v=0.1.0';
 import { DriftScore } from './scoring.js?v=0.1.0';
 import * as G from './garage.js?v=0.1.0';
@@ -24,6 +25,7 @@ import { Hud } from './hud.js?v=0.1.0';
 import { Debug, loadTuning } from './debug.js?v=0.1.0';
 import { appIcon } from './art.js?v=0.1.0';
 import { Loader, painted } from './loader.js?v=0.1.0';
+import { TipScreen } from './tips.js?v=0.1.0';
 import { view, onFit } from './fit.js?v=0.1.0';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -51,6 +53,8 @@ class Game {
     this.input = new Input(this.settings);
     this.quality = new Quality(this.settings.quality, this.input.touch);
     this.sound = new Sound();
+    // 11-18 (sound builder): New became the default; a choice saved before it (Recorded or Classic) starts on New once
+    if (this.settings.engineSoundV !== 2) { this.settings.engineSound = 'new'; this.settings.engineSoundV = 2; this.saveSettings(); }
     this.sound.setEngineSound(this.settings.engineSound); // 11-17 (sound builder): Settings > Engine sound
     installFog(this.course.sun);
     const canvas = document.getElementById('view');
@@ -79,6 +83,7 @@ class Game {
     this.post = new Post(this.renderer);
     this.hud = new Hud();
     this.ui = new UI(this);
+    this.tipScreen = new TipScreen(this, this.ui.tips); // 11-18 (2): the loading screen a race launches behind
     this.debug = new Debug(this);
     this.fpsEl = document.getElementById('fps'); this.fpsEl.hidden = !this.settings.fps;
     this.frames = []; this.fpsT = 0;
@@ -107,7 +112,7 @@ class Game {
   // ---------------------------------------------------------------- courses (the courses builder's: world, track, fog)
   // step(fraction 0..1, what): awaited between the stages (the boot's bar, the loading screen)
   async buildCourse(course, step) {
-    const track = new Track(course);
+    const track = this.chosenTrack && this.chosenTrack.course === course ? this.chosenTrack : new Track(course); // the card's road, if it has one
     if (step) await step(0.03, 'the road');
     const world = await buildWorld(track, course, this.quality.tier, step);
     // swapped in only once built (no frame sees a half-made course)
@@ -121,23 +126,70 @@ class Game {
   // skids, a ghost or a rival) is marked to recompile with the region's fog (look.js bumps the fog's epoch in every
   // program key); the new world's materials are new and compile once. The shaders compile and one frame is drawn under
   // the loading screen, so the card that follows answers at once. The old world goes after the new one is built.
+  // 11-18 (2): since the tips moved to the race's loading screen, a player picks a course (choose) and its world is
+  // built when a race on it launches (launch); loadCourse builds one at once, under the plain loading screen (the
+  // tests' __dl.loadCourse).
   async loadCourse(id) {
     const course = courseById(id);
+    this.chosen = null;
     if (course === this.course || this.loading) return false;
-    return this.busy('Building ' + course.name, async (step) => {
-      this.settings.course = course.id; this.saveSettings();
-      const old = this.world;
-      await this.buildCourse(course, (f) => step(0.04 + f * 0.8));
-      this.scene.remove(old.root); old.dispose();
-      this.car.track = this.track; this.score = new DriftScore(this.track); this.surface = new Surface(this.track);
-      if (this.autopilot) this.autopilot.track = this.track;
-      this.world.setPixelRatio(this.renderer.getPixelRatio());
-      this.skids.clear();
-      for (const o of this.scene.children) if (o !== this.world.root) o.traverse((x) => { for (const m of [].concat(x.material || [])) m.needsUpdate = true; });
-      this.parkAtStart(); this.cam.snap(this.car); this.titleS = 30;
-      if (this.state === 'title') this.titleCam(0);
-      if (this.paletteWorld !== this.world) this.applyPalette();
-    });
+    return this.busy('Building ' + course.name, (step) => this.swapCourse(course, (f) => step(0.04 + f * 0.8)));
+  }
+  async swapCourse(course, step) {
+    this.settings.course = course.id; this.saveSettings();
+    const old = this.world;
+    await this.buildCourse(course, step);
+    this.scene.remove(old.root); old.dispose();
+    this.car.track = this.track; this.score = new DriftScore(this.track); this.surface = new Surface(this.track);
+    if (this.autopilot) this.autopilot.track = this.track;
+    this.world.setPixelRatio(this.renderer.getPixelRatio());
+    this.skids.clear();
+    for (const o of this.scene.children) if (o !== this.world.root) o.traverse((x) => { for (const m of [].concat(x.material || [])) m.needsUpdate = true; });
+    this.parkAtStart(); this.cam.snap(this.car); this.titleS = 30;
+    if (this.state === 'title') this.titleCam(0);
+    if (this.paletteWorld !== this.world) this.applyPalette();
+  }
+  // 11-18 (2): picking a course chooses it. Its card opens at once, read from its road alone (a Track: a few ms); the
+  // world behind the card stays the one built until a race on the chosen course launches.
+  choose(id) {
+    const c = courseById(id);
+    this.chosen = c === this.course ? null : c;
+    if (this.chosen && (!this.chosenTrack || this.chosenTrack.course !== c)) this.chosenTrack = new Track(c);
+  }
+  get cardCourse() { return this.chosen || this.course; }
+  cardTrack() { return this.chosen ? this.chosenTrack : this.track; }
+  // 11-18 (2), Evrtek: "a brief, say, 2 to 3 second loading screen when you go to launch into a race. So this will give
+  // the system a little bit of time to load the assets in the background while giving the player a visual". A run or
+  // a duel launched from a menu (the card's Start run and Start duel, a results screen's Again and Rematch): the tip
+  // screen (js/tips.js) comes up on the tap; under it the chosen course is built if it is not the one already built,
+  // a duel's rival is brought out, the car is put on the line, the shaders compile and one frame is drawn; then it
+  // stays to about 2.5 s from when it appeared (at once if the work took longer), or goes on a tap; Esc or a pad's B
+  // goes back to the card instead. The frame loop rests under it as under the loading screen. Restart in pause and a
+  // duel's next leg go straight in: they are the race's own flow.
+  async launch(kind) {
+    if (this.loading) return false;
+    const course = this.cardCourse, T = this.tipScreen, build = course !== this.course, D = kind === 'duel' && course.duel ? DUELS[course.id] : null;
+    let how = 'go';
+    this.loading = true;
+    try {
+      await T.show(D ? 'Getting ' + D.who + ' to the line' : build ? 'Building ' + course.name : course.name);
+      if (build) await this.swapCourse(course, (f) => T.step(0.04 + f * 0.76));
+      this.chosen = null;
+      if (kind === 'duel' && this.ui.duel.needsPrep()) { this.ui.duel.prepare(); await T.step(0.82); }
+      this.parkAtStart(); this.cam.snap(this.car);
+      await T.step(0.84);
+      await this.renderer.compileAsync(this.scene, this.camera);
+      await T.step(0.9);
+      this.warmFrame();
+      await T.step(1);
+      how = await T.wait();
+    } finally {
+      this.loading = false; this.last = performance.now(); this.quality.wait = Math.max(this.quality.wait, 1);
+      T.hide();
+    }
+    if (how === 'back') { this.ui.course(); return false; }
+    if (!(kind === 'duel' && this.ui.duel.start())) this.startRun();
+    return true;
   }
   // 11-16: something slow asked for by a tap (a course built, a car brought out, a duel set up): the loading screen
   // comes up on the tap, the work runs in steps under it (step(f) moves the bar and lets the page paint), the new
@@ -228,41 +280,30 @@ class Game {
     this.backdrop(true);
   }
   // Portero's painting is the title's backdrop; every other screen shows the 3D world
-  backdrop(on) { if (this.bootEl) this.bootEl.classList.toggle('away', !on); }
-  enterGarage() { this.garageFrom = this.ui.name === 'course' || this.ui.name === 'courses' ? 'course' : this.ui.name === 'results' ? 'course' : 'title'; this.state = 'garage'; this.hud.show(false); this.showTouch(false); this.parkAtStart(); this.orbit = 0.6; }
+  // (11-18 (2): and behind the card of a course not built yet, bare: without the wordmark)
+  backdrop(on, bare = false) { if (this.bootEl) { this.bootEl.classList.toggle('away', !on); this.bootEl.classList.toggle('bare', on && bare); } }
+  // 11-18 (2): the garage's Back returns to the screen it was opened from (a results screen's to that course's card)
+  enterGarage() { const n = this.ui.name; this.garageFrom = n === 'courses' ? 'courses' : n === 'course' || n === 'results' || n === 'duel-result' ? 'course' : 'title'; this.state = 'garage'; this.hud.show(false); this.showTouch(false); this.parkAtStart(); this.orbit = 0.6; }
   showTouch(on) { const t = document.getElementById('touch'); if (this.input.touch) t.hidden = !on; }
   startRun() {
     this.ui.clear();
     this.parkAtStart();
     this.retune();
-    this.state = 'countdown'; this.count = 3.2; this.lastCount = 4; this.rejoin = false; this.quality.hold(2);
+    this.state = 'countdown'; this.count = 3.2; this.lastCount = 4; this.quality.hold(2);
     this.run = { time: 0, progress: 0, lapS: this.car.s, hits: [], wrong: 0, started: performance.now() };
     this.car.nosCharge = 1;
     this.cam.snap(this.car);
     this.hud.show(true); this.showTouch(true); this.input.showNos(this.car.T.car.nos);
     this.hud.condition(G.carState(this.progress).damage, G.condition(this.progress));
     if (this.settings.steer === 'tilt') this.input.centreTilt();
-    this.sound.setEngine(G.soundHints(this.progress), this.car.T.car.redline);
+    this.sound.setEngine(G.soundHints(this.progress), this.car.T.car.redline, this.car.T.car.gears); // 11-18 (sound builder): the ratios
     this.sound.setView('chase');
     this.sound.music('race');
     this.acc = 0;
   }
   pause() { if (this.state !== 'run' && this.state !== 'countdown') return; this.pausedFrom = this.state; this.state = 'paused'; this.showTouch(false); this.ui.pause(); this.sound.setPaused(true); }
-  // 11-17 (Evrtek: "If the tip is critical the game needs to pause while the player reads it"): something the player
-  // must read holds the game (js/tips.js, the first run's card). As in pause, the car, the run's clock, a rival, the
-  // ghost and the score stand still (nothing steps them), the sound goes quiet the same way, the touch controls go.
-  // by.confirm() lets go (its Got it, Enter, Space, a pad's A or Start); unhold() gives the car back through a count:
-  // the rest of the start's 3-2-1 if it was held on the line, a 2-1 where it stood if it was held mid-run.
-  hold(by) {
-    if (this.state !== 'run' && this.state !== 'countdown') return false;
-    this.heldFrom = this.state; this.heldBy = by; this.state = 'tip'; this.showTouch(false); this.sound.setPaused(true);
-    return true;
-  }
-  unhold() {
-    if (this.state !== 'tip') return;
-    this.heldBy = null; this.sound.setPaused(false); this.showTouch(true); this.last = performance.now(); this.state = 'countdown';
-    if (this.heldFrom === 'run') { this.rejoin = true; this.count = 2; this.lastCount = 3; }
-  }
+  // (11-17's hold(), which froze the start line under the first-run tip card, went with the card on 11-18 (2): the
+  // tips are on the race's loading screen now, js/tips.js)
   resume() { this.ui.clear(); this.state = this.pausedFrom || 'run'; this.showTouch(true); this.last = performance.now(); this.sound.setPaused(false); }
   finish() {
     if (this.duel && this.duel.lapDone()) return; // a downhill duel takes the lap's end (js/duel/duelui.js, day 4)
@@ -288,7 +329,9 @@ class Game {
     this.frame(Math.min(ms, 100) / 1000, ms);
   }
   frame(dt, ms) {
-    if (this.loading) { this.input.endFrame(); return; } // the loading screen is up: nothing is drawn, the build has the time
+    // the loading screen is up: nothing is drawn, the build has the time. Under a race's tip screen the keys and a pad
+    // still answer it (11-18 (2): Enter, Space or A goes once the course is ready; Esc or B goes back to the card)
+    if (this.loading) { if (this.tipScreen.up) { this.input.read(dt); this.tipScreen.keys(this.input); } this.input.endFrame(); return; }
     const c0 = performance.now();
     this.time += dt;
     // 11-16: on a phone the world behind a menu is drawn about 30 times a second (10 while paused) rather than every
@@ -300,8 +343,9 @@ class Game {
     if (this.state === 'run' || this.state === 'countdown') {
       if (this.input.pressed('pause') || this.input.edge('PadPause')) this.pause();
       if ((this.input.pressed('reset') || this.input.edge('PadReset')) && this.state === 'run') this.resetCar();
-    } else if (this.state === 'paused' && (this.input.pressed('pause') || this.input.edge('PadPause'))) this.resume();
-    else if (this.state === 'tip' && this.heldBy && this.input.edge('Enter', 'NumpadEnter', 'Space', 'PadA', 'PadPause')) this.heldBy.confirm();
+    } else if (this.state === 'paused' && this.ui.name === 'pause' && (this.input.pressed('pause') || this.input.edge('PadPause', 'PadB'))) this.resume();
+    // 11-18 (2): on every menu screen but the title, Esc and a pad's B do what its back button does (ui.js back())
+    else if (this.input.edge('Escape', 'PadB')) this.ui.back();
     if (this.input.edge('Backquote')) this.setSetting('fps', !this.settings.fps);
     this.input.endFrame();
 
@@ -312,7 +356,7 @@ class Game {
     // cameras
     if (this.state === 'title' || (this.state === 'paused' && false)) this.titleCam(dt);
     else if (this.state === 'garage') this.garageCam(dt);
-    else if (this.state !== 'paused' && this.state !== 'look' && this.state !== 'tip' && !this.rejoin) this.cam.update(this.car, dt, this.time);
+    else if (this.state !== 'paused' && this.state !== 'look') this.cam.update(this.car, dt, this.time);
     if (this.state !== 'garage' && this.camera.view && this.camera.view.enabled) this.camera.clearViewOffset();
 
     this.world.lightAt(this.car.trackI, this.light);
@@ -350,8 +394,6 @@ class Game {
     const n = Math.ceil(this.count);
     if (n !== this.lastCount && n > 0 && n <= 3) { this.hud.msg(String(n)); this.sound.ui('count'); }
     this.lastCount = n;
-    // back from a tip that held the run (hold above): the car waits exactly where it was until the count is out
-    if (this.rejoin) { if (this.count <= 0) { this.rejoin = false; this.hud.msg('GO'); this.sound.ui('go'); this.state = 'run'; } return; }
     // held on the line: the engine can rev
     this.car.step(dt, { steer: 0, throttle: 0, brake: 1, handbrake: 1 });
     this.car.rpm += ((this.car.T.car.idleRpm + inp.throttle * 5200) - this.car.rpm) * Math.min(1, dt * 6);
@@ -384,7 +426,7 @@ class Game {
     if (this.nosWas !== this.car.nosOn) { this.nosWas = this.car.nosOn; this.sound.nos(this.car.nosOn); }
   }
   carEvent(e, coasting) {
-    if (e.type === 'shift') { this.sound.shift(e.up, e.cut); return; }
+    if (e.type === 'shift') { this.sound.shift(e.up, e.cut, e.gear); return; } // 11-18 (sound builder): the gear
     if (e.type === 'impact') {
       const h = G.hit(this.progress, e.rel, e.speed);
       if (h.amt > 0 || e.speed > 2) { this.run.hits && this.run.hits.push(h); this.retune(); this.carMesh.setDamage(G.carState(this.progress).damage); this.hud.condition(G.carState(this.progress).damage, G.condition(this.progress)); }
@@ -407,6 +449,9 @@ class Game {
     if (e.type === 'link') { this.hud.pop(`Linked ×${e.mult}`, 'link'); this.sound.ui('link'); }
     if (e.type === 'bank' && e.value > 0) { this.hud.pop(`Banked +${e.value.toLocaleString('en-US')}`, 'bank'); this.sound.ui('bank'); }
     if (e.type === 'start') this.sound.ui('zone');
+    // 11-18 (game builder): the new multiplier steps. A hold ticks the HUD's badge (its ring) and chimes; a switchback pops
+    if (e.type === 'hold' && e.add > 0) this.sound.ui('sweet');
+    if (e.type === 'switch') { this.hud.pop(`Switchback ×${e.mult}`, 'link switch'); this.sound.ui('link'); }
   }
   resetCar() {
     const s = this.car.s;
@@ -424,7 +469,7 @@ class Game {
     this.smoke.maxDensity = { full: 1, less: 0.8, min: 0.6 }[this.settings.smoke || 'full'];
     const ease = this.smoke.crowd(this.camera.position, this.time) * amount; // less smoke when the camera is already in it, or by choice
     const lx = Math.cos(car.psi), lz = -Math.sin(car.psi);
-    const active = (this.state === 'run' || this.state === 'results' || this.state === 'countdown') && !this.rejoin;
+    const active = this.state === 'run' || this.state === 'results' || this.state === 'countdown';
     for (let k = 0; k < 4; k++) {
       const rear = k >= 2, slip = rear ? car.slipR : car.slipF;
       car.wheelPos(k, p);

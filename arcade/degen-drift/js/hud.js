@@ -1,17 +1,21 @@
 // DEGEN DRIFT: the driving HUD, read at a glance (day 3 art pass). Top centre: the banked total, small. Under it the live
-// chain, the thing to watch: the points so far, big, beside the multiplier in a badge whose colour climbs x1 to x6 and
-// whose ring is the link window draining (amber) or the zone you are in (cyan, pink in the sweet spot); under that one
-// word for where you are (IN THE ZONE, SWEET SPOT, LINK IT, SLIDING). Bottom centre: speed, gear, revs and the slide
-// angle. Top left: lap progress and the car's condition. Top right: pause and the nitrous gauge.
+// chain, the thing to watch: the points so far, big, beside the multiplier in a badge whose colour climbs x1 to x10 and
+// whose ring is the link window draining (amber), the zone you are in (cyan, full) or, in the sweet spot, the hold
+// filling toward its next step (pink, once round a second; 11-18); the badge kicks at every step, harder for a
+// switchback (two steps at once). Under that one word for where you are (IN THE ZONE, SWEET SPOT, LINK IT, SLIDING).
+// Bottom centre: speed, gear, revs and the slide angle. Top left: lap progress and the car's condition. Top right:
+// pause and the nitrous gauge.
 // The markup is made here (index.html keeps an empty #hud); the methods and their arguments are unchanged, so main.js
-// feeds it exactly as before. Extras hang off it without main.js: the first-run tips and the best run's ghost (ui.js
-// attaches them) get every frame of a run through update().
+// feeds it exactly as before. Extras hang off it without main.js: the best run's ghost and a duel (ui.js attaches
+// them) get every frame of a run through update(). (11-18 (2): the first-run tip card that hung here is gone; the tips
+// are on a race's loading screen, js/tips.js.)
 import * as ART from './art.js?v=0.1.0';
 
 const $ = (id) => document.getElementById(id);
 const fmt = (n) => Math.round(n).toLocaleString('en-US');
 const RING = 2 * Math.PI * 27;
-const MULT_COL = ['#a99cc8', '#a99cc8', '#36f2ff', '#8a5cff', '#ff3fa4', '#ff7a3c', '#ffd36a'];
+// x1 to x10 (11-18: the cap was x6): violet-grey, cyan, violet, pink, orange, then golds to white-gold at the top
+const MULT_COL = ['#a99cc8', '#a99cc8', '#36f2ff', '#8a5cff', '#ff3fa4', '#ff7a3c', '#ffb347', '#ffc85a', '#ffd36a', '#ffe08a', '#fff2c4'];
 
 const MARKUP = `
   <div class="hud-tl">
@@ -46,7 +50,6 @@ const MARKUP = `
     <div class="nosbar" id="h-nos" hidden><div id="h-nos-fill"></div><span>N2O</span></div>
   </div>
   <div class="center-msg" id="h-msg"></div>
-  <div class="tips" id="h-tips"></div>
   <div class="flash" id="h-flash"></div>`;
 
 export class Hud {
@@ -67,14 +70,15 @@ export class Hud {
     const live = sc.acc > 0;
     e.chain.classList.toggle('live', live || sc.drifting);
     this.set('acc', e.acc, '+' + fmt(sc.acc));
-    const m = Math.max(1, Math.min(6, sc.mult | 0));
+    const m = Math.max(1, Math.round(sc.mult * 4) / 4);
     if (this.last.m !== m) {
-      this.last.m = m; e.mult.textContent = '×' + m; e.multb.style.setProperty('--mc', MULT_COL[m]);
-      e.multb.classList.remove('bump'); void e.multb.offsetWidth; if (m > 1) e.multb.classList.add('bump');
+      const up = m - (this.last.m || 1);
+      this.last.m = m; e.mult.textContent = '×' + (Number.isInteger(m) ? m : m.toFixed(1)); e.multb.style.setProperty('--mc', MULT_COL[Math.min(MULT_COL.length - 1, Math.floor(m))]);
+      e.multb.classList.remove('bump', 'bump2'); void e.multb.offsetWidth; if (m > 1 && up > 0) e.multb.classList.add(up >= 2 ? 'bump2' : 'bump');
     }
-    // the ring: the link window draining, or the zone you are in (full), or nothing
+    // the ring: the link window draining, the zone you are in (full), the sweet spot's hold filling (11-18), or nothing
     const st = sc.inZone && sc.drifting ? (sc.sweet ? 'sweet' : 'zone') : sc.linkOpen ? 'linkwin' : sc.drifting ? 'drift' : '';
-    const f = sc.linkOpen ? Math.max(0, sc.linkT / linkWindow) : st === 'zone' || st === 'sweet' ? 1 : 0;
+    const f = sc.linkOpen ? Math.max(0, sc.linkT / linkWindow) : st === 'sweet' ? (sc.holdFrac ?? 1) : st === 'zone' ? 1 : 0;
     const off = (RING * (1 - f)).toFixed(1);
     if (this.last.off !== off) { this.last.off = off; e.ring.style.strokeDashoffset = off; }
     if (this.last.st !== st) {

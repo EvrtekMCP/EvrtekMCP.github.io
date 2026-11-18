@@ -55,7 +55,7 @@ export class Autopilot {
       const dist = Math.max(0, ahead.d - 6);
       vTarget = Math.min(vTarget, Math.sqrt(vc * vc + 2 * 6.0 * dist));
     }
-    if (here) vTarget = Math.min(vTarget, this.cornerSpeed(here) * 1.15);
+    if (here) vTarget = Math.min(vTarget, this.cornerSpeed(here)); // 11-18: was x1.15, too fast to hold a line by the wall
 
     if (drift) {
       this.mode = 'drift';
@@ -69,6 +69,9 @@ export class Autopilot {
       inp.steer = clamp((wDes - this.wv) * this.kRate + side * this.bias, -1, 1);
       // throttle holds the corner's speed, never so low the slide dies
       inp.throttle = clamp(0.62 + (vTarget - v) * 0.1, 0.32, 1);
+      // 11-18: eyes for the outside wall, now that the line rides it: a slide running wide of the line lifts, half the
+      // throttle per metre (speed, not steering, is what tightens a slide's path)
+      if (here) { const w = -side * (car.lat - tr.zoneLine(here, tr.zoneT(here, s), tr.half[car.trackI])); if (w > 0) inp.throttle = Math.max(0.15, inp.throttle - w * 0.5); }
       const beta = Math.abs(car.beta);
       // turn in: a short handbrake flick if the tail is not out yet
       if (this.lastZone !== zn.id) { this.lastZone = zn.id; if (beta < 12 * DEG) this.flick = this.flickTime; }

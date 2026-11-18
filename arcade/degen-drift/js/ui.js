@@ -45,10 +45,11 @@ export class UI {
       if (d.vol) { this.g.setVolume(d.vol, Number(e.target.value)); return; } // day 4: the volume sliders (cars builder)
       const k = d.setup; if (!k) return; G.carState(this.g.progress).setup[k] = Number(e.target.value); this.g.afterGarageChange();
     });
-    // the first-run tips and the best run's ghost ride on the HUD's frames (main.js knows nothing of them)
+    // the tips (11-18 (2): on a race's loading screen only, js/tips.js; Settings starts them over) and the best run's
+    // ghost, which rides on the HUD's frames (main.js knows nothing of it)
     this.tips = new Tips(game); this.ghost = new Ghost(game);
     this.duel = new Duel(game, this); // day 4: the downhill duels (js/duel/)
-    game.hud.attach(this.tips); game.hud.attach(this.ghost);
+    game.hud.attach(this.ghost);
     // the full-screen button follows the state, however it changed (the button, Esc, the browser's own control)
     const fsSync = () => { for (const b of this.el.querySelectorAll('[data-act="fs"]')) { b.innerHTML = FS_ICON[isFs() ? 1 : 0]; b.title = fsLabel(); b.setAttribute('aria-label', fsLabel()); } };
     for (const ev of ['fullscreenchange', 'webkitfullscreenchange']) document.addEventListener(ev, fsSync);
@@ -66,7 +67,23 @@ export class UI {
     const q = this.queued; this.queued = null;
     if (q) { this.g.sound.ui('click'); this.act(q[0], q[1]); }
   }
-  clear() { if (this.duel && !this.duel.active) this.duel.hideRival(); this.el.innerHTML = ''; this.el.className = 'screen'; this.name = null; if (this.g.backdrop) this.g.backdrop(false); for (const id of this.resTs || []) clearTimeout(id); this.resTs = []; }
+  clear() {
+    if (this.duel && !this.duel.active) this.duel.hideRival();
+    if (this.name === 'courses') this.keepListPlace(); // 11-18 (2): the list comes back where it was left
+    this.el.innerHTML = ''; this.el.className = 'screen'; this.name = null; this.shownAt = performance.now();
+    if (this.g.backdrop) this.g.backdrop(false); for (const id of this.resTs || []) clearTimeout(id); this.resTs = [];
+  }
+  // 11-18 (2), Evrtek: "you get so far into a path that you can't return". Every screen but the title marks one button
+  // as its way back (data-back); Esc and a pad's B press it (main.js frame). A screen that comes up as a race ends
+  // ignores them for its first 0.9 s, so a key or a B (the nitrous) still held from the run cannot skip it.
+  back() {
+    if (!this.name || this.name === 'title' || this.busy || this.g.input.capturing) return; // (not while a key is being set)
+    if (/^(results|duel-)/.test(this.name) && performance.now() - this.shownAt < 900) return;
+    const b = this.el.querySelector('[data-back]');
+    if (b && !b.disabled) this.tap(b);
+  }
+  // a race launched from a menu goes behind the tip screen (main.js launch); the same button again is the same launch
+  launch(act, kind) { return this.busyWith(act + ':', () => this.g.launch(kind)); }
   act(a, d) {
     const g = this.g;
     switch (a) {
@@ -76,12 +93,12 @@ export class UI {
       case 'garage': g.enterGarage(); this.garage(); break;
       case 'settings': this.settings(d.from || 'title'); break;
       case 'title': g.toTitle(); break;
-      case 'start': g.startRun(); break;
-      case 'retry': g.startRun(); break;
+      case 'start': this.launch('start', 'run'); break;
+      case 'retry': this.launch('retry', 'run'); break;
       case 'resume': g.resume(); break;
       case 'restart': if (this.duel.active) this.duel.restartLeg(); else g.startRun(); break;
       case 'quit': if (this.duel.active) this.duel.cancel(); g.toTitle(); break;
-      case 'duel': this.startDuel(); break;
+      case 'duel': this.launch('duel', 'duel'); break;
       case 'duel-next': this.duel.next(); break;
       case 'back': if (d.to === 'pause') this.pause(); else if (d.to === 'course') this.course(); else if (d.to === 'courses') this.courses(); else g.toTitle(); break;
       case 'tab': this.garageTab = d.tab; this.garage(); break;
@@ -110,11 +127,9 @@ export class UI {
     if (id === this.g.progress.car || this.g.carMesh.bodyId === id) { change(); return; }
     return this.busyWith(act + ':' + id, () => this.g.busy('Bringing out the ' + carById(id).name, async () => change()));
   }
-  startDuel() {
-    const g = this.g, D = DUELS[g.course.id];
-    if (!D || !this.duel.needsPrep()) { this.duel.start(); return; }
-    return this.busyWith('duel:', () => g.busy('Getting ' + D.who + ' to the line', async (step) => { this.duel.prepare(); await step(0.7); this.duel.start(); }));
-  }
+  // (a duel's rival is brought out under the race's tip screen since 11-18 (2): main.js launch)
+  // the course list's region and how far down it was scrolled, kept as it goes and put back as it returns
+  keepListPlace() { const b = this.el.querySelector('.clist .pbody'); if (b) this.listPlace = { region: this.region || this.g.cardCourse.region, top: b.scrollTop }; }
 
   // ------------------------------------------------------------------ title
   title() {
@@ -148,12 +163,18 @@ export class UI {
   courses() {
     this.clear(); this.name = 'courses'; this.el.classList.add('dim');
     this.el.innerHTML = courseList(this);
+    // 11-18 (2): back from a card (or the garage, or a results screen), the list is where it was left
+    const P = this.listPlace, b = this.el.querySelector('.clist .pbody');
+    if (P && b && P.region === (this.region || this.g.cardCourse.region)) b.scrollTop = P.top;
   }
 
   // ------------------------------------------------------------------ the course card
   course() {
     this.clear(); this.name = 'course'; this.el.classList.add('dim');
-    const g = this.g, c = g.course, p = g.progress, rate = G.rating(p), v = G.verdict(rate, c.difficulty), best = p.best[c.id], region = REGIONS.find((r) => r.id === c.region);
+    // 11-18 (2): the chosen course (its world is built when a race on it launches); until then Portero's painting
+    // stands behind its card rather than another course's world
+    const g = this.g, c = g.cardCourse, track = g.cardTrack(), p = g.progress, rate = G.rating(p), v = G.verdict(rate, c.difficulty), best = p.best[c.id], region = REGIONS.find((r) => r.id === c.region);
+    if (g.chosen) g.backdrop(true, true);
     const tierRow = (label, pts, got, icon, cls = '') => `<div class="tier ${got ? 'got' : ''} ${cls}">${icon}<span>${label}</span><span class="pts num">${fmt(pts)}</span></div>`;
     const bs = best ? best.score : 0;
     // 11-16 (fit): the card's two columns scroll as one body; its actions sit in a bar under them that never scrolls
@@ -164,8 +185,8 @@ export class UI {
         <div class="kicker">${esc(region ? region.name.toUpperCase() : '')} &middot; COURSE ${c.number || 1} OF ${COURSES.length}</div>
         ${ART.title(c.name, 'ctitle')}
         <div class="cfacts">${mapSvg(c, 120, 72, 'cmap small')}
-          <span class="fact"><b class="num">${(g.track.length / 1000).toFixed(2)}</b>KM</span>
-          <span class="fact"><b class="num">${g.track.zones.length}</b>ZONES</span>
+          <span class="fact"><b class="num">${(track.length / 1000).toFixed(2)}</b>KM</span>
+          <span class="fact"><b class="num">${track.zones.length}</b>ZONES</span>
           <span class="fact"><b class="num">${c.difficulty}</b>DIFFICULTY</span></div>
         <p class="blurb">${esc(c.blurb)}</p>
         <div class="meter"><div class="row"><span>YOUR ${esc(carById(p.car).name)} &middot; RATING ${rate}</span><span class="num">COURSE ${c.difficulty}</span></div>
@@ -184,7 +205,7 @@ export class UI {
         ${this.ghost.on() && best ? '<p class="note">Your best run drives beside you as a ghost.</p>' : ''}
         ${this.duelCard(c)}
       </div></div>
-      <div class="pfoot"><button class="btn primary" data-act="start">Start run</button>${duel ? '<button class="btn cyan" data-act="duel">Start duel</button>' : ''}<button class="btn" data-act="garage">Garage</button><button class="btn" data-act="drive">Courses</button></div></div>`;
+      <div class="pfoot"><button class="btn primary" data-act="start">Start run</button>${duel ? '<button class="btn cyan" data-act="duel">Start duel</button>' : ''}<button class="btn" data-act="garage">Garage</button><button class="btn" data-act="back" data-to="courses" data-back>Back</button></div></div>`;
   }
 
   // ------------------------------------------------------------------ the downhill duel (js/duel/duelui.js runs it)
@@ -214,7 +235,7 @@ export class UI {
     this.el.innerHTML = `<div class="sheet panel duelleg fp"><div class="kicker">${esc(this.g.course.name)} &middot; DOWNHILL DUEL &middot; LEG ${duel.legNo}</div>${ART.title(sd ? 'SUDDEN DEATH' : 'LEG 1')}
       <div class="pbody"><div class="stats">${this.legRows(L, D.who)}</div>
       <p class="note">${note}</p></div>
-      <div class="pfoot"><button class="btn primary" data-act="duel-next">${!sd ? 'Leg 2: chase' : lead ? 'Sudden death: lead' : 'Sudden death: chase'}</button><button class="btn" data-act="quit">Give up</button></div></div>`;
+      <div class="pfoot"><button class="btn primary" data-act="duel-next">${!sd ? 'Leg 2: chase' : lead ? 'Sudden death: lead' : 'Sudden death: chase'}</button><button class="btn" data-act="quit" data-back>Give up</button></div></div>`;
   }
   duelResult(r) {
     this.clear(); this.name = 'duel-result'; this.el.classList.add('dim');
@@ -230,9 +251,8 @@ export class UI {
         <div class="kicker">PAYOUT</div>
         <div class="stats pay">${r.pay.lines.map(([l, x]) => `<span>${esc(l)}</span><span>+${x.toLocaleString('en-US')}</span>`).join('')}<span><b>Total</b></span><span class="total num">+${r.pay.total.toLocaleString('en-US')}</span></div>
         <div class="stats" style="margin-top:0.6rem"><span>Credits</span><span class="num" style="color:var(--gold)">${this.g.progress.credits.toLocaleString('en-US')}</span><span>Condition</span><span>${G.condition(this.g.progress)}%</span></div>
-        ${this.tips.forResults() /* 11-17 (js/tips.js) */}
       </div></div>
-      <div class="pfoot"><button class="btn primary" data-act="duel">Rematch</button><button class="btn" data-act="garage">Garage</button><button class="btn" data-act="drive">Courses</button><button class="btn" data-act="title">Menu</button></div></div>`;
+      <div class="pfoot"><button class="btn primary" data-act="duel">Rematch</button><button class="btn" data-act="garage">Garage</button><button class="btn" data-act="drive" data-back>Courses</button><button class="btn" data-act="title">Menu</button></div></div>`;
     const badge = this.el.querySelector('.badge-deg'), wrap = this.el.querySelector('.degwrap'), flash = this.el.querySelector('.degflash'), panel = this.el.querySelector('.results');
     const go = () => { if (this.name !== 'duel-result') return; if (won) { wrap.classList.add('lit'); badge.classList.add('lit'); flash.classList.add('go'); if (!still()) panel.classList.add('shake'); this.g.sound.ui('degenerate'); } else this.g.sound.ui('wipe'); };
     const id = setTimeout(go, still() ? 0 : 450); (this.resTs ||= []).push(id);
@@ -284,12 +304,12 @@ export class UI {
           <div class="price">${act}</div></div>`;
       }
     }
-    const back = this.g.garageFrom === 'course';
+    const from = this.g.garageFrom === 'course' || this.g.garageFrom === 'courses' ? this.g.garageFrom : 'title'; // 11-18 (2): back where it was opened
     this.el.innerHTML = `<div class="garage">
       <div class="gstage">
         <div>${ART.title(car.name, 'carname')}<div class="chips"><span class="chip">${esc(car.cls.toUpperCase())}</span><span class="chip">${esc(car.engine.toUpperCase())}</span><span class="chip">CONDITION ${cond}%</span></div>
           <div class="ratingbox">${ART.ratingRing(rate)}<div class="note"><b>Ability rating</b><br>stock ${car.rating[0]}, fully built ${car.rating[1]}</div></div></div>
-        <button class="btn back" data-act="${back ? 'drive' : 'title'}">${back ? 'To the course' : 'Back'}</button>
+        <button class="btn back" data-act="back" data-to="${from}" data-back>Back</button>
       </div>
       <div class="gpanel panel">
         <div class="ghead">${ART.title('GARAGE')}<div class="credits num">${fmt(p.credits)}<small>CREDITS</small></div></div>
@@ -312,14 +332,14 @@ export class UI {
       <div class="opt"><label>Quality</label><div>${seg('quality', [['auto', 'Auto'], ['low', 'Low'], ['med', 'Medium'], ['high', 'High']])}<div class="note">Auto starts high on computers and medium on phones, then trims the resolution, and drops to Low if it has to, to hold 60 frames a second.</div></div></div>
       <div class="opt"><label>Sound</label><div>${seg('sound', [[true, 'On'], [false, 'Off']])}<div class="vols">${[['master', 'Everything'], ['music', 'Music'], ['sfx', 'Car and effects']].map(([ch, n]) => `<label class="sl"><span>${n}</span><input type="range" min="0" max="1" step="0.05" value="${(s.vol && s.vol[ch] != null) ? s.vol[ch] : 0.8}" data-vol="${ch}" aria-label="${n} volume"></label>`).join('')}</div></div></div>
       <div class="opt"><label>Tire smoke</label><div>${seg('smoke', [['full', 'Full'], ['less', 'Less'], ['min', 'Light']])}<div class="note">Less smoke is lighter work for an older phone.</div></div></div>
-      ${(() => { const v = s.engineSound === 'classic' ? 'classic' : 'recorded'; return `<div class="opt"><label>Engine sound</label><div><div class="seg">${[['recorded', 'Recorded'], ['classic', 'Classic']].map(([k, l]) => `<button class="${v === k ? 'on' : ''}" data-act="set" data-key="engineSound" data-val="${k}">${l}</button>`).join('')}</div><div class="note">Recorded: real engine and tire recordings (the KESTREL only, for now). Classic: the original engine sound.</div></div></div>`; })()}<!-- 11-17 (sound builder) -->
+      ${(() => { const v = s.engineSound === 'classic' || s.engineSound === 'recorded' ? s.engineSound : 'new'; return `<div class="opt"><label>Engine sound</label><div><div class="seg">${[['new', 'New'], ['recorded', 'Recorded'], ['classic', 'Classic']].map(([k, l]) => `<button class="${v === k ? 'on' : ''}" data-act="set" data-key="engineSound" data-val="${k}">${l}</button>`).join('')}</div><div class="note">New: every engine built from its firing pulses and exhaust pipes. Recorded: engine and tire recordings (the KESTREL only). Classic: the original engine sound.</div></div></div>`; })()}<!-- 11-17, 11-18 (sound builder) -->
       <div class="opt"><label>Zone colours</label><div>${seg('palette', [['neon', 'Cyan and pink'], ['safe', 'Blue and amber']])}<div class="note">Blue and amber stay apart for the common kinds of colour blindness.</div></div></div>
       <div class="opt"><label>Ghost</label><div>${seg('ghost', [[true, 'On'], [false, 'Off']])}<div class="note">Your best run on each course drives beside you, see-through.</div></div></div>
-      <div class="opt"><label>Tips</label><div><button class="btn small" data-act="tips-again" ${this.tips.done ? '' : 'disabled'}>${this.tips.done ? 'Show the tips again' : 'Tips are on for your next run'}</button></div></div>
+      <div class="opt"><label>Tips</label><div><button class="btn small" data-act="tips-again" ${this.tips.fresh ? 'disabled' : ''}>${this.tips.fresh ? 'The basics come first next race' : 'Show the tips again'}</button><div class="note">A tip shows while each race loads. This starts them again from the basics.</div></div></div>
       <div class="opt"><label>FPS readout</label>${seg('fps', [[true, 'On'], [false, 'Off']])}</div>
       ${!touch ? `<div class="opt"><label>Keys</label><div class="keys"><div class="keymap">${ACTIONS.map(([a, n]) => `<span>${n}</span><button class="btn small" data-act="rebind" data-a="${a}">${keyName(g.input.keysFor(a)[0])}</button>`).join('')}</div><div class="note">The arrows, E (nitrous), P (pause) and Shift (reset) always work too. <button class="btn small" data-act="keys-reset">Reset keys</button></div>A gamepad works too: left stick, triggers, A handbrake, B nitrous, Y reset.</div></div>` : ''}
       <div class="opt"><label>Progress</label><div><button class="btn small" data-act="reset-progress">Erase my progress</button></div></div></div>
-      <div class="pfoot"><button class="btn primary" data-act="back" data-to="${from}">Done</button></div></div>`;
+      <div class="pfoot"><button class="btn primary" data-act="back" data-to="${from}" data-back>Done</button></div></div>`;
   }
 
   // ------------------------------------------------------------------ pause
@@ -327,7 +347,7 @@ export class UI {
     this.clear(); this.name = 'pause'; this.el.classList.add('dim');
     // 11-16 (fit): two by two on a short screen; full screen beside the title where the browser allows it
     this.el.innerHTML = `<div class="pause panel"><div class="phead">${ART.title('PAUSED')}${fsButton()}</div>
-      <div class="pbtns"><button class="btn primary" data-act="resume">Resume</button><button class="btn" data-act="restart">Restart</button>
+      <div class="pbtns"><button class="btn primary" data-act="resume" data-back>Resume</button><button class="btn" data-act="restart">Restart</button>
       <button class="btn" data-act="settings" data-from="pause">Settings</button><button class="btn" data-act="quit">Quit to menu</button></div></div>`;
   }
 
@@ -358,9 +378,8 @@ export class UI {
         <div class="kicker">PAYOUT</div>
         <div class="stats pay">${r.pay.lines.map(([l, v]) => `<span>${esc(l)}</span><span>+${fmt(v)}</span>`).join('')}<span><b>Total</b></span><span class="total num" id="r-pay">0</span></div>
         <div class="stats" style="margin-top:0.6rem"><span>Credits</span><span class="num" style="color:var(--gold)">${fmt(p.credits)}</span><span>Damage this run</span><span>${esc(dmg)}</span><span>Condition</span><span>${G.condition(p)}%</span></div>
-        ${this.tips.forResults() /* 11-17: the tips you can play without live here, off the road (js/tips.js) */}
       </div></div>
-      <div class="pfoot"><button class="btn primary" data-act="retry">Again</button><button class="btn" data-act="garage">Garage</button><button class="btn" data-act="drive">Courses</button><button class="btn" data-act="title">Menu</button></div></div>`;
+      <div class="pfoot"><button class="btn primary" data-act="retry">Again</button><button class="btn" data-act="garage">Garage</button><button class="btn" data-act="drive" data-back>Courses</button><button class="btn" data-act="title">Menu</button></div></div>`;
     // the score and the pay count up; then the stars pop one by one; then, for the top tier, the badge stamps down
     const sEl = this.el.querySelector('#r-score'), pEl = this.el.querySelector('#r-pay'), t0 = performance.now(), dur = still() ? 0 : 1100;
     const stars = [...this.el.querySelectorAll('.bigstars .st')], deg = this.el.querySelector('.degwrap'), panel = this.el.querySelector('.results'), flash = this.el.querySelector('.degflash');

@@ -102,7 +102,13 @@ export const TUNING = {
     angleIdealDeg: 42,
     linkWindow: 2.6,         // s to reach the next zone still drifting
     multStep: 1,             // each link adds this to the multiplier
-    multCap: 6,
+    // 11-18 (Evrtek's multiplier): while a chain is live, holding the sweet spot and switchbacks raise it too
+    holdSec: 1.0,            // s in the sweet spot without a break (still sliding) for each hold step...
+    holdStep: 1,             // ...which adds this
+    holdGrace: 0.15,         // s past the sweet spot's edge that is no break (the time out does not count)
+    switchHold: 0.5,         // s a slide must be held one way to count as a drift that way (both sides of a switchback)
+    switchStep: 2,           // a switchback (one way, then the other, each held switchHold) adds this
+    multCap: 10,             // 11-18: was 6
     wallWipe: 1.0,           // share of the unbanked points a wall takes (1 = all of it, and the multiplier)
     // the star lines live with each course (courses/*.js: stars and degenerate); the top tier's name is his word
     topTierName: 'DEGENERATE',
@@ -124,7 +130,7 @@ export const TUNING = {
   // proper grind and are on show from the start. Credits are earned by play only; nothing is ever sold.
   economy: {
     entryPay: 420,           // every finished run pays this, however it went (times the course's pay factor)
-    perPoint: 0.05,          // credits per point scored
+    perPoint: 0.024,         // credits per point scored (11-18: was 0.05; the new multiplier doubles scores and lines)
     starPay: [0, 350, 770, 1260], // by stars earned (0..3)
     degeneratePay: 2200,     // on top, for a Degenerate run
     firstClearPay: 1000,     // the first time a course is finished
@@ -194,7 +200,9 @@ export const RANGES = {
   'steer.stickDead': [0, 0.3, 0.01], 'steer.stickCurve': [1, 3, 0.05],
   'wall.restitution': [0, 0.8, 0.01], 'wall.scrub': [0.5, 1, 0.01],
   'scoring.sweetMult': [1, 4, 0.1], 'scoring.speedExp': [0, 3, 0.05], 'scoring.angleWeight': [0, 1, 0.01],
-  'scoring.linkWindow': [0.5, 6, 0.1], 'scoring.multStep': [0.25, 2, 0.25], 'scoring.multCap': [1, 12, 1],
+  'scoring.linkWindow': [0.5, 6, 0.1], 'scoring.multStep': [0, 2, 0.25], 'scoring.multCap': [1, 20, 1],
+  'scoring.holdSec': [0.25, 3, 0.05], 'scoring.holdStep': [0, 3, 0.25], 'scoring.holdGrace': [0, 0.6, 0.05],
+  'scoring.switchHold': [0.2, 1.5, 0.05], 'scoring.switchStep': [0, 4, 0.25],
   'scoring.wallWipe': [0, 1, 0.05],
   'camera.velocityBlend': [0, 1, 0.01], 'camera.fov': [40, 90, 1], 'camera.fovKick': [0, 30, 1],
 };

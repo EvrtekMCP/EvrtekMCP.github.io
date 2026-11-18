@@ -71,7 +71,7 @@ export class Duel {
   }
   // the rival: its car (one of the six, with its own share of parts) and its mesh in its colours, made once per course
   // and rival. Building a car's body takes a moment on a phone, so the first duel on a course does it under the
-  // loading screen (ui.js startDuel, 11-16); later legs and rematches find it ready.
+  // loading screen (11-16; since 11-18 (2) the race's tip screen, main.js launch); later legs and rematches find it ready.
   needsPrep() { const g = this.g, cfg = this.cfg(); return !!cfg && (!this.rival || this.rival.track !== g.track || this.rivalId !== cfg.rival); }
   prepare() {
     if (!this.needsPrep()) return;

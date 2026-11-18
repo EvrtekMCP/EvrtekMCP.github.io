@@ -68,7 +68,7 @@ export class Rival {
     }
     let vTarget = car.T.car.topSpeedKmh / 3.6;
     if (ahead) { const vc = this.cornerSpeed(ahead.zn), dist = Math.max(0, ahead.d - 6); vTarget = Math.min(vTarget, Math.sqrt(vc * vc + 2 * 6.0 * dist)); }
-    if (here) vTarget = Math.min(vTarget, this.cornerSpeed(here) * (this.mistake === 'late' ? 0.92 : 1.15));
+    if (here) vTarget = Math.min(vTarget, this.cornerSpeed(here) * (this.mistake === 'late' ? 0.92 : 1)); // 11-18: was x1.15
     const drift = zn && v > 9 && this.mistake !== 'late';
     // don't drive into the back of you: ease off when closing and nowhere to go, a car's length and more back; mid-slide
     // only when about to touch, so its own drift does not fold up behind you (day 5)
@@ -83,6 +83,9 @@ export class Rival {
       if (this.mistake === 'wide') { bias = -0.05; extra = 0.12; }
       inp.steer = clamp((wDes - this.wv) * this.kRate + side * bias, -1, 1);
       inp.throttle = clamp(0.62 + (vTarget - v) * 0.1 + extra + (this.angle - 34) * 0.01, 0.32, 1);
+      // 11-18: eyes for the outside wall, now that the line rides it: a slide running wide of the line lifts, half the
+      // throttle per metre (not when running wide is the mistake it is making)
+      if (here && this.mistake !== 'wide') { const w = -side * (car.lat - tr.zoneLine(here, tr.zoneT(here, s), tr.half[car.trackI])); if (w > 0) inp.throttle = Math.max(0.15, inp.throttle - w * 0.5); }
       if (this.mistake === 'lift') { this.mt += dt; if (this.mt > 0.5 && this.mt < 1.1) inp.throttle = 0.22; }
       if (this.flick > 0) { this.flick -= dt; inp.handbrake = 1; inp.throttle = 0.4; inp.steer = side * 0.65; }
     } else {

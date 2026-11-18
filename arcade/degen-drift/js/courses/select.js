@@ -1,7 +1,8 @@
 // DEGEN DRIFT: the course list. Five regions as tabs, three courses each as cards: a small map of the road, the
 // name, the difficulty against your car's rating, the length, and your best (stars and the Degenerate badge). Nothing
-// is ever locked: the verdict on each card is the honest "level cap" signal (DESIGN.md). Picking a course builds its
-// world behind the loading screen and opens its course card. Drawn as plain DOM inside js/ui.js's screen.
+// is ever locked: the verdict on each card is the honest "level cap" signal (DESIGN.md). Picking a course opens its
+// course card at once (11-18 (2): its world is built when a race on it launches, under the tip screen, main.js
+// launch). Drawn as plain DOM inside js/ui.js's screen.
 import { REGIONS, COURSES } from './index.js?v=0.1.0';
 import { miniMap } from './route.js?v=0.1.0';
 import * as G from '../garage.js?v=0.1.0';
@@ -25,8 +26,8 @@ export function mapSvg(c, w = 132, h = 84, cls = 'cmap') {
 const stars = (n, top) => `<span class="stars">${[0, 1, 2].map((i) => ART.star(i < n, 13)).join('')}</span>${top ? ' <b class="deg">DEGENERATE</b>' : ''}`;
 
 export function courseList(ui) {
-  const g = ui.g, p = g.progress, rate = G.rating(p);
-  const region = ui.region || g.course.region;
+  const g = ui.g, p = g.progress, rate = G.rating(p), cur = g.cardCourse;
+  const region = ui.region || cur.region;
   const tabs = REGIONS.map((r) => {
     const cs = COURSES.filter((c) => c.region === r.id), lo = Math.min(...cs.map((c) => c.difficulty)), hi = Math.max(...cs.map((c) => c.difficulty));
     const got = cs.reduce((a, c) => a + ((p.best[c.id] && p.best[c.id].stars) || 0), 0);
@@ -34,7 +35,7 @@ export function courseList(ui) {
   }).join('');
   const reg = REGIONS.find((r) => r.id === region);
   const cards = COURSES.filter((c) => c.region === region).map((c) => {
-    const best = p.best[c.id], v = G.verdict(rate, c.difficulty), on = c.id === g.course.id;
+    const best = p.best[c.id], v = G.verdict(rate, c.difficulty), on = c.id === cur.id;
     return `<button class="ccard ${on ? 'cur' : ''}" data-act="pick" data-id="${c.id}" style="--tint:${REGION_TINT[c.region]}">
       ${mapSvg(c)}
       <span class="cnum">COURSE ${c.number}</span>
@@ -52,13 +53,13 @@ export function courseList(ui) {
     <div class="rtabs">${tabs}</div>
     <div class="pbody"><div class="rblurb">${esc(reg ? reg.blurb : '')}</div>
     <div class="ccards">${cards}</div></div>
-    <div class="pfoot"><button class="btn" data-act="garage">Garage</button><button class="btn" data-act="title">Back</button></div>
+    <div class="pfoot"><button class="btn" data-act="garage">Garage</button><button class="btn" data-act="title" data-back>Back</button></div>
   </div>`;
 }
 function carRatingName(g) { try { return G.carState(g.progress) && (g.progress.car || 'car').toUpperCase(); } catch (e) { return 'CAR'; } }
 
-// pick a course: the loading screen comes up on the tap, the course is built behind it (main.js loadCourse) and it
-// fades onto the course's card. The course already built opens its card at once.
+// pick a course: its card, at once (11-18 (2): it was the loading screen and a build here; choosing is a few ms)
 export function pick(ui, id) {
-  return ui.busyWith('pick:' + id, async () => { await ui.g.loadCourse(id); ui.course(); });
+  ui.g.choose(id); ui.region = ui.g.cardCourse.region;
+  ui.course();
 }

@@ -10,7 +10,7 @@ import { SOUND, VERSION } from './config.js?v=0.1.0';
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
 export class Sound {
-  constructor() { this.ctx = null; this.mod = null; this.muted = false; this.state = { rpm: 900, thr: 0, slip: 0, speed: 0, boost: 0 }; this.redline = 7600; this.hints = {}; this.engineSound = 'recorded'; }
+  constructor() { this.ctx = null; this.mod = null; this.muted = false; this.state = { rpm: 900, thr: 0, slip: 0, speed: 0, boost: 0 }; this.redline = 7600; this.hints = {}; this.engineSound = 'new'; this.gears = null; }
   // call from inside a user gesture (touchend / click / keydown)
   unlock() {
     if (this.ctx) { if (this.ctx.state !== 'running') this.ctx.resume(); if (this.mod && this.mod.unlock) this.mod.unlock(); return; }
@@ -28,11 +28,12 @@ export class Sound {
   setVolumes(vol) { for (const [ch, v] of Object.entries(vol || this.vols || {})) this.setVolume(ch, v); }
   setMuted(m) { this.muted = m; if (this.master) this.master.gain.value = m ? 0 : 0.8; if (this.mod && this.mod.setMuted) this.mod.setMuted(m); }
   // the car's engine preset and the fitted parts that change its voice (data/cars.js sound, data/upgrades.js sound)
-  setEngine(hints, redline) { this.hints = hints || {}; this.redline = redline || 7600; this.applyEngine(); }
-  applyEngine() { if (this.mod && this.mod.setEngineSound) this.mod.setEngineSound(this.engineSound); if (this.mod && this.mod.setEngine) this.mod.setEngine(this.hints.preset, this.hints); }
-  // 11-17 (sound builder): Settings > Engine sound. 'recorded' (the default) plays a car's recorded engine and tyres where
-  // it has a set (the KESTREL, for now); 'classic' the engine made in code, as before
-  setEngineSound(m) { this.engineSound = m === 'classic' ? 'classic' : 'recorded'; if (this.mod && this.mod.setEngineSound) this.mod.setEngineSound(this.engineSound); }
+  // 11-18 (sound builder): and the gearbox's ratios, so the engine lands each shift at rpm x next / current ratio
+  setEngine(hints, redline, gears) { this.hints = hints || {}; this.redline = redline || 7600; if (gears) this.gears = gears; this.applyEngine(); }
+  applyEngine() { if (this.mod && this.mod.setEngineSound) this.mod.setEngineSound(this.engineSound); if (this.mod && this.mod.setEngine) this.mod.setEngine(this.hints.preset, this.hints); if (this.mod && this.mod.setGears && this.gears) this.mod.setGears(this.gears); }
+  // 11-17 (sound builder): Settings > Engine sound. 11-18: 'new' (the default) the combustion engine, all six cars;
+  // 'recorded' a car's recorded engine and tyres where it has a set (the KESTREL); 'classic' the first engine made in code
+  setEngineSound(m) { this.engineSound = m === 'classic' || m === 'recorded' ? m : 'new'; if (this.mod && this.mod.setEngineSound) this.mod.setEngineSound(this.engineSound); }
 
   setRPM(rpm) { this.state.rpm = rpm; if (this.mod) return this.mod.setRPM && this.mod.setRPM(rpm, this.redline); }
   setThrottle(t, boost = 0) { this.state.thr = t; this.state.boost = boost; if (this.mod) return this.mod.setThrottle && this.mod.setThrottle(t); }
@@ -43,7 +44,7 @@ export class Sound {
   ui(name) { if (this.mod) return this.mod.ui && this.mod.ui(name); this.blip(name); }
   music(track) { if (this.mod) return this.mod.music && this.mod.music(track); }
   // day 2: the gearbox, the surface under the wheels, the camera view, and pausing
-  shift(up, cut) { if (this.mod) return this.mod.shift && this.mod.shift(up, cut); if (up && this.eng) this.tone(90, 0.06, 0.05, 'square'); }
+  shift(up, cut, gear) { if (this.mod) return this.mod.shift && this.mod.shift(up, cut, gear); if (up && this.eng) this.tone(90, 0.06, 0.05, 'square'); }
   setSurface(s) { if (s === this.surface) return; this.surface = s; if (this.mod) return this.mod.setSurface && this.mod.setSurface(s); }
   setView(v) { if (this.mod) return this.mod.setView && this.mod.setView(v); }
   setSpace(k) { if (k === this.space) return; this.space = k; if (this.mod) return this.mod.setSpace && this.mod.setSpace(k); }

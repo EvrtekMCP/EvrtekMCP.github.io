@@ -56,6 +56,30 @@ div.boot-art { background:
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.75), transparent); transform: translateX(-110%); }
 .boot.loading .boot-bar::after { opacity: 1; animation: barshine 0.9s linear infinite; }
 @keyframes barshine { to { transform: translateX(380%); } }
+/* 11-18 (2), the tip screen (js/tips.js): a race loads behind the loading screen with one tip on it. Portero's painting
+   dimmed, the wordmark smaller, the tip in a panel in the middle (its picture, its lettered title, one line in type
+   big enough to read at a glance on an iPhone SE held sideways), the bar and what it is doing underneath; once the
+   course is ready the line under the bar says how to go. After it goes, it takes the rest of that tap for a moment
+   (.tipout), so the lift and the click after it never land on the countdown's pause button. */
+.boot-tip { display: none; }
+.boot.tipping .boot-tip { display: flex; position: absolute; left: 0; right: 0; top: 19%; bottom: max(21%, 74px); align-items: center; justify-content: center; padding: 0 calc(16px + var(--sr)) 0 calc(16px + var(--sl)); }
+.boot.tipping .boot-top { height: 19%; gap: 0; }
+.boot.tipping .boot-wm { width: min(400px, 46vw); max-height: 64%; }
+.boot.tipping .boot-tag { display: none; }
+.boot.tipping .boot-paint { filter: brightness(0.5) saturate(1.1); }
+.boot.tipping .boot-low { height: max(21%, 74px); }
+.boot-low > * { flex: none; } /* on a short frame the strip is full: the bar (an empty box) must not be squeezed to nothing */
+.boot.tipping.ready .boot-what { color: var(--cyan); text-shadow: 0 0 10px rgba(54,242,255,0.8), 0 1px 3px #000; animation: tipready 0.8s ease-in-out infinite alternate; }
+@keyframes tipready { from { opacity: 0.7; } to { opacity: 1; } }
+.boot.tipout { pointer-events: auto; }
+.boot.bare .boot-top { display: none; } /* behind a course card (main.js backdrop) */
+.ltip { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1.2rem; align-items: center; width: min(48rem, 100%); padding: 1rem 1.4rem 1.1rem 1rem; border-radius: 1.2rem; border: 1.5px solid transparent;
+  background: linear-gradient(180deg, rgba(34,14,70,0.88), rgba(12,5,28,0.92)) padding-box, var(--edge) border-box; box-shadow: 0 0 2.6rem -0.8rem rgba(255,63,164,0.6), 0 1.2rem 3rem rgba(0,0,0,0.5); animation: rise 0.38s var(--ease) both; }
+.ltip .ldemo { display: block; width: 15rem; height: 9.375rem; border-radius: 0.8rem; background: rgba(0,0,0,0.42); box-shadow: inset 0 0 0 1px rgba(160,120,255,0.25); }
+.ltip .ltext { min-width: 0; }
+.ltip .ltitle { height: 2rem; margin: 0.35rem 0 0.55rem; }
+.ltip p { margin: 0; font-size: 1.3rem; line-height: 1.32; font-weight: 600; color: #f6f0ff; text-shadow: 0 1px 2px rgba(0,0,0,0.6); }
+.cb-safe .ldemo .zb { stroke: #3d8bff; } .cb-safe .ldemo .zs { stroke: #ffb000; } .cb-safe .ldemo .zsf { fill: #ffb000; }
 
 /* ---------------------------------------------------------------- the type scale (day 3): rem grows with the screen,
    13 px on a phone held sideways to 19 px on a big monitor, so panels fill a desktop and still fit an iPhone */
@@ -103,6 +127,9 @@ html { font-size: clamp(13px, calc(0.55vw + 0.9 * var(--vh1, 1vh)), 19px); } /* 
 .mult { position: relative; font-size: 1.25rem; font-weight: 900; font-style: italic; color: var(--mc); text-shadow: 0 0 0.7rem var(--mc); }
 .multb.bump { animation: bump 0.4s var(--ease); }
 @keyframes bump { 0% { transform: scale(1.6); } 100% { transform: scale(1); } }
+/* 11-18: a switchback (two steps at once) kicks the badge harder than a step, and pops in pink */
+.multb.bump2 { animation: bump2 0.55s var(--ease); }
+@keyframes bump2 { 0% { transform: scale(2.1) rotate(-10deg); filter: drop-shadow(0 0 0.9rem var(--pink)); } 60% { transform: scale(0.94) rotate(2deg); } 100% { transform: none; filter: none; } }
 .state { margin-top: 0.35rem; display: inline-block; min-height: 1.4rem; font-size: 0.78rem; font-weight: 900; letter-spacing: 0.24em; padding: 0.2rem 0.75rem 0.2rem 0.95rem; border-radius: 1rem; border: 1px solid transparent; text-shadow: 0 1px 2px #000; }
 .state:empty { visibility: hidden; }
 .state.zone { color: var(--cyan); border-color: rgba(54,242,255,0.55); background: rgba(8,40,52,0.6); }
@@ -113,6 +140,7 @@ html { font-size: clamp(13px, calc(0.55vw + 0.9 * var(--vh1, 1vh)), 19px); } /* 
 .pops { position: absolute; top: 36%; left: 50%; transform: translateX(-50%); width: 80%; text-align: center; }
 .pop { font-size: 1.4rem; font-weight: 900; font-style: italic; letter-spacing: 0.04em; animation: pop 1.3s forwards; text-shadow: 0 0 0.9rem currentColor, 0 2px 2px #000; }
 .pop.link { color: var(--amber); } .pop.bank { color: var(--good); } .pop.wipe { color: var(--bad); font-size: 1.6rem; } .pop.info { color: var(--cyan); font-size: 1rem; }
+.pop.switch { color: var(--pink); font-size: 1.75rem; letter-spacing: 0.08em; } .cb-safe .pop.switch { color: #ffb000; }
 @keyframes pop { 0% { opacity: 0; transform: translateY(10px) scale(0.9); } 12% { opacity: 1; transform: none; } 75% { opacity: 1; } 100% { opacity: 0; transform: translateY(-24px); } }
 .hud-bottom { position: absolute; bottom: calc(0.5rem + var(--sb)); left: 50%; transform: translateX(-50%); text-align: center; width: 11rem; }
 .angle { width: 9rem; height: 5rem; display: block; margin: 0 auto -2.7rem; }
@@ -130,34 +158,6 @@ html { font-size: clamp(13px, calc(0.55vw + 0.9 * var(--vh1, 1vh)), 19px); } /* 
 .flash.hit { opacity: 1; transition: none; }
 .fps { position: fixed; right: calc(8px + var(--sr)); top: calc(4.6rem + var(--st)); z-index: 30; font: 11px/1.3 ui-monospace, Menlo, Consolas, monospace; color: #c8ffd8; background: rgba(0,0,0,0.55); padding: 4px 7px; border-radius: 6px; pointer-events: none; white-space: pre; }
 
-/* 11-17, the first-run tips: nothing that teaches sits over live driving. The one a player must know holds the run in
-   the middle of a dimmed, frozen game (.tips.hold covers the whole HUD, so nothing under it takes a tap) until Got it;
-   the other two are cards on the results screens (.rtip) */
-.tips { position: absolute; inset: 0; display: grid; place-items: center; padding: calc(0.8rem + var(--st)) calc(1rem + var(--sr)) calc(0.8rem + var(--sb)) calc(1rem + var(--sl)); pointer-events: none; }
-.tips.hold { z-index: 5; pointer-events: auto; background: radial-gradient(ellipse at 50% 50%, rgba(11,6,24,0.4), rgba(11,6,24,0.82) 75%); animation: tipdim 0.3s ease-out; }
-@keyframes tipdim { from { background-color: transparent; opacity: 0.4; } }
-.tip { pointer-events: auto; display: grid; grid-template-columns: 7.5rem 1fr; gap: 0.8rem; align-items: center; padding: 0.7rem 0.9rem; border-radius: 1rem; border: 1.5px solid transparent; background: var(--face) padding-box, var(--edge) border-box; box-shadow: 0 0 2rem -0.6rem rgba(255,63,164,0.7); animation: tipin 0.45s var(--ease); }
-.tip.big { width: min(34rem, 100%); grid-template-columns: 11rem 1fr; gap: 1.1rem; padding: 1.1rem 1.3rem; }
-.tip.out { animation: tipout 0.35s forwards; }
-@keyframes tipin { from { opacity: 0; transform: translateY(-0.8rem) scale(0.96); } }
-@keyframes tipout { to { opacity: 0; transform: translateY(-0.6rem); } }
-.tip svg.demo, .rtip svg.demo { width: 7.5rem; height: 4.6rem; display: block; border-radius: 0.6rem; background: rgba(0,0,0,0.35); }
-.tip.big svg.demo { width: 11rem; height: 6.8rem; }
-.tip .tk, .rtip .tk { font-size: 0.62rem; letter-spacing: 0.3em; color: var(--cyan); font-weight: 800; }
-.tip .lt { height: 1.15rem; margin: 0.15rem 0 0.25rem; }
-.tip.big .lt { height: 1.5rem; margin: 0.25rem 0 0.4rem; }
-.tip p, .rtip p { margin: 0; font-size: 0.82rem; line-height: 1.35; color: #e9e0ff; }
-.tip.big p { font-size: 0.95rem; }
-.tip .tb { display: flex; justify-content: flex-end; margin-top: 0.8rem; }
-.rtip { display: grid; grid-template-columns: 6.5rem 1fr; gap: 0.75rem; align-items: center; margin-top: 0.8rem; padding: 0.6rem 0.75rem; border-radius: 0.9rem; border: 1px solid rgba(54,242,255,0.35); background: rgba(8,4,18,0.45); }
-.rtip svg.demo { width: 6.5rem; height: 4rem; }
-.rtip .lt { height: 1.05rem; margin: 0.15rem 0 0.2rem; }
-.rtip p { font-size: 0.78rem; }
-/* the demo's moving car and chevrons */
-.demo .dcar { animation: dcar 3.2s linear infinite; offset-rotate: auto 90deg; }
-.demo .dchev { animation: dchev 1s linear infinite; }
-@keyframes dchev { to { stroke-dashoffset: -16; } }
-@keyframes dcar { from { offset-distance: 0%; } to { offset-distance: 100%; } }
 
 /* ---------------------------------------------------------------- phone controls */
 .touch { position: fixed; inset: var(--app-y) auto auto var(--app-x); width: var(--app-w); height: var(--app-h); z-index: 12; touch-action: none; }
@@ -455,9 +455,6 @@ html { font-size: clamp(13px, calc(0.55vw + 0.9 * var(--vh1, 1vh)), 19px); } /* 
 .short .pause .lt { height: 1.6rem; }
 .short .pause .pbtns { grid-template-columns: 1fr 1fr; gap: 0.55rem; }
 .tiny .ghead { padding: 0.55rem 0.8rem 0.35rem; }
-.short .tip.big { width: min(36rem, 100%); grid-template-columns: 8.5rem 1fr; gap: 0.85rem; padding: 0.8rem 1rem; }
-.short .tip.big svg.demo { width: 8.5rem; height: 5.25rem; }
-.short .tip.big .tb { margin-top: 0.55rem; }
 .short .pops { top: 46%; }
 @media (max-width: 640px) and (orientation: landscape) { .garage { grid-template-columns: 1fr 1.25fr; } }
 

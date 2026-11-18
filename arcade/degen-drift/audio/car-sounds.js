@@ -133,6 +133,131 @@ export const ENGINES = {
 // the game's own names for them (js/data/cars.js `sound`)
 export const PRESET_ALIAS = { i6: 'six', inline6: 'six', straight6: 'six', four: 'turbo4', i4: 'turbo4' };
 
+// ---- 11-18, synth 2: the combustion engine (Engine sound: New) ------------------------------------------------------
+// One model (audio/drift-worklet.js, Combustion), six presets. What makes them differ is what makes real engines differ:
+// the firing order and spacing (and which exhaust bank each cylinder blows into), the pulse (its width in crank degrees,
+// capped in time so an idle chugs; its sharpness, its turbulence), the cycle-to-cycle variation and the idle's lump, and
+// the pipes: header lengths per bank (unequal ones rumble), one collector or true duals (two separate pipes), the pipe,
+// the muffler chamber (its expansion `area` relative to the pipe, its absorption `atten` and `lossHz`: a big, lossy
+// chamber is quiet and round, a small low-loss one is a straight-through race can), the tailpipe and its open end.
+// Areas are relative (a header is 1). Lengths in metres (sound runs at 520 m/s in the hot exhaust: a header's
+// quarter-wave is c / 4L). pops: afterfire per lift (amount), its rpm floor, the share of big bangs, the chance on a
+// shift and a blip. shift.flat: a sequential box's ignition-cut shift (the throttle held, bangs on every change).
+// gain: set by tools/sound/calibrate-synth2.mjs so New plays as loud as Classic on the same runs.
+const I4 = { events: [0, 180, 360, 540], banks: [0, 1, 0, 1] };
+const SIX = { events: [0, 120, 240, 360, 480, 600], banks: [0, 1, 0, 1, 0, 1] };
+export const COMBUSTION = {
+  // KESTREL: a 2.0 turbo four with a raw aftermarket turbo-back exhaust (a 3-inch pipe, one straight-through can):
+  // short manifold into the turbine (which rounds the pulses), a big low-loss pipe, little muffling, crackle on a lift
+  turbo4: {
+    label: 'Turbo four, raw turbo-back exhaust', model: 'combustion', cylinders: 4, displacement: 2.0,
+    firing: Object.assign({ weights: [1.0, 0.96, 1.03, 0.98] }, I4),
+    idleRpm: 950, redlineRpm: 7600, limiterRpm: 7650, limiter: { cutMs: 55, dropRpmS: 2800, pops: 0.35 }, flywheel: 0.010,
+    pulse: { maxMs: 6, deg: 150, rise: 0.06, fall: 0.28, riseOff: 0.2, fallOff: 0.4, noise: 0.55, noiseOff: 0.3, ccvOn: 0.05, ccvOff: 0.22, ccvIdle: 0.1, jitterDeg: 1.3, lump: 0.12, miss: 0.02, off: 0.16, idle: 0.55, bark: 0.4 },
+    header: { lengthM: [0.42, 0.47], area: 1, lossHz: 5000, atten: 0.965 }, collector: { drive: 1.3 }, turbine: { lpHz: 4000 },
+    pipe: { lengthM: 2.2, area: 1.8, lossHz: 4500, atten: 0.95 }, muffler: { lengthM: 0.5, area: 2.2, lossHz: 3000, atten: 0.93 }, tail: { lengthM: 0.35, area: 1.6, lossHz: 6000, atten: 0.97 },
+    outlet: { reflect: -0.7, lossHz: 3000 }, radHz: 28,
+    intake: { lengthM: 0.3, reflect: 0.7, open: -0.6, plenumHz: 230, plenumQ: 2.5, hiss: 0.15, gain: 0.2, offsetDeg: 400 },
+    block: { hz: 150, q: 3, gain: 0.45, order1: 0.03 }, guts: { gain: 0.5, lpHz: 170 }, overrun: { air: 0.25, hollow: 0.6 },
+    pops: { amount: 0.35, minRpm: 3000, gain: 1.0, bang: 0.12, shift: 0.3, blip: 0.35 }, shift: { dropS: 0.05, blip: 0.06 },
+    turbo: { on: true, spool: 0.7, spoolRpm: 2600, fullRpm: 4800, whineLo: 1700, whineHi: 5200, whine: 0.11, hiss: 0.18, bov: 'both', bovGain: 0.7, flutterGain: 0.5 },
+    interior: { lpHz: 850, boomHz: 110, boomDb: 5 }, mix: { exhaust: 1, intake: 0.35, block: 0.5, turbo: 0.75, shots: 0.7 }, gain: 0.69,
+  },
+  // VANTA: a smooth 3.0 straight six, a GT: 1-5-3-6-2-4 into two 3-into-1 headers, long overlapping pulses (the
+  // chord-like six), a long lossy muffler, almost no crackle
+  six: {
+    label: 'Straight six, GT', model: 'combustion', cylinders: 6, displacement: 3.0,
+    firing: Object.assign({ weights: [1.0, 0.99, 1.01, 0.99, 1.01, 0.99] }, SIX),
+    idleRpm: 900, redlineRpm: 7400, limiterRpm: 7450, limiter: { cutMs: 70, dropRpmS: 2200, pops: 0.04 }, flywheel: 0.014,
+    pulse: { maxMs: 7, deg: 170, rise: 0.1, fall: 0.32, riseOff: 0.22, fallOff: 0.42, noise: 0.22, noiseOff: 0.25, ccvOn: 0.03, ccvOff: 0.15, ccvIdle: 0.06, jitterDeg: 0.8, lump: 0.04, miss: 0.01, off: 0.15, idle: 0.5, bark: 0.25 },
+    header: { lengthM: [0.85, 0.9], area: 1, lossHz: 4500, atten: 0.965 }, collector: { drive: 1.1 },
+    pipe: { lengthM: 2.6, area: 1.6, lossHz: 3500, atten: 0.95 }, muffler: { lengthM: 0.7, area: 2.5, lossHz: 1500, atten: 0.75 }, tail: { lengthM: 0.5, area: 1.3, lossHz: 5000, atten: 0.97 },
+    outlet: { reflect: -0.8, lossHz: 2200 }, radHz: 28,
+    intake: { lengthM: 0.35, reflect: 0.75, open: -0.6, plenumHz: 190, plenumQ: 2.5, hiss: 0.2, gain: 0.45, offsetDeg: 400 },
+    block: { hz: 120, q: 3, gain: 0.4, order1: 0.02 }, guts: { gain: 0.45, lpHz: 170 }, overrun: { air: 0.2, hollow: 0.5 },
+    pops: { amount: 0.05, minRpm: 3500, gain: 0.6, bang: 0.02, shift: 0.03, blip: 0.05 }, shift: { dropS: 0.06, blip: 0.05 },
+    turbo: { on: false }, interior: { lpHz: 800, boomHz: 100, boomDb: 5 }, mix: { exhaust: 1, intake: 0.5, block: 0.45, turbo: 0.7, shots: 0.6 }, gain: 1.091,
+  },
+  // HALBERD: a lazy cross-plane V8, muscle: 1-8-4-3-6-5-7-2, each bank into its own pipe (true duals), so each pipe
+  // hears its bank's uneven beat (the burble); a heavy flywheel, a lumpy cam at idle, chambered mufflers, a burble on
+  // the overrun with the odd deep boom
+  v8: {
+    label: 'Cross-plane V8, muscle, true duals', model: 'combustion', cylinders: 8, displacement: 5.7,
+    firing: { events: [0, 90, 180, 270, 360, 450, 540, 630], banks: [0, 1, 1, 0, 1, 0, 0, 1], weights: [1.0, 0.96, 1.04, 0.97, 1.03, 0.95, 1.02, 0.98] },
+    idleRpm: 800, redlineRpm: 6600, limiterRpm: 6650, limiter: { cutMs: 75, dropRpmS: 2200, pops: 0.2 }, flywheel: 0.022,
+    pulse: { maxMs: 9, deg: 160, rise: 0.1, fall: 0.34, riseOff: 0.22, fallOff: 0.44, noise: 0.3, noiseOff: 0.3, ccvOn: 0.06, ccvOff: 0.3, ccvIdle: 0.16, jitterDeg: 1.8, lump: 0.6, miss: 0.04, off: 0.18, idle: 0.6, bark: 0.45 },
+    dual: true, header: { lengthM: [0.75, 0.82], area: 1, lossHz: 4200, atten: 0.965 }, collector: { drive: 1.3 },
+    pipe: { lengthM: 2.1, area: 1.5, lossHz: 3600, atten: 0.95 }, muffler: { lengthM: 0.4, area: 3, lossHz: 1800, atten: 0.9 }, tail: { lengthM: 0.55, area: 1.3, lossHz: 5000, atten: 0.97 },
+    outlet: { reflect: -0.8, lossHz: 2000 }, radHz: 24,
+    intake: { lengthM: 0.28, reflect: 0.75, open: -0.6, plenumHz: 150, plenumQ: 2.5, hiss: 0.2, gain: 0.4, offsetDeg: 400 },
+    block: { hz: 95, q: 2.5, gain: 0.6, order1: 0.06 }, guts: { gain: 0.55, lpHz: 150 }, overrun: { air: 0.2, hollow: 0.7 },
+    pops: { amount: 0.3, minRpm: 2300, gain: 1.1, bang: 0.25, shift: 0.15, blip: 0.3 }, shift: { dropS: 0.07, blip: 0.07 },
+    turbo: { on: false }, interior: { lpHz: 700, boomHz: 80, boomDb: 6 }, mix: { exhaust: 1, intake: 0.4, block: 0.6, turbo: 0.7, shots: 0.7 }, gain: 0.648,
+  },
+  // ORBIT: the car's own twin-rotor rotary, small and high-revving (9,000). Two rotors fire as often as a four, but the
+  // peripheral exhaust port snaps open and stays open long: sharp, long, noisy pulses, a raspy short system, the
+  // "brap" of an uneven idle (port overlap), and lots of crackle
+  rotary: {
+    label: 'Twin-rotor rotary, high-revving', model: 'combustion', cylinders: 2, displacement: 1.3,
+    firing: { events: [0, 180, 360, 540], banks: [0, 1, 0, 1], weights: [1.0, 0.93, 1.04, 0.95] },
+    idleRpm: 1000, redlineRpm: 9000, limiterRpm: 9050, limiter: { cutMs: 45, dropRpmS: 3200, pops: 0.5 }, flywheel: 0.008,
+    pulse: { maxMs: 5, deg: 250, rise: 0.05, fall: 0.4, riseOff: 0.15, fallOff: 0.45, noise: 0.6, noiseOff: 0.4, ccvOn: 0.07, ccvOff: 0.3, ccvIdle: 0.22, jitterDeg: 2.2, lump: 0.7, miss: 0.08, off: 0.2, idle: 0.6, bark: 0.4 },
+    header: { lengthM: [0.5, 0.5], area: 1.1, lossHz: 5500, atten: 0.965 }, collector: { drive: 1.5 },
+    pipe: { lengthM: 1.8, area: 1.7, lossHz: 5000, atten: 0.95 }, muffler: { lengthM: 0.35, area: 1.8, lossHz: 3500, atten: 0.95 }, tail: { lengthM: 0.3, area: 1.5, lossHz: 6000, atten: 0.97 },
+    outlet: { reflect: -0.65, lossHz: 3500 }, radHz: 30,
+    intake: { lengthM: 0.25, reflect: 0.7, open: -0.6, plenumHz: 260, plenumQ: 2.5, hiss: 0.35, gain: 0.5, offsetDeg: 300 },
+    block: { hz: 170, q: 3, gain: 0.25, order1: 0.02 }, guts: { gain: 0.45, lpHz: 180 }, overrun: { air: 0.25, hollow: 0.6 },
+    pops: { amount: 0.55, minRpm: 3500, gain: 1.15, bang: 0.15, shift: 0.3, blip: 0.4 }, shift: { dropS: 0.04, blip: 0.07 },
+    turbo: { on: false }, interior: { lpHz: 900, boomHz: 120, boomDb: 4 }, mix: { exhaust: 1, intake: 0.45, block: 0.3, turbo: 0.7, shots: 0.7 }, gain: 0.581,
+  },
+  // SPECTRE: the snappy track car, the car's own twin-turbo V6 (60 degrees, even 120-degree firing), each bank into its
+  // own small turbo and its own short race pipe; a sequential box: every upshift an ignition cut with the throttle
+  // held (bangs), a hard bouncing limiter, a blow-off on a lift
+  v6tt: {
+    label: 'Twin-turbo V6, track car, flat-shift', model: 'combustion', cylinders: 6, displacement: 3.0,
+    firing: Object.assign({ weights: [1.0, 0.97, 1.02, 0.98, 1.03, 0.97] }, SIX),
+    idleRpm: 950, redlineRpm: 7600, limiterRpm: 7650, limiter: { cutMs: 40, dropRpmS: 3500, pops: 0.6 }, flywheel: 0.008,
+    pulse: { maxMs: 6, deg: 150, rise: 0.07, fall: 0.28, riseOff: 0.2, fallOff: 0.4, noise: 0.45, noiseOff: 0.3, ccvOn: 0.04, ccvOff: 0.2, ccvIdle: 0.08, jitterDeg: 1.1, lump: 0.15, miss: 0.02, off: 0.16, idle: 0.5, bark: 0.5 },
+    dual: true, header: { lengthM: [0.38, 0.4], area: 1, lossHz: 5500, atten: 0.965 }, collector: { drive: 1.4 }, turbine: { lpHz: 3200 },
+    pipe: { lengthM: 1.6, area: 1.6, lossHz: 5000, atten: 0.95 }, muffler: { lengthM: 0.3, area: 1.6, lossHz: 4000, atten: 0.97 }, tail: { lengthM: 0.3, area: 1.5, lossHz: 6000, atten: 0.97 },
+    outlet: { reflect: -0.65, lossHz: 3500 }, radHz: 30,
+    intake: { lengthM: 0.3, reflect: 0.7, open: -0.6, plenumHz: 220, plenumQ: 2.5, hiss: 0.2, gain: 0.25, offsetDeg: 400 },
+    block: { hz: 140, q: 3, gain: 0.45, order1: 0.03 }, guts: { gain: 0.45, lpHz: 170 }, overrun: { air: 0.25, hollow: 0.6 },
+    pops: { amount: 0.45, minRpm: 3500, gain: 1.1, bang: 0.2, shift: 0.6, blip: 0.45 }, shift: { dropS: 0.03, blip: 0.06, flat: true },
+    turbo: { on: true, spool: 0.45, spoolRpm: 2400, fullRpm: 4200, whineLo: 2400, whineHi: 8500, whine: 0.14, hiss: 0.3, bov: 'bov', bovGain: 0.5, flutterGain: 0.4, twin: true },
+    interior: { lpHz: 850, boomHz: 105, boomDb: 5 }, mix: { exhaust: 1, intake: 0.3, block: 0.45, turbo: 0.75, shots: 0.7 }, gain: 0.527,
+  },
+  // ZENITH: a 4.0 flat six at 9,200: 1-6-2-4-3-5, the two 3-cylinder banks alternating into equal short headers (the
+  // third-order wail), a loud intake, a valved sport exhaust, strong crackle on a lift
+  flat6: {
+    label: 'Flat six, high-revving', model: 'combustion', cylinders: 6, displacement: 4.0,
+    firing: Object.assign({ weights: [1.0, 0.99, 1.01, 0.99, 1.01, 0.98] }, SIX),
+    idleRpm: 950, redlineRpm: 9200, limiterRpm: 9250, limiter: { cutMs: 50, dropRpmS: 3000, pops: 0.45 }, flywheel: 0.009,
+    pulse: { maxMs: 5.5, deg: 145, rise: 0.07, fall: 0.26, riseOff: 0.2, fallOff: 0.4, noise: 0.35, noiseOff: 0.28, ccvOn: 0.035, ccvOff: 0.18, ccvIdle: 0.07, jitterDeg: 0.9, lump: 0.08, miss: 0.015, off: 0.16, idle: 0.5, bark: 0.35 },
+    header: { lengthM: [0.6, 0.6], area: 1, lossHz: 5500, atten: 0.965 }, collector: { drive: 1.25 },
+    pipe: { lengthM: 1.6, area: 1.6, lossHz: 5000, atten: 0.95 }, muffler: { lengthM: 0.45, area: 2.5, lossHz: 2800, atten: 0.9 }, tail: { lengthM: 0.4, area: 1.4, lossHz: 6000, atten: 0.97 },
+    outlet: { reflect: -0.75, lossHz: 3000 }, radHz: 30,
+    intake: { lengthM: 0.25, reflect: 0.75, open: -0.6, plenumHz: 240, plenumQ: 3, hiss: 0.3, gain: 0.65, offsetDeg: 400 },
+    block: { hz: 160, q: 3, gain: 0.4, order1: 0.03 }, guts: { gain: 0.4, lpHz: 180 }, overrun: { air: 0.22, hollow: 0.6 },
+    pops: { amount: 0.55, minRpm: 3500, gain: 1.0, bang: 0.12, shift: 0.35, blip: 0.45 }, shift: { dropS: 0.035, blip: 0.07 },
+    turbo: { on: false }, interior: { lpHz: 850, boomHz: 110, boomDb: 4 }, mix: { exhaust: 1, intake: 0.6, block: 0.4, turbo: 0.7, shots: 0.7 }, gain: 0.686,
+  },
+};
+// the fitted parts, for the combustion engine: the same upgrades as MODS below, in this model's terms
+const MODS2 = {
+  catback: { mul: { 'mix.exhaust': 1.2, 'muffler.area': 0.75, 'muffler.lossHz': 1.25, 'outlet.lossHz': 1.15 }, add: { 'muffler.atten': 0.03, 'pops.amount': 0.12 } },
+  sport: { mul: { 'mix.exhaust': 1.3, 'muffler.area': 0.6, 'muffler.lossHz': 1.4, 'outlet.lossHz': 1.25, 'intake.gain': 1.2 }, add: { 'muffler.atten': 0.05, 'pops.amount': 0.25 } },
+  straight: { mul: { 'mix.exhaust': 1.35, 'muffler.lossHz': 1.6, 'outlet.lossHz': 1.3, 'intake.gain': 1.2 }, set: { 'muffler.area': 1.3 }, add: { 'muffler.atten': 0.08, 'pops.amount': 0.45, 'pops.bang': 0.1 } },
+  stage2: { mul: { 'collector.drive': 1.3, 'pulse.rise': 0.75, 'intake.gain': 1.3, 'pulse.ccvIdle': 1.3 }, add: { 'pulse.lump': 0.25, 'pops.amount': 0.1 } },
+  stage3: { mul: { 'collector.drive': 1.6, 'pulse.rise': 0.65, 'intake.gain': 1.45, 'pulse.ccvIdle': 1.5 }, add: { 'pulse.lump': 0.4, 'pops.amount': 0.15 } },
+  turbo: { set: { 'turbo.on': true, 'turbo.bov': 'flutter' }, mul: { 'turbo.whine': 1.8, 'mix.exhaust': 0.92 } },
+  strip: { mul: { 'interior.lpHz': 1.8, 'interior.block': 1.5, 'interior.exhaust': 1.25 }, add: { 'interior.boomDb': 2 } },
+  super: { set: { 'turbo.on': true, 'turbo.spool': 0.04, 'turbo.spoolRpm': 900, 'turbo.fullRpm': 7400, 'turbo.bov': 'none' }, mul: { 'turbo.hiss': 0.2, 'mix.exhaust': 0.95 }, add: { 'turbo.whine': 0.12 } },
+};
+const UP2 = { 'exhaust:1': 'catback', 'engine-1': 'sport', 'exhaust:2': 'straight', 'engine-2': 'stage2', 'harsh:1': 'stage2', 'harsh:2': 'stage3', turbo: 'turbo', 'turbo:1': 'turbo', strip: 'strip', 'strip:1': 'strip', 'super:1': 'super' };
+// a turbo kit on a car that had none needs the rest of a turbo's numbers
+const TURBO_KIT = { spool: 0.7, spoolRpm: 2800, fullRpm: 5000, whineLo: 1600, whineHi: 6500, whine: 0.16, hiss: 0.28, bovGain: 0.5, flutterGain: 0.5 };
+
 // ---- tyres ---------------------------------------------------------------------------------------------------
 // A squeal is a tread resonance excited by stick-slip: a tone (tonal share) plus noise through two narrow bands at
 // the squeal pitch and an overtone. At the edge of grip it comes in chirps; past fullDeg of slide it is a steady,
@@ -206,8 +331,10 @@ export function applyMods(entry, mods) {
   return entry;
 }
 
-export function resolveCarSound(engineId, upgrades = [], over = {}) {
+// model 'new' (11-18): the combustion engine's preset and the three-layer squeal; anything else: the classic synth
+export function resolveCarSound(engineId, upgrades = [], over = {}, model) {
   engineId = PRESET_ALIAS[engineId] || engineId;
+  if (model === 'new') return resolveNew(engineId, upgrades, over);
   const engine = clone(ENGINES[engineId] || ENGINES.six);
   engine.id = ENGINES[engineId] ? engineId : 'six';
   const ups = new Set(upgrades || []);
@@ -220,6 +347,29 @@ export function resolveCarSound(engineId, upgrades = [], over = {}) {
   let compound = over.compound || 'street';
   for (const [id, c] of Object.entries(TYRE_UPGRADES)) if (ups.has(id)) compound = c;
   const tyres = Object.assign(clone(TYRES), { compound: clone(COMPOUNDS[compound] || COMPOUNDS.street), compoundId: compound, surfaces: clone(SURFACES) });
+  if (over.tyres) applyMods(tyres, over.tyres);
+  return { engine, tyres };
+}
+
+function resolveNew(engineId, upgrades, over) {
+  const engine = clone(COMBUSTION[engineId] || COMBUSTION.six);
+  engine.id = COMBUSTION[engineId] ? engineId : 'six';
+  engine.interior = Object.assign({ exhaust: 1, intake: 0.9, block: 1.4, turbo: 0.8 }, engine.interior);
+  const ups = new Set(upgrades || []), done = new Set();
+  for (const [id, m] of Object.entries(UP2)) if (ups.has(id) && !done.has(m)) {
+    done.add(m);
+    if (MODS2[m].set && MODS2[m].set['turbo.on'] && !engine.turbo.whine) engine.turbo = Object.assign({}, TURBO_KIT, engine.turbo);
+    applyMods(engine, MODS2[m]);
+  }
+  engine.muffler.atten = Math.min(0.99, engine.muffler.atten);
+  if (over.idleRpm) engine.idleRpm = over.idleRpm;
+  if (over.redlineRpm) { engine.redlineRpm = over.redlineRpm; engine.limiterRpm = over.redlineRpm + 50; }
+  if (over.spool && engine.turbo.on) engine.turbo.spool = over.spool;
+  if (over.lite) engine.lite = true;
+  if (over.engine) applyMods(engine, over.engine);
+  let compound = over.compound || 'street';
+  for (const [id, c] of Object.entries(TYRE_UPGRADES)) if (ups.has(id)) compound = c;
+  const tyres = Object.assign(clone(TYRES), { model: 'new', compound: clone(COMPOUNDS[compound] || COMPOUNDS.street), compoundId: compound, surfaces: clone(SURFACES) });
   if (over.tyres) applyMods(tyres, over.tyres);
   return { engine, tyres };
 }
