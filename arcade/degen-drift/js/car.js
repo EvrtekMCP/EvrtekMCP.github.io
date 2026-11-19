@@ -40,6 +40,8 @@ export class Car {
     this.spin = 0; this.slipF = 0; this.slipR = 0; this.alphaF = 0; this.alphaR = 0;
     this.loadF = 0.5; this.wheelRot = 0; this.boost = 0; this.nosOn = false;
     this.hint = -1; this.contact = 0; this.scrape = 0; this.noContact = 1; this.touchFired = false;
+    this.grazeFired = false; this.wallPeak = 0; // 11-19: this contact forgiven so far; its hardest step (walls())
+    this.touch = { closing: 0, into: 0, angle: 0, part: 'side', side: 0, rel: 0, x: 0, z: 0, hit: false };
     this.s = s; this.lat = lat; this.trackI = 0;
     this.throttle = 0; this.brake = 0; this.handbrake = 0;
     this.events.length = 0;
@@ -337,21 +339,33 @@ export class Car {
   }
 
   // Walls stand at the road's edge plus a shoulder. The car's footprint across the road comes from its heading
-  // relative to the road. A hit bounces and scrubs. Events: 'impact' (damage: where on the car, how hard) for every
-  // real knock, and 'wall' (the score's wipe) once per contact: a knock past wipeSpeed, or scraping for scrapeTime.
+  // relative to the road. A knock bounces and scrubs. Events: 'impact' (damage: where on the car, how hard) for every
+  // real knock, and once per contact either 'wall' (a hit: the score's wipe) or 'graze' (a touch that is forgiven).
+  // 11-19 (Evrtek: "if you graze the wall gently, then I don't want that to be a punishment"): every step of a contact
+  // is measured (contactAt) and judged (judge). A HIT: the corner meeting the wall closes on it faster than
+  // wall.grazeSpeed, or it is a front corner with the nose turned in past wall.noseDeg (a nose-in is an oops at any
+  // speed). Anything softer is a GRAZE. A contact lasts until the car has been off the wall 0.35 s, and it stays a graze
+  // only while every step of it does: a brush that turns into a slap is a hit. A long scrape is a run of grazes, never
+  // a hit by its length (it pays nothing while it lasts: scoring.js). wall.grazes 0 is the rule before 11-19: any knock
+  // past wipeSpeed, or scrapeTime of scraping, wipes.
   walls(dt) {
     const W = this.T.wall, C = this.T.car, tr = this.track;
-    const q = this.locate();
-    const lim = tr.halfAt(q.i, q.f) + 0.55;
-    const rel = this.psi - tr.psi[q.i];
+    const q = this.locate(), qi = q.i, qf = q.f, qlat = q.lat; // copied: contactAt's look-ups reuse the track's q
+    const lim = tr.halfAt(qi, qf) + 0.55;
+    const rel = this.psi - tr.psi[qi];
     const ext = Math.abs(C.halfLength * Math.sin(rel)) + Math.abs(C.halfWidth * Math.cos(rel));
-    const lx = tr.tz[q.i], lz = -tr.tx[q.i];
+    const lx = tr.tz[qi], lz = -tr.tx[qi];
     const sp = Math.sin(this.psi), cp = Math.cos(this.psi);
+    const judging = W.grazes > 0;
     let touched = false;
     for (const side of [1, -1]) {
-      const over = side * q.lat + ext - lim;
+      const over = side * qlat + ext - lim;
       if (over <= 0) continue;
       touched = true;
+      // where the wall is, seen from the car (radians from the nose, + to the left)
+      const dx = lx * side, dz = lz * side, wallRel = Math.atan2(dx * cp - dz * sp, dx * sp + dz * cp);
+      const c = this.contactAt(side, rel, wallRel);           // measured before the bounce changes anything
+      if (judging) this.judge(c);
       this.x -= lx * side * over; this.z -= lz * side * over;   // back onto the road
       const vn = (this.vx * lx + this.vz * lz) * side;          // speed into the wall
       if (vn > 0) {
@@ -363,21 +377,55 @@ export class Car {
         // the nose glances off: some yaw toward running along the wall, and the spin is damped
         this.r *= 1 - clamp(vn / 10, 0, 0.6);
         this.r += -side * Math.sign(Math.sin(rel)) * clamp(vn, 0, 8) * 0.06 * (Math.abs(Math.sin(rel)) > 0.1 ? 1 : 0);
-        // where the wall is, seen from the car (radians from the nose, + to the left)
-        const dx = lx * side, dz = lz * side, wallRel = Math.atan2(dx * cp - dz * sp, dx * sp + dz * cp);
-        if (vn > 1.0) this.events.push({ type: 'impact', speed: vn, rel: wallRel, side });
-        if (vn > W.wipeSpeed && !this.touchFired) { this.events.push({ type: 'wall', speed: vn, side, rel: wallRel }); this.touchFired = true; }
+        // a knock in a contact still forgiven is a graze's (main.js: no damage, the light scrape)
+        if (vn > 1.0) this.events.push({ type: 'impact', speed: vn, rel: wallRel, side, graze: judging && !this.touchFired, x: c.x, z: c.z });
+        if (!judging && vn > W.wipeSpeed && !this.touchFired) { this.events.push({ type: 'wall', speed: vn, side, rel: wallRel }); this.touchFired = true; }
       }
     }
     if (touched) {
       this.noContact = 0; this.scrape += dt;
-      if (this.scrape > W.scrapeTime && !this.touchFired) { this.events.push({ type: 'wall', speed: 0.5, side: 0, rel: 0 }); this.touchFired = true; }
+      if (!judging && this.scrape > W.scrapeTime && !this.touchFired) { this.events.push({ type: 'wall', speed: 0.5, side: 0, rel: 0 }); this.touchFired = true; }
       this.contact = 1;
     } else {
       this.noContact += dt; this.contact = 0;
-      if (this.noContact > 0.35) { this.scrape = 0; this.touchFired = false; }
+      if (this.noContact > 0.35) { this.scrape = 0; this.touchFired = false; this.grazeFired = false; this.wallPeak = 0; }
     }
     this.locate();
+  }
+
+  // 11-19: one step of a wall contact, measured (this.touch, reused). The corner of the footprint deepest into this
+  // wall (the end of the car and the side of it turned toward the wall), the wall's normal where that corner is, and
+  // how fast the corner is closing on it: the body's velocity plus its spin at that corner (v + omega x r), so a tail
+  // swinging in counts as much as a slide. In a steady drift round a bend every point of the car moves along the wall,
+  // which is why the normal is taken at the corner's own place on the road, not at the car's middle. Also: the body's
+  // own speed into the wall (no spin), its angle to the wall (0 = parallel) and the part that meets it: 'side' within
+  // wall.noseDeg of parallel (the flank lies along the wall), otherwise the 'front' or the 'rear' corner.
+  contactAt(side, rel, wallRel) {
+    const C = this.T.car, tr = this.track, t = this.touch;
+    const sr = Math.sin(rel), cr = Math.cos(rel), sp = Math.sin(this.psi), cp = Math.cos(this.psi);
+    const fx = side * sr >= 0 ? C.halfLength : -C.halfLength, ly = side * cr >= 0 ? C.halfWidth : -C.halfWidth;
+    // the corner's offset from the middle (forward (sp, cp), left (cp, -sp)), and its velocity
+    const ox = fx * sp + ly * cp, oz = fx * cp - ly * sp;
+    const vx = this.vx + this.r * (fx * cp - ly * sp), vz = this.vz - this.r * (fx * sp + ly * cp);
+    const k = tr.closest(this.x + ox, this.z + oz, this.hint).i;
+    const nx = tr.tz[k] * side, nz = -tr.tx[k] * side;          // into this wall, where the corner is
+    t.closing = Math.max(0, vx * nx + vz * nz);
+    t.into = Math.max(0, this.vx * nx + this.vz * nz);
+    t.angle = Math.atan2(Math.abs(sr), Math.abs(cr)) / DEG;
+    t.part = t.angle <= this.T.wall.noseDeg ? 'side' : fx > 0 ? 'front' : 'rear';
+    t.side = side; t.rel = wallRel; t.x = this.x + ox; t.z = this.z + oz; t.hit = false;
+    return t;
+  }
+  // 11-19: graze or hit, once per contact (walls() above). A hit fires 'wall' (as every touch did before); the first
+  // forgiven step fires 'graze'. After a hit the contact stays one (touchFired) until the car is off the wall.
+  judge(c) {
+    const W = this.T.wall;
+    c.hit = c.closing > W.grazeSpeed || c.part === 'front';
+    this.wallPeak = Math.max(this.wallPeak, c.closing);
+    if (this.touchFired) return;
+    const e = { type: c.hit ? 'wall' : 'graze', speed: c.closing, side: c.side, rel: c.rel, part: c.part, angle: c.angle, x: c.x, z: c.z };
+    if (c.hit) { e.grazed = this.grazeFired; this.events.push(e); this.touchFired = true; }
+    else if (!this.grazeFired) { this.events.push(e); this.grazeFired = true; }
   }
 
   // world position of a wheel: 0 front left, 1 front right, 2 rear left, 3 rear right

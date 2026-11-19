@@ -83,8 +83,14 @@ export const TUNING = {
   wall: {
     restitution: 0.18,       // bounce off the wall
     scrub: 0.86,             // speed kept along the wall per hit
-    wipeSpeed: 0.8,          // m/s into the wall that counts as a touch (wipes the chain)
-    scrapeTime: 0.18,        // s of continuous scraping that also counts as a touch
+    // 11-19 (Evrtek: "if you graze the wall gently, then I don't want that to be a punishment"): each touch is judged
+    // by how fast the corner that meets the wall is closing on it (car.js contactAt); a graze keeps the chain
+    grazes: 1,               // 1 = grazes are forgiven; 0 = the rule before 11-19 (any touch past wipeSpeed wipes)
+    grazeSpeed: 2.0,         // m/s: the corner closing on the wall slower than this is a graze, faster is a hit
+    noseDeg: 8,              // a front corner meeting the wall with the nose turned in past this is a hit at any speed
+    grazePay: 0,             // share of the zone's points paid while touching the wall (0: a scrape pays nothing)
+    wipeSpeed: 0.8,          // (grazes 0) m/s into the wall that counts as a touch (wipes the chain)
+    scrapeTime: 0.18,        // (grazes 0) s of continuous scraping that also counts as a touch
   },
   scoring: {
     // Evrtek's ruling (11-15, via Dirigent): points only while drifting inside a corner's zone, per second, scaled
@@ -199,6 +205,7 @@ export const RANGES = {
   'assist.intentDeg': [0, 30, 0.5], 'assist.intentKeep': [0, 3, 0.05], 'assist.intentFade': [0.05, 2, 0.05],
   'steer.stickDead': [0, 0.3, 0.01], 'steer.stickCurve': [1, 3, 0.05],
   'wall.restitution': [0, 0.8, 0.01], 'wall.scrub': [0.5, 1, 0.01],
+  'wall.grazes': [0, 1, 1], 'wall.grazeSpeed': [0.5, 5, 0.1], 'wall.noseDeg': [0, 30, 1], 'wall.grazePay': [0, 1, 0.05],
   'scoring.sweetMult': [1, 4, 0.1], 'scoring.speedExp': [0, 3, 0.05], 'scoring.angleWeight': [0, 1, 0.01],
   'scoring.linkWindow': [0.5, 6, 0.1], 'scoring.multStep': [0, 2, 0.25], 'scoring.multCap': [1, 20, 1],
   'scoring.holdSec': [0.25, 3, 0.05], 'scoring.holdStep': [0, 3, 0.25], 'scoring.holdGrace': [0, 0.6, 0.05],

@@ -19,7 +19,7 @@
 // THE GAME'S ADAPTER (js/sound.js) uses the module-level functions at the bottom instead: init({ context }) once, then
 // setEngine(preset, hints), setRPM(rpm, redline), setThrottle(t), setSlip(share 0..1), setSpeed(m/s), impact(kind,
 // strength), nos(on), ui(name), music(track), setMuted(m). Its names are understood: presets i6/v6tt/flat6, hints
-// { exhaust, harsh, turbo, squeal }, impact 'hard'/'scrape', ui count/go/wipe/buy, music menu/race/results. With no
+// { exhaust, harsh, turbo, squeal }, impact 'hard'/'scrape'/'graze', ui count/go/wipe/buy, music menu/race/results. With no
 // shift() call it hears the gear changes in the revs; with no link step it counts the chain itself.
 //
 // 11-17 (Evrtek, after test v10): ENGINE SOUND 'recorded' (the default) plays a car's recorded engine and tyres
@@ -58,7 +58,7 @@ const UI_ALIAS = { wipe: 'lost', buy: 'purchase', select: 'click', hover: 'click
 const MUSIC_ALIAS = { menu: 'garage', title: 'garage' };
 const UI_GAIN = { click: 0.45, back: 0.4, purchase: 0.7, upgrade: 0.75, zone: 0.55, sweet: 0.6, link: 0.6, bank: 0.7, lost: 0.7, star: 0.85, degenerate: 0.9, count: 0.6, go: 0.7 };
 const IMPACT = { scrape: ['hit-scrape-1', 'hit-scrape-2', 'hit-scrape-3'], swipe: ['hit-swipe-1', 'hit-swipe-2', 'hit-swipe-3'], crunch: ['hit-crunch-1', 'hit-crunch-2', 'hit-crunch-3'] };
-const IMPACT_ALIAS = { light: 'scrape', side: 'swipe', hard: 'crunch', headon: 'crunch', 'head-on': 'crunch' };
+const IMPACT_ALIAS = { light: 'scrape', graze: 'scrape', side: 'swipe', hard: 'crunch', headon: 'crunch', 'head-on': 'crunch' }; // graze: 11-19, a touch forgiven (game builder)
 const LINK_STEPS = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24]; // a major pentatonic climb, one step per link
 const VOLUMES = { master: 0.9, music: 0.55, sfx: 0.9, ui: 0.8 };
 const MIX = { engine: 0.85, tyres: 0.8, impacts: 0.9, nos: 0.6, shift: 0.35 };

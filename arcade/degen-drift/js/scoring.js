@@ -5,7 +5,10 @@
 //   - leaving a zone still drifting opens a short link window; reaching a NEW zone still drifting links the chain and
 //     raises the multiplier (to a cap);
 //   - the drift ending, or the window running out, banks the chain: its points times the multiplier;
-//   - touching a wall wipes the unbanked points and the multiplier.
+//   - touching a wall wipes the unbanked points and the multiplier. 11-19 (Evrtek: "if you graze the wall gently, then
+//     I don't want that to be a punishment"): only a HIT does (car.js judges every contact); a GRAZE keeps the chain,
+//     its multiplier and its points, but the wall pays nothing while the car touches it (wall.grazePay) and touching
+//     is no time on the sweet spot, so riding the wall is never a drift.
 // 11-18 (Evrtek's multiplier, after test v12): two more ways up for the same multiplier, while a chain is live:
 //   - HOLD the sweet spot: every full second held in it (still sliding) is a step;
 //   - a SWITCHBACK: a slide one way, then a flip to a slide the other way, each held at least half a second, is a
@@ -84,6 +87,7 @@ export class DriftScore {
     this.zoneNear = zn; this.inZone = inZone; this.sweet = sweet; this.offLine = off;
 
     this.rate = 0;
+    const touching = TUNING.wall.grazes > 0 && car.contact > 0; // 11-19: on the wall this step (a graze, or a hit)
     if (inZone && this.drifting) {
       if (this.zoneId !== zn.id) {
         // into a zone: a new zone inside an open window links the chain
@@ -94,7 +98,7 @@ export class DriftScore {
       }
       const sf = clamp(Math.pow(kmh / Sc.speedRefKmh, Sc.speedExp), 0, Sc.speedFactorMax);
       const af = 1 - Sc.angleWeight + 2 * Sc.angleWeight * clamp((angle - Sc.minAngleDeg) / (Sc.angleIdealDeg - Sc.minAngleDeg), 0, 1);
-      this.rate = Sc.zonePointsPerSec * sf * af * (sweet ? Sc.sweetMult : 1);
+      this.rate = Sc.zonePointsPerSec * sf * af * (sweet ? Sc.sweetMult : 1) * (touching ? TUNING.wall.grazePay : 1);
       this.acc += this.rate * dt;
       this.stats.zoneTime += dt; if (sweet) this.stats.sweetTime += dt;
     } else if (this.zoneId >= 0) {
@@ -104,7 +108,7 @@ export class DriftScore {
     }
     // 11-18: holds and switchbacks, counted while there is a chain for them to multiply
     const st = this.steps;
-    st.tick(dt, car, sliding, inZone && this.drifting && sweet);
+    st.tick(dt, car, sliding, inZone && this.drifting && sweet && !touching);
     if (this.acc > 0) {
       if (st.hold) { this.stats.holds++; this.raise('hold', Sc.holdStep); }
       if (st.swap) { this.stats.switches++; this.raise('switch', Sc.switchStep); }
@@ -126,7 +130,7 @@ export class DriftScore {
     this.steps.reset(); this.holdFrac = 0; // a new chain counts its holds and switchbacks afresh
   }
 
-  // a wall (or a reset): the unbanked chain is lost
+  // a wall hit (or a reset): the unbanked chain is lost (a graze never calls this)
   wipe(why = 'wall') {
     const Sc = TUNING.scoring;
     if (why === 'wall') this.stats.walls++;

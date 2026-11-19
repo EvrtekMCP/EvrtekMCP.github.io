@@ -57,6 +57,8 @@ export class Debug {
       `steer ${c.steerIn.toFixed(2)}  wheels ${(c.delta * 57.3).toFixed(1)} deg  thr ${c.throttle.toFixed(2)} brk ${c.brake.toFixed(2)} hb ${c.handbrake.toFixed(1)}\n` +
       `front load ${(c.loadF * 100).toFixed(0)}%  slip F ${(c.alphaF * 57.3).toFixed(1)} R ${(c.alphaR * 57.3).toFixed(1)} deg  spin ${c.spin.toFixed(2)}  grip help ${(c.grip || 0).toFixed(2)} ask ${(c.intent || 0).toFixed(2)}\n` +
       `gear ${c.gear} rpm ${c.rpm.toFixed(0)} boost ${c.boost.toFixed(2)} nos ${c.nosCharge.toFixed(2)}\n` +
-      `zone ${s.zoneNear ? s.zoneNear.id : '-'} ${s.inZone ? (s.sweet ? 'SWEET' : 'in') : 'out'} off-line ${s.offLine.toFixed(1)} m  rate ${s.rate.toFixed(0)}/s  acc ${s.acc.toFixed(0)} x${s.mult}`;
+      `zone ${s.zoneNear ? s.zoneNear.id : '-'} ${s.inZone ? (s.sweet ? 'SWEET' : 'in') : 'out'} off-line ${s.offLine.toFixed(1)} m  rate ${s.rate.toFixed(0)}/s  acc ${s.acc.toFixed(0)} x${s.mult}\n` +
+      // 11-19: the last wall touch as car.js judged it, for setting wall.grazeSpeed and wall.noseDeg by feel
+      `last wall touch ${c.touch.closing.toFixed(2)} m/s at the ${c.touch.part} (${c.touch.angle.toFixed(0)} deg)${TUNING.wall.grazes ? (c.touch.hit ? ': HIT' : ': graze') : ': the rule before 11-19'}, this contact's hardest ${c.wallPeak.toFixed(2)} m/s`;
   }
 }

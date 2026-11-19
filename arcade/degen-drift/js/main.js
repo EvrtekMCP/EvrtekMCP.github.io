@@ -428,6 +428,7 @@ class Game {
   carEvent(e, coasting) {
     if (e.type === 'shift') { this.sound.shift(e.up, e.cut, e.gear); return; } // 11-18 (sound builder): the gear
     if (e.type === 'impact') {
+      if (e.graze) { this.grazeFx(e); return; } // 11-19: a knock in a contact that is still a graze does no damage
       const h = G.hit(this.progress, e.rel, e.speed);
       if (h.amt > 0 || e.speed > 2) { this.run.hits && this.run.hits.push(h); this.retune(); this.carMesh.setDamage(G.carState(this.progress).damage); this.hud.condition(G.carState(this.progress).damage, G.condition(this.progress)); }
       const lx = this.track.tz[this.car.trackI] * e.side, lz = -this.track.tx[this.car.trackI] * e.side;
@@ -444,6 +445,19 @@ class Game {
       if (lost > 0) this.sound.ui('wipe');
       this.hud.flash(); this.flashT = 1;
     }
+    // 11-19 (Evrtek: "if you graze the wall gently, then I don't want that to be a punishment"): a graze keeps the chain
+    // (car.js judges each contact). It says so in a small pop, not more than once in 1.2 s along a wall
+    if (e.type === 'graze') {
+      this.grazeFx(e);
+      if (!coasting && !(this.time - this.grazeT < 1.2)) { this.hud.pop('Kissed the wall', 'graze'); this.grazeT = this.time; }
+    }
+  }
+  // 11-19: a graze, felt: a few sparks where the corner met the wall and the light scrape (the sound module maps
+  // 'graze' to its scrape takes), no camera kick, no damage
+  grazeFx(e) {
+    const lx = this.track.tz[this.car.trackI] * e.side, lz = -this.track.tx[this.car.trackI] * e.side;
+    this.sparks.burst([e.x, this.car.y + 0.4, e.z], -lx, -lz, 0, this.time, this.rnd);
+    this.sound.impact('graze', clamp(e.speed / 12, 0.04, 0.16));
   }
   scoreEvent(e) {
     if (e.type === 'link') { this.hud.pop(`Linked ×${e.mult}`, 'link'); this.sound.ui('link'); }

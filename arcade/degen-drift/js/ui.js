@@ -369,7 +369,7 @@ export class UI {
           <span>Highest multiplier</span><span>&times;${r.stats.maxMult}</span>
           <span>Links</span><span>${r.stats.links}</span>
           <span>Time in zones (sweet spot)</span><span>${r.stats.zoneTime.toFixed(1)} s (${r.stats.sweetTime.toFixed(1)} s)</span>
-          <span>Wall touches</span><span>${r.stats.walls}${r.stats.wiped ? ' &middot; lost ' + fmt(r.stats.wiped) : ''}</span>
+          <span>Wall hits</span><span>${r.stats.walls}${r.stats.wiped ? ' &middot; lost ' + fmt(r.stats.wiped) : ''}</span>
           <span>Lap time</span><span>${r.time}</span>
         </div>
         ${ghostSaved ? '<p class="note">This run is now your ghost on this course.</p>' : ''}

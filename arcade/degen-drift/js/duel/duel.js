@@ -62,7 +62,7 @@ export class DriftMeter {
   end() { this.mult = 1; this.live = false; this.steps.reset(); }
   step(car, dt) {
     const Sc = TUNING.scoring, tr = this.track, ang = Math.abs(car.beta) * DEG, kmh = car.speed * 3.6;
-    if (car.touchFired && !this.touch) this.end(); // the touch that wipes a run's chain
+    if (car.touchFired && !this.touch) this.end(); // the touch that wipes a run's chain (11-19: a hit; a graze never sets it)
     this.touch = car.touchFired;
     const sliding = ang >= Sc.minAngleDeg && kmh >= Sc.minSpeedKmh && car.u > 0;
     if (sliding) { this.dropT = 0; this.drift = true; } else if (this.drift && (this.dropT += dt) > Sc.dropGrace) { this.drift = false; this.end(); }
