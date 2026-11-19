@@ -107,7 +107,7 @@ export const TUNING = {
     holdStep: 1,             // ...which adds this
     holdGrace: 0.15,         // s past the sweet spot's edge that is no break (the time out does not count)
     switchHold: 0.5,         // s a slide must be held one way to count as a drift that way (both sides of a switchback)
-    switchStep: 2,           // a switchback (one way, then the other, each held switchHold) adds this
+    switchStep: 1,           // Evrtek 11-18: +1, not +2. A switchback (one way, then the other, each held switchHold) adds this
     multCap: 10,             // 11-18: was 6
     wallWipe: 1.0,           // share of the unbanked points a wall takes (1 = all of it, and the multiplier)
     // the star lines live with each course (courses/*.js: stars and degenerate); the top tier's name is his word

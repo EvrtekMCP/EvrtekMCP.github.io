@@ -14,7 +14,7 @@ export const CHROME = course({
   blurb: 'Block after block of tight city corners. Every one links to the next if you are brave enough.',
   route: 'w4.75 o0.3 S220* R25:90 S60* L20:90 R20:90 S80 R60:90 S40 L28:50 R28:100 L28:50 S40 L30:60 R30:60 S40 R20:90 S40 L20:90 S60 R30:90 S90 L35:80 R35:80 S100 C30:50',
   zones: { zoneHalf: 2.6, sweetHalf: 0.95 },
-  stars: [13000, 32000, 65000], degenerate: 116000, // day 3: tools/starlines.mjs (zone worth and chain worth); his play retunes them
+  stars: [13000, 32000, 64000], degenerate: 115000, // day 3: tools/starlines.mjs (zone worth and chain worth); his play retunes them
 });
 
 export const MIDNIGHT = course({

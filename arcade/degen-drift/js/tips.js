@@ -112,11 +112,11 @@ const DEMO = {
     const plus = [0.25, 0.5, 0.75].map((a) => seen(D, a, a + 0.12, txt(110, 62, '+1', 12, '#ff3fa4', 'class="zsf"'))).join('');
     return road(R) + band(Z) + sweet(Z) + car(R, D, { at: [92, 48, -38] }) + badge(136, 80, ring('#ff3fa4', fill, still() ? 20 : 0), nums, 1.15, [0.25, 0.5, 0.75].map((a) => kick(D, a)).join('')) + plus;
   },
-  // a slide one way, then the other way: the switchback adds two
+  // a slide one way, then the other way: the switchback adds one
   switch() {
     const R = 'M-12 22 C 40 22 40 80 80 80 S 120 22 172 22', D = 4;
-    const nums = series(D, [['×1', 0, 0.3], ['×3', 0.3, 0.8], ['×5', 0.8, 1]], (s) => mult(s, '#ff3fa4', 11, 'zsf'));
-    const plus = [0.3, 0.8].map((a) => seen(D, a, a + 0.16, txt(80, 18, '+2', 15, '#ff3fa4', 'text-anchor="middle" class="zsf"'))).join('');
+    const nums = series(D, [['×1', 0, 0.3], ['×2', 0.3, 0.8], ['×3', 0.8, 1]], (s) => mult(s, '#ff3fa4', 11, 'zsf'));
+    const plus = [0.3, 0.8].map((a) => seen(D, a, a + 0.16, txt(80, 18, '+1', 15, '#ff3fa4', 'text-anchor="middle" class="zsf"'))).join('');
     return road(R) + band('M-12 22 C 40 22 40 80 80 80', 18) + band('M80 80 C 120 80 120 22 172 22', 18)
       + car(R, D, { slip: 28, spin: ['28;28;-28;-28;28;28', '0;0.22;0.3;0.72;0.8;1'], at: [80, 80, 0] })
       + badge(80, 46, ring('#ff3fa4'), nums, 1.1, [0.3, 0.8].map((a) => kick(D, a, 1.45)).join('')) + plus;
@@ -226,7 +226,7 @@ export const TIPS = [
   { id: 'zone', title: 'DRIFT IN THE ZONE', text: () => "Every corner has a glowing band. You only score while you're sliding inside it, and the faster you go, the more it pays." },
   { id: 'sweet', title: 'HIT THE SWEET SPOT', text: (c) => `The ${c.pink} line in the middle of the band pays double. Keep your slide right on it.` },
   { id: 'hold', title: 'HOLD IT', text: (c) => `Every full second you stay on the ${c.pink} line, still sliding, adds one to your multiplier.` },
-  { id: 'switch', title: 'SWITCHBACKS', text: () => 'Hold a slide one way, then throw it the other way and hold that. Each switchback adds two to the multiplier.' },
+  { id: 'switch', title: 'SWITCHBACKS', text: () => 'Hold a slide one way, then throw it the other way and hold that. Each switchback adds one to the multiplier.' },
   { id: 'link', title: 'LINK THE CORNERS', text: () => 'Still sliding when a zone ends? Reach the next one before the ring runs out and your multiplier goes up.' },
   { id: 'outside', title: 'RIDE THE OUTSIDE', text: (c) => `The ${c.pink} line runs close to the outside wall. Get near it, but one touch wipes every point you haven't banked.` },
   { id: 'cap', title: '×10 IS THE TOP', text: () => 'The multiplier tops out at ×10. Your chain banks when the slide ends, so end it before a wall does.' },

@@ -6,7 +6,7 @@ export const RED_MESA = course({
   blurb: 'Fast, open sweepers under the mesas. Hold one long slide and let the speed pay.',
   route: 'w5.85 o2 S200 g3 L50:40 R50:40 S40 R60:90 S100 L45:60 R45:60 g-2 S120 R50:90 S80 g4 L40:70 R40:70 S60 g5 R26:170 S50 L30:80 g-3 R70:60 g0 S80 C45',
   zones: { zoneHalf: 3.1, sweetHalf: 1.2 },
-  stars: [19000, 47000, 87000], degenerate: 156000, // day 3: tools/starlines.mjs (zone worth and chain worth); his play retunes them
+  stars: [19000, 47000, 85000], degenerate: 151000, // day 3: tools/starlines.mjs (zone worth and chain worth); his play retunes them
 });
 
 export const DUST_DEVIL = course({

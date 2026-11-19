@@ -24,5 +24,5 @@ export const WIDOWMAKER = course({
   blurb: 'A tunnel, a bridge over the gorge and the switchbacks in between. Narrow, quick, and no runoff at all.',
   route: 'w5.3 o0 S170* g4 L70:40 R60:40 S40 L45:90 S40* k2 S140 k0 g-5 R30:70 L30:70 S40 L35:90 S50 L40:60 R40:120 L40:60 S40 g6 L22:175 S60 R22:175 S50 L40:90 k3 S110 k0 g-6 R50:60 L30:60 S80 C35:40',
   zones: { zoneHalf: 2.6, sweetHalf: 1.0 },
-  stars: [15500, 38000, 83000], degenerate: 149000, // day 3: tools/starlines.mjs (zone worth and chain worth); his play retunes them
+  stars: [15500, 38000, 82000], degenerate: 147000, // day 3: tools/starlines.mjs (zone worth and chain worth); his play retunes them
 });
