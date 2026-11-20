@@ -219,8 +219,12 @@ class Game {
     addEventListener('resize', () => this.resize());
     addEventListener('orientationchange', () => setTimeout(() => this.resize(), 250));
     onFit(() => this.resize());
-    // audio unlocks inside the first gesture (iPhone Safari)
-    const unlock = () => { this.sound.unlock(); this.sound.setMuted(!this.settings.sound); this.sound.setVolumes(this.settings.vol); };
+    // audio unlocks inside the first gesture (iPhone Safari). 11-19 (2): and every later tap, click or key wakes it if iOS
+    // suspended or interrupted it (js/sound.js unlock). The same three events as before and on the way up, after the
+    // screen's own handler: a button answers before the context is made (caught earlier, on the way down or on
+    // pointerup, it held the first tip screen back by up to half a second); the saved mute and volumes go to the sound
+    // once (they were written again on every touch)
+    const unlock = () => { this.sound.unlock(); if (!this.soundSet) { this.soundSet = true; this.sound.setMuted(!this.settings.sound); this.sound.setVolumes(this.settings.vol); } };
     for (const ev of ['touchend', 'click', 'keydown']) addEventListener(ev, unlock, { passive: true });
     // no pinch zoom, no double-tap zoom, no page scroll on iOS
     document.addEventListener('gesturestart', (e) => e.preventDefault());
@@ -277,6 +281,7 @@ class Game {
   }
   toTitle() {
     this.state = 'title'; this.hud.show(false); this.showTouch(false); this.parkAtStart(); this.titleS = 30; this.ui.title(); this.sound.music('menu');
+    this.sound.setPaused(false); // 11-19 (2): Quit to menu from a paused race left the car's sound off (frame() follows it too)
     this.backdrop(true);
   }
   // Portero's painting is the title's backdrop; every other screen shows the 3D world
@@ -299,6 +304,9 @@ class Game {
     this.sound.setEngine(G.soundHints(this.progress), this.car.T.car.redline, this.car.T.car.gears); // 11-18 (sound builder): the ratios
     this.sound.setView('chase');
     this.sound.music('race');
+    // 11-19 (2): every run starts with its sound on (Restart in pause used to keep the pause's silence) and the context
+    // asked to run (iOS may have stopped it on the menu; the touch that launched the race asked first)
+    this.sound.setPaused(false); this.sound.wake('race');
     this.acc = 0;
   }
   pause() { if (this.state !== 'run' && this.state !== 'countdown') return; this.pausedFrom = this.state; this.state = 'paused'; this.showTouch(false); this.ui.pause(); this.sound.setPaused(true); }
@@ -368,7 +376,8 @@ class Game {
     if (this.score.inZone && this.score.drifting && this.score.zoneNear) zs[this.score.zoneNear.id] = 2;
     if (this.paletteWorld !== this.world) this.applyPalette(); // a new course was built
     this.world.update(this.time);
-    // sound
+    // sound (11-19 (2): the pause is the game's state, so no way out of a paused race can leave the car's sound off)
+    this.sound.setPaused(this.state === 'paused');
     this.sound.setRPM(this.car.rpm); this.sound.setThrottle(this.state === 'run' || this.state === 'countdown' ? this.car.throttle : 0, this.car.boost);
     this.sound.setSlip(Math.max(this.car.slipR, this.car.slipF)); this.sound.setSpeed(this.car.speed); this.sound.setSurface(this.surface.under(this.car)); this.car.surfGrip = this.surface.grip; this.sound.setSpace(this.surface.space(this.car)); this.sound.tick();
     if (this.state === 'run' || this.state === 'countdown') this.hud.update(this.car, this.score, this.run, this.car.T.car.nos, TUNING.scoring.linkWindow);
@@ -394,10 +403,9 @@ class Game {
     const n = Math.ceil(this.count);
     if (n !== this.lastCount && n > 0 && n <= 3) { this.hud.msg(String(n)); this.sound.ui('count'); }
     this.lastCount = n;
-    // held on the line: the engine can rev
-    this.car.step(dt, { steer: 0, throttle: 0, brake: 1, handbrake: 1 });
-    this.car.rpm += ((this.car.T.car.idleRpm + inp.throttle * 5200) - this.car.rpm) * Math.min(1, dt * 6);
-    this.car.throttle = inp.throttle;
+    // held on the line: the engine can rev. 11-19 (2): the car's own hold (js/car.js), in first with the clutch down, the
+    // gas taking the revs to the car's launch rpm, so GO carries straight on into the launch clutch with no flare
+    this.car.step(dt, { steer: 0, throttle: inp.throttle, hold: true });
     if (this.count <= 0) { this.hud.msg('GO'); this.sound.ui('go'); this.state = 'run'; this.run.lapS = this.car.s; }
   }
   simulate(dt, inp, coasting = false) {

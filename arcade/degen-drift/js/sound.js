@@ -8,21 +8,119 @@
 import { SOUND, VERSION } from './config.js?v=0.1.0';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+// 11-19 (2): ?debug=sound prints the audio's life (made, state changes, resumes, hidden and shown, rebuilds) to the
+// console; it is kept in sound.log either way (the release check opens plain ?debug and wants a silent console)
+const LOUD = typeof location !== 'undefined' && new URLSearchParams(location.search).getAll('debug').includes('sound');
+const IOS = typeof navigator !== 'undefined' && (/iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
 
+// 11-19 (2), Evrtek on test v16 (iPhone, the home-screen app): "The sounds often go mute after going from a course back
+// to the menu or sometimes they don't trigger at all on load." What this adapter now does about every way it went quiet:
+//   - every tap, click or key (main.js) wakes the context if it is not running: iOS suspends or interrupts a running one
+//     on its own (a call, Siri, the app in the background, another app's audio) and a resume asked for outside a
+//     gesture does nothing there, so the next touch is where it comes back;
+//   - shown again (visibilitychange, pageshow, focus) it asks at once, and the next touch asks again inside a gesture;
+//   - a context whose clock stands still while it says "running", or that two touches running could not resume, is
+//     closed and a new one made inside the next touch, with the module rebuilt on it (car, mode, volumes, music, pause);
+//   - the ring/silent switch: the page's audio session is set to "playback" (navigator.audioSession, Safari 16.4+), or
+//     on an older iPhone a silent looping media element does the same (paused whenever the page is hidden);
+//   - the pause is the game's state, followed every frame (main.js), so leaving a paused race by Quit or Restart can no
+//     longer leave the car's sound off (before 11-19 (2) it stayed off until the next pause and resume).
 export class Sound {
-  constructor() { this.ctx = null; this.mod = null; this.muted = false; this.state = { rpm: 900, thr: 0, slip: 0, speed: 0, boost: 0 }; this.redline = 7600; this.hints = {}; this.engineSound = 'new'; this.gears = null; }
-  // call from inside a user gesture (touchend / click / keydown)
-  unlock() {
-    if (this.ctx) { if (this.ctx.state !== 'running') this.ctx.resume(); if (this.mod && this.mod.unlock) this.mod.unlock(); return; }
-    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
-    this.ctx = new AC();
-    // iOS: a silent buffer played inside the gesture opens the output
-    const b = this.ctx.createBuffer(1, 1, 22050), s = this.ctx.createBufferSource(); s.buffer = b; s.connect(this.ctx.destination); s.start(0);
-    if (this.ctx.state !== 'running') this.ctx.resume();
-    if (SOUND.driftaudio) {
-      import(SOUND.module + '?v=' + VERSION).then((m) => { this.mod = m; try { if (m.init) m.init({ context: this.ctx, version: VERSION }); if (m.unlock) m.unlock(); if (m.setMuted) m.setMuted(this.muted); this.setVolumes(); } catch (e) { this.mod = null; this.synth(); } this.applyEngine(); }).catch(() => this.synth());
-    } else this.synth();
+  constructor() { this.ctx = null; this.mod = null; this.muted = false; this.state = { rpm: 900, thr: 0, slip: 0, speed: 0, boost: 0 }; this.redline = 7600; this.hints = {}; this.engineSound = 'new'; this.gears = null; this.paused = false; this.track = null; this.view = null; this.log = []; this.rebuilds = 0; this.failedWakes = 0; this.stalled = false; }
+  note(what, extra) {
+    const e = Object.assign({ t: Math.round(performance.now()), what, state: this.ctx ? this.ctx.state : 'none' }, extra);
+    this.log.push(e); if (this.log.length > 120) this.log.shift();
+    if (LOUD) console.info('[sound] ' + what + ' ' + JSON.stringify(e));
   }
+  // call from inside a user gesture (main.js: every tap, click or key). The first makes the context; every later one
+  // wakes it if it needs it
+  unlock() {
+    if (this.ctx) { this.wake('gesture', true); return; }
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    this.session();
+    this.make();
+  }
+  make() {
+    const AC = window.AudioContext || window.webkitAudioContext, ctx = this.ctx = new AC();
+    // iOS: a silent buffer played inside the gesture opens the output
+    try { const b = ctx.createBuffer(1, 1, 22050), s = ctx.createBufferSource(); s.buffer = b; s.connect(ctx.destination); s.start(0); } catch (e) { /* fine */ }
+    if (ctx.state !== 'running') this.resume('made', true);
+    if (ctx.addEventListener) ctx.addEventListener('statechange', () => { if (ctx === this.ctx) { this.note('statechange'); if (ctx.state === 'running') this.failedWakes = this.rebuilds = 0; } });
+    this.note('made', { rate: ctx.sampleRate });
+    this.watch();
+    if (!SOUND.driftaudio) { this.synth(); return; }
+    import(SOUND.module + '?v=' + VERSION).then((m) => {
+      if (ctx !== this.ctx) return; // a newer context took over while the module loaded
+      this.mod = m;
+      try {
+        const o = { context: ctx, version: VERSION, log: (w, x) => this.note(w, x) };
+        if (m.reinit && m.instance && m.instance()) m.reinit(o); else if (m.init) m.init(o); // a rebuild: a new instance on the new context
+        if (m.unlock) m.unlock(); if (m.setMuted) m.setMuted(this.muted); this.setVolumes();
+        if (m.setPaused) m.setPaused(this.paused);
+        if (this.view && m.setView) m.setView(this.view);
+        if (this.track && m.music) m.music(this.track);
+      } catch (e) { this.note('module failed', { err: String(e && e.message) }); this.mod = null; this.synth(); }
+      this.applyEngine();
+    }).catch((e) => { this.note('module did not load', { err: String(e && e.message) }); this.synth(); });
+  }
+  // the context back to running: from a gesture (counted when it does not take), or on being shown again (iOS may refuse
+  // that one; the next touch asks again)
+  wake(why, gesture = false) {
+    const c = this.ctx; if (!c) return;
+    if (gesture) {
+      this.session();
+      if (this.silentEl && this.silentEl.paused && !document.hidden) this.silentEl.play().catch(() => {});
+      if (this.stalled || (c.state !== 'running' && this.failedWakes >= 2)) { this.rebuild(this.stalled ? 'its clock stood still' : 'it would not resume'); return; }
+    }
+    if (c.state !== 'running' && c.state !== 'closed') { this.resume(why, gesture); if (gesture && this.mod && this.mod.unlock) this.mod.unlock(); }
+  }
+  resume(why, gesture) {
+    const c = this.ctx; this.note('resume', { why });
+    let p = null; try { p = c.resume(); } catch (e) { /* an old WebKit throws rather than rejects */ }
+    if (p && p.catch) p.catch((e) => this.note('resume refused', { why, err: String(e && e.name) }));
+    if (gesture) setTimeout(() => { if (c !== this.ctx || document.hidden) return; if (c.state === 'running') this.failedWakes = 0; else { this.failedWakes++; this.note('resume did not take', { why, n: this.failedWakes }); } }, 700);
+  }
+  // a new context, made inside the gesture, and the module rebuilt on it. Three at most before one of them runs (each
+  // takes a touch and a fault, so it can never loop by itself)
+  rebuild(why) {
+    if (this.rebuilds >= 3) { this.resume(why, true); return; }
+    this.rebuilds++; this.note('rebuild', { why, n: this.rebuilds });
+    const old = this.ctx; this.stalled = false; this.failedWakes = 0; this.eng = null; this.master = null; this.surface = this.space = undefined; this.mod = null; // quiet until the new instance is made
+    try { const p = old.close(); if (p && p.catch) p.catch(() => {}); } catch (e) { /* already closed */ }
+    this.make();
+  }
+  // shown again, the clock, and the ring/silent switch (set up once, with the first context)
+  watch() {
+    if (this.watching) return; this.watching = true;
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { this.note('hidden'); if (this.silentEl) this.silentEl.pause(); this.clockAt = 0; }
+      else { this.note('shown'); this.wake('shown'); }
+    });
+    addEventListener('pageshow', (e) => { this.note('pageshow', { persisted: !!e.persisted }); this.wake('pageshow'); });
+    addEventListener('focus', () => this.wake('focus'));
+    // a context that says "running" while its clock stands still makes no sound: checked twice a second while shown
+    setInterval(() => {
+      const c = this.ctx; if (!c || document.hidden || c.state !== 'running') { this.clockAt = 0; return; }
+      const now = performance.now();
+      if (!this.clockAt || c.currentTime !== this.clockT) { this.clockAt = now; this.clockT = c.currentTime; if (this.stalled) { this.stalled = false; this.note('clock moving'); } return; }
+      if (now - this.clockAt > 1500 && !this.stalled) { this.stalled = true; this.note('clock stood still'); }
+    }, 500);
+  }
+  // the ring/silent switch mutes Web Audio unless the page's audio session plays back: Safari 16.4+ says so directly;
+  // an older iPhone takes a silent looping media element, started in a gesture (and never shown on the lock screen:
+  // paused while the page is hidden)
+  session() {
+    try { const s = navigator.audioSession; if (s) { if (s.type !== 'playback') { s.type = 'playback'; this.note('audio session playback'); } return; } } catch (e) { /* not settable */ }
+    if (!IOS || this.silentEl) return;
+    const n = 4800, buf = new ArrayBuffer(44 + n * 2), d = new DataView(buf), w = (o, s) => { for (let i = 0; i < s.length; i++) d.setUint8(o + i, s.charCodeAt(i)); };
+    w(0, 'RIFF'); d.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt '); d.setUint32(16, 16, true); d.setUint16(20, 1, true); d.setUint16(22, 1, true);
+    d.setUint32(24, 48000, true); d.setUint32(28, 96000, true); d.setUint16(32, 2, true); d.setUint16(34, 16, true); w(36, 'data'); d.setUint32(40, n * 2, true);
+    const el = this.silentEl = new Audio(URL.createObjectURL(new Blob([buf], { type: 'audio/wav' })));
+    el.loop = true; el.preload = 'auto'; el.setAttribute('playsinline', ''); el.setAttribute('x-webkit-airplay', 'deny'); el.disableRemotePlayback = true;
+    el.play().then(() => this.note('silent media element playing')).catch(() => {});
+  }
+  // tests and the curious: the context and every bus, with their levels (audio/driftaudio.js levels())
+  levels() { const i = this.mod && this.mod.instance && this.mod.instance(); return i && i.levels ? i.levels() : { state: this.ctx ? this.ctx.state : 'none', module: false }; }
   // day 4: per-channel volume (master, music, sfx); the module keeps its own copy, set here at every unlock
   setVolume(ch, v) { this.vols = Object.assign({}, this.vols, { [ch]: v }); if (this.mod && this.mod.setVolume) this.mod.setVolume(ch, v); else if (ch === 'master' && this.master && !this.muted) this.master.gain.value = 0.8 * v; }
   setVolumes(vol) { for (const [ch, v] of Object.entries(vol || this.vols || {})) this.setVolume(ch, v); }
@@ -42,13 +140,17 @@ export class Sound {
   impact(kind, strength) { if (this.mod) return this.mod.impact && this.mod.impact(kind, strength); this.synthImpact(kind, strength); }
   nos(on) { if (this.mod) return this.mod.nos && this.mod.nos(on); this.synthNos(on); }
   ui(name) { if (this.mod) return this.mod.ui && this.mod.ui(name); this.blip(name); }
-  music(track) { if (this.mod) return this.mod.music && this.mod.music(track); }
+  music(track) { this.track = track; if (this.mod) return this.mod.music && this.mod.music(track); } // kept: a rebuild plays it again
   // day 2: the gearbox, the surface under the wheels, the camera view, and pausing
   shift(up, cut, gear) { if (this.mod) return this.mod.shift && this.mod.shift(up, cut, gear); if (up && this.eng) this.tone(90, 0.06, 0.05, 'square'); }
   setSurface(s) { if (s === this.surface) return; this.surface = s; if (this.mod) return this.mod.setSurface && this.mod.setSurface(s); }
-  setView(v) { if (this.mod) return this.mod.setView && this.mod.setView(v); }
+  setView(v) { this.view = v; if (this.mod) return this.mod.setView && this.mod.setView(v); }
   setSpace(k) { if (k === this.space) return; this.space = k; if (this.mod) return this.mod.setSpace && this.mod.setSpace(k); }
-  setPaused(p) { if (this.mod) return this.mod.setPaused && this.mod.setPaused(p); if (this.master) this.master.gain.value = p || this.muted ? 0 : 0.8; }
+  // 11-19 (2): main.js hands this the game's own pause every frame; only a change goes on (and is noted)
+  setPaused(p) {
+    p = !!p; if (p === this.paused) return; this.paused = p; this.note(p ? 'paused' : 'unpaused');
+    if (this.mod) return this.mod.setPaused && this.mod.setPaused(p); if (this.master) this.master.gain.value = p || this.muted ? 0 : 0.8;
+  }
   // per frame (the placeholder's mixer)
   tick() { if (!this.ctx || this.mod || !this.eng) return; this.mix(); }
 

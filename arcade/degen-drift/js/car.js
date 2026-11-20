@@ -35,7 +35,7 @@ export class Car {
     this.steerIn = 0; this.delta = 0;
     this.ax = 0; this.ay = 0;
     this.gear = 1; this.rpm = this.T.car.idleRpm; this.wheelSpin = 0; this.ws = 0; this.reverse = false; this.cut = 0;
-    this.vRoad = 0; this.shiftT = 9; this.lastUp = true; this.overT = 0; // the gearbox (gearbox() below)
+    this.vRoad = 0; this.shiftT = 9; this.lastUp = true; this.overT = 0; this.slipping = true; // the gearbox (gearbox() below; slipping: the launch clutch)
     this.intent = 0; this.liftT = 9; this.turnT = 0; this.bigT = 0; this.flickT = 9; this.flickSide = 0; this.calmT = 0; this.grip = 0; // launch grip (step)
     this.spin = 0; this.slipF = 0; this.slipR = 0; this.alphaF = 0; this.alphaR = 0;
     this.loadF = 0.5; this.wheelRot = 0; this.boost = 0; this.nosOn = false;
@@ -84,10 +84,15 @@ export class Car {
     this.delta = delta;
 
     // ---- pedals, with reverse when stopped and holding brake
-    let throttle = clamp(inp.throttle || 0, 0, 1), brake = clamp(inp.brake || 0, 0, 1);
-    const hand = clamp(inp.handbrake || 0, 0, 1);
+    // 11-19 (2) inp.hold: held on the line for the countdown (main.js). The brakes and the lever hold the car, in first
+    // with the clutch down; the gas only revs the engine (gearbox(): the launch clutch). Before, the countdown braked the
+    // car into reverse (R on the HUD) and pulled its revs toward idle + 5,200 x the pedal against the reverse's idle.
+    const held = !!inp.hold, pedal = clamp(inp.throttle || 0, 0, 1);
+    let throttle = held ? 0 : pedal, brake = held ? 1 : clamp(inp.brake || 0, 0, 1);
+    const hand = held ? 1 : clamp(inp.handbrake || 0, 0, 1);
+    if (held) { this.reverse = false; if (this.gear < 1) this.gear = 1; }
     if (this.reverse) { if (throttle > 0.05 || brake < 0.05) { if (u > -0.5) this.reverse = false; } }
-    if (!this.reverse && brake > 0.3 && throttle < 0.05 && u < 0.6 && u > -0.5) this.reverse = true;
+    if (!held && !this.reverse && brake > 0.3 && throttle < 0.05 && u < 0.6 && u > -0.5) this.reverse = true;
     // ---- power: the turbo's boost builds with throttle and revs; nitrous adds a surge while the bottle lasts
     let powerMul = 1;
     if (C.turbo) {
@@ -282,7 +287,8 @@ export class Car {
     const targetWs = hand > 0.05 ? 0 : Math.abs(this.ws);
     this.wheelSpin += (targetWs - this.wheelSpin) * Math.min(1, dt * (hand > 0.05 ? 20 : 10));
     this.wheelRot += (this.reverse ? -1 : 1) * Math.max(this.wheelSpin, Math.abs(u) * 0.5) / C.wheelRadius * dt;
-    this.gearbox(dt, throttle);
+    if (held) this.throttle = pedal; // what the sound and the HUD read: the pedal revving the held engine
+    this.gearbox(dt, held ? pedal : throttle);
   }
 
   // The automatic. 11-17 (Evrtek: "the gears keep jumping up and down gears while the gas is down"): it used to choose
@@ -326,10 +332,23 @@ export class Car {
       if (up) { this.cut = B.shiftCut; this.events.push({ type: 'shift', gear: to, up: true, cut: B.shiftCut }); }
       else this.events.push({ type: 'shift', gear: to, up: false });
     }
-    const rpm = toRpm(this.gear);
-    // revs flare with the pedal when the clutch would slip (standing starts, low speed)
-    const free = C.idleRpm + throttle * (C.redline - C.idleRpm) * 0.75;
-    let target = Math.max(rpm, this.speed < 6 ? free * (1 - this.speed / 6) + rpm * (this.speed / 6) : rpm, C.idleRpm);
+    // 11-19 (2) the launch clutch (Evrtek on test v16: "the weird sound on the car launch after the countdown is still
+    // there"). Before, the revs flared with the pedal under 6 m/s (about 5,300 just after GO) and were blended down to
+    // the wheels' revs by 22 km/h (2,330 at full throttle): a flare, then a long sag, that the tach, every engine sound
+    // and the turbo followed. Now the clutch slips as a driver's does on a launch. From near a standstill (the road
+    // turning the engine under its idle in this gear) the revs go with the pedal to the car's launch rpm (car.launchRpm,
+    // about its torque peak) and hold there, leaning up a little (launchLean) as the car gathers speed, while the
+    // wheels' revs climb to meet them; where they meet the clutch is home (a soft knee, no step) and the revs pull with
+    // the wheels. Off the gas they idle. Held on the line (the countdown) the clutch is down: the same launch revs.
+    const wheel = toRpm(this.gear), K = 140;
+    if (this.speed * C.gears[Math.max(0, this.gear - 1)] * k < C.idleRpm) this.slipping = true;
+    let target = wheel;
+    if (this.slipping) {
+      const slipTo = C.idleRpm + throttle * ((C.launchRpm || C.redline * 0.5) - C.idleRpm + (C.launchLean || 0) * wheel), x = (wheel - slipTo) / K;
+      target = slipTo + K * (x > 30 ? x : Math.log1p(Math.exp(x))); // the larger of the two, rounded at the meeting
+      if (x > 3) this.slipping = false;
+    }
+    target = Math.max(target, C.idleRpm);
     // 11-17: past the change-up the revs ease toward a ceiling halfway to the redline rather than pin on it. With the
     // gear held in a slide the spinning wheels would put the engine on the redline for much of a lap, and the sound
     // module plays its rev-limiter stutter there. The power band and the boost are full up here either way.

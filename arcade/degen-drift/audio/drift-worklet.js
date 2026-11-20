@@ -730,12 +730,10 @@
       if (thr > 0.5) this.armed = true;
       if (this.armed && thr < 0.2) { this.armed = false; this.lift(1); }
       this.tLift += dt; this.thr = thr;
-      let rpmIn = clamp(+ctl.rpm || p.idleRpm, 300, 12000);
-      // 11-18, the launch hum's fix: the game's revs sag at full throttle as its launch clutch hands the engine to the
-      // wheels (a 5,200 flare falling to 2,300 by 22 km/h, js/car.js). Heard, that is a long falling hum. Here the
-      // clutch slips as a driver's would: the revs hold near half the redline under the throttle until the wheels reach them, by
-      // about 36 km/h. (The tach still shows the game's revs.)
-      if (sp < 13 && thr > 0.2) { const slip = p.idleRpm + (0.48 * p.redlineRpm - p.idleRpm) * thr; rpmIn = Math.max(rpmIn, slip * (1 - sstep(10, 13, sp))); }
+      // 11-19 (2): the revs as the game gives them. 11-18 held them here near half the redline on a standing start, to mask
+      // the game's launch (a flare to about 5,300, then a sag to 2,330); the launch clutch is now in js/car.js itself, so
+      // the tach, New, Recorded, Classic and the rival all hear the same revs, and this mask is gone
+      const rpmIn = clamp(+ctl.rpm || p.idleRpm, 300, 12000);
       // the limiter: a hard ignition cut, whole firings dropped, the revs bouncing under it
       const lim = p.limiterRpm;
       if (rpmIn >= lim - 60 && thr > 0.35) { if (!this.limOn) { this.limOn = true; this.limRpm = Math.min(this.rpm, lim); this.limCut = 0; } }

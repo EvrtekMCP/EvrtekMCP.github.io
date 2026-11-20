@@ -145,6 +145,7 @@ export class Duel {
     if (!this.active || !this.leg) return;
     const g = this.g, leg = this.leg, r = this.rival;
     const dt = Math.max(0, run.time - this.lastT); this.lastT = run.time;
+    if (this.voice && g.sound && g.sound.ctx && this.voice.ctx !== g.sound.ctx) this.voice = null; // 11-19 (2): the sound was rebuilt on a new context (js/sound.js): a new voice on it
     if (!this.voice && g.sound && g.sound.mod) this.hearRival(); // the sound module arrived mid-leg
     // the surface under the rival's wheels: its grip (aprons and shoulders) and what its tyres sound like
     this.rSurf = this.surf.under(r); r.surfGrip = this.surf.grip;

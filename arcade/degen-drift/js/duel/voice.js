@@ -16,7 +16,7 @@ export class RivalVoice {
   // there is no module (the placeholder synth) or no Web Audio: the duel then runs as before, the rival silent.
   static make(sound, seed) {
     const mod = sound && sound.mod, v = mod && mod.voice ? mod.voice({ seed }) : null;
-    return v && v.out ? new RivalVoice(sound.ctx || v.out.context, v) : null;
+    return v && v.out ? new RivalVoice(v.out.context || sound.ctx, v) : null; // 11-19 (2): its own context (a rebuilt sound has a new one)
   }
   constructor(ctx, v) {
     this.ctx = ctx; this.v = v;

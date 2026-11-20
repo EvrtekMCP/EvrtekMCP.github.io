@@ -34,6 +34,12 @@
 // same sounds are synthesised. 'recorded' and 'classic' are as they were, for comparing. shift(up, cut, gear) and
 // setGears(ratios) let the engine land the revs at rpm x next / current ratio. setLite(true) is the cheaper path (one
 // exhaust bank, no muffler chamber or intake runner), taken by itself where there is no AudioWorklet.
+//
+// 11-19 (2) (Evrtek on test v16: the sound going mute): a worklet that will not load, whose node will not start, or that
+// throws while it plays no longer leaves the car silent: the same DSP takes over on the main thread (lite). Shown again,
+// the context is asked to run from 'interrupted' as from 'suspended'. levels() reads every bus (the lifecycle test,
+// tools/sound/lifecycle.mjs); reinit() puts a new instance on a new context (js/sound.js rebuild()); opts.log hears
+// what happened. The launch's revs are no longer masked here: the launch clutch is in js/car.js.
 const STAMP = new URL(import.meta.url).search;
 let cfgLoad = null, recLoad = null;
 const MODES = ['new', 'recorded', 'classic'];
@@ -81,6 +87,7 @@ export function createDriftAudio(opts = {}) {
   let engineMode = modeOf(opts.engineSound), recCar = null, recGen = 0, recTimer = null, gears = null, takes2 = null, takes2Bufs = null;
   let lite = opts.lite != null ? !!opts.lite : null; // null: decided when the car starts (the main-thread fallback is lite)
   const recSets = new Map(), voices = new Set(); // voices: each rival's re-sync, run when the mode changes
+  let taps = null; // 11-19 (2): analysers on the buses, made by levels()
 
   function load() { try { return JSON.parse(localStorage.getItem(STORE) || '{}'); } catch (e) { return {}; } }
   function save() { try { localStorage.setItem(STORE, JSON.stringify({ vol, muted })); } catch (e) { /* private mode: fine */ } }
@@ -116,13 +123,19 @@ export function createDriftAudio(opts = {}) {
 
   // one synthesised car: its engine out to `eng`, its tyres to `tyr`. The player's car and every voice() use this.
   // An AudioWorklet where there is one; on old Safari the same DSP in a ScriptProcessor on the main thread.
-  let workletAdded = null;
+  // 11-19 (2): and wherever the worklet will not load or its node will not start (before, that was a silent car, and
+  // the rival's with it): the main thread takes over, lite, for the rest of the session
+  let workletAdded = null, noWorklet = !!opts.noWorklet;
+  const log = opts.log || (() => {});
+  const goLite = () => { noWorklet = true; workletAdded = null; if (opts.lite == null) lite = true; };
   async function makeCar(conf, eng, tyr, o = {}) {
-    if (ctx.audioWorklet && typeof AudioWorkletNode !== 'undefined') {
-      await (workletAdded || (workletAdded = ctx.audioWorklet.addModule(url('drift-worklet.js')))); // once per context
-      const node = new AudioWorkletNode(ctx, 'drift-car', { numberOfInputs: 0, numberOfOutputs: 2, outputChannelCount: [1, 2], processorOptions: { config: conf, meter: !!o.meter, seed: o.seed } });
-      node.connect(eng, 0); node.connect(tyr, 1);
-      return { node, port: node.port };
+    if (!noWorklet && ctx.audioWorklet && typeof AudioWorkletNode !== 'undefined') {
+      try {
+        await (workletAdded || (workletAdded = ctx.audioWorklet.addModule(url('drift-worklet.js')))); // once per context
+        const node = new AudioWorkletNode(ctx, 'drift-car', { numberOfInputs: 0, numberOfOutputs: 2, outputChannelCount: [1, 2], processorOptions: { config: conf, meter: !!o.meter, seed: o.seed } });
+        node.connect(eng, 0); node.connect(tyr, 1);
+        return { node, port: node.port };
+      } catch (e) { log('worklet failed: the main thread plays the car', { err: String(e && (e.name || e.message)) }); goLite(); }
     }
     await import(url('drift-worklet.js'));
     if (lite === null) lite = true; // on the main thread: the cheaper path
@@ -140,11 +153,14 @@ export function createDriftAudio(opts = {}) {
   const confFor = (spec) => Object.assign({ type: 'config' }, cfg.resolveCarSound(spec.id, spec.ups, overOf(spec.over), engineMode === 'new' ? 'new' : undefined));
   async function startCar() {
     cfg = await loadCfg();
-    if (lite === null && ctx.audioWorklet && typeof AudioWorkletNode !== 'undefined') lite = false;
+    if (lite === null && !noWorklet && ctx.audioWorklet && typeof AudioWorkletNode !== 'undefined') lite = false;
     const conf = confFor(carSpec);
     const c = await makeCar(conf, nodes.engine, nodes.tyres, { meter: !!meterFn });
+    if (disposed) return;
     carNode = c.node; carPort = c.port;
     if (carNode.port) carPort.onmessage = (e) => { if (meterFn) meterFn(e.data); };
+    // 11-19 (2): a worklet that throws while it plays goes quiet for good; the main thread takes the car over
+    if (carNode.port) carNode.onprocessorerror = () => { log('worklet stopped: the main thread plays the car'); goLite(); try { carNode.disconnect(); } catch (e) { /* gone */ } carNode = carPort = null; startCar().then(() => syncRec()).catch(() => {}); };
     if (!active) carPort.postMessage({ type: 'active', on: false });
     if (gears) carPort.postMessage({ type: 'gears', ratios: gears });
     flush();
@@ -290,7 +306,9 @@ export function createDriftAudio(opts = {}) {
       unlocked = ctx.state === 'running';
       if (unlocked && !was && wantTrack !== undefined && wantTrack !== null && !player) music(wantTrack);
     };
-    const vis = () => { if (document.hidden) { if (ctx.state === 'running') ctx.suspend().catch(() => {}); } else if (unlocked || ctx.state === 'suspended') ctx.resume().catch(() => {}); };
+    // hidden: suspended (no sound and no battery in the background). Shown: asked to run again, from 'suspended' or iOS's
+    // 'interrupted' alike (11-19 (2)); where that is refused outside a gesture, the next touch's unlock() asks again
+    const vis = () => { if (document.hidden) { if (ctx.state === 'running') ctx.suspend().catch(() => {}); } else if (ctx.state !== 'running' && ctx.state !== 'closed') ctx.resume().catch(() => {}); };
     document.addEventListener('visibilitychange', vis); listeners.push([document, 'visibilitychange', vis, false]);
   }
 
@@ -523,9 +541,21 @@ export function createDriftAudio(opts = {}) {
     setMix(k, v) { if (k in mix) { mix[k] = +v; if (nodes && nodes[k]) nodes[k].gain.setTargetAtTime(mix[k], ctx.currentTime, 0.03); } },
     debug() { return { state: ctx && ctx.state, time: ctx && ctx.currentTime, format: ext, sfx: buffers.size, worklet: !!(carNode && carNode.port), engineSound: engineMode, lite: !!lite, takes2: takes2Bufs ? Object.keys(takes2Bufs).length : 0, recorded: recCar ? recCar.set.id : null, recPlaying: !!(recCar && recCar.on), track: player && player.id, nextChunk: player && player.next, scheduledTo: player && player.at, playing: player ? player.srcs.length : 0 }; },
     onMeter(fn) { meterFn = fn; if (carPort && carPort.postMessage) carPort.postMessage({ type: 'meter', on: !!fn }); },
+    // 11-19 (2): the context, the buses' gains and what each bus is putting out now (dB, RMS of the last 2,048 samples):
+    // the lifecycle test reads it after every transition (tools/sound/lifecycle.mjs). Its taps are made on the first call
+    levels() {
+      if (!nodes) return { state: ctx && ctx.state, nodes: false };
+      if (!taps) { taps = {}; for (const k of ['master', 'car', 'music', 'ui']) { const a = ctx.createAnalyser(); a.fftSize = 2048; nodes[k].connect(a); taps[k] = a; } }
+      const out = { state: ctx.state, time: +ctx.currentTime.toFixed(3), paused, active, muted, worklet: !!(carNode && carNode.port), car: !!carNode, engineSound: engineMode, gain: { master: +nodes.master.gain.value.toFixed(3), car: +nodes.car.gain.value.toFixed(3), duck: +nodes.duck.gain.value.toFixed(3) }, db: {} };
+      const buf = new Float32Array(2048);
+      for (const k in taps) { taps[k].getFloatTimeDomainData(buf); let e = 0; for (let i = 0; i < buf.length; i++) e += buf[i] * buf[i]; out.db[k] = Math.max(-120, +(10 * Math.log10(e / buf.length || 1e-12)).toFixed(1)); }
+      return out;
+    },
     dispose() {
-      disposed = true; if (player) player.stop(0); nos(false); if (recTimer) clearInterval(recTimer); if (recCar) recCar.dispose();
+      disposed = true;
       for (const [el, t, fn, cap] of listeners) el.removeEventListener(t, fn, cap ? { capture: true } : false);
+      try { if (player) player.stop(0); nos(false); } catch (e) { /* a closed context (a rebuild) */ }
+      if (recTimer) clearInterval(recTimer); try { if (recCar) recCar.dispose(); } catch (e) { /* closed */ }
       try { if (carNode) carNode.disconnect(); } catch (e) { /* gone */ }
       if (!opts.context && ctx) ctx.close().catch(() => {});
     },
@@ -535,6 +565,9 @@ export function createDriftAudio(opts = {}) {
 // ---- the module-level API the game's adapter (js/sound.js) calls --------------------------------------------------
 let inst = null;
 export function init(o = {}) { if (!inst) inst = createDriftAudio(o); return inst; }
+// 11-19 (2): a new instance on a new context (js/sound.js rebuild(): a context iOS would not bring back); the old one
+// is let go first (its listeners, its music, its car)
+export function reinit(o = {}) { if (inst) { try { inst.dispose(); } catch (e) { /* its context is already closed */ } inst = null; } return init(o); }
 export const instance = () => inst;
 export function unlock() { if (inst) inst.unlock(); }
 export function setEngine(preset, hints) { if (inst) inst.setCarHints(preset, hints || {}); }

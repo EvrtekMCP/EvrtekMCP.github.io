@@ -23,6 +23,9 @@ export const TUNING = {
     bandLo: 0.3, bandHi: 0.75, // where the band starts and where it is all there (share of the redline)
     smokeMul: 1,             // how much smoke this car makes
     idleRpm: 950, redline: 7800, shiftUpRpm: 7200, shiftDownRpm: 3600,
+    // 11-19 (2) the launch clutch (car.js gearbox): the revs a standing start holds while the clutch slips (each car
+    // its own, about its torque peak: data/cars.js), leaning up launchLean x the wheels' revs until they meet
+    launchRpm: 3600, launchLean: 0.1,
     gears: [3.4, 2.2, 1.6, 1.25, 1.0, 0.82], finalDrive: 3.9, wheelRadius: 0.33,
     // brakes
     brakeForce: 13000,       // N, both axles
