@@ -2,9 +2,9 @@
 // Two layouts share the look: EMBER BAY PASS ('harbour-pass': 0.1.0's harbour front and the climb through the pines,
 // now with rock and forest close to the road) and the closed docks (DRYDOCK RUN, SALT PIER CIRCUIT: a flat yard on
 // the water, container stacks, gantry cranes on the quay, a ship alongside, floodlight masts, the city across the bay).
-import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.0';
-import { sstep, fbm, colorGeom, mergeGeoms } from '../world.js?v=0.1.0';
-import * as K from './kit.js?v=0.1.0';
+import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.18';
+import { sstep, fbm, colorGeom, mergeGeoms } from '../world.js?v=0.1.18';
+import * as K from './kit.js?v=0.1.18';
 
 const C = (h) => new THREE.Color(h);
 const pass = (ctx) => ctx.course.dressing === 'harbour-pass';

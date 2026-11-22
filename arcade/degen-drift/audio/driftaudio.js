@@ -14,7 +14,7 @@
 // the gearbox clunk, interface sounds and fanfares are ElevenLabs recordings (audio/sfx). The music is whole
 // ElevenLabs takes, streamed in bar-line chunks after the game starts (audio/music), never at load.
 // Formats: Ogg Opus where the browser plays it, AAC in .mp4 otherwise (Safari). Every URL carries ?v=<version>: the
-// game's stamp when it imports this module stamped (driftaudio.js?v=0.1.0), or opts.version.
+// game's stamp when it imports this module stamped (driftaudio.js?v=0.1.18), or opts.version.
 //
 // THE GAME'S ADAPTER (js/sound.js) uses the module-level functions at the bottom instead: init({ context }) once, then
 // setEngine(preset, hints), setRPM(rpm, redline), setThrottle(t), setSlip(share 0..1), setSpeed(m/s), impact(kind,
@@ -62,7 +62,12 @@ const UI = {
 };
 const UI_ALIAS = { wipe: 'lost', buy: 'purchase', select: 'click', hover: 'click' };
 const MUSIC_ALIAS = { menu: 'garage', title: 'garage' };
-const UI_GAIN = { click: 0.45, back: 0.4, purchase: 0.7, upgrade: 0.75, zone: 0.55, sweet: 0.6, link: 0.6, bank: 0.7, lost: 0.7, star: 0.85, degenerate: 0.9, count: 0.6, go: 0.7 };
+const UI_GAIN = { click: 0.45, back: 0.4, purchase: 0.7, upgrade: 0.75, zone: 0.55, sweet: 0.6, link: 0.6, bank: 0.7, lost: 0.7, star: 0.85, degenerate: 0.9, count: 0.6, go: 0.6 };
+// 11-21 (the launch hum, measured: tools/sound/launch-1121.mjs): the GO take is one held tone, 370 Hz with every
+// harmonic, flat for 0.65 s, and it began exactly as the car could move: at 0.7 it was the loudest thing at the start,
+// 8-14 dB over the car (12-23 dB through a phone's speaker), in the engine's own register. It now plays as long as a
+// count beep (held UI_LEN.go s, then a UI_FADE s fade) at the count's level; the take itself is untouched (0: all of it)
+const UI_LEN = { go: 0.24 }, UI_FADE = 0.06;
 const IMPACT = { scrape: ['hit-scrape-1', 'hit-scrape-2', 'hit-scrape-3'], swipe: ['hit-swipe-1', 'hit-swipe-2', 'hit-swipe-3'], crunch: ['hit-crunch-1', 'hit-crunch-2', 'hit-crunch-3'] };
 const IMPACT_ALIAS = { light: 'scrape', graze: 'scrape', side: 'swipe', hard: 'crunch', headon: 'crunch', 'head-on': 'crunch' }; // graze: 11-19, a touch forgiven (game builder)
 const LINK_STEPS = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24]; // a major pentatonic climb, one step per link
@@ -388,7 +393,8 @@ export function createDriftAudio(opts = {}) {
     }
     if (name === 'bank' || name === 'lost') chain = 0;
     const id = name === 'click' ? pick('click', list) : list[0];
-    play(id, { bus: nodes.ui, gain: UI_GAIN[name] || 0.6, rate });
+    const g = UI_GAIN[name] || 0.6, h = play(id, { bus: nodes.ui, gain: g, rate });
+    if (h && UI_LEN[name]) { const t = ctx.currentTime + UI_LEN[name]; h.gain.gain.setValueAtTime(g, t); h.gain.gain.linearRampToValueAtTime(0, t + UI_FADE); h.src.stop(t + UI_FADE + 0.01); }
     if (name === 'star' || name === 'degenerate') { // the fanfare sits on top of the music for its length
       const len = (sfxMeta.sounds[id] || { dur: 2 }).dur;
       duckFan++; duck(); setTimeout(() => { duckFan = Math.max(0, duckFan - 1); duck(); }, len * 900);

@@ -260,6 +260,11 @@ html { font-size: clamp(13px, calc(0.55vw + 0.9 * var(--vh1, 1vh)), 19px); } /* 
 .foot { font-size: 0.78rem; color: var(--dim); text-align: center; max-width: 44rem; line-height: 1.5; }
 .foot b { color: #fff; }
 .ver { font-size: 0.62rem; color: rgba(255,255,255,0.45); letter-spacing: 0.3em; }
+/* 11-21: the test build's label (ui.js testLabel()), legible on a phone held sideways (13 px at the least, bold, amber on
+   a dark chip); in the title's version line and at the foot of the pause panel, never over the driving HUD */
+.testbuild { display: inline-block; font-size: max(13px, 0.9rem); font-weight: 800; letter-spacing: 0.08em; line-height: 1.25; color: var(--amber);
+  background: rgba(10,4,20,0.78); border: 1px solid rgba(255,179,71,0.65); border-radius: 0.4rem; padding: 0.12rem 0.55rem; vertical-align: middle; text-shadow: none; white-space: nowrap; }
+.pause .pver { text-align: center; line-height: 1; }
 
 /* the course card */
 .card { margin: auto; width: min(58rem, 94vw); padding: 1.3rem 1.5rem; }

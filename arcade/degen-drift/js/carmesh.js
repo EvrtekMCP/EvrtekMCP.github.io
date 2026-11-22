@@ -12,9 +12,9 @@
 // Draws per car: body (paint, cabin and painted parts in one), glass, trim (black parts, seams, pipes), head lamps,
 // tail lamps, livery (when it has painted bands), pinstripes (when it has them), four wheels of three each (tyre, rim
 // with its disc, caliper), and the shadow, light pool, halos and flames.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.0';
-import * as TX from './textures.js?v=0.1.0';
-import { BODIES, shapeOf } from './carbodies.js?v=0.1.0';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.18';
+import * as TX from './textures.js?v=0.1.18';
+import { BODIES, shapeOf } from './carbodies.js?v=0.1.18';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const lerp = (a, b, t) => a + (b - a) * t;

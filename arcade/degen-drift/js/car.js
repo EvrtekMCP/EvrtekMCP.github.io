@@ -4,7 +4,7 @@
 // three assists: the counter-steer (front wheels follow the slide), the drift hold (keeps the angle where the player
 // asks for it) and the spin guard. Every number comes from the tune (config.js TUNING with the garage's parts and the
 // car's damage applied: garage.js deriveTune). Pure JS: the browser and the Node simulator share it.
-import { TUNING } from './config.js?v=0.1.0';
+import { TUNING } from './config.js?v=0.1.18';
 
 const DEG = Math.PI / 180, G = 9.81;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -35,7 +35,7 @@ export class Car {
     this.steerIn = 0; this.delta = 0;
     this.ax = 0; this.ay = 0;
     this.gear = 1; this.rpm = this.T.car.idleRpm; this.wheelSpin = 0; this.ws = 0; this.reverse = false; this.cut = 0;
-    this.vRoad = 0; this.shiftT = 9; this.lastUp = true; this.overT = 0; this.slipping = true; // the gearbox (gearbox() below; slipping: the launch clutch)
+    this.vRoad = 0; this.shiftT = 9; this.lastUp = true; this.overT = 0; this.slipping = true; this.launchT = 0; this.held = false; // the gearbox (gearbox() below; slipping, launchT: the launch clutch)
     this.intent = 0; this.liftT = 9; this.turnT = 0; this.bigT = 0; this.flickT = 9; this.flickSide = 0; this.calmT = 0; this.grip = 0; // launch grip (step)
     this.spin = 0; this.slipF = 0; this.slipR = 0; this.alphaF = 0; this.alphaR = 0;
     this.loadF = 0.5; this.wheelRot = 0; this.boost = 0; this.nosOn = false;
@@ -288,6 +288,7 @@ export class Car {
     this.wheelSpin += (targetWs - this.wheelSpin) * Math.min(1, dt * (hand > 0.05 ? 20 : 10));
     this.wheelRot += (this.reverse ? -1 : 1) * Math.max(this.wheelSpin, Math.abs(u) * 0.5) / C.wheelRadius * dt;
     if (held) this.throttle = pedal; // what the sound and the HUD read: the pedal revving the held engine
+    this.held = held; // 11-21: the launch clutch's bite counts from the moment the car is let go
     this.gearbox(dt, held ? pedal : throttle);
   }
 
@@ -340,11 +341,20 @@ export class Car {
     // about its torque peak) and hold there, leaning up a little (launchLean) as the car gathers speed, while the
     // wheels' revs climb to meet them; where they meet the clutch is home (a soft knee, no step) and the revs pull with
     // the wheels. Off the gas they idle. Held on the line (the countdown) the clutch is down: the same launch revs.
+    // 11-21 (Evrtek on test v17: "we need to deal with the audio on the car launch, it's still doing that thing"): the
+    // revs no longer HOLD on the slipping clutch. 11-19's held them near the launch rpm for 2.2-3.0 s (the KESTREL 3,400
+    // to 3,790 in 2.4 s, under a semitone a second): a steady note, a drone. Now, as a launch goes: held on the line at
+    // the launch rpm; let go, the clutch takes up at once and BITES at launchBite s, the revs dipping steadily by
+    // launchDip on the way, then climbing with the road speed (launchLean of the wheels' revs) until the
+    // wheels meet them where 11-19's met (launchRpm x (1 - dip) / (1 - lean), 1.11 x the launch rpm, so the clutch is
+    // home about when it was), and pulling with the wheels. From GO the note always moves: down into the bite, then up.
     const wheel = toRpm(this.gear), K = 140;
     if (this.speed * C.gears[Math.max(0, this.gear - 1)] * k < C.idleRpm) this.slipping = true;
+    if (!this.slipping || this.held) this.launchT = 0; else if (throttle > 0.05 || this.launchT > 0) this.launchT += dt;
     let target = wheel;
     if (this.slipping) {
-      const slipTo = C.idleRpm + throttle * ((C.launchRpm || C.redline * 0.5) - C.idleRpm + (C.launchLean || 0) * wheel), x = (wheel - slipTo) / K;
+      const dip = (C.launchDip || 0) * Math.min(1, this.launchT / (C.launchBite || 0.6)); // the revs' follower below rounds its corners
+      const slipTo = C.idleRpm + throttle * ((C.launchRpm || C.redline * 0.5) * (1 - dip) - C.idleRpm + (C.launchLean || 0) * wheel), x = (wheel - slipTo) / K;
       target = slipTo + K * (x > 30 ? x : Math.log1p(Math.exp(x))); // the larger of the two, rounded at the meeting
       if (x > 3) this.slipping = false;
     }

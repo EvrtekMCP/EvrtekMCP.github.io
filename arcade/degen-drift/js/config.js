@@ -1,7 +1,12 @@
 // DRIFTLINE: every tuning number in one place. The hidden debug panel (F9, or ?debug) edits these live and can copy
 // the result back out as JSON; nothing else in the game hard-codes a feel number.
 // Units: metres, seconds, kilograms, newtons, radians unless the name says otherwise (Deg, Kmh).
-export const VERSION = '0.1.0';
+export const VERSION = '0.1.18';
+// 11-21 (Evrtek: "an on screen notice of what test version we're looking at"): the test build's number, shown with the
+// version on the title and in the pause menu (js/ui.js testLabel()). From test v18 the version's last number IS the test
+// number (v19 = 0.1.19). `node tools/release.mjs --bump X.Y.Z` sets both: 0.x.N gives N, 1.0.0 and on give null (no
+// label, only the title's quiet version line). The release check fails if the two disagree.
+export const TEST_BUILD = 18;
 
 export const TUNING = {
   car: {
@@ -25,7 +30,11 @@ export const TUNING = {
     idleRpm: 950, redline: 7800, shiftUpRpm: 7200, shiftDownRpm: 3600,
     // 11-19 (2) the launch clutch (car.js gearbox): the revs a standing start holds while the clutch slips (each car
     // its own, about its torque peak: data/cars.js), leaning up launchLean x the wheels' revs until they meet
-    launchRpm: 3600, launchLean: 0.1,
+    launchRpm: 3600, launchLean: 0.26,
+    // 11-21: and the bite: from the moment the car is let go the clutch takes up, the revs dipping by launchDip (a share
+    // of the launch rpm) until it bites at launchBite s, then climbing with the road; launchDip 0 and launchLean 0.1 are
+    // 11-19's held note
+    launchBite: 0.6, launchDip: 0.18,
     gears: [3.4, 2.2, 1.6, 1.25, 1.0, 0.82], finalDrive: 3.9, wheelRadius: 0.33,
     // brakes
     brakeForce: 13000,       // N, both axles

@@ -4,21 +4,21 @@
 // never a system font; panels wear the key art's magenta-to-cyan edge; parts are illustrated; cars are drawn from their
 // own bodies; the results screen has its star and DEGENERATE moments; motion stops for reduced-motion. The garage's
 // actions call garage.js exactly as before (its logic is the cars builder's).
-import { VERSION } from './config.js?v=0.1.0';
-import { CARS, carById } from './data/cars.js?v=0.1.0';
-import { CATEGORIES, COSMETICS, SETUP } from './data/upgrades.js?v=0.1.0';
-import { BODIES } from './carbodies.js?v=0.1.0';
-import { REGIONS, COURSES } from './courses/index.js?v=0.1.0';
-import { courseList, pick, mapSvg } from './courses/select.js?v=0.1.0';
-import * as G from './garage.js?v=0.1.0';
-import { ACTIONS, keyName } from './input.js?v=0.1.0';
-import * as ART from './art.js?v=0.1.0';
-import { Tips } from './tips.js?v=0.1.0';
-import { Ghost } from './ghost.js?v=0.1.0';
-import { Duel, record as duelRecord } from './duel/duelui.js?v=0.1.0';
-import { DUELS, duelPay } from './duel/duel.js?v=0.1.0';
-import { taps } from './loader.js?v=0.1.0';
-import { fsOK, isFs, toggleFs, iphoneHint } from './fit.js?v=0.1.0';
+import { VERSION, TEST_BUILD } from './config.js?v=0.1.18';
+import { CARS, carById } from './data/cars.js?v=0.1.18';
+import { CATEGORIES, COSMETICS, SETUP } from './data/upgrades.js?v=0.1.18';
+import { BODIES } from './carbodies.js?v=0.1.18';
+import { REGIONS, COURSES } from './courses/index.js?v=0.1.18';
+import { courseList, pick, mapSvg } from './courses/select.js?v=0.1.18';
+import * as G from './garage.js?v=0.1.18';
+import { ACTIONS, keyName } from './input.js?v=0.1.18';
+import * as ART from './art.js?v=0.1.18';
+import { Tips } from './tips.js?v=0.1.18';
+import { Ghost } from './ghost.js?v=0.1.18';
+import { Duel, record as duelRecord } from './duel/duelui.js?v=0.1.18';
+import { DUELS, duelPay } from './duel/duel.js?v=0.1.18';
+import { taps } from './loader.js?v=0.1.18';
+import { fsOK, isFs, toggleFs, iphoneHint } from './fit.js?v=0.1.18';
 
 // 11-16 (fit): full screen, where the browser allows it (js/fit.js); the icon shows what a tap will do
 const FS_ICON = ['<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>', '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>'];
@@ -28,6 +28,12 @@ const HINT_KEY = 'driftline.fshint';
 const hintGone = () => { try { return localStorage.getItem(HINT_KEY) === '1'; } catch (e) { return false; } };
 
 const fmt =(n) => Math.round(n).toLocaleString('en-US');
+// 11-21 (Evrtek on test v17: "i need to have an on screen notice of what test version we're looking at in browser just
+// in case i'm still seeing a version back"): the test build and its version, from config.js, which every module imports
+// under the same stamp as the page's own scripts, so the label is always the build that is running. A build from before
+// v18 has no label at all (its title says "TEST BUILD 0.1.0" in small grey). Shown on the title and in the pause menu,
+// never over the driving HUD; at go-live (TEST_BUILD null) it is gone and the title keeps its quiet version line.
+export const testLabel = () => (TEST_BUILD == null ? '' : `TEST v${TEST_BUILD} &middot; ${VERSION}`);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const still = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
 
@@ -149,7 +155,7 @@ export class UI {
       </div>
       <div class="foot">${best ? `Best on ${esc(this.g.course.name)}: <b class="num">${fmt(best.score)}</b> ${this.starRow(best.stars, best.top)}<br>` : ''}
         ${touch ? 'Hold the phone sideways. Left thumb steers; the right hand has the pedals and the handbrake.' : this.keyHint()}</div>
-      ${hint}<div class="ver" data-act="ver">REIMERTEK STUDIOS &middot; ${/^0\./.test(VERSION) ? 'TEST BUILD ' + VERSION : 'v' + VERSION}</div>
+      ${hint}<div class="ver" data-act="ver">REIMERTEK STUDIOS &middot; ${testLabel() ? `<span class="testbuild">${testLabel()}</span>` : 'v' + VERSION}</div>
     </div>`;
   }
   // day 4 (cars builder): the title's key line names the keys the player has set (Settings > Keys), not the defaults
@@ -348,7 +354,8 @@ export class UI {
     // 11-16 (fit): two by two on a short screen; full screen beside the title where the browser allows it
     this.el.innerHTML = `<div class="pause panel"><div class="phead">${ART.title('PAUSED')}${fsButton()}</div>
       <div class="pbtns"><button class="btn primary" data-act="resume" data-back>Resume</button><button class="btn" data-act="restart">Restart</button>
-      <button class="btn" data-act="settings" data-from="pause">Settings</button><button class="btn" data-act="quit">Quit to menu</button></div></div>`;
+      <button class="btn" data-act="settings" data-from="pause">Settings</button><button class="btn" data-act="quit">Quit to menu</button></div>
+      ${testLabel() ? `<div class="pver"><span class="testbuild">${testLabel()}</span></div>` : ''}</div>`;
   }
 
   // ------------------------------------------------------------------ results

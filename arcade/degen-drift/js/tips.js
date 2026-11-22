@@ -13,8 +13,8 @@
 // starts the basics over. The phone's three show only on a phone.
 // Each tip is one short line, as a person would say it, and a small looping picture of the move in the interface's
 // colours (the colour-safe palette recolours the zones, as on the road, css .ldemo .zb/.zs); still for reduced motion.
-import * as ART from './art.js?v=0.1.0';
-import { keyName } from './input.js?v=0.1.0';
+import * as ART from './art.js?v=0.1.18';
+import { keyName } from './input.js?v=0.1.18';
 
 export const MIN_MS = 2500;  // the shortest the tip screen stays up: his "2 to 3 second"
 const GUARD_MS = 350;        // a tap this soon after it appears is the launch's own tap arriving late, not a skip

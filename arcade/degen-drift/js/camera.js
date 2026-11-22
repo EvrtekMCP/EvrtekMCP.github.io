@@ -1,8 +1,8 @@
 // DRIFTLINE: the chase camera. It sits behind a blend of the nose and the direction of travel, so in a drift you see
 // the car at its angle sliding across the frame (the shot every drift video wants), follows on springs, looks a little
 // ahead, kicks its field of view with speed, shakes with the slide and the knocks, and never swings outside the walls.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.0';
-import { TUNING } from './config.js?v=0.1.0';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.18';
+import { TUNING } from './config.js?v=0.1.18';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const wrap = (a) => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };

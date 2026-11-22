@@ -2,31 +2,31 @@
 // countdown, run, pause, results), steps the car at a fixed 120 Hz, feeds the scoring, the effects, the sound and the
 // HUD, and renders. The car list is an array of drivers so a rival car (downhill duels) can join later: each driver is
 // a car, its mesh and where its inputs come from; 0.1.0 has the player alone.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.0';
-import { TUNING, VERSION } from './config.js?v=0.1.0';
-import { installFog, PAL } from './look.js?v=0.1.0';
-import { Track } from './track.js?v=0.1.0';
-import { courseById } from './courses/index.js?v=0.1.0';
-import { DUELS } from './duel/duel.js?v=0.1.0';
-import { Car } from './car.js?v=0.1.0';
-import { DriftScore } from './scoring.js?v=0.1.0';
-import * as G from './garage.js?v=0.1.0';
-import { buildWorld } from './world.js?v=0.1.0';
-import { CarMesh } from './carmesh.js?v=0.1.0';
-import { Surface } from './carsurface.js?v=0.1.0';
-import { Smoke, Skids, Sparks, SpeedLines } from './fx.js?v=0.1.0';
-import { ChaseCam } from './camera.js?v=0.1.0';
-import { Post } from './post.js?v=0.1.0';
-import { Quality } from './quality.js?v=0.1.0';
-import { Input } from './input.js?v=0.1.0';
-import { Sound } from './sound.js?v=0.1.0';
-import { UI } from './ui.js?v=0.1.0';
-import { Hud } from './hud.js?v=0.1.0';
-import { Debug, loadTuning } from './debug.js?v=0.1.0';
-import { appIcon } from './art.js?v=0.1.0';
-import { Loader, painted } from './loader.js?v=0.1.0';
-import { TipScreen } from './tips.js?v=0.1.0';
-import { view, onFit } from './fit.js?v=0.1.0';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.18';
+import { TUNING, VERSION } from './config.js?v=0.1.18';
+import { installFog, PAL } from './look.js?v=0.1.18';
+import { Track } from './track.js?v=0.1.18';
+import { courseById } from './courses/index.js?v=0.1.18';
+import { DUELS } from './duel/duel.js?v=0.1.18';
+import { Car } from './car.js?v=0.1.18';
+import { DriftScore } from './scoring.js?v=0.1.18';
+import * as G from './garage.js?v=0.1.18';
+import { buildWorld } from './world.js?v=0.1.18';
+import { CarMesh } from './carmesh.js?v=0.1.18';
+import { Surface } from './carsurface.js?v=0.1.18';
+import { Smoke, Skids, Sparks, SpeedLines } from './fx.js?v=0.1.18';
+import { ChaseCam } from './camera.js?v=0.1.18';
+import { Post } from './post.js?v=0.1.18';
+import { Quality } from './quality.js?v=0.1.18';
+import { Input } from './input.js?v=0.1.18';
+import { Sound } from './sound.js?v=0.1.18';
+import { UI } from './ui.js?v=0.1.18';
+import { Hud } from './hud.js?v=0.1.18';
+import { Debug, loadTuning } from './debug.js?v=0.1.18';
+import { appIcon } from './art.js?v=0.1.18';
+import { Loader, painted } from './loader.js?v=0.1.18';
+import { TipScreen } from './tips.js?v=0.1.18';
+import { view, onFit } from './fit.js?v=0.1.18';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const params = new URLSearchParams(location.search);
@@ -550,7 +550,7 @@ class Game {
 
   // ---------------------------------------------------------------- test hooks (?test): never loaded for players
   async testHooks() {
-    const { Autopilot } = await import('./autopilot.js?v=0.1.0');
+    const { Autopilot } = await import('./autopilot.js?v=0.1.18');
     this.capture = params.has('capture');
     const g = this;
     window.__dl = {
