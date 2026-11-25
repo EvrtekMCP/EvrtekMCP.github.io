@@ -123,8 +123,14 @@ export function condition(p, carId = p.car) {
 
 // ---- what a finished run pays: the entry, points, stars, the top tier, and first-time bonuses; all times the
 // course's pay factor (harder courses pay more)
+// the early-play boost (Evrtek 11-25): low at the easiest course, high at the hardest, on a cosine S-curve between
+export function payBoost(difficulty) {
+  const B = TUNING.economy.payBoost; if (!B) return 1;
+  const t = clamp((difficulty - B.from) / (B.to - B.from), 0, 1), s = (1 - Math.cos(Math.PI * t)) / 2;
+  return 1 + B.low + (B.high - B.low) * s;
+}
 export function payout(p, result, course) {
-  const E = TUNING.economy, f = 1 + course.difficulty * E.payPerDifficulty, lines = [];
+  const E = TUNING.economy, f = (1 + course.difficulty * E.payPerDifficulty) * payBoost(course.difficulty), lines = [];
   const first = (p.firsts[course.id] ||= { clear: false, stars: 0, top: false });
   lines.push(['Entry', E.entryPay * f]);
   lines.push(['Points', result.score * E.perPoint * f]);

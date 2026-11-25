@@ -155,6 +155,9 @@ export const TUNING = {
     firstStarPay: 400,       // per star, the first time each star is earned on a course
     firstDegeneratePay: 3000, // the first Degenerate on a course
     payPerDifficulty: 0.008, // harder courses pay more: factor = 1 + difficulty x this (day 3: set against the 15 courses)
+    // Evrtek 11-25: new players earn more. Every payout gets a boost of +20% on the easiest course falling on an S-curve
+    // (flat at both ends) to +5% on the hardest, so it favours the low end of play instead of lifting everything.
+    payBoost: { low: 0.20, high: 0.05, from: 10, to: 95 }, // boost at difficulty <= from, at difficulty >= to
     repair: { engine: 1650, front: 675, rear: 600, body: 375 }, // full repair of one part from 1.0 damage (Evrtek 11-25: all 25% off, was 2200/900/800/500)
     repairCap: 1350,         // a full repair never costs more than this (11-25: was 1800)
     patchShare: 0.3,         // a patch-up costs this share of the full repair...
