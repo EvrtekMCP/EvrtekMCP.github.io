@@ -1,12 +1,12 @@
 // DRIFTLINE: every tuning number in one place. The hidden debug panel (F9, or ?debug) edits these live and can copy
 // the result back out as JSON; nothing else in the game hard-codes a feel number.
 // Units: metres, seconds, kilograms, newtons, radians unless the name says otherwise (Deg, Kmh).
-export const VERSION = '0.1.18';
+export const VERSION = '0.1.19';
 // 11-21 (Evrtek: "an on screen notice of what test version we're looking at"): the test build's number, shown with the
 // version on the title and in the pause menu (js/ui.js testLabel()). From test v18 the version's last number IS the test
 // number (v19 = 0.1.19). `node tools/release.mjs --bump X.Y.Z` sets both: 0.x.N gives N, 1.0.0 and on give null (no
 // label, only the title's quiet version line). The release check fails if the two disagree.
-export const TEST_BUILD = 18;
+export const TEST_BUILD = 19;
 
 export const TUNING = {
   car: {
@@ -155,8 +155,8 @@ export const TUNING = {
     firstStarPay: 400,       // per star, the first time each star is earned on a course
     firstDegeneratePay: 3000, // the first Degenerate on a course
     payPerDifficulty: 0.008, // harder courses pay more: factor = 1 + difficulty x this (day 3: set against the 15 courses)
-    repair: { engine: 2200, front: 900, rear: 800, body: 500 }, // full repair of one part from 1.0 damage
-    repairCap: 1800,         // a full repair never costs more than this
+    repair: { engine: 1650, front: 675, rear: 600, body: 375 }, // full repair of one part from 1.0 damage (Evrtek 11-25: all 25% off, was 2200/900/800/500)
+    repairCap: 1350,         // a full repair never costs more than this (11-25: was 1800)
     patchShare: 0.3,         // a patch-up costs this share of the full repair...
     patchFix: 0.6,           // ...and takes this share off every part's damage
     startCredits: 500,

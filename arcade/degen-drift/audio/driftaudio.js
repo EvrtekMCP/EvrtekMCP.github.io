@@ -14,7 +14,7 @@
 // the gearbox clunk, interface sounds and fanfares are ElevenLabs recordings (audio/sfx). The music is whole
 // ElevenLabs takes, streamed in bar-line chunks after the game starts (audio/music), never at load.
 // Formats: Ogg Opus where the browser plays it, AAC in .mp4 otherwise (Safari). Every URL carries ?v=<version>: the
-// game's stamp when it imports this module stamped (driftaudio.js?v=0.1.18), or opts.version.
+// game's stamp when it imports this module stamped (driftaudio.js?v=0.1.19), or opts.version.
 //
 // THE GAME'S ADAPTER (js/sound.js) uses the module-level functions at the bottom instead: init({ context }) once, then
 // setEngine(preset, hints), setRPM(rpm, redline), setThrottle(t), setSlip(share 0..1), setSpeed(m/s), impact(kind,
