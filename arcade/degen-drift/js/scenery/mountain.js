@@ -1,9 +1,11 @@
 // DRIFTLINE region 3, Mountain pass: blue hour in the high forest. The last of the sun behind the ridge, a moon over
 // the snowfields, dense pines to the rails, rock cut faces on the uphill side, sodium lamps at the hairpins and in the
 // tunnels, concrete bridges over gorges with a river below, cabins with lit windows and a fire lookout on the ridge.
-import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.21';
-import { sstep, fbm, colorGeom, mergeGeoms } from '../world.js?v=0.1.21';
-import * as K from './kit.js?v=0.1.21';
+import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.22';
+import { sstep, fbm, colorGeom, mergeGeoms } from '../world.js?v=0.1.22';
+import * as K from './kit.js?v=0.1.22';
+import * as D from './detail.js?v=0.1.22';
+import * as P from './props.js?v=0.1.22';
 
 const C = (h) => new THREE.Color(h);
 
@@ -19,7 +21,9 @@ export function look() {
     sky: { disc: 0.06, bands: true, clouds: 0.6, stars: 1.2, moon: [0.6, 0.35, -0.7], moonSize: 0.055 },
     water: { kind: 'none' },
     fogDensity: 0.0026,
-    road: { runoff: ['#3a6a8a', '#d8e0ea'], kerb: ['#c01020', '#e0e0e8'], glare: 0.14 },
+    road: { runoff: ['#3a6a8a', '#d8e0ea'], kerb: ['#c01020', '#e0e0e8'], glare: 0.14, sunSheen: 0.12 },
+    // 11-26 Full: a moonlit deck of cloud, silver on the edges toward the moon, a halo round it, the last light's rays
+    skyFull: { scale: 0.14, cover: [0.53, 0.75], k: 0.75, hi: 0.75, drift: [0.0025, 0.0018], light: 'moon', shadow: '#16233e', lit: '#a8b8f0', rays: 0.12, halo: 0.3 },
   };
 }
 
@@ -144,4 +148,51 @@ export function far() {
     { r: 1900, lo: '#0a1228', hi: '#8a90c0', span: 420, seg: 260, shape: peaks(11, 0.6) },
     { r: 1500, lo: '#081020', hi: '#2a3a5a', span: 300, seg: 220, shape: peaks(23, 0.35) },
   ];
+}
+
+// ================================================================ 11-26 Full detail (graphics uplift part 2)
+// Settings > World detail > Full. Nothing above changes; this adds, with its own dice (ctx.R2): a better pine (fuller,
+// three cards, a warm and a cool rim), cut logs stacked in the pull-outs, warning signs (deer, falling rock, ice by the
+// bridges, the bends), smoke from the cabins, mist lying in the valleys, needles on the wind, the bridge lamps in the
+// river, and pools of light under the lamps and the cabins' windows.
+export function dressFull(ctx) {
+  const { R2: R, hAt, track } = ctx, lite = ctx.lite, free = D.occupancy(ctx);
+  const steep = (x, z, d = 4) => Math.abs(hAt(x + d, z) - hAt(x - d, z)) + Math.abs(hAt(x, z + d) - hAt(x, z - d));
+  // the better pines
+  D.betterPines(ctx, ['pines', 'mound-pines'], D.pineArt2(ctx, { body: ['#2a5260', '#122a34', '#0a1820'], tip: '#4a7a8a', rim: '#ff8a7a', cool: '#9ab8ff', seed: 41 }));
+  D.betterPines(ctx, ['firs'], D.pineArt2(ctx, { body: ['#1e4a40', '#0e2620', '#071410'], tip: '#3a6a5a', rim: '#d8a0a8', cool: '#9ab8ff', snow: 0.35, seed: 43 }));
+  // log piles in the pull-outs beside the road
+  const logs = [];
+  for (let k = 0; k < (lite ? 3 : 8); k++) {
+    const sp = D.besideRoad(ctx, (x, z) => ctx.clear(x, z, 2.3, 1.2) && free(x, z, 2.4) && steep(x, z, 2.5) < 1.6, { reach: [2.5, 10], tries: 400, kinds: [0, 1] }); if (!sp) continue;
+    const i = sp[4]; free.take(sp[0], sp[1], 2.4); logs.push([sp[0], sp[1], track.psi[i] + (R() - 0.5) * 0.3, 0.9 + R() * 0.2, null]);
+  }
+  D.place(ctx, 'log-piles', P.logs(), logs, { aoH: 1 });
+  // signs: the bends, deer on the straights, falling rock under the cut faces, ice before the bridges
+  const signs = { posts: [], faces: [] };
+  for (const zn of track.zones) { if (zn.peak < 1 / 45 || R() < 0.4) continue; D.roadSign(ctx, zn.s0 - 42, R() < 0.5 ? 1 : -1, zn.hairpin ? 2 : zn.side > 0 ? 0 : 1, signs); }
+  for (let k = 0; k < (lite ? 2 : 4); k++) D.roadSign(ctx, R() * track.length, R() < 0.5 ? 1 : -1, 3, signs);
+  for (let k = 0; k < 4; k++) { const s = R() * track.length, i = Math.floor(s / track.step) % track.n; for (const side of [1, -1]) { const p = track.point(s, side * (track.half[i] + 6)); if (hAt(p[0], p[2]) - track.y[i] > 4) { D.roadSign(ctx, s - 18, side, 4, signs); break; } } }
+  for (const B of ctx.bridges) D.roadSign(ctx, B.a * track.step - 40, 1, 5, signs);
+  D.place(ctx, 'sign-posts', P.signPost(), signs.posts, { audit: false, aoH: 2.4 }); D.signFaces(ctx, signs.faces);
+  // smoke from the cabins' chimneys, lit by their windows
+  const smoke = ctx.placed.filter((p) => p.what === 'cabins').map((c) => [c.x + (R() - 0.5) * 2, c.y0 + 6.2, c.z + (R() - 0.5) * 2]);
+  D.plumes(ctx, smoke, { per: lite ? 6 : 10, height: 10, speed: 0.07, size: [1.2, 5], wind: [0.9, 0, 0.3], tint: [0.75, 0.78, 0.9], alpha: 0.22, name: 'chimney-smoke' });
+  // mist lying in the valleys below the road
+  const mist = [];
+  for (let t = 0; t < 600 && mist.length < (lite ? 4 : 10); t++) {
+    const { x0, z0, ext } = ctx.terrainBox, x = x0 + R() * ext, z = z0 + R() * ext, e = ctx.edge(x, z);
+    if (e < 120 || e > 600 || hAt(x, z) > ctx.memAt(x, z) - 25) continue;
+    mist.push([x, hAt(x, z) + 3, z, [0.62, 0.7, 0.95]]);
+  }
+  D.plumes(ctx, mist, { per: 4, height: 6, speed: 0.012, size: [40, 70], wind: [2, 0, 1], tint: [0.55, 0.62, 0.85], alpha: 0.12, name: 'valley-mist' });
+  // the bridges' lamps in the river below
+  const st = [];
+  for (const G of ctx.gorges) { const level = G.base - G.depth + 1.2; for (let k = 0; k < ctx.glows.length; k += 8) { const x = ctx.glows[k], y = ctx.glows[k + 1], z = ctx.glows[k + 2]; if (Math.hypot(x - G.mx, z - G.mz) > G.half + 10 || y < level + 4) continue; st.push([x, level, z, [ctx.glows[k + 3] * 0.6, ctx.glows[k + 4] * 0.6, ctx.glows[k + 5] * 0.6], 45, 1.4]); } }
+  D.streaks(ctx, st);
+  // pools of light: under the lamps, the cabins' windows on the snow and the needles round them
+  D.lampPools(ctx, { k: 0.32 });
+  for (const c of ctx.placed) if (c.what === 'cabins') ctx.pools.push([c.x, c.z, c.r * 3.2, c.r * 3.2, 0, 0.32, [1, 0.72, 0.42]]);
+  // needles and leaves on the wind
+  D.drift(ctx, { kind: 'leaf', count: lite ? 40 : 90, box: [60, 3, 60], lo: -0.2, size: 0.1, wind: [3, 0.2, 2], tint: [0.45, 0.5, 0.62], colors: [[0.6, 0.5, 0.35], [0.4, 0.5, 0.35], [0.7, 0.45, 0.3]] });
 }

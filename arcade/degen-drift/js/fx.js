@@ -2,7 +2,7 @@
 // life (rise, spread, fade) is worked out on the GPU from their birth time, so the CPU writes one puff and forgets it.
 // Skid marks: a ring buffer of quads on the road, oldest overwritten, fading with age. Sparks off the walls: additive
 // points with gravity. Speed lines: streaks round the edge of the view, fed by speed.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.21';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.22';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
@@ -88,8 +88,10 @@ export class Smoke {
 }
 
 export class Skids {
-  constructor(quads) {
-    this.n = quads; this.head = 0;
+  // 11-26: room for cap quads; the ring in use is setLength's (the quality tier's under Classic World detail, as before;
+  // under Full a lap's worth, so the marks stay for the lap). Only the ring in use is drawn.
+  constructor(quads, cap = quads) {
+    this.n = quads; this.head = 0; this.cap = cap = Math.max(cap, quads); quads = cap;
     const pos = new Float32Array(quads * 4 * 3), alpha = new Float32Array(quads * 4), order = new Float32Array(quads * 4), idx = new Uint32Array(quads * 6);
     for (let q = 0; q < quads; q++) { for (let k = 0; k < 4; k++) order[q * 4 + k] = q; idx.set([q * 4, q * 4 + 1, q * 4 + 2, q * 4 + 1, q * 4 + 3, q * 4 + 2], q * 6); }
     const g = new THREE.BufferGeometry();
@@ -97,7 +99,7 @@ export class Skids {
     g.setAttribute('position', this.aP); g.setAttribute('aAlpha', this.aA); g.setAttribute('aOrder', new THREE.BufferAttribute(order, 1)); g.setIndex(new THREE.BufferAttribute(idx, 1));
     this.uHead = { value: 0 };
     this.mat = new THREE.ShaderMaterial({
-      uniforms: Object.assign(THREE.UniformsUtils.clone(THREE.UniformsLib.fog), { head: this.uHead, total: { value: quads } }),
+      uniforms: Object.assign(THREE.UniformsUtils.clone(THREE.UniformsLib.fog), { head: this.uHead, total: { value: this.n } }),
       fog: true, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2,
       vertexShader: `attribute float aAlpha; attribute float aOrder; uniform float head; uniform float total; varying float vA;
         #include <fog_pars_vertex>
@@ -112,7 +114,9 @@ export class Skids {
     });
     this.mesh = new THREE.Mesh(g, this.mat); this.mesh.frustumCulled = false; this.mesh.renderOrder = 1;
     this.last = [null, null, null, null]; this.lo = Infinity; this.hi = -1;
+    g.setDrawRange(0, this.n * 6);
   }
+  setLength(n) { n = Math.max(1, Math.min(this.cap, n)); if (n === this.n) return; this.n = n; this.mat.uniforms.total.value = n; this.mesh.geometry.setDrawRange(0, n * 6); this.head = 0; this.aA.array.fill(0); this.aA.clearUpdateRanges(); this.aA.needsUpdate = true; this.lift(); }
   // a wheel's mark: p = [x,y,z] contact, (dx,dz) the wheel's sideways unit vector, a = strength 0..1 (0 lifts)
   mark(w, p, dx, dz, a) {
     const half = 0.12, L = [p[0] + dx * half, p[1] + 0.03, p[2] + dz * half], Rr = [p[0] - dx * half, p[1] + 0.03, p[2] - dz * half];

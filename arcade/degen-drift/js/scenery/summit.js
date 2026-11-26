@@ -1,9 +1,11 @@
 // DRIFTLINE region 5, Summit: the hard high touge just before dawn. A pink sun breaking over a sea of cloud far
 // below, a pale moon setting behind, snow and bare rock falling away on both sides of a narrow road, red-and-white
 // snow poles, a radio mast blinking on the highest crag and an observatory dome at the top.
-import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.21';
-import { sstep, fbm, colorGeom, mergeGeoms } from '../world.js?v=0.1.21';
-import * as K from './kit.js?v=0.1.21';
+import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.22';
+import { sstep, fbm, colorGeom, mergeGeoms } from '../world.js?v=0.1.22';
+import * as K from './kit.js?v=0.1.22';
+import * as D from './detail.js?v=0.1.22';
+import * as P from './props.js?v=0.1.22';
 
 const C = (h) => new THREE.Color(h);
 
@@ -19,7 +21,9 @@ export function look(course) {
     sun: [0.75, 0.045, 0.66], sunK: 1.1, ambK: 0.72,
     sky: { disc: 0.07, bands: true, clouds: 0.3, stars: 1.0, moon: [-0.7, 0.3, -0.6], moonSize: 0.07 },
     fogDensity: 0.0020,
-    road: { runoff: ['#c01020', '#f0f0f8'], kerb: ['#c01020', '#f0f0f8'] },
+    road: { runoff: ['#c01020', '#f0f0f8'], kerb: ['#c01020', '#f0f0f8'], sunSheen: 0.4, spindrift: 0.75 },
+    // 11-26 Full: the dawn breaking: cloud above lit rose and gold from below the horizon, and the sun's rays
+    skyFull: { scale: 0.13, cover: [0.54, 0.76], k: 0.75, hi: 0.7, drift: [0.005, 0.002], shadow: '#3a3466', lit: '#ffb4a0', rays: 0.5 },
   };
 }
 
@@ -132,3 +136,71 @@ export function far(ctx) {
 
 // the water here is the sea of cloud, at a level the terrain chose
 export function water(ctx) { return { kind: 'clouds', level: ctx.cloudLevel }; }
+
+// ================================================================ 11-26 Full detail (graphics uplift part 2)
+// Settings > World detail > Full. Nothing above changes; this adds, with its own dice (ctx.R2): a snow pole every 11 m
+// (between 0.1.21's), snow banked along the outside of the rails, slatted snow fences on the slopes, a weather mast
+// with its cups spinning, cairns, signs (ice, steep grade, the bends), snow blowing on the wind and streaming across
+// the road (look.road.spindrift), the low sun's road of light across the cloud sea, and pools under the lamps.
+export function dressFull(ctx) {
+  const { R2: R, hAt, track, PAL } = ctx, lite = ctx.lite, free = D.occupancy(ctx);
+  const steep = (x, z, d = 4) => Math.abs(hAt(x + d, z) - hAt(x - d, z)) + Math.abs(hAt(x, z + d) - hAt(x, z - d));
+  // snow poles between the old ones, and snow banked against the outside of the rails
+  const poles = [], banks = [], snowC = C('#e4e8fa');
+  for (let s = 17; s < track.length; s += 22) {
+    const i = Math.floor(s / track.step) % track.n; if (track.kind[i] >= 2) continue;
+    for (const side of [1, -1]) {
+      const p = track.point(s, side * (track.half[i] + 1.6)); if (!ctx.clear(p[0], p[2], 0.1, 0.4) || !free(p[0], p[2], 0.2)) continue;
+      const y = ctx.ground(p[0], p[2], 0.1) - 0.2; poles.push([p[0], p[2], 0, 1, null, y]); free.take(p[0], p[2], 0.2);
+      ctx.glow(p[0], y + 2.3, p[2], side > 0 ? [1, 0.25, 0.15] : [1, 0.85, 0.6], 0.7);
+    }
+  }
+  for (let s = 0; s < track.length; s += lite ? 9 : 5) {
+    const i = Math.floor(s / track.step) % track.n; if (track.kind[i] >= 2) continue;
+    for (const side of [1, -1]) {
+      if (R() < 0.35) continue;
+      const r = 1.1 + R() * 1.6, p = track.point(s, side * (track.half[i] + 1.5 + r * 1.2)); if (!ctx.clear(p[0], p[2], r * 1.2, 0.35) || !free(p[0], p[2], r * 0.8)) continue;
+      banks.push([p[0], p[2], r, 0.32 + R() * 0.15, snowC.clone().multiplyScalar(0.92 + R() * 0.1)]);
+    }
+  }
+  D.place(ctx, 'snow-poles-2', P.snowPole(), poles, { aoH: 0.6, audit: false });
+  K.rocks(ctx, banks, { name: 'snow-banks', seed: 71 });
+  // snow fences on the slopes above the road, across the wind
+  const fences = [];
+  for (let k = 0; k < (lite ? 4 : 10); k++) {
+    const sp = D.besideRoad(ctx, (x, z) => ctx.clear(x, z, 3.2, 2) && free(x, z, 3.3) && steep(x, z, 3) < 2.5, { reach: [6, 30], tries: 300 }); if (!sp) continue;
+    free.take(sp[0], sp[1], 3.3); fences.push([sp[0], sp[1], track.psi[sp[4]] + (R() - 0.5) * 0.4, 1, null]);
+  }
+  D.place(ctx, 'snow-fences', P.snowFence(), fences, { aoH: 1.6 });
+  // a weather mast by the radio mast (or the observatory), its cups spinning
+  const near = ctx.placed.find((p) => p.what === 'mast hut') || ctx.placed.find((p) => p.what === 'observatory');
+  if (near) {
+    for (let t = 0; t < 30; t++) { const a = R() * 6.28, d = near.r + 6 + R() * 6, x = near.x + Math.cos(a) * d, z = near.z + Math.sin(a) * d;
+      if (!ctx.clear(x, z, 1, 2) || !free(x, z, 1.2) || steep(x, z, 2) > 2) continue;
+      D.movers(ctx, 'weather-mast', P.weatherMast(), [[x, z, R() * 6.28, 1, null]], (tt) => [0, tt * 7, 0], { aoH: 3 });
+      ctx.glow(x, ctx.ground(x, z, 0.5) + 6.1, z, [1, 0.1, 0.05], 1.6, 0.9); break; }
+  }
+  // cairns on the crests
+  const cairns = [];
+  for (let k = 0; k < (lite ? 4 : 10); k++) {
+    const sp = D.besideRoad(ctx, (x, z) => ctx.clear(x, z, 1, 2) && free(x, z, 1.1) && steep(x, z, 2) < 2, { reach: [5, 40], tries: 200 }); if (!sp) continue;
+    free.take(sp[0], sp[1], 1.1); const c = PAL.rock.clone().multiplyScalar(0.9);
+    for (let j = 0; j < 4; j++) cairns.push([sp[0] + (R() - 0.5) * 0.15, sp[1] + (R() - 0.5) * 0.15, 0.75 - j * 0.15, 0.55, c]);
+  }
+  // stacked: each stone a little higher (rocks() stands each on the ground, so lift them by hand after)
+  const cm = K.rocks(ctx, cairns, { name: 'cairns', seed: 73 });
+  if (cm) { const m4 = new ctx.THREE.Matrix4(); for (let k = 0; k < cairns.length; k++) { cm.getMatrixAt(k, m4); m4.elements[13] += (k % 4) * 0.42; cm.setMatrixAt(k, m4); if (k % 4) ctx.placed[ctx.placed.length - cairns.length + k].hangs = true; } }
+  // signs: ice, the grade, the bends
+  const signs = { posts: [], faces: [] };
+  for (const zn of track.zones) { if (zn.peak < 1 / 40 || R() < 0.45) continue; D.roadSign(ctx, zn.s0 - 40, R() < 0.5 ? 1 : -1, zn.hairpin ? 2 : zn.side > 0 ? 0 : 1, signs); }
+  for (let k = 0; k < (lite ? 2 : 4); k++) D.roadSign(ctx, R() * track.length, R() < 0.5 ? 1 : -1, R() < 0.5 ? 5 : 6, signs);
+  D.place(ctx, 'sign-posts', P.signPost(), signs.posts, { audit: false, aoH: 2.4 }); D.signFaces(ctx, signs.faces);
+  // snow on the wind, and the lamps' pools on the snow
+  D.drift(ctx, { kind: 'snow', count: lite ? 160 : 380, box: [60, 9, 60], lo: -0.5, size: 0.09, wind: [7, -0.6, 2.5], tint: [0.75, 0.75, 0.9], colors: [[1, 1, 1]] });
+  D.lampPools(ctx, { k: 0.3 });
+}
+// the farthest peaks, catching the dawn
+export function farFull(ctx) {
+  const c = ctx.cloudLevel, peaks = (seed, hs) => (a, k) => c + 20 + Math.pow(fbm(k * 0.05 + seed, seed), 2.2) * 1100 * hs;
+  return [{ r: 2750, lo: '#5a4a80', hi: '#ffe0d8', span: 650, seg: 260, base: c - 10, shape: peaks(31, 1.05), haze: 1.2 }];
+}

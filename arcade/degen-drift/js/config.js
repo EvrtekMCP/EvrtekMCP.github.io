@@ -1,12 +1,12 @@
 // DRIFTLINE: every tuning number in one place. The hidden debug panel (F9, or ?debug) edits these live and can copy
 // the result back out as JSON; nothing else in the game hard-codes a feel number.
 // Units: metres, seconds, kilograms, newtons, radians unless the name says otherwise (Deg, Kmh).
-export const VERSION = '0.1.21';
+export const VERSION = '0.1.22';
 // 11-21 (Evrtek: "an on screen notice of what test version we're looking at"): the test build's number, shown with the
 // version on the title and in the pause menu (js/ui.js testLabel()). From test v18 the version's last number IS the test
 // number (v19 = 0.1.19). `node tools/release.mjs --bump X.Y.Z` sets both: 0.x.N gives N, 1.0.0 and on give null (no
 // label, only the title's quiet version line). The release check fails if the two disagree.
-export const TEST_BUILD = 21;
+export const TEST_BUILD = 22;
 
 export const TUNING = {
   car: {
@@ -224,6 +224,17 @@ export const TUNING = {
     coat: 1.7,               // the clear coat's strength on paint and glass: 0 none, 1 as built, 2 double (Dirigent 11-26: 1 read faint on the KESTREL; 1.7 no blow-out on the white SPECTRE)
     rough: 0,                // added to every finish's roughness: 0 as built (mirror-sharp paint), up to 1 (satin)
   },
+  // 11-26 the worlds (graphics uplift part 2; Settings > World detail picks Classic or Full). Under Full each layer can
+  // be switched off live here to compare, 1 on, 0 off. The baked light (warm and cool sides, the lamps' pools) is not
+  // here: it is made with the world, so only World detail switches it.
+  world: {
+    road: 1,                 // the road: worn racing lines and skid arcs, patches, worn paint, the sheen toward the sun, puddles, mirage, spindrift
+    sky: 1,                  // the sky: drifting clouds lit by the low sun, rays, the far haze
+    water: 1,                // the water: the lamps' streaks and the sun's path
+    kit: 1,                  // the new roadside pieces (forklifts, cones, signs, pumpjacks...)
+    motion: 1,               // the moving things: litter, leaves, snow, steam, flags, flicker, the machines' motion
+    pools: 1,                // light spilling on the ground and contact shadows under things
+  },
 };
 
 // Where game sound goes (Dirigent 11-15): a second builder is making audio/driftaudio.js (ElevenLabs takes). Until it
@@ -262,6 +273,7 @@ export const RANGES = {
   'scoring.wallWipe': [0, 1, 0.05],
   'camera.velocityBlend': [0, 1, 0.01], 'camera.fov': [40, 90, 1], 'camera.fovKick': [0, 30, 1],
   'reflect.coat': [0, 2, 0.05], 'reflect.rough': [0, 1, 0.01],
+  'world.road': [0, 1, 1], 'world.sky': [0, 1, 1], 'world.water': [0, 1, 1], 'world.kit': [0, 1, 1], 'world.motion': [0, 1, 1], 'world.pools': [0, 1, 1],
 };
 
 // A copy of the shipped numbers, so the panel can put them back.

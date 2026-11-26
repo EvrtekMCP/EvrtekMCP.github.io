@@ -2,7 +2,7 @@
 // half-float target, its bright parts (lamps, neon, the sun, the tail lights) are pulled out at quarter size, blurred
 // across and down, and laid back over the picture with a soft vignette and a touch of grade. Below the high tier the
 // scene draws straight to the screen and the glow points carry the look on their own.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.21';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.22';
 
 const VS = 'varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }';
 const BRIGHT = `uniform sampler2D tex; uniform vec2 texel; varying vec2 vUv;

@@ -2,33 +2,33 @@
 // countdown, run, pause, results), steps the car at a fixed 120 Hz, feeds the scoring, the effects, the sound and the
 // HUD, and renders. The car list is an array of drivers so a rival car (downhill duels) can join later: each driver is
 // a car, its mesh and where its inputs come from; 0.1.0 has the player alone.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.21';
-import { TUNING, VERSION } from './config.js?v=0.1.21';
-import { installFog, PAL, sunDir } from './look.js?v=0.1.21';
-import { Reflections, LIVE_SIZE, COURSE_SIZE } from './reflect.js?v=0.1.21';
-import { SHARED as PAINT, setWorldLight } from './carpaint.js?v=0.1.21';
-import { Track } from './track.js?v=0.1.21';
-import { courseById } from './courses/index.js?v=0.1.21';
-import { DUELS } from './duel/duel.js?v=0.1.21';
-import { Car } from './car.js?v=0.1.21';
-import { DriftScore } from './scoring.js?v=0.1.21';
-import * as G from './garage.js?v=0.1.21';
-import { buildWorld } from './world.js?v=0.1.21';
-import { CarMesh, WET_VP } from './carmesh.js?v=0.1.21';
-import { Surface } from './carsurface.js?v=0.1.21';
-import { Smoke, Skids, Sparks, SpeedLines } from './fx.js?v=0.1.21';
-import { ChaseCam } from './camera.js?v=0.1.21';
-import { Post } from './post.js?v=0.1.21';
-import { Quality } from './quality.js?v=0.1.21';
-import { Input } from './input.js?v=0.1.21';
-import { Sound } from './sound.js?v=0.1.21';
-import { UI } from './ui.js?v=0.1.21';
-import { Hud } from './hud.js?v=0.1.21';
-import { Debug, loadTuning } from './debug.js?v=0.1.21';
-import { appIcon } from './art.js?v=0.1.21';
-import { Loader, painted } from './loader.js?v=0.1.21';
-import { TipScreen } from './tips.js?v=0.1.21';
-import { view, onFit } from './fit.js?v=0.1.21';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.22';
+import { TUNING, VERSION } from './config.js?v=0.1.22';
+import { installFog, PAL, sunDir } from './look.js?v=0.1.22';
+import { Reflections, LIVE_SIZE, COURSE_SIZE } from './reflect.js?v=0.1.22';
+import { SHARED as PAINT, setWorldLight } from './carpaint.js?v=0.1.22';
+import { Track } from './track.js?v=0.1.22';
+import { courseById } from './courses/index.js?v=0.1.22';
+import { DUELS } from './duel/duel.js?v=0.1.22';
+import { Car } from './car.js?v=0.1.22';
+import { DriftScore } from './scoring.js?v=0.1.22';
+import * as G from './garage.js?v=0.1.22';
+import { buildWorld } from './world.js?v=0.1.22';
+import { CarMesh, WET_VP } from './carmesh.js?v=0.1.22';
+import { Surface } from './carsurface.js?v=0.1.22';
+import { Smoke, Skids, Sparks, SpeedLines } from './fx.js?v=0.1.22';
+import { ChaseCam } from './camera.js?v=0.1.22';
+import { Post } from './post.js?v=0.1.22';
+import { Quality } from './quality.js?v=0.1.22';
+import { Input } from './input.js?v=0.1.22';
+import { Sound } from './sound.js?v=0.1.22';
+import { UI } from './ui.js?v=0.1.22';
+import { Hud } from './hud.js?v=0.1.22';
+import { Debug, loadTuning } from './debug.js?v=0.1.22';
+import { appIcon } from './art.js?v=0.1.22';
+import { Loader, painted } from './loader.js?v=0.1.22';
+import { TipScreen } from './tips.js?v=0.1.22';
+import { view, onFit } from './fit.js?v=0.1.22';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const params = new URLSearchParams(location.search);
@@ -60,7 +60,9 @@ class Game {
     this.sound.setEngineSound(this.settings.engineSound); // 11-17 (sound builder): Settings > Engine sound
     installFog(this.course.sun);
     const canvas = document.getElementById('view');
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: !this.input.touch, powerPreference: 'high-performance', alpha: false, stencil: false });
+    // 11-26 (Evrtek: "a lot of jagged lines in the cars"): 4x MSAA on phones too. Apple's GPUs draw in tiles, where it is close
+    // to free (measured on this PC's phone viewport: WORKBENCH 11-26, the worlds); before, touch devices had none
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance', alpha: false, stencil: false });
     this.renderer.setPixelRatio(this.quality.pixelRatio());
     this.renderer.setSize(view.w, view.h, false);
     this.renderer.info.autoReset = false;
@@ -78,7 +80,7 @@ class Game {
     this.drivers = [{ car: this.car, mesh: this.carMesh, source: 'player' }];
     this.score = new DriftScore(this.track);
     this.surface = new Surface(this.track);
-    this.smoke = new Smoke(this.quality.particles); this.skids = new Skids(this.quality.skids); this.sparks = new Sparks(); this.lines = new SpeedLines();
+    this.smoke = new Smoke(this.quality.particles); this.skids = new Skids(this.quality.skids, 20000); this.applySkids(); this.sparks = new Sparks(); this.lines = new SpeedLines();
     this.scene.add(this.smoke.mesh, this.skids.mesh, this.sparks.mesh, this.lines.mesh);
     this.smoke.setTint(G.looks(this.progress).smoke);
     this.cam = new ChaseCam(this.camera);
@@ -91,7 +93,7 @@ class Game {
     this.fpsEl = document.getElementById('fps'); this.fpsEl.hidden = !this.settings.fps;
     this.frames = []; this.fpsT = 0;
     this.quality.onScale = () => this.resize();
-    this.quality.onTier = () => { this.resize(); this.applyReflect(); };
+    this.quality.onTier = () => { this.resize(); this.applyReflect(); this.applySkids(); };
     this.world.setPixelRatio(this.renderer.getPixelRatio());
     this.rnd = mulberry(42);
     this.light = [1, 1, 1];
@@ -120,7 +122,7 @@ class Game {
   async buildCourse(course, step) {
     const track = this.chosenTrack && this.chosenTrack.course === course ? this.chosenTrack : new Track(course); // the card's road, if it has one
     if (step) await step(0.03, 'the road');
-    const world = await buildWorld(track, course, this.quality.tier, step);
+    const world = await buildWorld(track, course, this.quality.tier, step, this.worldDetail());
     // swapped in only once built (no frame sees a half-made course)
     this.course = course; this.track = track; this.world = world;
     this.scene.fog.color.copy(world.fog.color); this.scene.fog.density = world.fog.density;
@@ -154,6 +156,24 @@ class Game {
     this.parkAtStart(); this.cam.snap(this.car); this.titleS = 30;
     if (this.state === 'title') this.titleCam(0);
     if (this.paletteWorld !== this.world) this.applyPalette();
+  }
+  // 11-26: Settings > World detail (Classic: 0.1.21's worlds; Full, the default: the graphics uplift, part 2). A change
+  // remakes the course's world under the loading screen with the same road, the car left where it is; the skid marks
+  // last a lap under Full (fx.js)
+  worldDetail() { return this.settings.world === 'classic' ? 'classic' : 'full'; }
+  applySkids() { this.skids.setLength(this.worldDetail() === 'full' ? [6000, 14000, 20000][this.quality.tier] : this.quality.skids); }
+  async rebuildWorld() {
+    this.applySkids();
+    if (!this.world || this.world.detail === this.worldDetail() || this.loading) return false;
+    return this.busy(this.worldDetail() === 'full' ? 'Adding the detail' : 'Building the classic world', async (step) => {
+      const old = this.world;
+      const world = await buildWorld(this.track, this.course, this.quality.tier, (f) => step(0.04 + f * 0.8), this.worldDetail());
+      this.world = world; this.scene.fog.color.copy(world.fog.color); this.scene.fog.density = world.fog.density;
+      this.scene.add(world.root); this.scene.remove(old.root); old.dispose();
+      this.world.setPixelRatio(this.renderer.getPixelRatio());
+      for (const o of this.scene.children) if (o !== this.world.root) o.traverse((x) => { for (const m of [].concat(x.material || [])) m.needsUpdate = true; });
+      this.applyPalette(); this.applyReflect();
+    });
   }
   // 11-18 (2): picking a course chooses it. Its card opens at once, read from its road alone (a Track: a few ms); the
   // world behind the card stays the one built until a race on the chosen course launches.
@@ -246,7 +266,7 @@ class Game {
   // what a reflection leaves out: the player's car, the smoke, sparks, skid marks, speed lines and the ghost, and a
   // rival's glows (sized for the screen); from the course's map the rival too (it waits on the grid at the bake)
   reflectOpts(bake) {
-    const hide = [this.carMesh.group, this.smoke.mesh, this.sparks.mesh, this.skids.mesh, this.lines.mesh, this.ui.ghost && this.ui.ghost.mesh];
+    const hide = [this.carMesh.group, this.smoke.mesh, this.sparks.mesh, this.skids.mesh, this.lines.mesh, this.ui.ghost && this.ui.ghost.mesh, ...(this.world.noReflect || [])]; // 11-26: and the world's small new things
     const rival = this.ui.duel && this.ui.duel.mesh;
     if (rival) { if (bake) hide.push(rival.group); else hide.push(...rival.fxParts()); }
     return { world: this.world, hide, fov: TUNING.camera.fov, viewH: view.h };
@@ -291,6 +311,7 @@ class Game {
     this.camera.aspect = w / h; this.camera.updateProjectionMatrix();
     if (this.post.rt) this.post.setSize();
     this.renderer.getDrawingBufferSize(WET_VP.value); // 11-26: the lamps' streaks in the road are sized in pixels
+    { const gl = this.renderer.getContext(); this.bufW = gl.drawingBufferWidth; this.bufH = gl.drawingBufferHeight; this.aaSamples = gl.getParameter(gl.SAMPLES); } // 11-26: what the FPS readout shows (the pixels really drawn)
     this.world.setPixelRatio(this.renderer.getPixelRatio()); this.sparks.uScale.value = this.renderer.getPixelRatio();
     const portrait = this.input.touch && h > w;
     document.getElementById('rotate').hidden = !portrait;
@@ -305,6 +326,7 @@ class Game {
     if (k === 'engineSound') this.sound.setEngineSound(v); // 11-17 (sound builder)
     if (k === 'palette') this.applyPalette();
     if (k === 'reflect') this.applyReflect(); // 11-26
+    if (k === 'world') this.rebuildWorld(); // 11-26 (graphics uplift part 2)
     if (k === 'steer' && v === 'tilt') this.input.startTilt(true).then((ok) => { if (!ok) { this.settings.steer = 'stick'; this.saveSettings(); this.input.applyLayout(); if (this.ui.name === 'settings') this.ui.settings(this.ui.from); } });
     this.input.applyLayout();
   }
@@ -429,6 +451,7 @@ class Game {
     const ahead = this.nextZone(); if (ahead) zs[ahead.id] = 1;
     if (this.score.inZone && this.score.drifting && this.score.zoneNear) zs[this.score.zoneNear.id] = 2;
     if (this.paletteWorld !== this.world) this.applyPalette(); // a new course was built
+    this.world.focus(this.state === 'title' ? this.camera.position.y - 4.5 : this.car.y); // 11-26: what blows on the wind stays near the car (on the title, near the road the camera drives along)
     this.world.update(this.time);
     // sound (11-19 (2): the pause is the game's state, so no way out of a paused race can leave the car's sound off)
     this.sound.setPaused(this.state === 'paused');
@@ -619,12 +642,12 @@ class Game {
     this.fpsT += dt; if (this.fpsT < 0.25 || this.fpsEl.hidden) return; this.fpsT = 0;
     const f = this.frames.slice(-60), avg = f.reduce((a, b) => a + b, 0) / f.length, worst = Math.max(...f);
     const info = this.renderer.info.render;
-    this.fpsEl.textContent = `${(1000 / avg).toFixed(0)} fps  ${avg.toFixed(1)} ms (worst ${worst.toFixed(0)})\n${['LOW', 'MEDIUM', 'HIGH'][this.quality.tier]}  res ${(this.quality.scale * 100).toFixed(0)}%  x${this.renderer.getPixelRatio().toFixed(2)}\ndraws ${info.calls}  tris ${(info.triangles / 1000).toFixed(0)}k\nreflections ${this.reflectInfo()}`; // 11-26
+    this.fpsEl.textContent = `${(1000 / avg).toFixed(0)} fps  ${avg.toFixed(1)} ms (worst ${worst.toFixed(0)})\n${['LOW', 'MEDIUM', 'HIGH'][this.quality.tier]}  ${this.bufW || 0}x${this.bufH || 0}  x${this.renderer.getPixelRatio().toFixed(2)} (res ${(this.quality.scale * 100).toFixed(0)}%)  ${this.aaSamples ? 'AA ' + this.aaSamples + 'x' : 'no AA'}\ndraws ${info.calls}  tris ${(info.triangles / 1000).toFixed(0)}k\nreflections ${this.reflectInfo()}`; // 11-26
   }
 
   // ---------------------------------------------------------------- test hooks (?test): never loaded for players
   async testHooks() {
-    const { Autopilot } = await import('./autopilot.js?v=0.1.21');
+    const { Autopilot } = await import('./autopilot.js?v=0.1.22');
     this.capture = params.has('capture');
     const g = this;
     window.__dl = {

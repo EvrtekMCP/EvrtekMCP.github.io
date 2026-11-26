@@ -4,7 +4,7 @@
 // three assists: the counter-steer (front wheels follow the slide), the drift hold (keeps the angle where the player
 // asks for it) and the spin guard. Every number comes from the tune (config.js TUNING with the garage's parts and the
 // car's damage applied: garage.js deriveTune). Pure JS: the browser and the Node simulator share it.
-import { TUNING } from './config.js?v=0.1.21';
+import { TUNING } from './config.js?v=0.1.22';
 
 const DEG = Math.PI / 180, G = 9.81;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);

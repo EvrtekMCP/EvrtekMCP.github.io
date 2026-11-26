@@ -6,17 +6,17 @@
 // Nothing here changes how either car drives.
 // Day 5: the rival is heard (voice.js: its own engine and tyres, placed by distance, pan and Doppler), leaves skid
 // marks like yours (the same ring, wheels 4-7), and grips as the surface under it says, as your car does.
-import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.21';
-import { TUNING } from '../config.js?v=0.1.21';
-import { Car } from '../car.js?v=0.1.21';
-import { CarMesh } from '../carmesh.js?v=0.1.21';
-import { Surface } from '../carsurface.js?v=0.1.21';
-import { carById } from '../data/cars.js?v=0.1.21';
-import * as G from '../garage.js?v=0.1.21';
-import { DUELS, Leg, verdict, suddenDeath, playerLeads, duelPay, carTune, carProgress } from './duel.js?v=0.1.21';
-import { Rival } from './rival.js?v=0.1.21';
-import { RivalVoice } from './voice.js?v=0.1.21';
-import { view } from '../fit.js?v=0.1.21';
+import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.22';
+import { TUNING } from '../config.js?v=0.1.22';
+import { Car } from '../car.js?v=0.1.22';
+import { CarMesh } from '../carmesh.js?v=0.1.22';
+import { Surface } from '../carsurface.js?v=0.1.22';
+import { carById } from '../data/cars.js?v=0.1.22';
+import * as G from '../garage.js?v=0.1.22';
+import { DUELS, Leg, verdict, suddenDeath, playerLeads, duelPay, carTune, carProgress } from './duel.js?v=0.1.22';
+import { Rival } from './rival.js?v=0.1.22';
+import { RivalVoice } from './voice.js?v=0.1.22';
+import { view } from '../fit.js?v=0.1.22';
 
 const H = 1 / 120;
 const KEY = 'driftline.duels.v1';

@@ -1,5 +1,5 @@
 // DRIFTLINE region 2, Canyon: desert-red cutbacks at dusk. Wider and kinder than the mountains, harder than the docks.
-import { course } from './route.js?v=0.1.21';
+import { course } from './route.js?v=0.1.22';
 
 export const RED_MESA = course({
   id: 'red-mesa', name: 'RED MESA RUN', region: 'canyon', difficulty: 26, scenery: 'canyon',

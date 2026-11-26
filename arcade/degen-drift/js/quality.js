@@ -1,7 +1,9 @@
 // DRIFTLINE: quality tiers and adaptive resolution.
-// Tiers: 0 low (pixel ratio <= 1, fewer trees and puffs, no bloom), 1 medium (<= 1.5, no bloom), 2 high (<= 2, bloom).
+// Tiers: 0 low (pixel ratio <= 1, fewer trees and puffs, no bloom), 1 medium (<= 2, no bloom), 2 high (<= 2, bloom).
+// 11-26 (Evrtek: "a lot of jagged lines in the cars"): medium went from 1.5 to 2 (a phone held sideways draws about
+// 1690x780 instead of 1270x590), and on medium and high the adaptive scale stops at 75%, not 60%.
 // AUTO starts phones and tablets on medium and computers on high. Resolution then adapts inside the tier: every half
-// second the smoothed frame time is checked; slow frames scale the render down (to 60% at the least), steady frames
+// second the smoothed frame time is checked; slow frames scale the render down (to 75% at the least on medium and high, 60% on low), steady frames
 // at the display's own rate probe back up a step at a time. If the scale has bottomed out and frames are still slow
 // for three seconds, AUTO drops a tier. A manual tier never moves on its own (only its resolution does).
 export class Quality {
@@ -17,7 +19,8 @@ export class Quality {
   get bloom() { return this.tier >= 2; }
   get particles() { return [180, 360, 600][this.tier]; }
   get skids() { return [900, 1800, 3000][this.tier]; }
-  maxRatio() { return [1, 1.5, 2][this.tier]; }
+  maxRatio() { return [1, 2, 2][this.tier]; }
+  floor() { return this.tier >= 1 ? 0.75 : 0.6; }
   pixelRatio() { return Math.min(window.devicePixelRatio || 1, this.maxRatio()) * this.scale; }
   set(choice) {
     this.choice = choice;
@@ -38,7 +41,7 @@ export class Quality {
     if (this.t < 0.5 || this.fixedScale) return;
     this.t = 0;
     const slow = this.ema > 19.5, steady = this.ema < 17.6;
-    if (slow) { this.fastT = 0; this.slowT += 0.5; if (this.scale > 0.6) { this.ceiling = Math.min(this.ceiling, this.scale); this.scale = Math.max(0.6, this.scale * 0.88); this.changed(); } else if (this.choice === 'auto' && this.tier > 0 && this.slowT > 4) { this.tier--; this.scale = 1; this.ceiling = 1; this.slowT = 0; this.log.push({ tier: this.tier, at: performance.now() }); if (this.onTier) this.onTier(this.tier); } }
+    if (slow) { this.fastT = 0; this.slowT += 0.5; if (this.scale > this.floor() + 1e-3) { this.ceiling = Math.min(this.ceiling, this.scale); this.scale = Math.max(this.floor(), this.scale * 0.88); this.changed(); } else if (this.choice === 'auto' && this.tier > 0 && this.slowT > 4) { this.tier--; this.scale = 1; this.ceiling = 1; this.slowT = 0; this.log.push({ tier: this.tier, at: performance.now() }); if (this.onTier) this.onTier(this.tier); } }
     else { this.slowT = 0; if (steady && this.scale < 1) { this.fastT += 0.5; if (this.fastT > (this.scale < this.ceiling ? 2 : 6)) { this.scale = Math.min(1, this.scale * 1.08); this.fastT = 0; this.changed(); } } }
   }
   changed() { if (this.onScale) this.onScale(); }

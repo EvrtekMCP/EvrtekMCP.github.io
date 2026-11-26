@@ -8,15 +8,24 @@
 // and picking a course never fetches anything (about 20 KB gzipped for all five). The craft
 // rules (the mixed physics stance) are checked by audit(): no ground over the road, no road left hanging, nothing
 // standing on the road, nothing floating.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.21';
-import { PAL, sunDir, lampGrid, lampsAt, ambient, setLook } from './look.js?v=0.1.21';
-import * as TX from './textures.js?v=0.1.21';
+// 11-26 (graphics uplift part 2): Settings > World detail. Classic builds 0.1.21's worlds exactly; Full adds, here and in
+// each region's dressFull (js/scenery/detail.js holds the shared layers): a worn road (tyre tracks and the black arcs of
+// old drifts along the racing line, patches, flaking paint, a sheen toward the low sun, puddles, mirage, spindrift),
+// richer baked light (warm and cool sides, longer lamp pools with a hot core, deeper contact shade), a deck of drifting
+// cloud lit from the sun's side and rays, hazier far ranges, the sun's path and the lamps' streaks on the water, the
+// new roadside kit, contact shadows and light pools, and things that move (litter, steam, flags, flicker, machines).
+// Each Full layer answers a five-tap panel switch (TUNING.world), read in update().
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.22';
+import { PAL, sunDir, lampGrid, lampsAt, ambient, setLook, setDetail } from './look.js?v=0.1.22';
+import { TUNING } from './config.js?v=0.1.22';
+import * as D from './scenery/detail.js?v=0.1.22';
+import * as TX from './textures.js?v=0.1.22';
 // the regions' files import a few helpers from this one (a cycle that is safe: they touch them only inside functions)
-import * as harbour from './scenery/harbour.js?v=0.1.21';
-import * as canyon from './scenery/canyon.js?v=0.1.21';
-import * as mountain from './scenery/mountain.js?v=0.1.21';
-import * as neon from './scenery/neon.js?v=0.1.21';
-import * as summit from './scenery/summit.js?v=0.1.21';
+import * as harbour from './scenery/harbour.js?v=0.1.22';
+import * as canyon from './scenery/canyon.js?v=0.1.22';
+import * as mountain from './scenery/mountain.js?v=0.1.22';
+import * as neon from './scenery/neon.js?v=0.1.22';
+import * as summit from './scenery/summit.js?v=0.1.22';
 const SCENERY = { harbour, canyon, mountain, neon, summit };
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -53,12 +62,14 @@ const PROFILES = {
 // step(fraction, what): optional, awaited between the stages so a loading screen can show real progress (and the page
 // can paint); the fractions follow where the time goes (measured 11-16 on four regions at a 4x CPU slowdown: the land
 // is about half of it). Nothing built here is seen until the caller swaps the finished world in.
-export async function buildWorld(track, course, tier, step = null) {
+export async function buildWorld(track, course, tier, step = null, detail = 'full') {
   const S = SCENERY[course.scenery || course.region];
   if (!S) throw new Error('no scenery for ' + (course.scenery || course.region));
   const at = step || (() => null);
   const look = S.look(course);
   setLook(look);
+  const FULL = detail !== 'classic'; // 11-26: Classic = 0.1.21's world, made by exactly the code it was made by
+  setDetail(FULL);
   const root = new THREE.Group();
   const sun = sunDir();
   const R = rng(course.seed || 1234);
@@ -89,6 +100,9 @@ export async function buildWorld(track, course, tier, step = null) {
     mounts: [],  // lamp poles {x,y,z, ax,az (the arm's direction), style, lamp (index), h}
     placed: [],  // dressing footprints for the audit {x, z, r, y0, what}
     tunnels, bridges, nearRoad, disposables, moundSpots: [],
+    // 11-26 Full: its own dice (Classic's sequence, and so every classic thing's place, is untouched), the low tier's
+    // lighter share, the five-tap switches' objects and uniforms, what the reflection cube leaves out, frame hooks
+    full: FULL, lite: tier === 0, pools: [], uFloor: { value: 0 }, R2: D.rng(D.idSeed(course.id || 'course') ^ 0x2545f491), layers: {}, switches: {}, noReflect: [], onFrame: [], scaled: [], grain: grainTex,
     ambientN: (nx, ny, nz, out) => ambient(nx, ny, nz, 1, out),
     glow(x, y, z, c, size, blink = 0) { this.glows.push(x, y, z, c.r ?? c[0], c.g ?? c[1], c.b ?? c[2], size, blink); },
     // distance from the nearest road's wall line (negative: on the road)
@@ -109,7 +123,16 @@ export async function buildWorld(track, course, tier, step = null) {
   // tunnel lamps: a pair every 14 m along the roof
   const inTunnel = new Uint8Array(n); for (let i = 0; i < n; i++) inTunnel[i] = track.kind[i] === 2 ? 1 : 0;
   for (const T of tunnels) for (let q = T.a + 6; q <= T.b - 4; q += 14) { const i = q % n, p = track.point(i * track.step, 0); const c = PAL.sodium; ctx.lamps.push({ x: p[0], y: p[1] + 5.6, z: p[2], r: c.r, g: c.g, b: c.b, i: 1.25, range: 13 }); ctx.glow(p[0], p[1] + 5.7, p[2], c, 2.6); }
+  if (FULL) {
+    // the region's own extra light (signs' spill, work lights), every pool a fifth longer and a touch warmer (look.js
+    // adds the hot core), and one lamp head in about twenty that flickers (a negative blink: glowMaterial)
+    if (S.lampsFull) S.lampsFull(ctx);
+    for (const L of ctx.lamps) { L.range *= 1.2; L.r *= 1.04; L.b *= 0.95; }
+    const G = ctx.glows; for (let k = 0; k < G.length; k += 8) if (G[k + 6] >= 4.9 && G[k + 7] === 0 && ctx.R2() < 0.05) G[k + 7] = -(0.6 + ctx.R2() * 0.8);
+  }
   const LG = lampGrid(ctx.lamps);
+  // 11-26 Full: a lamp added after the bake (a work light placed with the dressing) lights what is placed after it
+  ctx.addLamp = (L) => { ctx.lamps.push(L); const r = Math.ceil(L.range / LG.cell), cx0 = Math.floor(L.x / LG.cell), cz0 = Math.floor(L.z / LG.cell); for (let i = -r; i <= r; i++) for (let k = -r; k <= r; k++) { const key = (cx0 + i) * 73856093 ^ (cz0 + k) * 19349663; if (!LG.grid.has(key)) LG.grid.set(key, []); LG.grid.get(key).push(L); } };
   ctx.light = (x, y, z, nx = 0, ny = 1, nz = 0, out = [0, 0, 0], vis = 1) => { const a = ambient(nx, ny, nz, vis, [0, 0, 0]), l = lampsAt(LG, x, y, z, nx, ny, nz, [0, 0, 0]); for (let c = 0; c < 3; c++) out[c] = a[c] + l[c]; return out; };
   ctx.lampsAt = (x, y, z, nx, ny, nz, out) => lampsAt(LG, x, y, z, nx, ny, nz, out);
 
@@ -220,11 +243,12 @@ export async function buildWorld(track, course, tier, step = null) {
   // ---------------------------------------------------------------- the road (one ribbon, its own shader)
   const ACROSS = 12;
   const roadLight = new Float32Array(n * 3); // the baked light along the centre, for the car and the smoke
-  const RS = Object.assign({ runoff: ['#c8323c', '#e8e2e0'], kerb: ['#c00a12', '#d8d2cc'], sheen: 0.04, glare: 0.45 }, look.road || {});
+  const RS = Object.assign({ runoff: ['#c8323c', '#e8e2e0'], kerb: ['#c00a12', '#d8d2cc'], sheen: 0.04, glare: 0.45, sunSheen: 0.3, puddles: 0, mirage: 0, spindrift: 0 }, look.road || {});
   const ca = (h) => new THREE.Color(h);
   {
     const V = n + 1, pos = new Float32Array(V * ACROSS * 3), colr = new Float32Array(V * ACROSS * 3), uv = new Float32Array(V * ACROSS * 2), hw = new Float32Array(V * ACROSS), kerb = new Float32Array(V * ACROSS), runA = new Float32Array(V * ACROSS);
     const amb = [0, 0, 0], lmp = [0, 0, 0], p = [0, 0, 0];
+    const RL = FULL ? D.racingLine(track) : null, wear = FULL ? new Float32Array(V * ACROSS * 2) : null; // 11-26 Full: the line worn in
     // kerbs: the inside of every zone, around its apex (the same rule js/carsurface.js hears)
     const kerbAt = new Float32Array(n);
     for (const zn of track.zones) { const a = zn.s0 + zn.len * Math.max(0.1, zn.apexT - 0.35), b = zn.s0 + zn.len * Math.min(0.95, zn.apexT + 0.3); for (let s = a; s < b; s += track.step) kerbAt[Math.floor(track.wrapS(s) / track.step) % n] = zn.side; }
@@ -240,35 +264,64 @@ export async function buildWorld(track, course, tier, step = null) {
         ambient(0, 1, 0, tun ? 0 : sunVis(p[0], p[1] + 0.5, p[2]), amb);
         lampsAt(LG, p[0], p[1], p[2], 0, 1, 0, lmp);
         for (let c = 0; c < 3; c++) colr[k * 3 + c] = amb[c] * (1 - edge * 0.38) * (tun ? 0.22 : 1) + lmp[c];
+        if (FULL) { // a deeper contact shade in the last half metre at the wall's foot; the racing line for the shader
+          const foot = 1 - 0.32 * sstep(half - 0.4, half + 0.62, Math.abs(lat)); for (let c = 0; c < 3; c++) colr[k * 3 + c] *= foot;
+          wear[k * 2] = RL.line[i]; wear[k * 2 + 1] = RL.zone[i];
+        }
         if (a === ACROSS >> 1) for (let c = 0; c < 3; c++) roadLight[i * 3 + c] = colr[k * 3 + c];
       }
     }
     const idx = new Uint32Array(n * (ACROSS - 1) * 6); let o = 0;
     for (let v = 0; v < n; v++) for (let a = 0; a < ACROSS - 1; a++) { const q = v * ACROSS + a, r = q + ACROSS; idx[o++] = q; idx[o++] = q + 1; idx[o++] = r; idx[o++] = q + 1; idx[o++] = r + 1; idx[o++] = r; }
+    // 11-26 Full: the ribbon wound to face up. Since 0.1.0 it has faced down, so the default culling hid it from above and
+    // what showed as the road was the land held 0.6 m under it (the lines, kerbs, start checker and sheen never drew,
+    // and the car, its skid marks and the zones sat that much over what was seen). Classic keeps it exactly as it was.
+    if (FULL) for (let k = 0; k < idx.length; k += 3) { const t = idx[k + 1]; idx[k + 1] = idx[k + 2]; idx[k + 2] = t; }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(colr, 3));
     g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); g.setAttribute('aHalf', new THREE.BufferAttribute(hw, 1)); g.setAttribute('aKerb', new THREE.BufferAttribute(kerb, 1)); g.setAttribute('aRun', new THREE.BufferAttribute(runA, 1));
+    if (FULL) g.setAttribute('aWear', new THREE.BufferAttribute(wear, 2));
     g.setIndex(new THREE.BufferAttribute(idx, 1));
+    const uRoad = { value: 1 }; (ctx.switches.road ||= []).push(uRoad);
+    const F = FULL, seed = ((course.seed || 1234) % 997).toFixed(1);
     const m = new THREE.ShaderMaterial({
-      uniforms: Object.assign(THREE.UniformsUtils.clone(THREE.UniformsLib.fog), { grain: { value: grainTex } }),
+      uniforms: Object.assign(THREE.UniformsUtils.clone(THREE.UniformsLib.fog), { grain: { value: grainTex } }, F ? { time: uTime, uRoad } : {}),
       fog: true,
-      vertexShader: `attribute vec3 color; attribute float aHalf; attribute float aKerb; attribute float aRun; varying vec3 vLight; varying vec2 vUv; varying vec3 vWorld; varying float vHalf; varying float vKerb; varying float vRun;
+      vertexShader: `attribute vec3 color; attribute float aHalf; attribute float aKerb; attribute float aRun; varying vec3 vLight; varying vec2 vUv; varying vec3 vWorld; varying float vHalf; varying float vKerb; varying float vRun;${F ? ' attribute vec2 aWear; varying vec2 vWear;' : ''}
         #include <fog_pars_vertex>
-        void main() { vLight = color; vUv = uv; vHalf = aHalf; vKerb = aKerb; vRun = aRun; vec4 wp = modelMatrix * vec4(position, 1.0); vWorld = wp.xyz; vec4 mvPosition = viewMatrix * wp; gl_Position = projectionMatrix * mvPosition;
+        void main() { vLight = color; vUv = uv; vHalf = aHalf; vKerb = aKerb; vRun = aRun;${F ? ' vWear = aWear;' : ''} vec4 wp = modelMatrix * vec4(position, 1.0); vWorld = wp.xyz; vec4 mvPosition = viewMatrix * wp; gl_Position = projectionMatrix * mvPosition;
         #include <fog_vertex>
         }`,
-      fragmentShader: `uniform sampler2D grain; varying vec3 vLight; varying vec2 vUv; varying vec3 vWorld; varying float vHalf; varying float vKerb; varying float vRun;
+      fragmentShader: `uniform sampler2D grain; varying vec3 vLight; varying vec2 vUv; varying vec3 vWorld; varying float vHalf; varying float vKerb; varying float vRun;${F ? ' varying vec2 vWear; uniform float time; uniform float uRoad;' : ''}
         #include <fog_pars_fragment>
         const vec3 SUNV = normalize(vec3(${sun.x.toFixed(4)}, ${sun.y.toFixed(4)}, ${sun.z.toFixed(4)}));
         void main() {
           vec4 gr = texture2D(grain, vUv * 0.22); vec4 bl = texture2D(grain, vUv * 0.021 + 0.37);
           vec3 alb = ${g3(PAL.asphalt)} * (0.72 + 0.55 * gr.r / 1.0) * (0.82 + 0.36 * bl.g);
           float ax = abs(vUv.x);
-          float edge = 1.0 - smoothstep(0.07, 0.11, abs(ax - (vHalf - 0.42)));
+${F ? `          // 11-26 Full: the coarse aggregate and streaks along the road; a patched repair now and then (a darker newer
+          // one or a paler old one) with its sealed seam
+          vec4 st = texture2D(grain, vec2(vUv.x * 0.35, vUv.y * 0.018) + 0.61);
+          alb *= 1.0 + uRoad * (0.22 * (gr.r - 0.62) + 0.22 * (st.g - 0.5));
+          // tar snakes: sealed cracks, thin glossy-black lines wandering along the road, in some stretches
+          { float cn = texture2D(grain, vUv * vec2(0.09, 0.03) + 0.27 + (gr.g - 0.5) * 0.035).g, cw = fwidth(cn) * 0.9 + 0.002;
+            float crack = (1.0 - smoothstep(0.0, cw, abs(cn - 0.5))) * step(ax, vHalf - 0.25) * smoothstep(0.55, 0.78, texture2D(grain, vUv * 0.009 + 0.71).g);
+            alb *= 1.0 - crack * uRoad * 0.45; }
+          { float cell = floor(vUv.y / 29.0), hp = fract(sin(cell * 91.7 + ${seed}) * 43758.5453);
+            if (hp > 0.5) { float y0 = cell * 29.0 + fract(hp * 7.3) * 16.0, len = 3.0 + fract(hp * 13.1) * 9.0, x0 = (fract(hp * 3.7) - 0.5) * vHalf * 1.1, w = 0.8 + fract(hp * 5.9) * 2.0;
+              vec2 q = vec2(abs(vUv.x - x0) - w, abs(vUv.y - y0 - len * 0.5) - len * 0.5); float mq = max(q.x, q.y), onL = step(ax, vHalf);
+              alb *= 1.0 - uRoad * onL * (step(mq, 0.0) * (hp > 0.8 ? -0.18 : 0.3) + (1.0 - smoothstep(0.0, 0.08, abs(mq))) * 0.5); } }
+` : ''}          float edge = 1.0 - smoothstep(0.07, 0.11, abs(ax - (vHalf - 0.42)));
           float centre = (1.0 - smoothstep(0.06, 0.1, ax)) * step(fract(vUv.y / 10.0), 0.42);
           vec3 lineC = ${g3(PAL.line)} * (0.8 + 0.25 * gr.r);
-          alb = mix(alb, lineC, max(edge, centre) * 0.92);
-          if (ax > vHalf) {
+${F ? `          float lineK = 1.0 - uRoad * 0.5 * smoothstep(0.42, 0.72, texture2D(grain, vUv * vec2(1.7, 0.13) + 0.2).g); // the paint flaking
+` : ''}          alb = mix(alb, lineC, max(edge, centre) * 0.92${F ? ' * lineK' : ''});
+${F ? `          // the racing line: two rubbered tyre tracks either side of it and a polished band between; through the zones the
+          // black arcs of every drift before yours (over the paint: tyres cross the lines)
+          float dw = vUv.x - vWear.x, tyre = 1.0 - smoothstep(0.1, 0.4, abs(abs(dw) - 0.8)), polish = 1.0 - smoothstep(0.5, 1.8, abs(dw));
+          float arcs = vWear.y * (1.0 - smoothstep(0.15, 0.8, abs(abs(dw) - 0.72))) * (0.5 + 0.5 * smoothstep(0.3, 0.7, texture2D(grain, vec2(vUv.x * 2.6, vUv.y * 0.045)).g));
+          alb *= 1.0 - uRoad * clamp(tyre * (0.6 + 0.4 * vWear.y) * (0.7 + 0.5 * st.g) * 0.4 + polish * 0.1 + arcs * 0.68, 0.0, 0.78) * step(ax, vHalf + 0.3);
+` : ''}          if (ax > vHalf) {
             if (vRun > 0.5) {
               // the runoff apron: painted stripes across it, then a kerb on the lane's edge
               float st = step(0.5, fract((vUv.y + ax * 0.6) / 3.0));
@@ -285,7 +338,27 @@ export async function buildWorld(track, course, tier, step = null) {
           float gl = pow(max(dot(Rr, SUNV), 0.0), 18.0);
           col += ${g3(PAL.sunLight)} * gl * ${RS.glare.toFixed(3)} * (0.55 + 0.6 * gr.r);
           col += vLight * pow(max(-V.y, 0.0), 0.5) * ${RS.sheen.toFixed(3)} * gr.r;
-          gl_FragColor = vec4(col, 1.0);
+${F ? `          // 11-26 Full: a broad sheen toward the low sun, strongest looking along the road and on the polished line
+          float fres = pow(1.0 - max(-V.y, 0.0), 4.0);
+          float sl = pow(max(dot(normalize(vec3(Rr.x, Rr.y * 2.5, Rr.z)), normalize(vec3(SUNV.x, SUNV.y * 2.5, SUNV.z))), 0.0), 7.0);
+          col += ${g3(PAL.sunLight)} * sl * fres * ${RS.sunSheen.toFixed(3)} * (0.4 + polish * 0.9) * uRoad;
+${RS.puddles ? `          // rain-sheen puddles off the line: dark, mirror-wet, the street's light doubled in them, rain rings
+          { float pm = smoothstep(0.585, 0.635, texture2D(grain, vUv * vec2(0.045, 0.03) + 0.13).g) * smoothstep(0.7, 1.5, abs(dw)) * step(ax, vHalf) * uRoad * ${RS.puddles.toFixed(2)};
+            vec2 rp = vWorld.xz * 0.8, ci = floor(rp), cf = fract(rp) - 0.5; float h = fract(sin(dot(ci, vec2(12.9898, 78.233))) * 43758.5453), t = fract(time * 0.9 + h);
+            float ring = (1.0 - smoothstep(0.0, 0.04, abs(length(cf) - t * 0.48))) * (1.0 - t) * step(0.4, h);
+            vec3 neonR = mix(${g3(PAL.neonPink)}, ${g3(PAL.neonCyan)}, smoothstep(0.35, 0.65, texture2D(grain, vec2(vWorld.x + vWorld.z, vWorld.z - vWorld.x) * 0.004).g)); // the signs and the sky glow, streaked in the water
+            vec3 vl = vLight / (1.0 + max(vLight.r, max(vLight.g, vLight.b))); // a floodlit puddle shines, but never as a white sheet
+            col = mix(col, col * 0.38 + vl * (0.22 + 0.6 * fres) + neonR * (0.05 + 0.22 * fres) * (0.6 + 0.4 * sin(vUv.y * 0.9 + vUv.x * 3.0)) + vl * ring * 0.9, pm); }
+` : ''}${RS.mirage ? `          // heat on the road ahead: far off, at a grazing look, it mirrors the hot sky and shimmers
+          { float dist = length(vWorld - cameraPosition), mir = smoothstep(50.0, 130.0, dist) * (1.0 - smoothstep(0.004, 0.06, -V.y)) * uRoad;
+            float wob = 0.55 + 0.45 * sin(vWorld.x * 0.23 + vWorld.z * 0.19 + time * 3.3) * sin(vWorld.z * 0.07 - vWorld.x * 0.05 - time * 1.7);
+            vec3 hot = mix(${g3(PAL.horizonAway)}, ${g3(PAL.horizonSun)}, pow(max(dot(normalize(vec3(V.x, 0.0, V.z)), normalize(vec3(SUNV.x, 0.0, SUNV.z))), 0.0), 2.0));
+            col = mix(col, hot * 0.95, mir * ${RS.mirage.toFixed(2)} * wob); }
+` : ''}${RS.spindrift ? `          // spindrift: snow streaming across the road on the wind
+          { vec2 sp = vec2(vWorld.x * 0.8 + vWorld.z * 0.6, vWorld.z * 0.8 - vWorld.x * 0.6) + vec2(time * 3.2, time * 0.7);
+            float sd = smoothstep(0.52, 0.8, texture2D(grain, sp * vec2(0.03, 0.11)).g) * smoothstep(0.35, 0.7, texture2D(grain, sp * 0.013 + 0.5).g);
+            col += (vLight * 0.7 + 0.03) * sd * ${RS.spindrift.toFixed(2)} * uRoad; }
+` : ''}` : ''}          gl_FragColor = vec4(col, 1.0);
           #include <fog_fragment>
           #include <colorspace_fragment>
         }`,
@@ -314,7 +387,7 @@ export async function buildWorld(track, course, tier, step = null) {
           let dn = b[0] - a[0], dh = b[1] - a[1]; const nl = Math.hypot(dn, dh) || 1; const no = dh / nl, nh = -dn / nl;
           const nx = -lx * no, nz = -lz * no, ny = nh;
           ambient(nx, ny, nz, inTunnel[i] ? 0 : 0.85, amb); lampsAt(LG, p[0], p[1] + h, p[2], nx, ny, nz, lmp);
-          const ao = 0.55 + 0.45 * sstep(0, 0.6, h);
+          const ao = FULL ? 0.36 + 0.64 * sstep(0, 0.8, h) : 0.55 + 0.45 * sstep(0, 0.6, h); // 11-26 Full: darker where the wall meets the road
           for (let c = 0; c < 3; c++) colr.push(W.color[c] * ((amb[c] * 1.1) * ao * (inTunnel[i] ? 0.3 : 1) + lmp[c] * 0.8) * (W.k ?? 1));
         }
         // the skirt: from just behind the wall's foot down into the ground, so the road never shows an edge in the air
@@ -422,6 +495,7 @@ export async function buildWorld(track, course, tier, step = null) {
     const mesh = new THREE.Mesh(mergeIndexed(parts), new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide })); mesh.name = 'tunnels'; root.add(mesh);
   }
 
+  const uWater = { value: 1 }; if (FULL) (ctx.switches.water ||= []).push(uWater); // 11-26 Full: the water's own switch
   // ---------------------------------------------------------------- bridges: a deck under the road, piers down to the gorge
   if (bridges.length) {
     const parts = [], p = [0, 0, 0];
@@ -452,7 +526,7 @@ export async function buildWorld(track, course, tier, step = null) {
       // only along the gorge's deep part (further out the valley floor rises above the water and hides it)
       const L = 420, Wd = Math.max(12, G.half * 0.6), g = new THREE.PlaneGeometry(Wd, L, 1, 1); g.rotateX(-Math.PI / 2);
       g.rotateY(Math.atan2(G.ux, G.uz)); g.translate(G.mx, G.base - G.depth + 1.2, G.mz);
-      const river = new THREE.Mesh(g, waterMaterial(sun, uTime, 'river')); river.name = 'river'; root.add(river);
+      const river = new THREE.Mesh(g, waterMaterial(sun, uTime, 'river', FULL && uWater)); river.name = 'river'; root.add(river);
     }
   }
 
@@ -579,12 +653,20 @@ export async function buildWorld(track, course, tier, step = null) {
   await at(0.85, 'the scenery');
   // ---------------------------------------------------------------- the region's own dressing
   S.dress(ctx);
+  if (FULL) {
+    // 11-26 Full: the region's new kit, light and moving things, then a soft contact shadow under everything placed near
+    // the road (0.1.21's things too) and the pools of light the region asked for
+    if (S.dressFull) S.dressFull(ctx);
+    D.decals(ctx, D.shadowsFor(ctx, 0, Object.assign({ reach: ctx.lite ? 45 : 80 }, S.shadowOpts || {})));
+    if (ctx.pools.length) D.decals(ctx, ctx.pools, { light: true });
+  }
   await at(0.96, 'the sky');
 
   // ---------------------------------------------------------------- the far side: painted silhouettes all round
   {
     const layers = (S.far && S.far(ctx)) || [];
-    const parts = [];
+    if (FULL && S.farFull) layers.push(...S.farFull(ctx));
+    const parts = [], hz = PAL.fog.clone().lerp(PAL.horizonAway, 0.45);
     for (const L of layers) {
       const pos = [], colr = [], idx = [], c0 = new THREE.Color(L.lo), c1 = new THREE.Color(L.hi), seg = L.seg || 220;
       for (let k = 0; k <= seg; k++) {
@@ -593,7 +675,11 @@ export async function buildWorld(track, course, tier, step = null) {
         const x = cx + dx * L.r, z = cz + dz * L.r;
         pos.push(x, (L.base ?? -12), z, x, hgt, z);
         const t = clamp((hgt - (L.base ?? -12)) / (L.span || 400), 0, 1);
-        colr.push(c0.r, c0.g, c0.b, c0.r + (c1.r - c0.r) * t, c0.g + (c1.g - c0.g) * t, c0.b + (c1.b - c0.b) * t);
+        if (FULL) { // 11-26: the farther the range, the more of the air between: its foot sinks into the haze
+          const k0 = clamp((L.r - 1100) / 1700, 0.18, 0.72) * (L.haze ?? 1), k1 = k0 * 0.4 * (1 - t * 0.5);
+          const tr = c0.r + (c1.r - c0.r) * t, tg = c0.g + (c1.g - c0.g) * t, tb = c0.b + (c1.b - c0.b) * t;
+          colr.push(c0.r + (hz.r - c0.r) * k0, c0.g + (hz.g - c0.g) * k0, c0.b + (hz.b - c0.b) * k0, tr + (hz.r - tr) * k1, tg + (hz.g - tg) * k1, tb + (hz.b - tb) * k1);
+        } else colr.push(c0.r, c0.g, c0.b, c0.r + (c1.r - c0.r) * t, c0.g + (c1.g - c0.g) * t, c0.b + (c1.b - c0.b) * t);
       }
       for (let k = 0; k < seg; k++) { const a = k * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
       const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(colr, 3)); g.setIndex(idx);
@@ -608,18 +694,25 @@ export async function buildWorld(track, course, tier, step = null) {
     for (let k = 0; k < cnt; k++) { for (let c = 0; c < 3; c++) { pos[k * 3 + c] = gp[k * 8 + c]; colr[k * 3 + c] = gp[k * 8 + 3 + c]; } size[k] = gp[k * 8 + 6]; blink[k] = gp[k * 8 + 7]; }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(colr, 3)); g.setAttribute('aSize', new THREE.BufferAttribute(size, 1)); g.setAttribute('aBlink', new THREE.BufferAttribute(blink, 1));
-    const m = glowMaterial(uTime);
+    const m = glowMaterial(uTime, FULL);
+    if (FULL) (ctx.switches.motion ||= []).push(m.uniforms.flick);
     const pts = new THREE.Points(g, m); pts.name = 'glows'; pts.frustumCulled = false; pts.renderOrder = 3; root.add(pts);
     root.userData.glowMat = m;
   }
 
   // ---------------------------------------------------------------- sky and water
   const SK = Object.assign({ disc: 0.085, bands: true, clouds: 0.85, stars: 1, moon: null, haze: 0 }, look.sky || {});
+  // 11-26 Full: the cloud deck (scale: how big the clouds; cover: the density range that becomes cloud; light: what lights
+  // their edges, the sun or the moon), rays round the sun, a halo round the moon
+  const SF = Object.assign({ scale: 0.16, cover: [0.5, 0.72], k: 0.8, hi: 0.7, drift: [0.0035, 0.0012], light: 'sun', shadow: null, lit: null, rays: 0, halo: 0 }, look.skyFull || {});
+  const uSky = { value: 1 }; if (FULL) (ctx.switches.sky ||= []).push(uSky);
+  const moonV = SK.moon ? new THREE.Vector3().fromArray(SK.moon).normalize() : null, LDIR = SF.light === 'moon' && moonV ? moonV : sun;
+  const cShadow = SF.shadow ? new THREE.Color(SF.shadow) : PAL.zenith.clone().lerp(PAL.sky, 0.6).multiplyScalar(0.9), cLit = SF.lit ? new THREE.Color(SF.lit) : PAL.horizonSun.clone();
   const moon = SK.moon ? new THREE.Vector3().fromArray(SK.moon).normalize() : null;
   const skyMat = new THREE.ShaderMaterial({
-    uniforms: { time: uTime, stars: { value: 1 } }, depthWrite: false, side: THREE.BackSide, fog: false, // stars: 0 in the cars' reflections (reflect.js)
+    uniforms: Object.assign({ time: uTime, stars: { value: 1 } }, FULL ? { grain: { value: grainTex }, uSky } : {}), depthWrite: false, side: THREE.BackSide, fog: false, // stars: 0 in the cars' reflections (reflect.js)
     vertexShader: `varying vec3 vDir; void main() { vDir = position; vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_Position = p.xyww; }`,
-    fragmentShader: `uniform float time; uniform float stars; varying vec3 vDir;
+    fragmentShader: `uniform float time; uniform float stars; varying vec3 vDir;${FULL ? ' uniform sampler2D grain; uniform float uSky;' : ''}
       ${SKY_GLSL(sun)}
       float h1(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(h1(i), h1(i + vec2(1, 0)), f.x), mix(h1(i + vec2(0, 1)), h1(i + vec2(1, 1)), f.x), f.y); }
@@ -628,7 +721,7 @@ export async function buildWorld(track, course, tier, step = null) {
         vec3 c = skyCol(d);
         // streaks of cloud low over the horizon, lit from below by the sun
         float az = atan(d.x, d.z);
-        float n = vn(vec2(az * 6.0, d.y * 38.0)) * 0.6 + vn(vec2(az * 17.0, d.y * 90.0)) * 0.4;
+        float n = vn(vec2(${FULL ? '(az + time * 0.0025)' : 'az'} * 6.0, d.y * 38.0)) * 0.6 + vn(vec2(${FULL ? '(az + time * 0.0025)' : 'az'} * 17.0, d.y * 90.0)) * 0.4;
         float band = smoothstep(0.02, 0.07, d.y) * (1.0 - smoothstep(0.12, 0.26, d.y));
         float cl = smoothstep(0.55, 0.8, n) * band;
         float sa = max(dot(d, SUN), 0.0);
@@ -646,9 +739,27 @@ export async function buildWorld(track, course, tier, step = null) {
           c += vec3(0.55, 0.6, 0.9) * exp(-ma * ma / (MR * MR * 9.0)) * 0.25;
           float disc = 1.0 - smoothstep(MR * 0.95, MR, ma); float mot = vn(d.xz * 90.0) * 0.18;
           c = mix(c, vec3(0.92, 0.9, 1.0) * (0.85 - mot), disc); }` : ''}
-        // stars, fading in toward the top
+${FULL ? `        // 11-26 Full: a deck of cloud overhead receding to the horizon, drifting, lit on its edges toward the light
+        float cdn = 0.0;
+        if (d.y > 0.0) {
+          const vec3 LDIR = normalize(vec3(${LDIR.x.toFixed(4)}, ${LDIR.y.toFixed(4)}, ${LDIR.z.toFixed(4)}));
+          vec2 cp = d.xz / (d.y + 0.08) * ${SF.scale.toFixed(4)} + vec2(time * ${SF.drift[0].toFixed(5)}, time * ${SF.drift[1].toFixed(5)});
+          float a1 = texture2D(grain, cp).g, a2 = texture2D(grain, cp * 2.37 + 0.31).g, a3 = texture2D(grain, cp * 5.11 + 0.67).g;
+          vec2 tl = normalize(LDIR.xz + vec2(0.0001)) * 0.05;
+          float b1 = texture2D(grain, cp + tl).g, b2 = texture2D(grain, (cp + tl) * 2.37 + 0.31).g;
+          float rim = clamp(((a1 * 0.55 + a2 * 0.3) - (b1 * 0.55 + b2 * 0.3)) * 7.0 + 0.3, 0.0, 1.0);
+          cdn = smoothstep(${SF.cover[0].toFixed(3)}, ${SF.cover[1].toFixed(3)}, a1 * 0.55 + a2 * 0.3 + a3 * 0.15) * smoothstep(0.012, 0.15, d.y) * (1.0 - smoothstep(${SF.hi.toFixed(3)}, 1.0, d.y)) * ${SF.k.toFixed(3)} * uSky;
+          float la = max(dot(d, LDIR), 0.0);
+          vec3 body = mix(${g3(cShadow)}, ${g3(cLit)}, rim * (0.25 + 0.75 * pow(la, 2.0))) + ${g3(cLit)} * pow(la, 10.0) * 0.55;
+          c = mix(c, body, cdn);
+        }
+${SF.rays ? `        { vec3 ax1 = normalize(cross(SUN, vec3(0.0, 1.0, 0.0))), ax2 = cross(ax1, SUN); float ang = atan(dot(d, ax2), dot(d, ax1));
+          float ry = texture2D(grain, vec2(ang * 0.477465, time * 0.004)).g;
+          c += ${g3(PAL.horizonSun)} * smoothstep(0.42, 0.85, ry) * pow(max(dot(d, SUN), 0.0), 5.0) * ${SF.rays.toFixed(3)} * uSky * (1.0 - cdn * 0.5); }
+` : ''}${SF.halo && moon ? `        { vec3 M = normalize(vec3(${moon.x.toFixed(4)}, ${moon.y.toFixed(4)}, ${moon.z.toFixed(4)})); float ma = acos(clamp(dot(d, M), -1.0, 1.0)); c += vec3(0.42, 0.48, 0.75) * exp(-pow((ma - 0.38) / 0.03, 2.0)) * ${SF.halo.toFixed(3)} * uSky; }
+` : ''}` : ''}        // stars, fading in toward the top
         vec2 sp = floor(vec2(az * 260.0, d.y * 260.0));
-        float st = step(0.9965, h1(sp)) * smoothstep(0.18, 0.6, d.y) * (0.6 + 0.4 * sin(time * 2.0 + h1(sp + 3.0) * 40.0)) * ${SK.stars.toFixed(3)} * stars;
+        float st = step(0.9965, h1(sp)) * smoothstep(0.18, 0.6, d.y) * (0.6 + 0.4 * sin(time * 2.0 + h1(sp + 3.0) * 40.0)) * ${SK.stars.toFixed(3)} * stars${FULL ? ' * (1.0 - cdn)' : ''};
         c += vec3(0.9, 0.85, 1.0) * st;
         gl_FragColor = vec4(c, 1.0);
         #include <colorspace_fragment>
@@ -659,7 +770,7 @@ export async function buildWorld(track, course, tier, step = null) {
   const WA = (S.water && S.water(ctx)) || look.water || { kind: 'sea', level: course.seaLevel ?? -1.6 };
   if (WA.kind !== 'none') {
     const seaG = new THREE.PlaneGeometry(9000, 9000, 1, 1); seaG.rotateX(-Math.PI / 2);
-    const sea = new THREE.Mesh(seaG, waterMaterial(sun, uTime, WA.kind)); sea.position.set(cx, WA.level, cz); sea.name = 'water'; root.add(sea);
+    const sea = new THREE.Mesh(seaG, waterMaterial(sun, uTime, WA.kind, FULL && uWater)); sea.position.set(cx, WA.level, cz); sea.name = 'water'; root.add(sea);
   }
 
   // ---------------------------------------------------------------- what the game reads
@@ -668,10 +779,21 @@ export async function buildWorld(track, course, tier, step = null) {
     root, lamps: ctx.lamps, roadLight, fog, look,
     zoneState: zoneState.value,
     setZoneColors(z, sw) { zoneCol.value.copy(z); sweetCol.value.copy(sw); },
-    update(t) { uTime.value = t; },
+    // 11-26: which detail this world was made with, and what the cars' reflection cube leaves out of it (main.js)
+    detail: FULL ? 'full' : 'classic', noReflect: ctx.noReflect,
+    focus(y) { ctx.uFloor.value = y; }, // the road height where the car is (what blows on the wind stays near it)
+    update(t) {
+      uTime.value = t;
+      if (FULL) { // the five-tap panel's layer switches (TUNING.world), live; the moving things only while motion is on
+        const W = TUNING.world;
+        for (const k in ctx.layers) { const on = (W[k] ?? 1) > 0.5; for (const o of ctx.layers[k]) o.visible = on; }
+        for (const k in ctx.switches) { const v = (W[k] ?? 1) > 0.5 ? 1 : 0; for (const u of ctx.switches[k]) u.value = v; }
+        if ((W.motion ?? 1) > 0.5) for (const f of ctx.onFrame) f(t);
+      }
+    },
     // the baked light where the car is (for tinting the car and its smoke)
     lightAt(i, out) { out[0] = roadLight[i * 3]; out[1] = roadLight[i * 3 + 1]; out[2] = roadLight[i * 3 + 2]; return out; },
-    setPixelRatio(pr) { root.userData.glowMat.uniforms.scale.value = pr; },
+    setPixelRatio(pr) { root.userData.glowMat.uniforms.scale.value = pr; for (const m of ctx.scaled) m.uniforms.scale.value = pr; },
     // a quiet camera path for the title and the course card: from the region (or a drive along the road)
     titleShot: S.titleShot ? S.titleShot(ctx) : null,
     hAt,
@@ -704,16 +826,16 @@ export async function buildWorld(track, course, tier, step = null) {
 }
 
 // water: the sea (sky reflection, sun glitter, moving waves), a river, or a sea of cloud far below
-export function waterMaterial(sun, uTime, kind = 'sea') {
-  const cloud = kind === 'clouds';
+export function waterMaterial(sun, uTime, kind = 'sea', uWater = null) {
+  const cloud = kind === 'clouds', F = !!uWater; // 11-26: uWater given = Full (the sun's path)
   return new THREE.ShaderMaterial({
-    uniforms: Object.assign(THREE.UniformsUtils.clone(THREE.UniformsLib.fog), { time: uTime }), fog: true,
+    uniforms: Object.assign(THREE.UniformsUtils.clone(THREE.UniformsLib.fog), { time: uTime }, F ? { uWater } : {}), fog: true,
     vertexShader: `varying vec3 vWorld;
       #include <fog_pars_vertex>
       void main() { vec4 wp = modelMatrix * vec4(position, 1.0); vWorld = wp.xyz; vec4 mvPosition = viewMatrix * wp; gl_Position = projectionMatrix * mvPosition;
       #include <fog_vertex>
       }`,
-    fragmentShader: `uniform float time; varying vec3 vWorld;
+    fragmentShader: `uniform float time; varying vec3 vWorld;${F ? ' uniform float uWater;' : ''}
       #include <fog_pars_fragment>
       ${SKY_GLSL(sun)}
       float h1(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -728,7 +850,9 @@ export function waterMaterial(sun, uTime, kind = 'sea') {
         float sa = pow(max(dot(normalize(vec3(V.x, 0.0, V.z)), normalize(vec3(SUN.x, 0.0, SUN.z))), 0.0), 3.0);
         vec3 c = mix(${g3(PAL.fog)} * 0.75, mix(${g3(PAL.skyAmb)} * 1.15, ${g3(PAL.horizonSun)}, sa * 0.75), smoothstep(0.35, 0.8, b));
         c += ${g3(PAL.sunLight)} * pow(b, 3.0) * sa * 0.35;
-        gl_FragColor = vec4(c, 1.0);` : `
+${F ? `        // 11-26 Full: the low sun's road of light across the cloud tops
+        c += ${g3(PAL.sunLight)} * pow(max(dot(normalize(vec3(V.x, V.y * 0.25, V.z)), normalize(vec3(SUN.x, -SUN.y * 0.25, SUN.z))), 0.0), 40.0) * (0.25 + 0.5 * pow(b, 2.0)) * uWater;
+` : ''}        gl_FragColor = vec4(c, 1.0);` : `
         float a = time * 0.9;
         vec2 g = vec2(cos(p.x * 0.09 + a) * 0.5 + cos((p.x + p.y) * 0.05 - a * 0.7) * 0.4, cos(p.y * 0.11 + a * 1.2) * 0.5 + cos((p.x - p.y) * 0.21 + a * 1.6) * 0.25);
         vec3 n = normalize(vec3(g.x * ${kind === 'river' ? '0.14' : '0.08'}, 1.0, g.y * 0.08));
@@ -737,7 +861,13 @@ export function waterMaterial(sun, uTime, kind = 'sea') {
         vec3 c = mix(${g3(PAL.seaDeep)}, skyCol(Rr), clamp(fres + 0.18, 0.0, 1.0));
         float sd = max(dot(Rr, SUN), 0.0);
         c += ${g3(PAL.sunLight)} * (pow(sd, 260.0) * 6.0 + pow(sd, 22.0) * 0.35);
-        gl_FragColor = vec4(c, 1.0);`}
+${F ? `        // 11-26 Full: the sun's path, a long column of glints from the horizon toward you
+        { vec3 Rs = normalize(vec3(Rr.x, Rr.y * 0.2, Rr.z)), Ss = normalize(vec3(SUN.x, SUN.y * 0.2, SUN.z));
+          float path = pow(max(dot(Rs, Ss), 0.0), 160.0);
+          vec2 gp = p * 0.45 + vec2(time * 0.5, -time * 0.35);
+          float glint = step(0.7, fract(sin(dot(floor(gp), vec2(127.1, 311.7)) + floor(time * 4.0 + h1(floor(gp)) * 4.0) * 0.37) * 43758.5453));
+          c += ${g3(PAL.sunLight)} * path * (0.18 + 2.4 * glint) * fres * 1.4 * uWater; }
+` : ''}        gl_FragColor = vec4(c, 1.0);`}
         #include <fog_fragment>
         #include <colorspace_fragment>
       }`,
@@ -745,14 +875,17 @@ export function waterMaterial(sun, uTime, kind = 'sea') {
 }
 
 // soft additive points (lamp halos, reflectors, city lights, beacons that blink)
-export function glowMaterial(uTime) {
+export function glowMaterial(uTime, full = false) {
   return new THREE.ShaderMaterial({
-    uniforms: Object.assign(THREE.UniformsUtils.clone(THREE.UniformsLib.fog), { time: uTime, scale: { value: 1 } }),
+    uniforms: Object.assign(THREE.UniformsUtils.clone(THREE.UniformsLib.fog), { time: uTime, scale: { value: 1 } }, full ? { flick: { value: 1 } } : {}),
     fog: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
     vertexShader: `attribute float aSize; attribute float aBlink; attribute vec3 color; uniform float time; uniform float scale; varying vec3 vCol;
       #include <fog_pars_vertex>
-      void main() { vec4 mvPosition = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mvPosition;
-        float b = aBlink > 0.0 ? step(0.55, fract(time * 0.5 * aBlink + aBlink * 3.1)) : 1.0;
+${full ? `      // 11-26 Full: a lamp whose blink is negative flickers: now and then a few seconds of stutter
+      uniform float flick;
+      float flicker(float s) { float k = fract(sin(floor(time * 13.0 + s * 41.0) * 12.9898) * 43758.5453), on = step(0.72, fract(time * 0.09 * (0.6 + s) + s * 5.3)); return 1.0 - flick * on * (0.88 - 0.88 * step(0.45, k)); }
+` : ''}      void main() { vec4 mvPosition = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mvPosition;
+        float b = aBlink > 0.0 ? step(0.55, fract(time * 0.5 * aBlink + aBlink * 3.1)) : ${full ? 'aBlink < 0.0 ? flicker(-aBlink) : 1.0' : '1.0'};
         vCol = color * b;
         gl_PointSize = clamp(aSize * 260.0 * scale / -mvPosition.z, 1.5, 160.0 * scale);
         #include <fog_vertex>

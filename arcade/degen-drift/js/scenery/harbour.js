@@ -2,9 +2,11 @@
 // Two layouts share the look: EMBER BAY PASS ('harbour-pass': 0.1.0's harbour front and the climb through the pines,
 // now with rock and forest close to the road) and the closed docks (DRYDOCK RUN, SALT PIER CIRCUIT: a flat yard on
 // the water, container stacks, gantry cranes on the quay, a ship alongside, floodlight masts, the city across the bay).
-import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.21';
-import { sstep, fbm, colorGeom, mergeGeoms } from '../world.js?v=0.1.21';
-import * as K from './kit.js?v=0.1.21';
+import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.22';
+import { sstep, fbm, colorGeom, mergeGeoms } from '../world.js?v=0.1.22';
+import * as K from './kit.js?v=0.1.22';
+import * as D from './detail.js?v=0.1.22';
+import * as P from './props.js?v=0.1.22';
 
 const C = (h) => new THREE.Color(h);
 const pass = (ctx) => ctx.course.dressing === 'harbour-pass';
@@ -16,7 +18,9 @@ export function look(course) {
     sky: { disc: 0.085, bands: true, clouds: 0.85, stars: 1 },
     water: { kind: 'sea', level: course.seaLevel ?? -1.6 },
     fogDensity: 0.0024,
-    road: { runoff: ['#b8283a', '#e6dcd8'], kerb: ['#c00a12', '#d8d2cc'] },
+    road: { runoff: ['#b8283a', '#e6dcd8'], kerb: ['#c00a12', '#d8d2cc'], sunSheen: 0.34 },
+    // 11-26 Full: a deck of sunset cloud, violet bellies and fire on the edges toward the sun, and rays
+    skyFull: { scale: 0.15, cover: [0.5, 0.74], k: 0.85, drift: [0.004, 0.0016], shadow: '#3a1f52', lit: '#ff9c5a', rays: 0.32 },
   };
 }
 
@@ -276,3 +280,116 @@ export function far(ctx) {
 
 // where the title camera drives: along the road (the default)
 export function titleShot() { return null; }
+
+// ================================================================ 11-26 Full detail (graphics uplift part 2)
+// Settings > World detail > Full. Nothing above changes; this adds, with its own dice (ctx.R2): the quay's working
+// kit (forklifts, pallets, drums, spools, cones, bollards, water barriers and a wall of old tyres by the start), two
+// ship-to-shore cranes with their trolleys running, work lights in the yards, the lamps and the far shore in the water,
+// pools of light under the lamps and the windows, flags on the quay, steam from the ship and the warehouses' vents,
+// litter on the wind, and on the pass a better pine.
+export function dressFull(ctx) {
+  const { PAL } = ctx, R = ctx.R2, lite = ctx.lite, free = D.occupancy(ctx), level = ctx.course.seaLevel ?? -1.6;
+  const pal = containerPalette(), kit = { fork: [], pal0: [], pal1: [], pal2: [], drum: [], spool: [], cone: [], bar: [], bol: [], tyre: [] };
+  const flat = pass(ctx) ? (x, z) => ctx.harbourRect(x, z) && ctx.hAt(x, z) > 0 : (x, z) => ctx.hAt(x, z) > -0.7 && ctx.hAt(x, z) < -0.2;
+  // the working kit, scattered on the flat beside the road (never on it, never on anything else)
+  const want = (n) => Math.round(n * (lite ? 0.5 : 1) * (pass(ctx) ? 0.6 : 1));
+  const put = (list, n, r, make, reach = [1.5, 26]) => { for (let k = 0; k < want(n); k++) { const sp = D.besideRoad(ctx, (x, z) => flat(x, z) && ctx.clear(x, z, r, 0.6) && free(x, z, r) ? [x, z] : null, { reach }); if (!sp) continue; free.take(sp[0], sp[1], r); list.push(make(sp[0], sp[1])); } };
+  put(kit.fork, 14, 1.8, (x, z) => [x, z, R() * 6.28, 1, null]);
+  put(kit.pal0, 22, 0.9, (x, z) => [x, z, Math.round(R() * 4) * 1.57 + (R() - 0.5) * 0.2, 1, null]);
+  put(kit.pal1, 16, 0.9, (x, z) => [x, z, R() * 6.28, 1, null]);
+  put(kit.pal2, 12, 0.9, (x, z) => [x, z, R() * 6.28, 1, null]);
+  put(kit.spool, 10, 0.9, (x, z) => [x, z, R() * 6.28, 0.8 + R() * 0.5, null]);
+  for (let k = 0; k < want(16); k++) { // drums come in huddles
+    const sp = D.besideRoad(ctx, (x, z) => flat(x, z) && ctx.clear(x, z, 1.6, 0.6) && free(x, z, 1.6) ? [x, z] : null, { reach: [2, 24] }); if (!sp) continue; free.take(sp[0], sp[1], 1.6);
+    const c = [C('#2a5aa8'), C('#b8302a'), C('#e0b020'), C('#2a7a4a'), C('#5a5a62')][Math.floor(R() * 5)];
+    for (let q = 0, n = 2 + Math.floor(R() * 4); q < n; q++) kit.drum.push([sp[0] + (q % 2) * 0.62 - 0.3, sp[1] + Math.floor(q / 2) * 0.62 - 0.3, R() * 6.28, 1, R() < 0.25 ? C('#7a6a5a') : c]);
+  }
+  // cones in short lines along the wall where the road kinks (someone's been setting out a course)
+  for (let k = 0; k < want(10); k++) {
+    const sp = D.besideRoad(ctx, (x, z) => flat(x, z) && ctx.clear(x, z, 0.5, 0.3) ? [x, z] : null, { reach: [0.6, 3] }); if (!sp) continue;
+    const T = ctx.track, i = Math.floor(T.wrapS(sp[2]) / T.step) % T.n;
+    for (let q = 0; q < 4; q++) { const p = T.point(sp[2] + q * 2.2, sp[3] * (T.half[i] + 0.6 + 1.1)); if (flat(p[0], p[2]) && ctx.clear(p[0], p[2], 0.25, 0.3) && free(p[0], p[2], 0.3)) { kit.cone.push([p[0], p[2], R() * 6.28, 1, null]); free.take(p[0], p[2], 0.3); } }
+  }
+  // the start: a wall of old tyres and water barriers, red and white, along the outside of the first straight
+  for (const side of [1, -1]) for (let s = 8; s < 70; s += side > 0 ? 2.2 : 2.05) {
+    const T = ctx.track, i = Math.floor(T.wrapS(s) / T.step) % T.n, p = T.point(s, side * (T.half[i] + 0.6 + (side > 0 ? 1.45 : 1.0)));
+    if (!flat(p[0], p[2]) || !ctx.clear(p[0], p[2], side > 0 ? 1.05 : 0.5, 0.35) || !free(p[0], p[2], 0.6)) continue;
+    if (side > 0) { kit.bar.push([p[0], p[2], T.psi[i], 1, (Math.floor(s / 2.2) % 2) ? C('#c8202a') : C('#e8e6e0')]); free.take(p[0], p[2], 1); }
+    else if (Math.floor(s / 2.05) % 3 !== 2) { kit.tyre.push([p[0], p[2], R() * 6.28, 1, null]); free.take(p[0], p[2], 0.5); }
+  }
+  // bollards along the quay's edge, every 14 m
+  for (let k = 0; k < (lite ? 200 : 500) && kit.bol.length < (pass(ctx) ? 26 : 40); k++) {
+    const { x0, z0, ext } = ctx.terrainBox, x = x0 + R() * ext, z = z0 + R() * ext;
+    const h = ctx.hAt(x, z); if (!(h > -0.75 && h < -0.2) && !(pass(ctx) && Math.abs(z + 20) < 0.8 && ctx.harbourRect(x, z))) continue;
+    let wet = false; for (let a = 0; a < 8 && !wet; a++) if (ctx.hAt(x + Math.cos(a * 0.785) * 5, z + Math.sin(a * 0.785) * 5) < -3) wet = true;
+    if (!wet || !ctx.clear(x, z, 0.4, 1) || !free(x, z, 7)) continue;
+    kit.bol.push([x, z, 0, 1, null]); free.take(x, z, 0.4);
+  }
+  if (pass(ctx)) for (let x = -240; x < 290; x += 14) if (ctx.clear(x, -21, 0.4, 1) && free(x, -21, 0.5)) kit.bol.push([x, -21, 0, 1, null, 0.35]); // on the quay wall's top
+  D.place(ctx, 'forklifts', P.forklift(), kit.fork, { aoH: 1.4 });
+  D.place(ctx, 'pallets', P.pallets(0), kit.pal0); D.place(ctx, 'pallet-boxes', P.pallets(1), kit.pal1); D.place(ctx, 'pallet-stacks', P.pallets(2), kit.pal2, { aoH: 0.5 });
+  D.place(ctx, 'drums', P.drum(), kit.drum, { aoH: 0.9 }); D.place(ctx, 'spools', P.spool(), kit.spool); D.place(ctx, 'cones', P.cone(), kit.cone, { aoH: 0.4 });
+  D.place(ctx, 'barriers', P.barrier(), kit.bar, { aoH: 0.8 }); D.place(ctx, 'tyre-walls', P.tyres(5), kit.tyre); D.place(ctx, 'bollards', P.bollard(), kit.bol, { aoH: 0.5 });
+  for (const f of kit.fork) ctx.glow(f[0] - Math.sin(f[2]) * 0.5, ctx.ground(f[0], f[1], 1) + 2.2, f[1] - Math.cos(f[2]) * 0.5, [1, 0.5, 0.1], 0.8, 1.7 + R());
+  // ship-to-shore cranes on the quay, booms out over the water, trolleys running out and back
+  const sts = [], used = ctx.placed.filter((p) => p.what === 'crane');
+  const T0 = ctx.track, roadZ = (x) => { let best = 1e9, bz = 0; for (let i = 0; i < T0.n; i += 2) { if (!ctx.harbourRect || !ctx.harbourRect(T0.x[i], T0.z[i])) continue; const d = Math.abs(T0.x[i] - x); if (d < best) { best = d; bz = T0.z[i]; } } return best < 6 ? bz : null; };
+  const span = pass(ctx) ? 33 : 16;
+  const quaySpots = pass(ctx) ? [-85, 65, 175].map((x) => [x, roadZ(x), Math.PI]).filter((q) => q[1] !== null) : (() => {
+    const out = [];
+    for (let t = 0; t < 900 && out.length < 3; t++) {
+      const { x0, z0, ext } = ctx.terrainBox, x = x0 + R() * ext, z = z0 + R() * ext, h = ctx.hAt(x, z); if (h < -0.7 || h > -0.2) continue;
+      let best = null; for (let a = 0; a < 16; a++) { const dx = Math.sin(a * 0.3927), dz = Math.cos(a * 0.3927); if (ctx.hAt(x + dx * 18, z + dz * 18) < -4 && ctx.hAt(x - dx * 14, z - dz * 14) > -0.7) { best = [dx, dz]; break; } }
+      if (!best) continue;
+      const cx = x - best[0] * 11, cz = z - best[1] * 11;
+      if (out.some((o) => Math.hypot(o[0] - cx, o[1] - cz) < 60) || used.some((u) => Math.hypot(u.x - cx, u.z - cz) < 40)) continue;
+      out.push([cx, cz, Math.atan2(best[0], best[1])]);
+    }
+    return out;
+  })();
+  for (const [x, z, ry] of quaySpots) {
+    const legs = [[-9, -span / 2], [9, -span / 2], [-9, span / 2], [9, span / 2]].map(([lx, lz]) => [x + lx * Math.cos(ry) + lz * Math.sin(ry), z - lx * Math.sin(ry) + lz * Math.cos(ry)]);
+    if (!legs.every(([lx, lz]) => ctx.clear(lx, lz, 1.6, 1.2) && free(lx, lz, 1.4) && ctx.hAt(lx, lz) > (pass(ctx) ? -4 : -0.75))) continue;
+    if (used.some((u) => Math.hypot(u.x - x, u.z - z) < 30)) continue;
+    const y = Math.min(...legs.map(([lx, lz]) => ctx.ground(lx, lz, 1.3))) - 0.05;
+    sts.push([x, z, ry, 1, null, y]); for (const [lx, lz] of legs) { free.take(lx, lz, 1.4); ctx.placed.push({ x: lx, z: lz, r: 1.2, y0: y, what: 'sts crane leg' }); }
+  }
+  if (sts.length) {
+    const M = P.stsCrane('#2f62b0', span);
+    D.movers(ctx, 'sts-cranes', M, sts, (t, k) => [0, 0, 0, 0, 0, M.reach[0] + (M.reach[1] - M.reach[0]) * (0.5 + 0.5 * Math.sin(t * 0.09 + k * 2.1))], { aoH: 20, reflect: true, audit: false });
+    for (const [x, z, ry, , , y] of sts) { const at = (lz, h) => [x + Math.sin(ry) * lz, y + h, z + Math.cos(ry) * lz]; for (const [lz, h] of [[-4, 73.5], [57, 45.5], [-33, 45.5]]) { const p = at(lz, h); ctx.glow(p[0], p[1], p[2], [1, 0.08, 0.05], 2.4, 0.8 + R() * 0.4); } const c = at(10, 40); ctx.glow(c[0], c[1], c[2], [1, 0.82, 0.55], 2.5); const f = at(0, 38); ctx.pools.push([f[0], f[2], 30, 30, 0, 0.28, [1, 0.85, 0.65]]); }
+  }
+  // work lights in the yards: a trailer with four lamps, its pool on the ground and its light on what stands near
+  const towers = [];
+  for (let k = 0; k < want(pass(ctx) ? 5 : 12); k++) {
+    const sp = D.besideRoad(ctx, (x, z) => flat(x, z) && ctx.clear(x, z, 1.4, 2) && free(x, z, 1.6) ? [x, z] : null, { reach: [3, 30] }); if (!sp) continue;
+    const T = ctx.track, i = Math.floor(T.wrapS(sp[2]) / T.step) % T.n, ry = T.psi[i] + (sp[3] > 0 ? -Math.PI / 2 : Math.PI / 2) + (R() - 0.5) * 0.6; // lamps toward the road
+    free.take(sp[0], sp[1], 1.6); towers.push([sp[0], sp[1], ry, 1, null]);
+    const y = ctx.ground(sp[0], sp[1], 1.2), fx = sp[0] + Math.sin(ry) * 9, fz = sp[1] + Math.cos(ry) * 9;
+    ctx.addLamp({ x: fx, y: y + 6, z: fz, r: 1, g: 0.95, b: 0.85, i: 0.9, range: 18 });
+    ctx.pools.push([fx, fz, 22, 22, 0, 0.42, [1, 0.94, 0.82]]);
+    for (const dx of [-0.72, -0.24, 0.24, 0.72]) ctx.glow(sp[0] + Math.cos(ry) * dx + Math.sin(ry) * 0.25, y + 7.3, sp[1] - Math.sin(ry) * dx + Math.cos(ry) * 0.25, [1, 0.96, 0.88], 1.6);
+  }
+  D.place(ctx, 'light-towers', P.lightTower(), towers, { aoH: 1 });
+  // pools of light: under the lamps, and the warm spill from the sheds' windows onto the ground
+  D.lampPools(ctx, { k: 0.26 });
+  for (const S of ctx.placed) if (S.what === 'sheds' && ctx.edge(S.x, S.z) < 120) for (let q = 0; q < 3; q++) { const a = R() * 6.28, d = S.r * 0.62; ctx.pools.push([S.x + Math.cos(a) * d, S.z + Math.sin(a) * d, 9, 9, a, 0.3, [1, 0.72, 0.42]]); }
+  // flags on the quay by the start: four poles, colours, no words
+  { const fl = [], poles = [], T = ctx.track;
+    for (let k = 0; k < 4; k++) { const s = 30 + k * 7, i = Math.floor(T.wrapS(s) / T.step) % T.n, side = -1, p = T.point(s, side * (T.half[i] + 0.6 + 3.2)); if (!flat(p[0], p[2]) || !ctx.clear(p[0], p[2], 0.3, 1.5) || !free(p[0], p[2], 0.6)) continue; const y = ctx.ground(p[0], p[2], 0.2) - 0.05; poles.push([p[0], p[2], 0, 1, null, y]); free.take(p[0], p[2], 0.6); fl.push([p[0], y + 7.6, p[2], T.psi[i] + 0.9, 2.2, 1.3, [C('#ff3fa4'), C('#36f2ff'), C('#ffd23f'), C('#f4ecff')][k]]); }
+    D.place(ctx, 'flag-poles', P.flagPole(), poles, { aoH: 2 }); D.flags(ctx, fl); }
+  // the water: the lights over it laid along it toward you
+  D.streaks(ctx, D.streaksFromGlows(ctx, level, { share: lite ? 0.35 : 0.7 }));
+  // steam: the ship's funnel and the warehouses' roof vents
+  const steam = [];
+  for (const S of ctx.placed) if (S.what === 'sheds' && R() < 0.6) { const top = ctx.ground(S.x, S.z) + 10; steam.push([S.x + (R() - 0.5) * S.r * 0.6, top + 2, S.z + (R() - 0.5) * S.r * 0.6]); }
+  const ship = ctx.root.getObjectByName('ship'); if (ship) { ship.geometry.computeBoundingBox(); const b = ship.geometry.boundingBox; steam.push([(b.min.x + b.max.x) / 2, b.max.y + 14, (b.min.z + b.max.z) / 2]); }
+  D.plumes(ctx, steam.slice(0, lite ? 4 : 10), { per: lite ? 6 : 10, height: 9, alpha: 0.22 });
+  // litter on the wind
+  D.drift(ctx, { kind: 'paper', count: lite ? 50 : 110, tint: [0.62, 0.5, 0.66], colors: [[1, 1, 1], [0.9, 0.86, 0.8], [0.8, 0.85, 0.95]] });
+  // the pass: a better pine (the art, and a third card for body from every side)
+  if (pass(ctx)) D.betterPines(ctx, ['pines'], D.pineArt2(ctx, { body: ['#2c5a50', '#15302c', '#0b1c1c'], tip: '#4a8070', rim: '#ff9a6a', cool: '#8a8ad8', seed: 31 }));
+  void PAL; void pal;
+}
+// signs' spill and the yards' floodlights stay as they were; the extra light is placed with the dressing (addLamp)
+export const shadowOpts = { reach: 90 };

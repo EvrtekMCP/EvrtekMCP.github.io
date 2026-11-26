@@ -17,7 +17,7 @@
 // High tier only (groundK): the paint's downward reflections meet the road under the car, where the car's own
 // underglow and headlight pool are (a fake planar reflection, worked out in the shader), so a neon underglow shows in
 // the sills. Fog: the look's fog chunks, as every material (look.js bumps the program key on a new look).
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.21';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.22';
 
 // shared by every car: the sun's highlight and the five-tap panel's sliders (TUNING.reflect)
 export const SHARED = {
@@ -127,6 +127,14 @@ void main() {
   float mz = sqrt(max(0.0, 1.0 - dot(m, m)));
   float lam = max(0.0, m.x * -0.35 + m.y * 0.6 + mz * 0.7) * 0.75 + 0.25;
   float rough = clamp(rough0 + roughK + vCoat.y, 0.0, 1.0);
+  // 11-26 (Evrtek: "a lot of jagged lines in the cars"): geometric specular anti-aliasing (after Kaplanyan 2016, and
+  // Tokuyoshi and Kaplanyan 2019). Where the normal turns fast across a pixel (small curved parts, mirrors, arches, the
+  // ends of the smoothing) the finish is treated as that much rougher, so its mirror and the sun's spot blur instead of
+  // stair-stepping and sparkling as the car moves; and there the clear coat's mirror eases off (edgeK)
+  vec3 dnx = dFdx(N), dny = dFdy(N);
+  float saa = min(0.5 * (dot(dnx, dnx) + dot(dny, dny)), 0.2);
+  rough = sqrt(min(1.0, rough * rough + saa));
+  float edgeK = 1.0 - 0.5 * smoothstep(0.01, 0.2, saa);
   float lod = rough * 7.0;
   vec3 col;
 #if defined(KIND_PAINT)
@@ -153,15 +161,15 @@ void main() {
   }
   // a show car's coat: past a real one's 4% face-on, and short of a full mirror at the silhouette (the body's flat
   // facets there would ring the car in a bright outline)
-  float F = clamp((0.08 + 0.72 * pow(1.0 - NdV, 4.0)) * coatK * vCoat.x, 0.0, 1.0);
+  float F = clamp((0.08 + 0.72 * pow(1.0 - NdV, 4.0)) * coatK * vCoat.x * edgeK, 0.0, 1.0);
   // the coat's own colour over the paint's: the paint dims only part of the way under a strong reflection, so a car
   // keeps its colour against a dark night
-  col = d * (1.0 - 0.75 * F) + r * F + sunGlint(R, rough) * coatK * vCoat.x;
+  col = d * (1.0 - 0.75 * F) + r * F + sunGlint(R, rough) * coatK * vCoat.x * edgeK;
 #elif defined(KIND_GLASS)
   // the dark tint, the cabin's grey a little lifted behind it (never a black hole), then mostly reflection
   vec3 d = (base * 0.55 + vec3(0.03, 0.03, 0.04)) * lam * tint;
-  float F = clamp((0.1 + 0.75 * pow(1.0 - NdV, 4.0)) * coatK, 0.0, 1.0);
-  col = d * (1.0 - 0.7 * F) + world(R, lod) * F + sunGlint(R, rough) * coatK;
+  float F = clamp((0.1 + 0.75 * pow(1.0 - NdV, 4.0)) * coatK * edgeK, 0.0, 1.0);
+  col = d * (1.0 - 0.7 * F) + world(R, lod) * F + sunGlint(R, rough) * coatK * edgeK;
 #elif defined(KIND_TRIM)
   // chrome where the shade says metal (0.95), gloss black where it is dark (0.11), slats and seams between
   float metal = smoothstep(0.3, 0.9, max(vCol.r, max(vCol.g, vCol.b)));

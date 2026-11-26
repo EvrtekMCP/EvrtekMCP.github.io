@@ -9,7 +9,7 @@
 // feeds it exactly as before. Extras hang off it without main.js: the best run's ghost and a duel (ui.js attaches
 // them) get every frame of a run through update(). (11-18 (2): the first-run tip card that hung here is gone; the tips
 // are on a race's loading screen, js/tips.js.)
-import * as ART from './art.js?v=0.1.21';
+import * as ART from './art.js?v=0.1.22';
 
 const $ = (id) => document.getElementById(id);
 const fmt = (n) => Math.round(n).toLocaleString('en-US');

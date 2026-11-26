@@ -5,7 +5,7 @@
 // Changing course (courses 0.2.0): setLook() copies the region's colours INTO the same PAL objects (so every importer
 // sees them), moves the sun, rewrites the fog chunks and bumps an epoch that is part of every material's program key,
 // so materials that already exist (the car's) recompile with the new fog when they are next marked for update.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.21';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.22';
 
 const lin = (hex) => new THREE.Color(hex); // three converts sRGB hex to linear on the way in
 const BASE = {
@@ -21,6 +21,12 @@ export const PAL = Object.fromEntries(Object.entries(BASE).map(([k, v]) => [k, l
 
 let SUN = new THREE.Vector3(-0.62, 0.105, -0.78).normalize();
 let K = { sun: 1.25, amb: 0.62 };   // the sun's and the sky's strength in the baked light
+// 11-26 (graphics uplift part 2): Settings > World detail. Classic is 0.1.21's light, untouched; Full warms the sun side
+// of every wall, stack and rock face and cools its shadow side, and gives the lamps' pools a hot core (world.js sets it
+// with the look, before anything is baked).
+let FULL = false;
+export function setDetail(full) { FULL = !!full; }
+export function detailFull() { return FULL; }
 export function sunDir() { return SUN; }
 const v3 = (c) => `vec3(${c.r.toFixed(4)}, ${c.g.toFixed(4)}, ${c.b.toFixed(4)})`;
 
@@ -93,7 +99,7 @@ export function lampsAt(lamps, x, y, z, nx = 0, ny = 1, nz = 0, out = _a) {
     if (d2 >= R2) continue;
     const d = Math.sqrt(d2) || 1;
     const facing = Math.max(0, (dx * nx + dy * ny + dz * nz) / d) * 0.75 + 0.25;
-    const f = (1 - d2 / R2); const k = f * f * facing * L.i;
+    const f = (1 - d2 / R2); const k = (FULL ? f * f * 0.82 + f * f * f * f * 0.55 : f * f) * facing * L.i; // Full: a hot core under the lamp, a longer soft tail (the range is longer too, world.js)
     out[0] += L.r * k; out[1] += L.g * k; out[2] += L.b * k;
   }
   return out;
@@ -105,6 +111,15 @@ export function ambient(nx, ny, nz, sunVis = 1, out = [0, 0, 0]) {
   for (let c = 0; c < 3; c++) {
     const k = c === 0 ? 'r' : c === 1 ? 'g' : 'b';
     out[c] = (PAL.groundAmb[k] * (1 - h) + PAL.skyAmb[k] * h) * K.amb + PAL.sunLight[k] * ndl * K.sun;
+  }
+  if (FULL) {
+    // the warm sun side and the cool shadow side of anything upright: facing the low sun it catches its colour (the
+    // horizon's), facing away it takes the open sky's (cooler, a little brighter than the hemisphere alone gives)
+    const hl = Math.hypot(SUN.x, SUN.z) || 1, side = (nx * SUN.x + nz * SUN.z) / hl, up = 1 - Math.abs(ny);
+    const warm = Math.max(0, side) * up * sunVis * 0.16 * K.sun, cool = Math.max(0, -side) * up * 0.2 * K.amb;
+    out[0] += PAL.horizonSun.r * warm + (PAL.skyAmb.r * 0.55 + PAL.zenith.r * 0.2) * cool;
+    out[1] += PAL.horizonSun.g * warm + (PAL.skyAmb.g * 0.6 + PAL.zenith.g * 0.2) * cool;
+    out[2] += PAL.horizonSun.b * warm + (PAL.skyAmb.b * 0.85 + PAL.zenith.b * 0.3) * cool;
   }
   return out;
 }

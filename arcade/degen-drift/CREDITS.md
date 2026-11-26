@@ -21,7 +21,7 @@ Dirigent planned the full game, the cars and the economy. Indaga researched what
 - the DEGEN DRIFT wordmark and its letterforms;
 - the DEGENERATE badge, the stars and the part illustrations;
 - the six cars, KESTREL, VANTA, HALBERD, ORBIT, SPECTRE and ZENITH, modelled in code from Portero's designs (their shapes measured off his sheets);
-- the fifteen courses, their five regions and the scenery.
+- the fifteen courses, their five regions and the scenery, with the roadside kit (the cranes, forklifts, pumpjacks, windpumps and the rest).
 
 Textures are drawn at load time; the only image files are Portero's (the key art, icons and share image) and the wordmark.
 
