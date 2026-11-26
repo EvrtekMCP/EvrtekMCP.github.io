@@ -402,7 +402,11 @@
     configure(p) {
       p = Object.assign({}, DEFAULT_TYRES, p);
       // 11-18: model 'new' squeals in three layers (Squeal2); the rest (roar, wind, kerbs, gravel, the fronts) is as before
-      this.model = p.model === 'new' ? 'new' : 'classic'; if (this.model === 'new' && !this.s2) this.s2 = new Squeal2(this.fs, this.r);
+      // 11-26 (3): model 'plus' is New+'s stick-slip screech (TyresPlus); with its screech switched off it is New's squeal
+      const plus = p.model === 'plus', screech = plus && !(p.plus && p.plus.on && p.plus.on.screech === 0);
+      this.model = p.model === 'new' || (plus && !screech) ? 'new' : screech ? 'plus' : 'classic'; if (this.model === 'new' && !this.s2) this.s2 = new Squeal2(this.fs, this.r);
+      this.plusOn = plus;
+      if (plus) { if (!this.tp) this.tp = new TyresPlus(this.fs, 0x51ed5eed); this.tp.configure(p.plus || {}); }
       p.compound = Object.assign({}, DEFAULT_TYRES.compound, p.compound);
       p.surfaces = Object.assign({}, DEFAULT_TYRES.surfaces, p.surfaces);
       this.p = p;
@@ -461,6 +465,10 @@
       // understeer groan from the fronts
       const fr = clamp(+ctl.front || 0, 0, 1) * spdF;
       this.frontAmpT = fr * p.front * c.gain * (1 - sf.gravel);
+      if (this.plusOn && this.tp) { // 11-26 (3): New+'s four tyres (its own fronts replace the groan, but not in its low tier)
+        if (this.model === 'plus') this.tp.control(ctl, c, sf, p, dt, sp);
+        if (this.model === 'plus' && this.tp.p.on.four && !this.tp.p.lite) this.frontAmpT = 0;
+      }
       this.front.set('bp', Math.round(c.squealHz * 0.5 * sf.pitch), 7, 0, fs);
       // rolling roar, wind
       const rf = Math.round((140 + 26 * sp) * sf.roarHz);
@@ -495,7 +503,8 @@
         this.lockPh += 15 / fs; if (this.lockPh >= 1) this.lockPh -= 1;
         const lam = this.lockAM > 0.01 ? 1 - 0.4 * this.lockAM * (0.5 + 0.5 * Math.sin(TAU * this.lockPh)) : 1;
         let sq0 = 0, sq1 = 0;
-        if (this.s2 && this.model === 'new') { const s2 = this.s2; sq0 = s2.voice(0, r.b(), fs); sq1 = s2.voice(1, r.b(), fs); if (ch > 0) { sq0 += s2.chirp(0, ch, r.b()); sq1 += s2.chirp(1, ch, r.b()); } }
+        if (this.model === 'plus') { const tp = this.tp; tp.sample(); sq0 = tp.out[0]; sq1 = tp.out[1]; } // 11-26 (3): already panned
+        else if (this.s2 && this.model === 'new') { const s2 = this.s2; sq0 = s2.voice(0, r.b(), fs); sq1 = s2.voice(1, r.b(), fs); if (ch > 0) { sq0 += s2.chirp(0, ch, r.b()); sq1 += s2.chirp(1, ch, r.b()); } }
         else if (v0.ampT > 1e-4 || v0.amp > 1e-4 || ch > 0) {
           for (let k = 0; k < 2; k++) {
             const vo = k ? v1 : v0;
@@ -532,8 +541,9 @@
           const w = r.b();
           gv = this.gr1.run(w * this.grEnv1) * 3 + this.gr2.run(w * this.grEnv2) * 3 + this.grLow.run(r.b()) * this.grAmp * 0.25;
         }
-        let l = sq0 * 0.8 + sq1 * 0.45 + fr + rl + wl + kb + gv;
-        let rt = sq1 * 0.8 + sq0 * 0.45 + fr + rr + wr + kb + gv;
+        let l, rt;
+        if (this.model === 'plus') { l = sq0 + fr + rl + wl + kb + gv; rt = sq1 + fr + rr + wr + kb + gv; }
+        else { l = sq0 * 0.8 + sq1 * 0.45 + fr + rl + wl + kb + gv; rt = sq1 * 0.8 + sq0 * 0.45 + fr + rr + wr + kb + gv; }
         if (this.windOnly) { l = wl; rt = wr; } // 11-17: recorded tyres (audio/recorded.js) play all but the wind
         if (view > 0.001) { l += (this.inL.lp(l) - l) * view; rt += (this.inR.lp(rt) - rt) * view; }
         L[i] = clamp(l, -1, 1); R[i] = clamp(rt, -1, 1);
@@ -600,6 +610,59 @@
   };
   const COMB_GROUPS = ['firing', 'limiter', 'pulse', 'port', 'header', 'collector', 'turbine', 'pipe', 'muffler', 'tail', 'outlet', 'intake', 'block', 'guts', 'overrun', 'pops', 'shift', 'turbo', 'interior', 'mix'];
 
+  // ============================================================================================================
+  // 11-26 (3), NEW+ (Engine sound: New+): synth 2 with depth, after Evrtek on the Eleven passes: "I just feel like they're
+  // lacking in that cinema quality depth". An engine entry with `plus` is synth 2 plus these layers, each a switch
+  // (on.<layer> 0 turns that layer back into New's own behaviour, for A/B by ear) and a level (lvl.<layer>):
+  //   induction  the intake side as a second mic: turbulence drawn in by every suction stroke through a throttle
+  //              formant that opens with the pedal, the airbox's honk and a runner's ring (the flat six's howl), the
+  //              rotary's port buzz
+  //   mech       the third mic: a valvetrain tick at every valve closing (two per firing), a timing-chain (or the
+  //              rotary's gear) whine at teeth x crank speed, rising with the revs
+  //   irregular  cycle-to-cycle variation that remembers a little of the last cycle (AR(1)), and a slow wander of
+  //              strength, sharpness, turbulence and revs (a few per cent, under a hertz): alive, never rough
+  //   load       on load a level-independent soft clip that hardens the note (odd harmonics); off load the overrun
+  //              BURBLE (some pumping strokes burn late and irregular)
+  //   overrun    afterfire as CRACKLE: clusters of sub-millisecond cracks fired into the tailpipe and radiated at its
+  //              mouth, densest just after the throttle closes, more with the revs; the odd big bang (no recordings)
+  //   bass       phone bass: the weight a phone cannot play (the band under ~240 Hz) carried up where it can: the
+  //              exhaust's own firing harmonics at 280-900 Hz raised by as much as that low band holds (in phase, so it
+  //              never cancels), and harmonics generated from the low band when the 280-900 band is nearly empty
+  //   shift      on every change the drivetrain's clunk as the clutch takes up (a driveline thump and a metal clack),
+  //              and a crackle on the ignition cut
+  //   turbo      the whistle rising with boost (with its octave), compressor surge as a flutter ("stu-tu-tu": a
+  //              chuff per surge cycle at 8-16 Hz, slowing as the boost bleeds) and a synthesised blow-off
+  // `solo` plays one part alone (the bench and the solo reel). Nothing here touches New when `plus` is absent.
+  const DEFAULT_PLUS = {
+    on: { induction: 1, mech: 1, irregular: 1, load: 1, overrun: 1, bass: 1, shift: 1, turbo: 1 },
+    lvl: { exhaust: 1, induction: 1, mech: 1, overrun: 1, bass: 1, shift: 1, turbo: 1 },
+    induction: { gain: 0.5, roarLo: 300, roarHi: 1100, roarQ: 1.6, honkHz: 160, honkQ: 5, honk: 0.6, runnerHz: 540, runnerQ: 7, runner: 0.35, turb: 1, buzz: 0, buzzHz: 2300 },
+    mech: { gain: 0.5, tick: 0.5, tickHz: 4300, tickQ: 3, valves: 2, chain: 0.25, teeth: 19 },
+    irregular: { ar: 0.25, wander: 0.035, wanderHz: 0.7, sharp: 0.08, noise: 0.15, rpm: 0.0015 },
+    load: { odd: 0.55, drive: 2.4 },
+    overrun: { burble: 0.35, late: 45, crackle: 1, cluster: 5, crackHz: 2600, direct: 0.9, gain: 1, imp: 0.3, burst: 0.8, body: 2.5 },
+    bass: { gain: 1, fc: 240, lo: 280, hi: 900 },
+    shift: { pop: 0.5, clunk: 0.5, clunkHz: 55, clack: 0.35 },
+    turbo: { whistle: 1, surge: 1, surgeHz: 12, bov: 1 },
+    solo: '', lite: false,
+  };
+  const PLUS_GROUPS = ['on', 'lvl', 'induction', 'mech', 'irregular', 'load', 'overrun', 'bass', 'shift', 'turbo'];
+  function plusOf(x) { const o = Object.assign({}, DEFAULT_PLUS, x); for (const k of PLUS_GROUPS) o[k] = Object.assign({}, DEFAULT_PLUS[k], x[k]); return o; }
+  class PlusState { // what New+ keeps between samples (made once, only for an engine with `plus`)
+    constructor() {
+      this.c = 0; this.tLp = 0; this.wv = [0, 0, 0, 0]; this.wA = 0; this.wS = 0; this.wN = 0; this.wR = 0;
+      this.roar = new Biquad(); this.honk = new Biquad(); this.runner = new Biquad(); this.buzzBp = new Biquad(); this.buzzE = 0; this.ivE = 0; this.inGate = 0; this.buzzAmp = 0;
+      this.tQ = new Float64Array(12); this.tA = new Float32Array(12); this.tN = 0; this.tE = 0; this.tB1 = new Biquad(); this.tB2 = new Biquad(); this.tickLvl = 0;
+      this.chPh = 0; this.chBp = new Biquad(); this.chAmp = 0; this.chF = 1000; this.meLp = new OnePole();
+      this.ms = 1e-4; this.ms2 = 1e-4; this.odd = 0;
+      this.cQ = new Float64Array(32); this.cA = new Float32Array(32); this.cN = 0; this.cE = 0; this.cImp = 0; this.cB = 0; this.cBl = 0; this.crBp = new Biquad(); this.crHp = new OnePole(); this.burbleP = 0;
+      this.bl1 = new Biquad(); this.bl2 = new Biquad(); this.bh1 = new Biquad(); this.bh2 = new Biquad(); this.bLp = new Biquad(); this.bEnv = 0; this.bEnvB = 0; this.bG = new Biquad(); this.bGh = new Biquad();
+      this.kE = 0; this.kPh = 0; this.kF = 55; this.kC = 0; this.kB1 = new Biquad(); this.kB2 = new Biquad();
+      this.sE = 0; this.sPh = 0; this.sF = 12; this.chuff = 0; this.sB1 = new Biquad(); this.sB2 = new Biquad(); this.wPh2 = 0;
+      this.cutWas = 0; this.blipWas = 0; this.preLift = 0;
+    }
+  }
+
   class Combustion {
     constructor(fs, rng) {
       this.fs = fs; this.r = rng;
@@ -624,6 +687,7 @@
       this.boost = 0; this.shaft = 0; this.limOn = false; this.limRpm = 0; this.limCut = 0; this.cutT = 0; this.land = 0; this.blipT = 0; this.barkN = 0;
       this.wob = 0; this.huntPh = 0; this.view = 0; this.nos = 0; this.gears = null; this.gear = 1; this.speed = 0;
       this.meter = { boost: 0, limiter: 0, pops: 0, rpm: 0, cut: 0 }; this.pops = 0;
+      this.P = null; this.X = null; this.trace = null; // 11-26 (3): New+ (plusOf) and its state; trace: the firings, for the judge
       this.configure(DEFAULT_COMB);
     }
     configure(p) {
@@ -664,11 +728,24 @@
       this.kR = 1 - Math.exp(-1 / (Math.max(0.002, p.flywheel) * fs)); this.kL = 1 - Math.exp(-1 / (0.025 * fs)); this.kLu = 1 - Math.exp(-1 / (0.012 * fs));
       this.bovKind = p.turbo.bov === 'flutter' ? 2 : p.turbo.bov === 'both' ? 3 : p.turbo.bov === 'none' ? 0 : 1;
       this.lite = !!p.lite;
+      // 11-26 (3): New+
+      if (p.plus) {
+        const X = this.P = plusOf(p.plus), S = this.X || (this.X = new PlusState()), I = X.induction, M = X.mech, O = X.overrun, B = X.bass;
+        S.honk.set('bp', I.honkHz, I.honkQ, 0, fs); S.runner.set('bp', I.runnerHz, I.runnerQ, 0, fs); S.buzzBp.set('bp', I.buzzHz, 1.2, 0, fs);
+        S.tB1.set('bp', M.tickHz, M.tickQ, 0, fs); S.tB2.set('bp', M.tickHz * 1.62, M.tickQ * 1.3, 0, fs); S.meLp.set(7000, fs);
+        S.crBp.set('bp', O.crackHz, 0.8, 0, fs); S.crHp.set(350, fs);
+        S.bl1.set('lp', B.fc, 0.707, 0, fs); S.bl2.set('lp', B.fc, 0.707, 0, fs); S.bh1.set('hp', B.lo, 0.707, 0, fs); S.bh2.set('hp', B.lo, 0.707, 0, fs); S.bLp.set('lp', B.hi, 0.707, 0, fs); S.bG.set('lp', B.hi, 0.707, 0, fs); S.bGh.set('hp', B.lo, 0.707, 0, fs);
+        S.kB1.set('bp', 1350, 7, 0, fs); S.kB2.set('bp', 2900, 9, 0, fs);
+        S.sB1.set('bp', 760, 1.6, 0, fs); S.sB2.set('bp', 2100, 2.2, 0, fs);
+        this.tDec = Math.exp(-1 / (0.0006 * fs)); this.cDec = Math.exp(-1 / (0.0007 * fs)); this.cBd = Math.exp(-1 / (0.0025 * fs)); this.cBk = 1 - Math.exp(-TAU * 1800 / fs); this.kDec = Math.exp(-1 / (0.05 * fs)); this.kcDec = Math.exp(-1 / (0.012 * fs)); this.chuffDec = Math.exp(-1 / (0.016 * fs));
+        this.buzzDec = Math.exp(-1 / (0.0004 * fs)); this.tLpK = 1 - Math.exp(-TAU * 1600 / fs); this.ivK = 1 - Math.exp(-1 / (0.003 * fs)); this.msK = 1 - Math.exp(-1 / (0.03 * fs)); this.bEnvR = 1 - Math.exp(-1 / (0.08 * fs));
+      } else this.P = null;
     }
     setGears(r) { this.gears = Array.isArray(r) && r.length ? r.slice() : null; }
     setSamples(b) { for (const k in b) this.bufs[k] = b[k]; }
     // a recorded one-shot (the blow-off, the flutter, a big bang), if its take has arrived; true when it played
     shot(name, gain, rate) {
+      if (this.P) return false; // 11-26 (3): New+ is synthesis throughout (its blow-off, flutter and bangs are made here)
       const b = this.bufs[name]; if (!b || !b.data) return false;
       let s = this.shots[0]; for (const x of this.shots) if (!x.on) { s = x; break; }
       s.b = b.data; s.p = 0; s.r = (rate || 1) * (b.rate || 48000) / this.fs; s.g = gain; s.on = true; s.end = b.data.length - 2; s.fade = 0; return true;
@@ -684,18 +761,36 @@
         this.cutT = clamp(cut == null ? 0.15 : +cut, 0.04, 0.5);
         this.land = ratio ? this.rpm * ratio : 0; // where the revs land: rpm x next / current ratio
         if (p.turbo.on && this.boost > 0.35 && !p.shift.flat) this.lift(0.6);
+        // 11-26 (3), New+: the ignition cut crackles on every change of a car that pops (shift.pop), more on a flat shift
+        if (this.P && this.P.on.shift) { const X = this.P, c = X.shift.pop * (this.rpm > p.pops.minRpm * 0.8 ? 1 : 0.3) * (p.shift.flat ? 1.6 : 1); if (this.r.u() < c) { const n = 1 + ((this.r.u() * (p.shift.flat ? 3 : 2)) | 0); for (let i = 0; i < n; i++) this.queuePop(this.fs * (0.012 + 0.035 * i + 0.02 * this.r.u()), p.pops.gain * (0.5 + 0.5 * this.r.u()), i === 0 && this.r.u() < p.pops.bang * 1.5); } }
         // a flat shift (the throttle held through the ignition cut) bangs; an H-pattern lift sometimes crackles
-        if (this.rpm > p.pops.minRpm && this.r.u() < p.pops.shift * (p.shift.flat ? 2.2 : 1)) { const n = 1 + ((this.r.u() * (p.shift.flat ? 3 : 2)) | 0); for (let i = 0; i < n; i++) this.queuePop(this.fs * (0.01 + 0.03 * i + 0.02 * this.r.u()), p.pops.gain * (0.5 + 0.5 * this.r.u()), i === 0 && this.r.u() < p.pops.bang * 2); }
+        else if (this.rpm > p.pops.minRpm && this.r.u() < p.pops.shift * (p.shift.flat ? 2.2 : 1)) { const n = 1 + ((this.r.u() * (p.shift.flat ? 3 : 2)) | 0); for (let i = 0; i < n; i++) this.queuePop(this.fs * (0.01 + 0.03 * i + 0.02 * this.r.u()), p.pops.gain * (0.5 + 0.5 * this.r.u()), i === 0 && this.r.u() < p.pops.bang * 2); }
       } else { // a downshift: the blip
         this.blipT = 0.13; this.land = ratio ? this.rpm * ratio * (1 + p.shift.blip) : this.rpm * (1 + p.shift.blip);
-        if (this.rpm > p.pops.minRpm * 0.8 && this.r.u() < p.pops.blip) this.queuePop(this.fs * (0.08 + 0.05 * this.r.u()), p.pops.gain * 0.6, false);
+        if (this.P && this.P.on.shift) { if (this.rpm > p.pops.minRpm * 0.8 && this.r.u() < Math.max(p.pops.blip, this.P.shift.pop * 0.6)) this.queuePop(this.fs * (0.08 + 0.05 * this.r.u()), p.pops.gain * 0.6, false); }
+        else if (this.rpm > p.pops.minRpm * 0.8 && this.r.u() < p.pops.blip) this.queuePop(this.fs * (0.08 + 0.05 * this.r.u()), p.pops.gain * 0.6, false);
       }
+    }
+    // 11-26 (3), New+: the drivetrain's clunk as the clutch takes up (k: 1 an upshift, less for a downshift's blip)
+    clunk(k) {
+      const X = this.P, S = this.X, g = this.gear || 2;
+      const a = X.shift.clunk * X.lvl.shift * k * (g <= 2 ? 1 : g === 3 ? 0.8 : 0.65) * this.weight;
+      S.kE = Math.max(S.kE, a * 1.2); S.kC = Math.max(S.kC, a * X.shift.clack * 2); S.kPh = 0; S.kF = X.shift.clunkHz * (0.9 + 0.2 * this.r.u());
     }
     lift(k = 1) {
       this.tLift = 0;
+      if (this.P) this.X.preLift = this.load; // 11-26 (3): a lift from full load crackles more
       const t = this.p.turbo;
       if (!t.on || this.boost < 0.3 || !this.bovKind) return;
       const b = this.boost * k;
+      // 11-26 (3), New+: the blow-off and the compressor's surge, synthesised (the surge: a chuff per cycle, render())
+      if (this.P && this.P.on.turbo) {
+        const X = this.P, S = this.X;
+        if (this.bovKind === 1 || this.bovKind === 3) { this.bovEnv = Math.max(this.bovEnv, t.bovGain * b * X.turbo.bov); this.bovF = 4200; }
+        if (this.bovKind >= 2) { S.sE = Math.max(S.sE, t.flutterGain * b * X.turbo.surge); S.sPh = 0.75; }
+        this.boost *= this.bovKind === 2 ? 0.55 : 0.2;
+        return;
+      }
       if (this.bovKind === 1 || this.bovKind === 3) { if (!this.shot('bov', t.bovGain * b * 1.4, 0.96 + 0.08 * this.r.u())) this.bovEnv = Math.max(this.bovEnv, t.bovGain * b); this.bovF = 4200; }
       if (this.bovKind >= 2) { if (!this.shot('flutter', t.flutterGain * b * 1.4, 0.95 + 0.1 * this.r.u())) { this.flEnv = Math.max(this.flEnv, t.flutterGain * b); this.flF = 16 + 4 * this.r.u(); } }
       this.boost *= this.bovKind === 2 ? 0.55 : 0.2;
@@ -703,7 +798,38 @@
     queuePop(delay, amp, big) {
       for (let j = 0; j < 16; j++) if (this.popQ[j] <= 0) { this.popQ[j] = Math.max(1, delay); this.popA[j] = big ? -amp : amp; this.popN++; return; }
     }
+    // 11-26 (3), New+: one combustion, as fire() below, with the cycle remembering a little of the last (AR(1)), the slow
+    // wander, the overrun's late burns (the burble) and the valves closing (two ticks per firing)
+    firePlus(k, over) {
+      const p = this.p, P = p.pulse, r = this.r, X = this.P, S = this.X;
+      let g = r.g();
+      if (X.on.irregular) { const ar = X.irregular.ar; S.c = ar * S.c + Math.sqrt(1 - ar * ar) * g; g = S.c; }
+      let a = this.amp * this.evW[k] * Math.max(0.05, 1 + this.ccv * g) * (1 + S.wA), late = 0;
+      if (!this.igOn) a = this.pump * (0.7 + 0.6 * r.u());
+      else if (r.u() < this.miss) a *= 0.12;
+      else if (S.burbleP > 0 && r.u() < S.burbleP) { a *= 0.4 + 2.2 * r.u(); late = X.overrun.late * (0.3 + 0.7 * r.u()); } // a pumping stroke that burns late: the burble
+      if (this.igOn && this.barkN > 0) { a *= 1 + P.bark; this.barkN--; }
+      const s = this.pz[this.pzI]; this.pzI = (this.pzI + 1) % (this.lite ? 6 : this.pz.length);
+      const rr = Math.max(300, this.rpm), w = Math.min(P.maxMs / 1000, P.deg / (6 * rr)) * (this.igOn ? 1 : 1.4), dps = 6 * rr / this.fs;
+      const jit = this.jit * Math.abs(r.g());
+      s.on = true; s.inc = TN / (w * this.fs); s.x = (over - jit - late) / dps * s.inc; s.a = a; s.b = this.evB[k];
+      s.s = this.igOn ? clamp(this.sharpNow * (1 + S.wS), 0, 1) : 0; s.n = (this.igOn ? this.noiseNow : P.noiseOff) * Math.max(0, 1 + S.wN);
+      const q = this.iz[this.izI]; this.izI = (this.izI + 1) % this.iz.length;
+      q.on = true; q.x = 0; q.wait = p.intake.offsetDeg / (6 * rr) * this.fs; q.inc = TN / (Math.min(0.012, 220 / (6 * rr)) * this.fs); q.a = this.inAmp * this.evW[k];
+      if (this.igOn) this.blkX += a * p.block.gain;
+      if (X.induction.buzz > 0 && this.igOn) S.buzzE = Math.min(1.5, a / Math.max(1e-4, this.amp));
+      if (S.tickLvl > 1e-6) for (let v = 0; v < X.mech.valves; v++) { // the exhaust valve seats near TDC, the intake's near BDC
+        const deg = (v ? 230 : 400) + 8 * r.b();
+        if (S.tN < 12) for (let j = 0; j < 12; j++) if (S.tQ[j] <= 0) { S.tQ[j] = Math.max(1, (deg - over) / dps); S.tA[j] = S.tickLvl * (0.7 + 0.6 * r.u()); S.tN++; break; }
+      }
+      if (this.popP > 0 && r.u() < this.popP && this.popN < 12) {
+        const amp = p.pops.gain * (0.3 + 0.6 * r.u());
+        this.queuePop(this.fs * (0.002 + 0.006 * r.u()), amp, r.u() < p.pops.bang);
+      }
+      if (this.trace && this.trace.length < 200000) this.trace.push(this.igOn ? a / Math.max(1e-9, this.amp * this.evW[k]) : -1, jit + late, this.load);
+    }
     fire(k, over) {
+      if (this.P) { this.firePlus(k, over); return; }
       const p = this.p, P = p.pulse, r = this.r;
       let a = this.amp * this.evW[k] * Math.max(0.05, 1 + this.ccv * r.g());
       if (!this.igOn) a = this.pump * (0.7 + 0.6 * r.u());            // no spark: the cylinder only pumps air
@@ -795,7 +921,76 @@
       // the recorded flutter fades with the boost it is letting go of
       if (this.boost < 0.1) this.fadeShot('flutter', 0.25);
       this.view += ((ctl.view ? 1 : 0) - this.view) * Math.min(1, dt / 0.25);
+      if (this.P) this.controlPlus(dt, thr, rn);
       const m = this.meter; m.boost = this.boost; m.limiter = this.limOn ? 1 : 0; m.rpm = this.rpm; m.pops = this.pops; m.cut = this.igOn ? 0 : 1;
+    }
+    // 11-26 (3), New+: each block, the layers' levels and filters from the revs, the load and the pedal
+    controlPlus(dt, thr, rn) {
+      const X = this.P, S = this.X, r = this.r, fs = this.fs, L = this.load, p = this.p;
+      // the slow wander: four smoothed random walks (strength, sharpness, turbulence, revs), each of unit spread
+      if (X.on.irregular) {
+        const k = 1 - Math.exp(-dt * TAU * X.irregular.wanderHz), nrm = Math.sqrt((2 - k) / k);
+        for (let j = 0; j < 4; j++) S.wv[j] += k * (r.g() - S.wv[j]);
+        const c = (v) => clamp(v * nrm, -2.5, 2.5);
+        S.wA = X.irregular.wander * c(S.wv[0]); S.wS = X.irregular.sharp * c(S.wv[1]); S.wN = X.irregular.noise * c(S.wv[2]); S.wR = X.irregular.rpm * c(S.wv[3]);
+        this.rpmT *= 1 + S.wR;
+      } else { S.wA = S.wS = S.wN = S.wR = 0; }
+      // induction: the throttle formant opens with the pedal (and a little with the revs); all of it gated by the pedal
+      const I = X.induction;
+      if (X.on.induction && !X.lite) {
+        const fr = I.roarLo * Math.pow(I.roarHi / I.roarLo, Math.pow(thr, 0.7)) * (0.85 + 0.3 * rn);
+        S.roar.set('bp', Math.round(fr), I.roarQ, 0, fs);
+        S.inGate = I.gain * 1.4 * (0.08 + 0.92 * Math.pow(thr, 1.3)) * (0.35 + 0.65 * rn) * this.weight;
+        S.buzzAmp = I.buzz * (0.25 + 0.75 * thr) * (0.3 + 0.7 * rn);
+      } else { S.inGate = 0; S.buzzAmp = 0; }
+      // the mechanicals: valve ticks by the revs and the load; the chain's whine at teeth x crank speed, by revs squared
+      const M = X.mech;
+      if (X.on.mech && !X.lite) {
+        S.tickLvl = M.gain * M.tick * Math.sqrt(Math.max(0.05, rn)) * (0.6 + 0.4 * L) * 0.65;
+        S.chF = this.rpm / 60 * M.teeth; if (S.chF < fs * 0.4) S.chBp.set('bp', Math.round(S.chF), 30, 0, fs);
+        S.chAmp = S.chF < fs * 0.4 ? M.gain * M.chain * rn * rn * 0.12 : 0;
+      } else { S.tickLvl = 0; S.chAmp = 0; }
+      S.odd = X.on.load ? X.load.odd * Math.pow(L, 1.2) : 0;
+      // the overrun: late burns (burble) and crackle, densest just after the lift, more with the revs and a harder lift
+      if (X.on.overrun && this.igOn) {
+        const off = clamp(1 - L / 0.3, 0, 1), rpmB = sstep(p.idleRpm + 400, p.idleRpm + 2200, this.rpm);
+        S.burbleP = X.overrun.burble * off * rpmB * (0.45 + 0.55 * Math.exp(-this.tLift / 2));
+        const evPerSec = Math.max(1, this.nEv * this.rpm / 120), rpmF = sstep(p.pops.minRpm, p.pops.minRpm + 2400, this.rpm) * (0.5 + 0.5 * rn);
+        const k2 = 0.4 + 0.6 * clamp(S.preLift, 0, 1);
+        this.popP = off > 0 ? p.pops.amount * X.overrun.crackle * rpmF * (0.35 + 9 * Math.exp(-this.tLift / 0.8) * k2) * off / evPerSec : 0;
+      } else S.burbleP = 0;
+      // the clutch taking up: at the end of an upshift's cut, and as a downshift's blip settles
+      if (X.on.shift) { if (S.cutWas > 0 && this.cutT <= 0) this.clunk(1); if (S.blipWas > 0 && this.blipT <= 0) this.clunk(0.6); }
+      S.cutWas = this.cutT; S.blipWas = this.blipT;
+      // the turbo: the whistle by boost (not the shaft's lag alone); the surge slowing and dying as the boost bleeds
+      const t = p.turbo;
+      if (t.on && X.on.turbo) this.twAmp = t.whine * X.turbo.whistle * 1.1 * Math.pow(this.boost, 1.3) * (0.35 + 0.65 * L);
+      if (S.sE > 1e-4) { S.sF = X.turbo.surgeHz * (0.65 + 0.6 * Math.min(1, S.sE / 0.4)); S.sE *= Math.exp(-dt / 0.42); }
+    }
+    // 11-26 (3), New+: the afterfire, one sample: a queued pop becomes a cluster of sub-millisecond cracks; a big one a bang
+    popPlus(w) {
+      const S = this.X, O = this.P.overrun, r = this.r, fs = this.fs;
+      if (this.popN > 0) for (let j = 0; j < 16; j++) if (this.popQ[j] > 0 && --this.popQ[j] <= 0) {
+        this.popN--; this.pops++; const A = this.popA[j], a = Math.abs(A);
+        if (A < 0) { this.popE = Math.max(this.popE, a * 1.6); this.thE = Math.max(this.thE, a * 1.8); this.thPh = 0; this.thF = 70 + 30 * r.u(); }
+        const n = 1 + ((r.u() * O.cluster) | 0); let d = 1;
+        for (let i = 0; i < n && S.cN < 30; i++) {
+          for (let q = 0; q < 32; q++) if (S.cQ[q] <= 0) { S.cQ[q] = d; S.cA[q] = a * (0.4 + 0.6 * r.u()) * (1 - i / (n + 1)); S.cN++; break; }
+          d += fs * (0.0015 + 0.013 * r.u());
+        }
+      }
+      if (S.cN > 0) for (let q = 0; q < 32; q++) if (S.cQ[q] > 0 && --S.cQ[q] <= 0) { S.cN--; const a = S.cA[q]; if (a > S.cE) S.cE = a; if (a > S.cB) S.cB = a * 0.7; S.cImp += r.u() < 0.5 ? -a : a; }
+      let y = 0;
+      if (S.cE > 1e-5) { y = S.cImp * O.imp + S.cE * w * O.burst; S.cE *= this.cDec; }
+      if (S.cB > 1e-5) { S.cBl += this.cBk * (w - S.cBl); y += S.cBl * S.cB * O.body; S.cB *= this.cBd; }
+      S.cImp = 0;
+      let bang = 0; // the odd big one: New's bang, at New's level
+      if (this.popE > 1e-5 || this.thE > 1e-5) {
+        this.popE *= this.popDec; this.thE *= this.thDec; this.thPh += this.thF / fs; if (this.thPh >= 1) this.thPh -= 1;
+        bang = (this.popE * w * 1.6 + this.thE * Math.sin(TAU * this.thPh)) * 0.3;
+      }
+      S.crack = y;
+      return (y * 1.6 + bang * 0.55) * this.p.pops.gain * O.gain * this.P.lvl.overrun;
     }
 
     render(out, n, ctl) {
@@ -807,8 +1002,11 @@
       const drive = this.drive * 0.5, invD = 1 / drive, popG = p.pops.gain, gutsG = p.guts.gain, hollow = p.overrun.hollow;
       const v = this.view, mx = p.mix, ii = p.interior;
       const gEx = mx.exhaust * (1 - v), gBody = mx.exhaust * ii.exhaust * v, gIn = mx.intake * ((1 - v) + ii.intake * v * 1.6), gBl = mx.block * ((1 - v) + ii.block * v), gTu = mx.turbo * ((1 - v) + ii.turbo * v), gSh = mx.shots;
-      const intakeG = p.intake.gain, turbo = p.turbo.on || this.bovEnv > 1e-4 || this.flEnv > 1e-4, twin = p.turbo.twin;
+      const intakeG = p.intake.gain, turbo = p.turbo.on || this.bovEnv > 1e-4 || this.flEnv > 1e-4 || (this.P && this.X.sE > 1e-4), twin = p.turbo.twin;
       const nch = dual ? 2 : 1;
+      // 11-26 (3), New+: which layers run, and their gains (inside, the intake and the mechanicals come closer)
+      const X = this.P, S = this.X, crackle = X && X.on.overrun, plusBass = X && X.on.bass, plusTurbo = X && X.on.turbo;
+      const gInd = X ? (1 - v) + 1.6 * v : 0, gMe = X ? (1 - v) + 1.8 * v : 0;
       for (let i = 0; i < n; i++) {
         this.rpm += (this.rpmT - this.rpm) * this.rpmK;
         this.load += (this.loadT - this.load) * (this.loadT > this.load ? this.kLu : this.kL);
@@ -860,7 +1058,8 @@
           if (kT < 1) { this.turbL[c] += kT * (toPipe - this.turbL[c]); toPipe = this.turbL[c]; } // the turbine smooths the pulses
           // pipe -> muffler -> tailpipe (pops fired in at the tailpipe's inlet) -> the open end
           let pop = 0;
-          if (c === 0 && (this.popN > 0 || this.popE > 1e-5 || this.thE > 1e-5)) {
+          if (c === 0 && crackle) pop = this.popPlus(w2);
+          else if (c === 0 && (this.popN > 0 || this.popE > 1e-5 || this.thE > 1e-5)) {
             if (this.popN > 0) for (let j = 0; j < 16; j++) if (this.popQ[j] > 0 && --this.popQ[j] <= 0) {
               this.popN--; this.pops++; const A = this.popA[j], big = A < 0, a = Math.abs(A);
               if (big && this.shot(r.u() < 0.6 ? 'bang' : 'boom', a * 0.9, 0.92 + 0.16 * r.u())) continue;
@@ -882,8 +1081,11 @@
         if (dual) y *= 0.7;
         const ex = this.rad.hp(y);
         // the guts: the low band's harmonics, regenerated (a full-wave and a squared copy), for speakers without bass
-        const lb = this.gLp2.run(this.gLp1.run(ex)); this.gEnv += 0.002 * (Math.abs(lb) - this.gEnv);
-        const xn = lb / (this.gEnv + 1e-4), gh = this.gOut.run(this.gHp.run((0.55 * xn * Math.abs(xn) + 0.45 * Math.abs(xn)) * this.gEnv));
+        let gh = 0;
+        if (!plusBass) {
+          const lb = this.gLp2.run(this.gLp1.run(ex)); this.gEnv += 0.002 * (Math.abs(lb) - this.gEnv);
+          const xn = lb / (this.gEnv + 1e-4); gh = this.gOut.run(this.gHp.run((0.55 * xn * Math.abs(xn) + 0.45 * Math.abs(xn)) * this.gEnv));
+        }
         // the intake: suction pulses up the runner, a closed valve at one end, the plenum at the other
         let inOut = 0;
         if (!this.lite) { this.inT.read(); this.inOpen += kInO * (this.inT.ar - this.inOpen); this.inT.write(iv + rInV * this.inT.al, rInO * this.inOpen); inOut = this.plenum.run(this.inT.ar + this.ihiss.run(w1) * this.hissNow) * intakeG; }
@@ -892,7 +1094,16 @@
         const bl = this.blk.run(this.blkX) * 3 + Math.sin(TAU * this.crank / 360) * this.o1; this.blkX = 0;
         // the turbo
         let tu = 0;
-        if (turbo) {
+        if (turbo && plusTurbo) { // 11-26 (3), New+: the whistle with its octave, the blow-off, the compressor's surge
+          this.twPh += this.twF / fs; if (this.twPh >= 1) this.twPh -= 1; S.wPh2 += 2.004 * this.twF / fs; if (S.wPh2 >= 1) S.wPh2 -= 1;
+          tu = (Math.sin(TAU * this.twPh) * 0.4 + Math.sin(TAU * S.wPh2) * 0.1 + this.tw.run(w1) * 2.4) * this.twAmp + this.whoosh.hp(w2) * this.whAmp * 0.45;
+          if (twin) tu += this.tw2.run(w2) * 2 * this.twAmp;
+          if (this.bovEnv > 1e-4) { this.bovEnv *= this.bovDec; tu += this.bovBp.run(w1) * this.bovEnv * 2.4; }
+          if (S.sE > 1e-4) {
+            S.sPh += S.sF / fs; if (S.sPh >= 1) { S.sPh -= 1; S.chuff = S.sE * (0.7 + 0.6 * r.u()); }
+            if (S.chuff > 1e-5) { const wv = r.b(); tu += (S.sB1.run(wv) + 0.55 * S.sB2.run(wv)) * S.chuff * 2.6; S.chuff *= this.chuffDec; }
+          }
+        } else if (turbo) {
           this.twPh += this.twF / fs; if (this.twPh >= 1) this.twPh -= 1;
           tu = (Math.sin(TAU * this.twPh) * 0.3 + this.tw.run(w1) * 3) * this.twAmp + this.whoosh.hp(w2) * this.whAmp * 0.45;
           if (twin) tu += this.tw2.run(w2) * 2 * this.twAmp;
@@ -907,11 +1118,180 @@
           const d = s.b, f = s.p - k; sv += (d[k] + (d[k + 1] - d[k]) * f) * s.g; s.p += s.r;
           if (s.fade) { s.g *= s.fk; if (s.g < 1e-4) s.on = false; }
         }
+        if (X) { out[i] = this.mixPlus(ex, gh * gutsG, iv, inOut, bl, tu, w1, gEx, gBody, gIn, gBl, gTu, gInd, gMe, v); continue; }
         let o = (ex + gh * gutsG) * gEx + inOut * gIn + bl * gBl + tu * gTu + sv * gSh;
         if (v > 0.001) { o += this.body.run(ex + gh * gutsG) * gBody; o = this.boom.run(o); }
         o = this.dc.hp(o * p.gain);
         out[i] = o > 0.9 ? 0.9 + 0.1 * softclip((o - 0.9) * 10) : o < -0.9 ? -0.9 + 0.1 * softclip((o + 0.9) * 10) : o;
       }
+    }
+    // 11-26 (3), New+: one output sample from the exhaust (ex) and New's own parts, with the layers added (or one alone)
+    mixPlus(ex, gh, iv, inOut, bl, tu, w1, gEx, gBody, gIn, gBl, gTu, gInd, gMe, v) {
+      const X = this.P, S = this.X, p = this.p, r = this.r, fs = this.fs, L = X.lvl;
+      // on load, harder: a soft clip that sees the note at a fixed level (so it shapes, never just compresses the loud)
+      let exP = ex;
+      // (the clipped copy is brought back to the note's own level: the hardening changes the tone, never the loudness)
+      if (S.odd > 1e-4) { S.ms += this.msK * (ex * ex - S.ms); const ref = Math.sqrt(S.ms) * 2.5 + 1e-6, D = X.load.drive, sc = softclip(D * ex / ref) * ref / D; S.ms2 += this.msK * (sc * sc - S.ms2); exP = ex + S.odd * (sc * Math.sqrt(S.ms / (S.ms2 + 1e-12)) - ex); }
+      // phone bass: the exhaust's own firing harmonics in the band a phone plays (lo..hi) raised by as much as the band under
+      // fc carries (what the phone loses), on envelopes slower than a firing, so it adds in phase, never cancels (11-26 (3),
+      // measured: harmonics generated apart from them cancelled the exhaust's by up to 3 dB); when that band is nearly
+      // empty (the ratio over 2), harmonics generated from the low band itself (clipped and rectified) fill it
+      let hb = gh;
+      if (X.on.bass) {
+        const lb = S.bl2.run(S.bl1.run(ex)), bb = S.bLp.run(S.bh2.run(S.bh1.run(ex)));
+        S.bEnv += this.bEnvR * (Math.abs(lb) - S.bEnv); S.bEnvB += this.bEnvR * (Math.abs(bb) - S.bEnvB);
+        const ratio = S.bEnv / (S.bEnvB + 1e-6), g = X.bass.gain * L.bass * clamp(ratio - 0.4, 0, 2.2) * 0.5;
+        hb = bb * g;
+        const fill = sstep(2, 6, ratio);
+        if (fill > 0) { const xn = lb / (S.bEnv * 1.4 + 1e-6), cl = xn > 1 ? 1 : xn < -1 ? -1 : xn; hb += S.bG.run(S.bGh.run(0.65 * cl + 0.35 * Math.abs(cl))) * S.bEnv * X.bass.gain * L.bass * fill; }
+      }
+      // the induction mic: turbulence drawn in by each suction stroke, the throttle formant, the airbox, the runner, the buzz
+      let ind = 0;
+      if (S.inGate > 1e-6) {
+        S.ivE += this.ivK * (Math.abs(iv) - S.ivE);
+        const w3 = r.b(); S.tLp += this.tLpK * (w3 - S.tLp);
+        const turb = S.tLp * S.ivE * X.induction.turb * 1.4, src = iv * 0.8 + turb * 0.5;
+        ind = S.roar.run(iv * 0.9 + turb) * 1.2 + S.honk.run(src) * X.induction.honk * 2 + S.runner.run(src) * X.induction.runner * 1.6;
+        if (S.buzzAmp > 1e-5) { ind += S.buzzBp.run(S.buzzE * w3) * S.buzzAmp * 3; S.buzzE *= this.buzzDec; }
+        ind *= S.inGate;
+      }
+      // the mechanical mic: valve ticks as they come due, the chain's whine
+      let me = 0;
+      if (S.tN > 0) for (let j = 0; j < 12; j++) if (S.tQ[j] > 0 && --S.tQ[j] <= 0) { S.tN--; if (S.tA[j] > S.tE) S.tE = S.tA[j]; }
+      if (S.tE > 1e-6) { const wv = r.b() * S.tE; me += S.tB1.run(wv) + 0.3 * S.tB2.run(wv); S.tE *= this.tDec; }
+      if (S.chAmp > 1e-7) { S.chPh += S.chF / fs; if (S.chPh >= 1) S.chPh -= 1; me += (Math.sin(TAU * S.chPh) * 0.35 + S.chBp.run(w1) * 2.5) * S.chAmp; }
+      me = S.meLp.lp(me); // the block and the bay take the top off (7 kHz)
+      // the clutch taking up: a driveline thump (and its 2.6x partial) and a metal clack
+      let ck = 0;
+      if (S.kE > 1e-5 || S.kC > 1e-5) {
+        S.kPh += S.kF / fs; ck = (Math.sin(TAU * S.kPh) + 0.5 * Math.sin(TAU * S.kPh * 2.6)) * S.kE; S.kE *= this.kDec;
+        const wv = r.b() * S.kC; ck += (S.kB1.run(wv) + 0.7 * S.kB2.run(wv)) * 2.5; S.kC *= this.kcDec;
+      }
+      // the cracks, radiated at the tailpipe's mouth as well as fired into it
+      const cr = X.on.overrun ? S.crBp.run(S.crHp.hp(S.crack)) * X.overrun.direct * L.overrun * p.pops.gain : 0;
+      const exM = (exP + hb) * L.exhaust;
+      let o;
+      if (X.solo) {
+        const s = X.solo;
+        o = s === 'exhaust' ? exP * gEx : s === 'bass' ? hb * gEx : s === 'induction' ? ind * gInd + inOut * gIn : s === 'mech' ? me * gMe : s === 'turbo' ? tu * gTu
+          : s === 'shift' ? ck * gBl : s === 'crackle' ? (cr * 3 + S.crack * 0.35) * gEx : s === 'odd' ? (exP - ex) * gEx * 2 : 0;
+      } else {
+        o = exM * gEx + inOut * gIn + bl * gBl + tu * gTu * L.turbo + ind * gInd * L.induction + me * gMe * L.mech + ck * gBl + cr * gEx;
+        if (v > 0.001) { o += this.body.run(exM) * gBody; o = this.boom.run(o); }
+      }
+      o = this.dc.hp(o * p.gain);
+      return o > 0.9 ? 0.9 + 0.1 * softclip((o - 0.9) * 10) : o < -0.9 ? -0.9 + 0.1 * softclip((o + 0.9) * 10) : o;
+    }
+  }
+
+  // ============================================================================================================
+  // 11-26 (3), NEW+ TYRES: a stick-slip screech per tyre, no loop anywhere. Each tyre is a friction oscillator (the tread
+  // sticks, loads up and lets go: a ramp and a sudden release, its period jittering more the rougher the slide) ringing
+  // the tread's two modes and the belt's broad one, with noise by the sliding speed:
+  //   - from its own slip angle (the game's alphaR / alphaF, or read back from the slip share): howl at the edge of grip
+  //     (Q about 36, almost a tone), screech deep past it (Q about 8, rough, chattering);
+  //   - its load (front/rear share, the lateral transfer: in a drift the outer wheels carry more): louder and LOWER with
+  //     load, quieter, higher and thinner when light;
+  //   - the sliding speed (speed x sin(slip angle), plus wheelspin): brighter the faster the rubber slides.
+  // The rears scream, the fronts scrub (lower, noisier, quieter), each detuned a little from the others and panned
+  // where it is. Transitions: a sharp chirp as a slide starts, a bite (a chirp and a thump) as it regrips, a scrub
+  // that decays as the slide dies, a squeak as a sliding rear crosses a painted line.
+  const DEFAULT_TP = { on: { screech: 1, four: 1, transitions: 1 }, lvl: { screech: 1, front: 1, transitions: 1, scrub: 1 }, rear: 1, front: 0.5, peakR: 8, peakF: 7.5, belt: 2500, chirp: 1, bite: 1, scrub: 1, squeak: 1, solo: '', lite: false };
+  const DEG = Math.PI / 180;
+  class TyreVoice {
+    constructor(rng, det, pan, front) {
+      this.det = det; this.pan = pan; this.front = front; this.gl = Math.cos((pan + 1) * Math.PI / 4); this.gr = Math.sin((pan + 1) * Math.PI / 4);
+      this.ph = rng.u(); this.jit = 0; this.jn = 0; this.f = 900; this.wob = 0; this.amp = 0; this.ampT = 0; this.n = 0.3; this.I = 0; this.Is = 0; this.Ipk = 0; this.cool = 0;
+      this.m1 = new Biquad(); this.m2 = new Biquad(); this.m3 = new Biquad(); this.lp = new OnePole(); this.amPh = rng.u(); this.amF = 25; this.amD = 0.1;
+      this.chT = 0; this.chLen = 0; this.chA = 0; this.chF0 = 0; this.chF1 = 0; this.cb = new Biquad(); this.bite = 0; this.biPh = 0; this.sc = 0; this.scK = 0; this.scB = new Biquad();
+    }
+  }
+  class TyresPlus {
+    constructor(fs, seed) {
+      const rng = new Rng(seed); this.fs = fs; this.r = rng; this.paint = 0; this.paintCool = 0;
+      this.v = [new TyreVoice(rng, 0.984, -0.45, 0), new TyreVoice(rng, 1.017, 0.45, 0), new TyreVoice(rng, 0.991, -0.3, 1), new TyreVoice(rng, 1.009, 0.3, 1)];
+      this.kA = 1 - Math.exp(-1 / (0.02 * fs)); this.biteDec = Math.exp(-1 / (0.03 * fs)); this.out = [0, 0];
+      this.configure({});
+    }
+    configure(x = {}) { const p = this.p = Object.assign({}, DEFAULT_TP, x); p.on = Object.assign({}, DEFAULT_TP.on, x.on); p.lvl = Object.assign({}, DEFAULT_TP.lvl, x.lvl); }
+    chirp(v, f0, f1, len, amp) { if (v.chLen > 0 && v.chA > amp) return; v.chT = 0; v.chLen = len; v.chF0 = f0; v.chF1 = f1; v.chA = amp; v.cool = 0.25; }
+    // each block: c the compound, sf the eased surface, P the tyre entry (its squeal level), sp the speed
+    control(ctl, c, sf, P, dt, sp) {
+      const X = this.p, fs = this.fs, r = this.r;
+      const useN = ctl.slipN != null && ctl.slipN >= 0, given = ctl.alphaR != null && ctl.alphaR >= 0;
+      // slip angles in degrees: the game's own (js/sound.js setDetail), or read back from the share (slipR = (alphaR - 8) / 25)
+      const aR = given ? +ctl.alphaR : useN ? (ctl.slipN > 0.002 ? X.peakR + 25 * ctl.slipN : 0) : Math.abs(+ctl.slip || 0) * 0.9;
+      const aF = ctl.alphaF != null && ctl.alphaF >= 0 ? +ctl.alphaF : ctl.front > 0 ? X.peakF * 1.6 + 12 * ctl.front : Math.min(aR * 0.25, 4);
+      const loadF = ctl.loadF > 0 ? +ctl.loadF : 0.52 - 0.06 * clamp(+ctl.throttle || 0, 0, 1);
+      const lat = clamp((+ctl.latG || 0) / 9.81, -1.5, 1.5), spinV = Math.max(0, +ctl.spinV || 0) || clamp(+ctl.spin || 0, 0, 1) * 6, lock = clamp(+ctl.lock || 0, 0, 1);
+      const spdF = sstep(1.5, 8, sp), four = X.on.four && !X.lite, tr = X.on.transitions;
+      for (let k = 0; k < 4; k++) {
+        const v = this.v[k], fr = v.front;
+        if (fr && !four) { v.ampT = 0; v.I = 0; continue; }
+        const alpha = fr ? aF : aR, peak = fr ? X.peakF : X.peakR;
+        const axle = fr ? 2 * loadF : 2 * (1 - loadF), load = clamp(axle * (1 + (v.pan < 0 ? -1 : 1) * 0.32 * lat), 0.15, 2.2);
+        const x = alpha / peak;
+        let I = (fr ? 0.75 * sstep(0.6, 3.2, x) : sstep(0.9, 3.6, x)) * (useN && !given ? 1 : spdF);
+        if (!fr) I = Math.max(I, 0.9 * sstep(0.4, 5, spinV), lock * 0.85 * spdF);
+        v.I = I;
+        const vs = sp * Math.sin(Math.min(80, alpha) * DEG) + (fr ? 0 : spinV);
+        v.wob = clamp(v.wob * 0.95 + r.b() * 0.004, -0.03, 0.03);
+        const f = c.squealHz * sf.pitch * (1.24 - 0.34 * I) * (1 + 0.14 * (1 - load)) * (0.93 + 0.12 * Math.min(1, vs / 12)) * v.det * (fr ? 0.62 : 1) * (1 - 0.15 * lock) * (1 + v.wob);
+        v.f = f;
+        const q = fr ? 6 - 3 * I : 36 - 28 * Math.pow(I, 0.8);
+        v.m1.set('bp', Math.round(f), Math.round(q * 4) / 4, 0, fs); v.m2.set('bp', Math.round(f * 2.03), Math.round(q * 2.8) / 4, 0, fs); v.m3.set('bp', Math.round(X.belt * (0.9 + 0.2 * I) * sf.pitch), 2.6, 0, fs);
+        v.lp.set(1600 + 3400 * Math.pow(Math.min(1, vs / 14), 0.7), fs);
+        v.n = fr ? 0.75 : 0.18 + 0.55 * I; v.jit = 0.008 + 0.11 * Math.pow(I, 1.5);
+        if (r.u() < dt * 6) v.amF = 16 + 30 * r.u(); v.amD = (fr ? 0.3 : 0.08) + 0.4 * I;
+        const gain = c.gain * sf.squeal * P.squeal * (1 - sf.gravel);
+        v.ampT = X.on.screech ? Math.pow(I, 0.85) * (0.45 + 0.55 * Math.min(1, sp / 28)) * Math.pow(load, 0.6) * (fr ? X.front * X.lvl.front : X.rear) * gain * X.lvl.screech : 0;
+        v.scK = (0.4 + 0.6 * Math.min(1, sp / 25)) * gain * Math.pow(load, 0.5);
+        // the transitions: onset chirp, the bite on regrip, the scrub as the slide dies
+        v.Is += (I - v.Is) * Math.min(1, dt / 0.12); v.cool -= dt;
+        if (I > v.Ipk) v.Ipk = I; else v.Ipk = Math.max(I, v.Ipk - dt * 0.25);
+        if (tr && !fr) {
+          if (I - v.Is > 0.2 && v.Is < 0.35 && v.cool <= 0) this.chirp(v, f * 1.3, f, 0.05 + 0.03 * r.u(), Math.min(1, (I - v.Is) * 2.4) * spdF * Math.sqrt(load) * X.chirp * gain);
+          if (v.Ipk > 0.45 && I < 0.18 && v.Is - I > 0.15 && v.cool <= 0) { this.chirp(v, f * 1.12, f * 1.02, 0.07, v.Ipk * 0.9 * X.bite * gain); v.bite = v.Ipk * 0.8 * X.bite * gain; v.biPh = 0; v.sc = Math.max(v.sc, v.Ipk); v.Ipk = I; }
+        }
+        v.sc = tr ? Math.max(v.sc * Math.exp(-dt / 0.45), Math.max(0, v.Is - I) * 1.6 * X.scrub) : 0;
+        if (v.sc > 1e-4) v.scB.set('bp', Math.round(0.7 * f), 1.3, 0, fs);
+        if (v.chLen > 0) { const t = Math.min(1, v.chT / v.chLen); v.cb.set('bp', Math.round(v.chF0 + (v.chF1 - v.chF0) * t), 40, 0, fs); }
+      }
+      // painted lines: a squeak as a sliding rear crosses onto (or off) the paint
+      const pt = clamp(+ctl.paint || 0, 0, 1); this.paintCool -= dt;
+      if (tr && Math.abs(pt - this.paint) > 0.3 && this.paintCool <= 0) {
+        const v = this.v[pt > this.paint ? 1 : 0];
+        if (v.I > 0.12) { this.chirp(v, v.f * 1.5, v.f * 1.38, 0.045, v.I * 0.8 * X.squeak * (pt > this.paint ? 1 : 0.6)); v.cool = 0.08; this.paintCool = 0.07; }
+      }
+      this.paint = pt;
+    }
+    // one stereo sample into this.out
+    sample() {
+      const fs = this.fs, r = this.r, X = this.p, kA = this.kA, solo = X.solo;
+      let L = 0, R = 0;
+      for (let k = 0; k < 4; k++) {
+        const v = this.v[k];
+        v.amp += (v.ampT - v.amp) * kA;
+        if (v.amp < 1e-5 && v.chLen === 0 && v.sc < 1e-4 && v.bite < 1e-4) continue;
+        // the friction oscillator: stick (a slow ramp), slip (a sudden release), its period jittering with the roughness
+        v.ph += v.f / fs * (1 + v.jn); if (v.ph >= 1) { v.ph -= 1; v.jn = v.jit * r.g(); }
+        const saw = v.ph * 2 - 1, w = r.b();
+        let y = 0, t = 0;
+        if (v.amp > 1e-5 && solo !== 'transitions') {
+          const e = saw * (1 - v.n) + w * v.n * 1.7;
+          v.amPh += v.amF / fs; if (v.amPh >= 1) v.amPh -= 1;
+          const am = 1 - v.amD * (0.5 + 0.5 * Math.sin(TAU * v.amPh));
+          y = v.lp.lp(v.m1.run(e) + 0.45 * v.m2.run(e) + v.m3.run(w) * (0.04 + 0.16 * v.I)) * v.amp * am * 2.1;
+          if (solo === 'front' && !v.front) y = 0; else if (solo === 'rear' && v.front) y = 0;
+        }
+        if (v.chLen > 0) { v.chT += 1 / fs; const x = v.chT / v.chLen; if (x >= 1) v.chLen = 0; else { const s = Math.sin(Math.PI * x); t += v.cb.run(saw * 0.7 + w * 0.3) * s * s * v.chA * 3.2 * X.lvl.transitions; } }
+        if (v.bite > 1e-4) { v.biPh += 170 / fs; if (v.biPh >= 1) v.biPh -= 1; t += Math.sin(TAU * v.biPh) * v.bite * 0.25 * X.lvl.transitions; v.bite *= this.biteDec; }
+        if (v.sc > 1e-4) t += v.scB.run(w) * v.sc * v.scK * 1.4 * X.lvl.scrub;
+        if (solo === 'screech' || solo === 'front' || solo === 'rear') t = 0;
+        y += t;
+        L += y * v.gl; R += y * v.gr;
+      }
+      this.out[0] = L; this.out[1] = R;
     }
   }
 
@@ -973,7 +1353,7 @@
     constructor(fs, seed) {
       const s = seed || 20261115;
       this.fs = fs; this.seed = s; this.engine = new Engine(fs, new Rng(s)); this.tyres = new Tyres(fs, new Rng(s * 7 + 1)); this.comb = null; this.model = 'classic';
-      this.ctl = { rpm: 900, throttle: 0, boost: -1, slip: 0, slipN: -1, spin: 0, lock: 0, front: 0, speed: 0, surface: 'asphalt', view: 0, nos: 0 };
+      this.ctl = { rpm: 900, throttle: 0, boost: -1, slip: 0, slipN: -1, spin: 0, lock: 0, front: 0, speed: 0, surface: 'asphalt', view: 0, nos: 0, alphaR: -1, alphaF: -1, loadF: 0, latG: 0, spinV: 0, paint: 0 }; // 11-26 (3): the last six for New+'s tyres
     }
     message(m) {
       if (!m) return;
@@ -1021,5 +1401,5 @@
     }
     registerProcessor('drift-car', DriftCarProcessor);
   }
-  G.DriftDSP = { DriftCarDSP, Engine, Tyres, Combustion, Squeal2, Rng, Biquad, version: 2 };
+  G.DriftDSP = { DriftCarDSP, Engine, Tyres, Combustion, Squeal2, TyresPlus, Rng, Biquad, DEFAULT_PLUS, DEFAULT_TP, version: 3 };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

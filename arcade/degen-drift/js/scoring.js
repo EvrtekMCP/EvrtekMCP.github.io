@@ -17,7 +17,7 @@
 //     live: inside one bend, through an S, between zones in the link window.
 //   The link stays as it was (a step, and the window that carries the chain from zone to zone). The cap is higher.
 // Pure JS; every number lives in TUNING.scoring.
-import { TUNING } from './config.js?v=0.1.22';
+import { TUNING } from './config.js?v=0.1.23';
 
 const DEG = 180 / Math.PI;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);

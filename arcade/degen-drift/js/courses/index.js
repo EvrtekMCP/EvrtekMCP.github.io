@@ -2,12 +2,12 @@
 // route.js), zone settings, a scenery preset (js/scenery/<region>.js, all five loaded with the game since 11-16), a
 // difficulty out of 100, star lines and the Degenerate line. Fifteen courses in five regions of three, difficulty
 // rising 10 to 95 (MCP projects/driftline-design.md). Three carry a second grid slot for the duels (duel.grid).
-import { EMBER_BAY } from './ember-bay.js?v=0.1.22';
-import { DRYDOCK, SALT_PIER } from './harbour.js?v=0.1.22';
-import { RED_MESA, DUST_DEVIL, SCORPION } from './canyon.js?v=0.1.22';
-import { PINE_HOLLOW, CEDAR, WIDOWMAKER } from './mountain.js?v=0.1.22';
-import { AFTERGLOW, CHROME, MIDNIGHT } from './neon.js?v=0.1.22';
-import { FROSTLINE, SKYLINE, CLOUDBREAK } from './summit.js?v=0.1.22';
+import { EMBER_BAY } from './ember-bay.js?v=0.1.23';
+import { DRYDOCK, SALT_PIER } from './harbour.js?v=0.1.23';
+import { RED_MESA, DUST_DEVIL, SCORPION } from './canyon.js?v=0.1.23';
+import { PINE_HOLLOW, CEDAR, WIDOWMAKER } from './mountain.js?v=0.1.23';
+import { AFTERGLOW, CHROME, MIDNIGHT } from './neon.js?v=0.1.23';
+import { FROSTLINE, SKYLINE, CLOUDBREAK } from './summit.js?v=0.1.23';
 
 export const REGIONS = [
   { id: 'harbour', name: 'Harbour', blurb: 'Closed industrial loops by the water.' },

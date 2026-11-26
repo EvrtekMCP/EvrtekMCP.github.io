@@ -14,7 +14,7 @@
 // the gearbox clunk, interface sounds and fanfares are ElevenLabs recordings (audio/sfx). The music is whole
 // ElevenLabs takes, streamed in bar-line chunks after the game starts (audio/music), never at load.
 // Formats: Ogg Opus where the browser plays it, AAC in .mp4 otherwise (Safari). Every URL carries ?v=<version>: the
-// game's stamp when it imports this module stamped (driftaudio.js?v=0.1.22), or opts.version.
+// game's stamp when it imports this module stamped (driftaudio.js?v=0.1.23), or opts.version.
 //
 // THE GAME'S ADAPTER (js/sound.js) uses the module-level functions at the bottom instead: init({ context }) once, then
 // setEngine(preset, hints), setRPM(rpm, redline), setThrottle(t), setSlip(share 0..1), setSpeed(m/s), impact(kind,
@@ -40,10 +40,39 @@
 // the context is asked to run from 'interrupted' as from 'suspended'. levels() reads every bus (the lifecycle test,
 // tools/sound/lifecycle.mjs); reinit() puts a new instance on a new context (js/sound.js rebuild()); opts.log hears
 // what happened. The launch's revs are no longer masked here: the launch clutch is in js/car.js.
+//
+// 11-26 (3) (Evrtek: "lacking in that cinema quality depth"; the Eleven passes did not do it): ENGINE SOUND 'newplus', the
+// default (New+), is New with depth, all synthesis (no recorded take of engine or tyres): the worklet's New+ layers
+// (induction, mechanicals, irregularity, load tone and burble, crackle, phone bass, the clunk and the turbo's surge;
+// audio/drift-worklet.js DEFAULT_PLUS, presets audio/car-sounds.js PLUS), the four-tyre stick-slip screech (TyresPlus),
+// and here: THE SPACE ROUND THE CAR (setAcoustics: the walls' distances from the car, both sides, from the track; the
+// region's facades, canyon walls or forest; the tunnel's boom and the bridge's parapets) and A MASTER BUS on the car
+// (a gentle saturation, a glue compressor, a limiter). setPlus(TUNING.sound) switches and levels every layer (the
+// five-tap panel, audio/bench.html); setTyreState() takes the game's slip angles, load, lateral g and painted lines.
+// New is untouched (tools/sound/same-1126.mjs: sample-identical); New, Recorded and Classic stay for comparing.
 const STAMP = new URL(import.meta.url).search;
 let cfgLoad = null, recLoad = null;
-const MODES = ['new', 'recorded', 'classic'];
-const modeOf = (m) => (MODES.includes(m) ? m : 'new');
+const MODES = ['newplus', 'new', 'recorded', 'classic'];
+const modeOf = (m) => (MODES.includes(m) ? m : 'newplus');
+// 11-26 (3): the space, per region (js/courses/index.js REGIONS) and per kind of road (track.kind: 2 tunnel, 3 bridge).
+// wall: what the barrier is at the road's edge (the scenery's wall() profiles: k its reflection, lp its top end); far:
+// what stands back from it, both sides (d metres past the wall, k, lp, fb a flutter between the two sides); echo: far
+// walls (canyon faces, d metres from the road); room: a diffuse tail (rt seconds, lp, level). Physically estimated
+// numbers (image sources from the chase camera 6.3 m behind the car), tuned by ear on the bench.
+const WALLS = { barrier: { k: 0.5, lp: 4500 }, block: { k: 0.55, lp: 5000 }, parapet: { k: 0.55, lp: 4500 }, curb: { k: 0.45, lp: 4000 }, rail: { k: 0.14, lp: 6500 } };
+const SPACES = {
+  harbour: { wall: ['barrier', 'rail'], far: { d: 12, k: 0.2, lp: 2800, fb: 0.12 }, farAlt: { d: 20, k: 0.07, lp: 2500, fb: 0 }, room: { rt: 0.6, lp: 3500, g: 0.05 } },
+  canyon: { wall: ['block'], far: null, echo: { d: [38, 52], k: 0.3, lp: 1700, fb: 0.3 }, room: { rt: 1.4, lp: 2200, g: 0.06 } },
+  mountain: { wall: ['rail', 'rail', 'curb', 'parapet'], far: null, room: { rt: 0.7, lp: 3200, g: 0.09 } }, // the pines: a soft diffuse return
+  neon: { wall: ['barrier'], far: { d: 7.5, k: 0.36, lp: 3800, fb: 0.3 }, room: { rt: 0.9, lp: 4500, g: 0.06 } }, // the city canyon
+  summit: { wall: ['rail'], far: null, room: { rt: 0.5, lp: 3000, g: 0.015 } }, // open air at the top
+  tunnel: { k: 0.42 }, bridge: { echo: { d: [26, 26], k: 0.16, lp: 2200, fb: 0.15 } },
+};
+const LC = 6.3; // the chase camera's distance from the car, m (the reflected path's extra length is measured from it)
+// New+'s bus: the makeup after the glue. Web Audio's compressors add their own makeup (0.6 x the full-range reduction: about
+// +5.4 dB for the glue, +1.1 for the limiter), so this takes most of it back: New+ lands about 1.5 dB over New on the
+// before-and-after pairs (tools/sound/depth-1126.mjs measures each pair, BS.1770), honest, not level-matched down
+const PLUS_MAKEUP = 0.72;
 // 11-18: synth 2's recorded layer: whole takes, played in the worklet. Loops carry their loop points (from the set's
 // manifest), the squeals their centre pitch (measured: the light about 1,250 Hz, the heavy 1,450) and their level
 const TAKES2 = {
@@ -85,7 +114,9 @@ export function createDriftAudio(opts = {}) {
   let ctx = opts.context || null, ext = null, nodes = null, carNode = null, carPort = null, active = true, paused = false;
   let sfxMeta = null, musicMeta = null, unlocked = false, disposed = false;
   const buffers = new Map(), lastPick = {}, lastHit = {}, listeners = [];
-  const ctl = { rpm: 900, throttle: 0, boost: -1, slip: 0, slipN: -1, spin: 0, lock: 0, front: 0, speed: 0, surface: 'asphalt', view: 0, nos: 0 };
+  const ctl = { rpm: 900, throttle: 0, boost: -1, slip: 0, slipN: -1, spin: 0, lock: 0, front: 0, speed: 0, surface: 'asphalt', view: 0, nos: 0, alphaR: -1, alphaF: -1, loadF: 0, latG: 0, spinV: 0, paint: 0 };
+  // 11-26 (3): New+'s switches and levels (js/config.js TUNING.sound's names), the region, the walls, the low tier
+  let plusSet = Object.assign({}, opts.plus || {}), region = opts.region || 'harbour', acoustic = { wl: 7, wr: 7, kind: 0, given: false }, tierLite = false, spaceKind = 'open';
   let dirty = false, carSpec = { id: opts.engine || 'six', ups: opts.upgrades || [], over: opts.car || {} };
   let meterFn = null, duckHit = 0, duckFan = 0, duckLevel = 1, nosOn = false, nosSrc = null, nosGain = null;
   let player = null, wantTrack = null, cfg = null, chain = 0, raceTurn = 0, shiftSeen = false, revLast = 0, revT = 0, autoShiftT = 0;
@@ -110,7 +141,8 @@ export function createDriftAudio(opts = {}) {
     nodes = { master: g(muted ? 0 : vol.master), limiter, music: g(vol.music), duck: g(1), sfx: g(vol.sfx), ui: g(vol.ui), car: g(1), engine: g(mix.engine), tyres: g(mix.tyres) };
     nodes.music.connect(nodes.duck).connect(nodes.master);
     nodes.sfx.connect(nodes.master); nodes.ui.connect(nodes.master);
-    nodes.car.connect(nodes.sfx); nodes.engine.connect(nodes.car); nodes.tyres.connect(nodes.car);
+    // 11-26 (3): the car straight to sfx (dry) as before, or (New+) into its bus with the space's returns
+    nodes.dry = g(engineMode === 'newplus' ? 0 : 1); nodes.car.connect(nodes.dry).connect(nodes.sfx); nodes.engine.connect(nodes.car); nodes.tyres.connect(nodes.car);
     nodes.master.connect(limiter).connect(ctx.destination);
     // day 3 (Fundi): the space round the car. A tunnel is a long dense reverb, a bridge a short slap off the deck and the
     // parapets; both are sends from the car, faded in and out by setSpace()
@@ -121,9 +153,139 @@ export function createDriftAudio(opts = {}) {
     nodes.tunnel = g(0); nodes.bridge = g(0);
     nodes.car.connect(nodes.tunnel).connect(conv).connect(nodes.sfx);
     nodes.car.connect(nodes.bridge).connect(slap).connect(lp).connect(nodes.sfx); lp.connect(fb).connect(slap);
+    routePlus(true); // 11-26 (3): New+'s space and bus, built and joined only when it plays
     let probe = null; try { probe = new Audio(); } catch (e) { /* no media element: assume Opus */ }
     ext = opts.format || (!probe || probe.canPlayType('audio/ogg; codecs="opus"') ? 'ogg' : 'mp4');
     return true;
+  }
+
+  // ---- 11-26 (3): New+'s space and bus ----------------------------------------------------------------------------
+  // the impulse responses' noise is seeded, so a render is repeatable
+  function irNoise(seed) { let s = (seed >>> 0) || 1; return () => { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296 * 2 - 1; }; }
+  // a diffuse tail falling 60 dB in rt seconds (the band under 220 Hz in rtLow: a tunnel's boom), low-passed at lp, with
+  // early taps [s, gain] (relative to the tail's first 10 ms); unit energy per channel, so its send level is its level
+  function makeIR(rt, lp, { rtLow = rt, low = 1, early = [], len = Math.min(3, Math.max(rt, rtLow) * 1.25 + 0.1), seed = 7, pre = 0.008 } = {}) {
+    const fs = ctx.sampleRate, n = Math.floor(len * fs), b = ctx.createBuffer(2, n, fs);
+    for (let c = 0; c < 2; c++) {
+      const d = b.getChannelData(c), rnd = irNoise(seed + c * 101), k = 1 - Math.exp(-2 * Math.PI * lp / fs), kl = 1 - Math.exp(-2 * Math.PI * 220 / fs);
+      let y = 0, yl = 0, e10 = 0;
+      for (let i = 0; i < n; i++) {
+        const t = i / fs, w = rnd(); y += k * (w - y); yl += kl * (w - yl);
+        const on = t < pre ? 0 : Math.min(1, (t - pre) / 0.012);
+        d[i] = ((y - yl) * Math.pow(10, -3 * t / rt) + yl * low * 2.5 * Math.pow(10, -3 * t / rtLow)) * on;
+        if (t >= pre && t < pre + 0.01) e10 += d[i] * d[i];
+      }
+      const tapK = Math.sqrt(e10 || 1e-6);
+      for (const [t, gn] of early) { const i = Math.floor((t + (c ? 0.0006 : 0)) * fs); if (i < n) d[i] += gn * tapK * (c ? 0.92 : 1); }
+      let e = 0; for (let i = 0; i < n; i++) e += d[i] * d[i]; const s = 1 / Math.sqrt(e || 1); for (let i = 0; i < n; i++) d[i] *= s;
+    }
+    return b;
+  }
+  // a tunnel's first 0.4 s: the side walls and the roof, then the flutter between the walls dying away
+  const tunnelEarly = () => { const out = [[0.024, 0.9], [0.026, -0.8], [0.029, 0.75]]; for (let k = 1; k <= 9; k++) out.push([0.026 + k * 0.041, (k % 2 ? -0.7 : 0.7) * Math.pow(0.74, k)]); return out; };
+  const rooms = new Map();
+  const roomIR = (r) => { if (!rooms.has(r)) { const R = (SPACES[r] || SPACES.harbour).room; rooms.set(r, makeIR(R.rt, R.lp, { seed: 3 + Object.keys(SPACES).indexOf(r) * 17 })); } return rooms.get(r); };
+  let plus = null;
+  const num = (k, d = 1) => (plusSet[k] == null || !isFinite(+plusSet[k]) ? d : +plusSet[k]);
+  // Built the first time New+ plays, and connected only while it does: Chrome runs every node joined to the output, silent
+  // or not (measured 11-26 (3): these, idle under New, cost New 1.8% of a core). Inside it, each part of the space is fed
+  // only while it has something to do (link()): the facades in the harbour and the city, the far echo in the canyon and on
+  // a bridge, the tunnel's convolver in a tunnel and for its tail after
+  function buildPlus() {
+    const P = plus = { links: {} }, g = (v) => { const n = ctx.createGain(); n.gain.value = v; return n; };
+    P.busIn = g(1);
+    // the space: a mono send of the car to taps (delay, the wall's top end, level, the side it is on) and two tails
+    P.send = g(0); P.send.channelCount = 1; P.send.channelCountMode = 'explicit'; P.send.channelInterpretation = 'speakers';
+    P.ret = g(1); P.ret.connect(P.busIn);
+    const pan = (v) => { if (ctx.createStereoPanner) { const p = ctx.createStereoPanner(); p.pan.value = v; return p; } return g(1); };
+    const tap = (max, lpHz, pv) => { const d = ctx.createDelay(max), f = ctx.createBiquadFilter(), gn = g(0), pn = pan(pv); d.delayTime.value = 0.02; f.type = 'lowpass'; f.frequency.value = lpHz; f.Q.value = 0.5; d.connect(f).connect(gn).connect(pn); return { d, f, g: gn, out: pn }; };
+    P.eL = tap(0.25, 4500, -0.75); P.eR = tap(0.25, 4500, 0.75);   // the walls at the road's edge
+    P.fL = tap(0.6, 3800, -0.6); P.fR = tap(0.6, 3800, 0.6);       // the facades (the city) or the sheds (the harbour) behind them
+    P.fbL = g(0); P.fbR = g(0); P.fL.f.connect(P.fbL).connect(P.fR.d); P.fR.f.connect(P.fbR).connect(P.fL.d); // the flutter between the two sides
+    P.xL = tap(1.0, 1700, -0.4); P.xR = tap(1.0, 1700, 0.4);       // far walls: the canyon's faces, a bridge's valley
+    P.xfL = g(0); P.xfR = g(0); P.xL.f.connect(P.xfL).connect(P.xR.d); P.xR.f.connect(P.xfR).connect(P.xL.d);
+    P.tun = ctx.createConvolver(); P.tun.normalize = false; P.tun.buffer = makeIR(1.5, 4200, { rtLow: 2.8, low: 1.3, early: tunnelEarly(), seed: 11 }); P.tunG = g(0); P.tunG.connect(P.tun); P.late = Infinity;
+    P.roomG = g(0); P.room = null; P.roomFor = null; setRoom();
+    // the bus: a gentle saturation (unity for quiet signals, rounding the peaks), a glue compressor, the makeup, a limiter
+    P.pre = g(0.375); P.shaper = ctx.createWaveShaper(); const N = 2048, cv = new Float32Array(N); for (let i = 0; i < N; i++) cv[i] = Math.tanh(4 * (i / (N - 1) * 2 - 1)); P.shaper.curve = cv; P.shaper.oversample = '2x';
+    P.post = g(1 / 1.5);
+    P.glue = ctx.createDynamicsCompressor(); P.glue.threshold.value = -18; P.glue.knee.value = 8; P.glue.ratio.value = 2; P.glue.attack.value = 0.02; P.glue.release.value = 0.25;
+    P.makeup = g(PLUS_MAKEUP);
+    P.lim = ctx.createDynamicsCompressor(); P.lim.threshold.value = -2; P.lim.knee.value = 0; P.lim.ratio.value = 20; P.lim.attack.value = 0.001; P.lim.release.value = 0.1;
+    P.wet = g(1); P.byp = g(0);
+    P.busIn.connect(P.wet).connect(P.pre).connect(P.shaper).connect(P.post).connect(P.glue).connect(P.makeup).connect(P.lim);
+    P.busIn.connect(P.byp);
+  }
+  // join or part two nodes, once (a connection made twice is one; parting one not made throws)
+  // a part of the space: fed while it works, joined to the mix while it works and for its tail after, then parted (an idle
+  // node joined to the output is still run); true while it is joined
+  function part(name, on, tail, ins, outs) {
+    const P = plus, t = ctx.currentTime, k = 'off_' + name;
+    if (on) P[k] = Infinity; else if (P[k] === Infinity) P[k] = t; else if (P[k] === undefined) P[k] = -99;
+    const joined = on || t - P[k] < tail;
+    ins.forEach(([a, b], i) => link(on, a, b, name + '>' + i)); outs.forEach(([a, b], i) => link(joined, a, b, name + '<' + i));
+    if (!on && joined) P.late = Math.min(P.late, P[k] + tail);
+    return joined;
+  }
+  function link(on, from, to, key) { const P = plus; if (!!P.links[key] === !!on) return; P.links[key] = !!on; try { if (on) from.connect(to); else from.disconnect(to); } catch (e) { /* already apart */ } }
+  function setRoom() { // the region's diffuse tail: a new convolver (a buffer is set once), swapped in
+    const P = plus; if (!P || P.roomFor === region) return;
+    const c = ctx.createConvolver(); c.normalize = false; c.buffer = roomIR(region);
+    if (P.room) { try { P.roomG.disconnect(); P.room.disconnect(); } catch (e) { /* gone */ } }
+    P.room = c; P.roomFor = region; P.roomG.connect(c);
+    if (P.links['room<0']) { P.links['room<0'] = false; link(true, c, P.ret, 'room<0'); }
+  }
+  // which way the car goes (New+: into its bus, else dry, as before), the bus on or bypassed, the space's send
+  function routePlus(now) {
+    const on = engineMode === 'newplus';
+    if (on && !plus) { buildPlus(); now = true; }
+    const t = ctx.currentTime, set = (prm, v) => { if (now) prm.value = v; else prm.setTargetAtTime(v, t, 0.04); };
+    set(nodes.dry.gain, on ? 0 : 1);
+    const P = plus; if (!P) { oldSends(now); return; }
+    const bus = on && num('masterBus') > 0, space = on && num('reflections') > 0, d = Math.max(0.25, num('busDrive'));
+    link(on, nodes.car, P.busIn, 'in'); link(on && bus, P.lim, nodes.sfx, 'wet'); link(on && !bus, P.byp, nodes.sfx, 'byp'); link(space, nodes.car, P.send, 'send');
+    set(P.wet.gain, bus ? 1 : 0); set(P.byp.gain, bus ? 0 : 1); set(P.pre.gain, 0.375 * d); set(P.post.gain, 1 / (1.5 * d));
+    P.shaper.oversample = tierLite || lite ? 'none' : '2x'; // the low tier: the saturation without its oversampling
+    set(P.send.gain, space ? num('spaceLvl') : 0);
+    spaceKey = ''; oldSends(now); updateSpace(now);
+  }
+  // New, Recorded and Classic keep day 3's tunnel and bridge sends; New+ has its own space
+  function oldSends(now) {
+    const on = engineMode !== 'newplus', t = ctx.currentTime, tv = on && spaceKind === 'tunnel' ? 0.5 : 0, bv = on && spaceKind === 'bridge' ? 0.32 : 0;
+    if (now) { nodes.tunnel.gain.value = tv; nodes.bridge.gain.value = bv; } else { nodes.tunnel.gain.setTargetAtTime(tv, t, 0.25); nodes.bridge.gain.setTargetAtTime(bv, t, 0.25); }
+  }
+  // the space from where the car is: each wall's image source seen from the chase camera (its extra path sets the
+  // delay, the spreading the level), the region's far reflectors, the tunnel or the bridge
+  let spaceKey = '';
+  function updateSpace(now) {
+    const P = plus; if (!P || !nodes || engineMode !== 'newplus') return;
+    const S = SPACES[region] || SPACES.harbour, kind = acoustic.given ? acoustic.kind : spaceKind === 'tunnel' ? 2 : spaceKind === 'bridge' ? 3 : 0, tun = kind === 2, bri = kind === 3;
+    const dl = acoustic.given ? acoustic.wl : 7, dr = acoustic.given ? acoustic.wr : 7;
+    const q = (d) => Math.round(d * 4) / 4, key = [region, kind, q(dl), q(dr), ctl.view, tierLite || lite].join(); // to a quarter metre: a wall a metre off moves its echo 0.4 ms
+    if (key === spaceKey && !now && !(ctx.currentTime >= P.late)) return; spaceKey = key; // (late: a part's tail has rung out)
+    const W = tun ? { k: 0.6, lp: 4000 } : WALLS[S.wall[kind] || S.wall[0]] || WALLS.barrier, lc = ctl.view ? 0.8 : LC;
+    const path = (d) => Math.sqrt(lc * lc + 4 * d * d) - lc; // the reflection's extra path over the direct one, m
+    // short linear ramps that end (a setTargetAtTime never does, and keeps every one of these computed per sample: measured
+    // 11-26 (3), the space then cost as much as the whole car); only a value that moved is touched
+    const t = ctx.currentTime, set = (prm, v, tc) => { if (now) { prm.value = v; return; } if (Math.abs(prm.value - v) < 1e-4 * Math.max(1, Math.abs(v))) return; prm.cancelScheduledValues(t); prm.setValueAtTime(prm.value, t); prm.linearRampToValueAtTime(v, t + Math.max(0.03, tc * 2)); };
+    const wall = (tp, d) => { const e = path(Math.max(0.3, d + (tun ? 0.6 : 0))); set(tp.d.delayTime, Math.min(0.24, e / 343), 0.06); set(tp.g.gain, W.k * lc / (lc + e), 0.12); set(tp.f.frequency, W.lp, 0.1); };
+    const sp = num('reflections') > 0; P.late = Infinity;
+    part('walls', sp, 0.5, [[P.send, P.eL.d], [P.send, P.eR.d]], [[P.eL.out, P.ret], [P.eR.out, P.ret]]);
+    wall(P.eL, dl); wall(P.eR, dr);
+    const low = tierLite || lite; // the low tier keeps the walls beside the car and the tunnel; no facades, far echo or region tail
+    const F = tun || bri || low ? null : kind === 1 && S.farAlt ? S.farAlt : S.far;
+    part('far', sp && !!F, 2.5, [[P.send, P.fL.d], [P.send, P.fR.d]], [[P.fL.out, P.ret], [P.fR.out, P.ret]]);
+    const far = (tp, d) => { if (!F) { set(tp.g.gain, 0, 0.2); return; } const e = path(d + F.d), e0 = path(7 + F.d); set(tp.d.delayTime, Math.min(0.58, e / 343), 0.06); set(tp.g.gain, F.k * Math.min(1.4, (lc + e0) / (lc + e)), 0.15); set(tp.f.frequency, F.lp, 0.1); };
+    far(P.fL, dl); far(P.fR, dr); set(P.fbL.gain, F ? F.fb : 0, 0.15); set(P.fbR.gain, F ? F.fb : 0, 0.15);
+    const E = low ? null : bri ? SPACES.bridge.echo : tun ? null : S.echo;
+    part('echo', sp && !!E, 4, [[P.send, P.xL.d], [P.send, P.xR.d]], [[P.xL.out, P.ret], [P.xR.out, P.ret]]);
+    const echo = (tp, d) => { if (!E) { set(tp.g.gain, 0, 0.25); return; } set(tp.d.delayTime, Math.min(0.98, path(d) / 343), 0.2); set(tp.g.gain, E.k, 0.25); set(tp.f.frequency, E.lp, 0.1); };
+    echo(P.xL, E ? E.d[0] : 30); echo(P.xR, E ? E.d[1] : 30); set(P.xfL.gain, E ? E.fb : 0, 0.25); set(P.xfR.gain, E ? E.fb : 0, 0.25);
+    // the tunnel's convolver fed in a tunnel and for 4 s after (its tail rings out on its own); the region's tail likewise
+    part('tun', sp && tun, 4.5, [[P.send, P.tunG]], [[P.tun, P.ret]]);
+    part('room', sp && !tun && !low && S.room.g > 0, 2.5, [[P.send, P.roomG]], [[P.room, P.ret]]);
+    set(P.tunG.gain, tun ? SPACES.tunnel.k : 0, 0.22);
+    set(P.roomG.gain, tun ? 0 : S.room.g * (bri ? 0.5 : 1), 0.3);
   }
 
   // one synthesised car: its engine out to `eng`, its tyres to `tyr`. The player's car and every voice() use this.
@@ -145,6 +307,7 @@ export function createDriftAudio(opts = {}) {
     await import(url('drift-worklet.js'));
     if (lite === null) lite = true; // on the main thread: the cheaper path
     if (lite && conf.engine && conf.engine.model === 'combustion') conf = Object.assign({}, conf, { engine: Object.assign({}, conf.engine, { lite: true }) });
+    if (lite && conf.engine && conf.engine.plus) conf = Object.assign({}, conf, { engine: Object.assign({}, conf.engine, { plus: Object.assign({}, conf.engine.plus, { lite: true }) }), tyres: Object.assign({}, conf.tyres, { plus: Object.assign({}, conf.tyres.plus, { lite: true }) }) }); // 11-26 (3): New+'s low tier on the main thread
     const dsp = new globalThis.DriftDSP.DriftCarDSP(ctx.sampleRate, o.seed);
     dsp.message(conf);
     let on = true;
@@ -155,7 +318,14 @@ export function createDriftAudio(opts = {}) {
   }
   // 11-18: the config the worklet takes, for the mode: 'new' the combustion engine and the three-layer squeal
   const overOf = (o) => (lite ? Object.assign({}, o, { lite: true }) : o);
-  const confFor = (spec) => Object.assign({ type: 'config' }, cfg.resolveCarSound(spec.id, spec.ups, overOf(spec.over), engineMode === 'new' ? 'new' : undefined));
+  // 11-26 (3): 'newplus' resolves New+ (model 'plus') with the panel's switches and levels; its low tier is lite too
+  const confFor = (spec) => {
+    if (engineMode === 'newplus') { const o = Object.assign({}, spec.over, { plus: cfg.plusFrom(plusSet) }); if (lite || tierLite) o.lite = true; return Object.assign({ type: 'config' }, cfg.resolveCarSound(spec.id, spec.ups, o, 'plus')); }
+    return Object.assign({ type: 'config' }, cfg.resolveCarSound(spec.id, spec.ups, overOf(spec.over), engineMode === 'new' ? 'new' : undefined));
+  };
+  // New's recorded layer (its squeal loops, blow-off, flutter, bangs) is fetched for New, and for New+ only when its
+  // screech is switched off (the shipped squeal loops are then New+'s fallback); New+ itself plays no recording
+  const wantTakes = () => engineMode === 'new' || (engineMode === 'newplus' && num('screech') === 0);
   async function startCar() {
     cfg = await loadCfg();
     if (lite === null && !noWorklet && ctx.audioWorklet && typeof AudioWorkletNode !== 'undefined') lite = false;
@@ -173,7 +343,7 @@ export function createDriftAudio(opts = {}) {
   }
   // the recorded layer for synth 2, fetched once (after the first tap), then handed to every car's worklet
   function loadTakes2() {
-    if (takes2 || engineMode !== 'new' || !ctx) return takes2;
+    if (takes2 || !wantTakes() || !ctx) return takes2;
     takes2 = (async () => {
       let man = null; try { man = await (await fetch(url('rec/kestrel/kestrel.json'))).json(); } catch (e) { /* no loops then */ }
       const out = {};
@@ -189,7 +359,7 @@ export function createDriftAudio(opts = {}) {
     })();
     return takes2;
   }
-  function sendTakes2(port) { if (engineMode !== 'new' || !port) return; const t = loadTakes2(); if (t) t.then((b) => { if (b && engineMode === 'new') port.postMessage({ type: 'samples', bufs: b }); }); }
+  function sendTakes2(port) { if (!wantTakes() || !port) return; const t = loadTakes2(); if (t) t.then((b) => { if (b && wantTakes()) port.postMessage({ type: 'samples', bufs: b }); }); }
 
   // 11-17: the recorded engine and tyres. A set is fetched once (after the first tap, with the effects) and shared by
   // the player's car and the rival's; which car plays it is decided here whenever the car or the mode changes.
@@ -367,6 +537,7 @@ export function createDriftAudio(opts = {}) {
   function doShift(up, cut, gear) {
     if (carPort) carPort.postMessage({ type: 'shift', cut: cut == null ? 0.15 : cut, up: up !== false, gear });
     if (recCar) recCar.shift(up, cut == null ? 0.15 : cut);
+    if (engineMode === 'newplus' && num('shiftFx') > 0) return; // 11-26 (3): New+ makes its own clunk, at the clutch's take-up (the worklet)
     const quick = (carSpec.ups || []).includes('shifter');
     play(quick ? 'shift-2' : pick('shift', ['shift-1', 'shift-2']), { gain: mix.shift * (ctl.view ? 1.6 : 1) * (up ? 1 : 0.85), rate: up ? 1 : 0.94 });
   }
@@ -523,7 +694,30 @@ export function createDriftAudio(opts = {}) {
     setEngineSound(mode) {
       const m = modeOf(mode); if (m === engineMode) return; engineMode = m;
       preloadRec(); loadTakes2(); pushCar(); sendTakes2(carPort); if (nodes && carNode) syncRec(); for (const v of voices) v();
+      if (nodes) { spaceKey = ''; routePlus(false); } // 11-26 (3): New+ into its bus and space, the others dry as before
     },
+    // 11-26 (3): New+'s switches and levels (js/config.js TUNING.sound: induction, mechanical, irregular, loadTone,
+    // overrun, phoneBass, shiftFx, turboFx, screech, fourTyres, transitions, reflections, masterBus and the *Lvl levels,
+    // busDrive; solo: one part alone, a tyre part as 't:screech' and so on). Only a change reconfigures the car
+    setPlus(o = {}) {
+      const next = Object.assign({}, o), was = JSON.stringify(plusSet); if (JSON.stringify(next) === was) return;
+      const takesWere = wantTakes(); plusSet = next;
+      if (engineMode === 'newplus') { pushCar(); for (const v of voices) v(); if (!takesWere && wantTakes()) { loadTakes2(); sendTakes2(carPort); } }
+      if (nodes) routePlus(false);
+    },
+    get plus() { return Object.assign({}, plusSet); },
+    // 11-26 (3): the game's tyres as New+ hears them: slip angles (degrees), the front axle's share of the load, the lateral
+    // acceleration (m/s2, + to the left), the rears' wheelspin (m/s faster than the road) and the share of the rears on paint
+    setTyreState(o = {}) { for (const k of ['alphaR', 'alphaF', 'loadF', 'latG', 'spinV', 'paint']) if (o[k] !== undefined && isFinite(+o[k])) set(k, +o[k]); },
+    // 11-26 (3): where the walls are (metres from the car to the wall on the left and on the right) and the road's kind
+    // (track.kind: 0 or 1 the region's walls, 2 a tunnel, 3 a bridge); the region (js/courses/index.js REGIONS)
+    setAcoustics(o = {}) { acoustic = { wl: +o.wl > 0 ? +o.wl : 7, wr: +o.wr > 0 ? +o.wr : 7, kind: o.kind | 0, given: true }; updateSpace(false); },
+    setRegion(r) { if (!r || r === region) return; region = r; if (plus) { setRoom(); spaceKey = ''; updateSpace(false); } },
+    get region() { return region; },
+    // 11-26 (3): the game's lowest quality tier: New+ there is lite (New's one-bank engine, no mechanicals, induction or front
+    // tyres) and its space keeps only the walls beside the car and the tunnel (no facades, far echo or region tail), the
+    // bus's saturation without oversampling
+    setTierLite(on) { const l = !!on; if (l === tierLite) return; tierLite = l; if (engineMode === 'newplus') { pushCar(); for (const v of voices) v(); } if (nodes) routePlus(false); },
     // 11-18: the gearbox's ratios (first gear first), so a shift lands the revs at rpm x next / current ratio
     setGears(r) { gears = Array.isArray(r) && r.length ? r.slice() : null; if (carPort && gears) carPort.postMessage({ type: 'gears', ratios: gears }); },
     // 11-18: the cheaper engine (one bank, no muffler chamber or intake runner), for weak devices
@@ -539,13 +733,13 @@ export function createDriftAudio(opts = {}) {
     setSurface: (s) => set('surface', s || 'asphalt'),
     setBoost: (v) => set('boost', v == null ? -1 : +v),
     setView: (v) => set('view', v === 'interior' || v === 1 ? 1 : 0),
-    setSpace(k) { if (!nodes) return; const t = ctx.currentTime; nodes.tunnel.gain.setTargetAtTime(k === 'tunnel' ? 0.5 : 0, t, 0.25); nodes.bridge.gain.setTargetAtTime(k === 'bridge' ? 0.32 : 0, t, 0.25); },
+    setSpace(k) { spaceKind = k || 'open'; if (!nodes) return; oldSends(false); updateSpace(false); }, // 11-26 (3): New+ reads it when no setAcoustics() came
     setActive(on) { active = !!on; if (carPort) carPort.postMessage({ type: 'active', on: active }); if (recCar) recCar.setActive(active); if (nodes) nodes.car.gain.setTargetAtTime(active && !paused ? 1 : 0, ctx.currentTime, 0.05); },
     setPaused(p) { paused = !!p; if (nodes) nodes.car.gain.setTargetAtTime(active && !paused ? 1 : 0, ctx.currentTime, 0.08); if (paused) nos(false); duck(); },
     shift, impact, nos, ui, music, voice,
     setVolume, getVolume: (ch) => vol[ch], setMuted, toggleMute() { setMuted(!muted); return muted; }, get muted() { return muted; },
     setMix(k, v) { if (k in mix) { mix[k] = +v; if (nodes && nodes[k]) nodes[k].gain.setTargetAtTime(mix[k], ctx.currentTime, 0.03); } },
-    debug() { return { state: ctx && ctx.state, time: ctx && ctx.currentTime, format: ext, sfx: buffers.size, worklet: !!(carNode && carNode.port), engineSound: engineMode, lite: !!lite, takes2: takes2Bufs ? Object.keys(takes2Bufs).length : 0, recorded: recCar ? recCar.set.id : null, recPlaying: !!(recCar && recCar.on), track: player && player.id, nextChunk: player && player.next, scheduledTo: player && player.at, playing: player ? player.srcs.length : 0 }; },
+    debug() { return { state: ctx && ctx.state, time: ctx && ctx.currentTime, format: ext, sfx: buffers.size, worklet: !!(carNode && carNode.port), engineSound: engineMode, lite: !!lite, takes2: takes2Bufs ? Object.keys(takes2Bufs).length : 0, recorded: recCar ? recCar.set.id : null, recPlaying: !!(recCar && recCar.on), track: player && player.id, nextChunk: player && player.next, scheduledTo: player && player.at, playing: player ? player.srcs.length : 0, region, tierLite, bus: engineMode === 'newplus' && num('masterBus') > 0, space: engineMode === 'newplus' && num('reflections') > 0 }; },
     onMeter(fn) { meterFn = fn; if (carPort && carPort.postMessage) carPort.postMessage({ type: 'meter', on: !!fn }); },
     // 11-19 (2): the context, the buses' gains and what each bus is putting out now (dB, RMS of the last 2,048 samples):
     // the lifecycle test reads it after every transition (tools/sound/lifecycle.mjs). Its taps are made on the first call
@@ -593,6 +787,11 @@ export function setMuted(m) { if (inst) inst.setMuted(m); }
 export function setVolume(ch, v) { if (inst) inst.setVolume(ch, v); }
 export function setPaused(p) { if (inst) inst.setPaused(p); }
 export function voice(spec) { return inst ? inst.voice(spec) : null; } // a second car, the duel's rival (day 5)
-export function setEngineSound(mode) { if (inst) inst.setEngineSound(mode); } // 'new' | 'recorded' | 'classic' (11-17, 11-18)
+export function setEngineSound(mode) { if (inst) inst.setEngineSound(mode); } // 'newplus' | 'new' | 'recorded' | 'classic' (11-17, 11-18, 11-26 (3))
+export function setPlus(o) { if (inst) inst.setPlus(o); } // 11-26 (3): New+'s switches and levels (TUNING.sound)
+export function setTyreState(o) { if (inst) inst.setTyreState(o); } // 11-26 (3): slip angles, load, lateral g, wheelspin, paint
+export function setAcoustics(o) { if (inst) inst.setAcoustics(o); } // 11-26 (3): { wl, wr, kind }: the walls and the road's kind
+export function setRegion(r) { if (inst) inst.setRegion(r); } // 11-26 (3): the course's region
+export function setTierLite(on) { if (inst) inst.setTierLite(on); } // 11-26 (3): the game's lowest quality tier
 export function setGears(r) { if (inst) inst.setGears(r); } // 11-18: the gearbox's ratios
 export function setLite(on) { if (inst) inst.setLite(on); } // 11-18: the cheaper engine for weak devices

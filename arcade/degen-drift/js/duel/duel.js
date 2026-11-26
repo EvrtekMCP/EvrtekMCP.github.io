@@ -10,10 +10,10 @@
 //     behind on points; that leg alone decides.
 //   - The rival is a car like yours (same physics, its own tune and parts) driven by rival.js: real lines, drifts in
 //     the zones, and the odd mistake you can pounce on. It never gets help from the physics.
-import { TUNING } from '../config.js?v=0.1.22';
-import { Steps } from '../scoring.js?v=0.1.22';
-import * as G from '../garage.js?v=0.1.22';
-import { CATEGORIES } from '../data/upgrades.js?v=0.1.22';
+import { TUNING } from '../config.js?v=0.1.23';
+import { Steps } from '../scoring.js?v=0.1.23';
+import * as G from '../garage.js?v=0.1.23';
+import { CATEGORIES } from '../data/upgrades.js?v=0.1.23';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const DEG = 180 / Math.PI;

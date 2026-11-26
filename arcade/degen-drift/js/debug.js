@@ -1,16 +1,16 @@
 // DEGEN DRIFT: the hidden tuning panel (five taps on the version line on the title; nothing else opens it). Every number in
 // config.js TUNING gets a slider; changes apply live, are kept in this browser, and "Copy" puts the changed numbers on
 // the clipboard as JSON, ready to paste back into config.js. Telemetry runs along the top.
-import { TUNING, RANGES, DEFAULTS, getPath, setPath, diffFromDefaults, applyOverrides } from './config.js?v=0.1.22';
+import { TUNING, RANGES, DEFAULTS, getPath, setPath, diffFromDefaults, applyOverrides } from './config.js?v=0.1.23';
 
 const KEY = 'driftline.tuning.v1';
-const GROUPS = ['car', 'tires', 'steer', 'assist', 'wall', 'scoring', 'damage', 'nos', 'turbo', 'gearbox', 'camera', 'fx', 'economy', 'reflect', 'world'];
+const GROUPS = ['car', 'tires', 'steer', 'assist', 'wall', 'scoring', 'damage', 'nos', 'turbo', 'gearbox', 'camera', 'fx', 'economy', 'reflect', 'world', 'sound']; // 11-26 (3): sound, New+'s layer switches and levels
 
 export function loadTuning() { try { applyOverrides(JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* none */ } }
 
 export class Debug {
   constructor(game) {
-    this.g = game; this.el = document.getElementById('debug'); this.open = false; this.t = 0; this.shut = new Set(GROUPS.slice(4).filter((g) => g !== 'reflect' && g !== 'world')); // 11-26: the reflections' two sliders open, and the worlds' layer switches
+    this.g = game; this.el = document.getElementById('debug'); this.open = false; this.t = 0; this.shut = new Set(GROUPS.slice(4).filter((g) => g !== 'reflect' && g !== 'world' && g !== 'sound')); // 11-26: the reflections' two sliders open, and the worlds' layer switches
     // release (day 4): only the hidden gesture opens it (five taps on the title's version line); no key, no URL
     this.el.addEventListener('input', (e) => {
       const i = e.target; if (!i.dataset.path) return;

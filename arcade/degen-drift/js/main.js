@@ -2,33 +2,33 @@
 // countdown, run, pause, results), steps the car at a fixed 120 Hz, feeds the scoring, the effects, the sound and the
 // HUD, and renders. The car list is an array of drivers so a rival car (downhill duels) can join later: each driver is
 // a car, its mesh and where its inputs come from; 0.1.0 has the player alone.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.22';
-import { TUNING, VERSION } from './config.js?v=0.1.22';
-import { installFog, PAL, sunDir } from './look.js?v=0.1.22';
-import { Reflections, LIVE_SIZE, COURSE_SIZE } from './reflect.js?v=0.1.22';
-import { SHARED as PAINT, setWorldLight } from './carpaint.js?v=0.1.22';
-import { Track } from './track.js?v=0.1.22';
-import { courseById } from './courses/index.js?v=0.1.22';
-import { DUELS } from './duel/duel.js?v=0.1.22';
-import { Car } from './car.js?v=0.1.22';
-import { DriftScore } from './scoring.js?v=0.1.22';
-import * as G from './garage.js?v=0.1.22';
-import { buildWorld } from './world.js?v=0.1.22';
-import { CarMesh, WET_VP } from './carmesh.js?v=0.1.22';
-import { Surface } from './carsurface.js?v=0.1.22';
-import { Smoke, Skids, Sparks, SpeedLines } from './fx.js?v=0.1.22';
-import { ChaseCam } from './camera.js?v=0.1.22';
-import { Post } from './post.js?v=0.1.22';
-import { Quality } from './quality.js?v=0.1.22';
-import { Input } from './input.js?v=0.1.22';
-import { Sound } from './sound.js?v=0.1.22';
-import { UI } from './ui.js?v=0.1.22';
-import { Hud } from './hud.js?v=0.1.22';
-import { Debug, loadTuning } from './debug.js?v=0.1.22';
-import { appIcon } from './art.js?v=0.1.22';
-import { Loader, painted } from './loader.js?v=0.1.22';
-import { TipScreen } from './tips.js?v=0.1.22';
-import { view, onFit } from './fit.js?v=0.1.22';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.23';
+import { TUNING, VERSION } from './config.js?v=0.1.23';
+import { installFog, PAL, sunDir } from './look.js?v=0.1.23';
+import { Reflections, LIVE_SIZE, COURSE_SIZE } from './reflect.js?v=0.1.23';
+import { SHARED as PAINT, setWorldLight } from './carpaint.js?v=0.1.23';
+import { Track } from './track.js?v=0.1.23';
+import { courseById } from './courses/index.js?v=0.1.23';
+import { DUELS } from './duel/duel.js?v=0.1.23';
+import { Car } from './car.js?v=0.1.23';
+import { DriftScore } from './scoring.js?v=0.1.23';
+import * as G from './garage.js?v=0.1.23';
+import { buildWorld } from './world.js?v=0.1.23';
+import { CarMesh, WET_VP } from './carmesh.js?v=0.1.23';
+import { Surface } from './carsurface.js?v=0.1.23';
+import { Smoke, Skids, Sparks, SpeedLines } from './fx.js?v=0.1.23';
+import { ChaseCam } from './camera.js?v=0.1.23';
+import { Post } from './post.js?v=0.1.23';
+import { Quality } from './quality.js?v=0.1.23';
+import { Input } from './input.js?v=0.1.23';
+import { Sound } from './sound.js?v=0.1.23';
+import { UI } from './ui.js?v=0.1.23';
+import { Hud } from './hud.js?v=0.1.23';
+import { Debug, loadTuning } from './debug.js?v=0.1.23';
+import { appIcon } from './art.js?v=0.1.23';
+import { Loader, painted } from './loader.js?v=0.1.23';
+import { TipScreen } from './tips.js?v=0.1.23';
+import { view, onFit } from './fit.js?v=0.1.23';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const params = new URLSearchParams(location.search);
@@ -56,8 +56,10 @@ class Game {
     this.quality = new Quality(this.settings.quality, this.input.touch);
     this.sound = new Sound();
     // 11-18 (sound builder): New became the default; a choice saved before it (Recorded or Classic) starts on New once
-    if (this.settings.engineSoundV !== 2) { this.settings.engineSound = 'new'; this.settings.engineSoundV = 2; this.saveSettings(); }
+    // 11-26 (3): New+ became the default the same way (every saved choice starts on New+ once)
+    if (this.settings.engineSoundV !== 3) { this.settings.engineSound = 'newplus'; this.settings.engineSoundV = 3; this.saveSettings(); }
     this.sound.setEngineSound(this.settings.engineSound); // 11-17 (sound builder): Settings > Engine sound
+    this.sound.setPlus(TUNING.sound); this.sound.setRegion(this.course.region); this.sound.setTier(this.quality.tier); // 11-26 (3): New+'s layers, the region, the low tier
     installFog(this.course.sun);
     const canvas = document.getElementById('view');
     // 11-26 (Evrtek: "a lot of jagged lines in the cars"): 4x MSAA on phones too. Apple's GPUs draw in tiles, where it is close
@@ -93,7 +95,7 @@ class Game {
     this.fpsEl = document.getElementById('fps'); this.fpsEl.hidden = !this.settings.fps;
     this.frames = []; this.fpsT = 0;
     this.quality.onScale = () => this.resize();
-    this.quality.onTier = () => { this.resize(); this.applyReflect(); this.applySkids(); };
+    this.quality.onTier = () => { this.resize(); this.applyReflect(); this.applySkids(); this.sound.setTier(this.quality.tier); }; // 11-26 (3): New+'s low tier
     this.world.setPixelRatio(this.renderer.getPixelRatio());
     this.rnd = mulberry(42);
     this.light = [1, 1, 1];
@@ -125,6 +127,7 @@ class Game {
     const world = await buildWorld(track, course, this.quality.tier, step, this.worldDetail());
     // swapped in only once built (no frame sees a half-made course)
     this.course = course; this.track = track; this.world = world;
+    this.sound.setRegion(course.region); // 11-26 (3): the space round the car (New+)
     this.scene.fog.color.copy(world.fog.color); this.scene.fog.density = world.fog.density;
     this.scene.add(world.root);
   }
@@ -348,7 +351,7 @@ class Game {
     this.smoke.setTint(lk.smoke);
     this.carMesh.setDamage(G.carState(this.progress).damage);
   }
-  retune() { if (this.car) this.car.setTune(G.deriveTune(this.progress)); }
+  retune() { if (this.car) this.car.setTune(G.deriveTune(this.progress)); this.sound.setPlus(TUNING.sound); } // 11-26 (3): the five-tap panel's sound layers too
 
   // ---------------------------------------------------------------- states
   parkAtStart() {
@@ -456,7 +459,7 @@ class Game {
     // sound (11-19 (2): the pause is the game's state, so no way out of a paused race can leave the car's sound off)
     this.sound.setPaused(this.state === 'paused');
     this.sound.setRPM(this.car.rpm); this.sound.setThrottle(this.state === 'run' || this.state === 'countdown' ? this.car.throttle : 0, this.car.boost);
-    this.sound.setSlip(Math.max(this.car.slipR, this.car.slipF)); this.sound.setSpeed(this.car.speed); this.sound.setSurface(this.surface.under(this.car)); this.car.surfGrip = this.surface.grip; this.sound.setSpace(this.surface.space(this.car)); this.sound.tick();
+    this.sound.setSlip(Math.max(this.car.slipR, this.car.slipF)); this.sound.setSpeed(this.car.speed); this.sound.setSurface(this.surface.under(this.car)); this.car.surfGrip = this.surface.grip; this.sound.setSpace(this.surface.space(this.car)); this.sound.setDetail(this.car, this.surface); this.sound.tick(); // 11-26 (3): setDetail, New+'s tyres and walls
     if (this.state === 'run' || this.state === 'countdown') this.hud.update(this.car, this.score, this.run, this.car.T.car.nos, TUNING.scoring.linkWindow);
     this.renderer.info.reset();
     // on the title the painting covers the view: draw the world only now and then, so it is ready, and save the battery
@@ -647,7 +650,7 @@ class Game {
 
   // ---------------------------------------------------------------- test hooks (?test): never loaded for players
   async testHooks() {
-    const { Autopilot } = await import('./autopilot.js?v=0.1.22');
+    const { Autopilot } = await import('./autopilot.js?v=0.1.23');
     this.capture = params.has('capture');
     const g = this;
     window.__dl = {

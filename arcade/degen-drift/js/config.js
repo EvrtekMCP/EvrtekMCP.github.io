@@ -1,12 +1,12 @@
 // DRIFTLINE: every tuning number in one place. The hidden debug panel (F9, or ?debug) edits these live and can copy
 // the result back out as JSON; nothing else in the game hard-codes a feel number.
 // Units: metres, seconds, kilograms, newtons, radians unless the name says otherwise (Deg, Kmh).
-export const VERSION = '0.1.22';
+export const VERSION = '0.1.23';
 // 11-21 (Evrtek: "an on screen notice of what test version we're looking at"): the test build's number, shown with the
 // version on the title and in the pause menu (js/ui.js testLabel()). From test v18 the version's last number IS the test
 // number (v19 = 0.1.19). `node tools/release.mjs --bump X.Y.Z` sets both: 0.x.N gives N, 1.0.0 and on give null (no
 // label, only the title's quiet version line). The release check fails if the two disagree.
-export const TEST_BUILD = 22;
+export const TEST_BUILD = 23;
 
 export const TUNING = {
   car: {
@@ -235,6 +235,25 @@ export const TUNING = {
     motion: 1,               // the moving things: litter, leaves, snow, steam, flags, flicker, the machines' motion
     pools: 1,                // light spilling on the ground and contact shadows under things
   },
+  // 11-26 (3) the sound's depth (Settings > Engine sound: New+; audio/driftaudio.js setPlus). Each layer 1 on, 0 back to
+  // New's own (to compare by ear); the levels 1 as built, 0 to 2. audio/bench.html has the same, with solos
+  sound: {
+    induction: 1,            // the intake as a second mic: a roar that opens with the throttle, the airbox's honk, the runner's ring
+    mechanical: 1,           // the third mic: valvetrain ticks, the timing chain's whine (the rotary's gears)
+    irregular: 1,            // every combustion a little different, remembering the last, and a slow wander: alive, never rough
+    loadTone: 1,             // harder on load (odd harmonics); the overrun burble off it
+    overrun: 1,              // afterfire as crackle: clusters of cracks after a lift, more with the revs
+    phoneBass: 1,            // the bass a phone cannot play, moved up as its own harmonics so the weight comes through
+    shiftFx: 1,              // the clutch's clunk on every change and a crackle on the cut
+    turboFx: 1,              // the whistle rising with boost, the compressor's flutter on a lift, the blow-off
+    screech: 1,              // the tyres: a stick-slip screech per tyre (0: New's squeal, the shipped loops)
+    fourTyres: 1,            // the fronts scrubbing as well as the rears screaming, each its own voice
+    transitions: 1,          // a chirp as a slide starts, a bite on regrip, the scrub as it dies, squeaks on painted lines
+    reflections: 1,          // the space: the walls beside the car, the city's facades, the canyon, the tunnel's boom
+    masterBus: 1,            // the car's mix bus: a gentle saturation, a glue compressor, a limiter
+    inductionLvl: 1, mechLvl: 1, overrunLvl: 1, bassLvl: 1, shiftLvl: 1, turboLvl: 1,
+    screechLvl: 1, frontLvl: 1, transLvl: 1, spaceLvl: 1, busDrive: 1,
+  },
 };
 
 // Where game sound goes (Dirigent 11-15): a second builder is making audio/driftaudio.js (ElevenLabs takes). Until it
@@ -274,6 +293,9 @@ export const RANGES = {
   'camera.velocityBlend': [0, 1, 0.01], 'camera.fov': [40, 90, 1], 'camera.fovKick': [0, 30, 1],
   'reflect.coat': [0, 2, 0.05], 'reflect.rough': [0, 1, 0.01],
   'world.road': [0, 1, 1], 'world.sky': [0, 1, 1], 'world.water': [0, 1, 1], 'world.kit': [0, 1, 1], 'world.motion': [0, 1, 1], 'world.pools': [0, 1, 1],
+  // 11-26 (3) the sound's layers: switches, and levels 0..2
+  ...Object.fromEntries(['induction', 'mechanical', 'irregular', 'loadTone', 'overrun', 'phoneBass', 'shiftFx', 'turboFx', 'screech', 'fourTyres', 'transitions', 'reflections', 'masterBus'].map((k) => ['sound.' + k, [0, 1, 1]])),
+  ...Object.fromEntries(['inductionLvl', 'mechLvl', 'overrunLvl', 'bassLvl', 'shiftLvl', 'turboLvl', 'screechLvl', 'frontLvl', 'transLvl', 'spaceLvl', 'busDrive'].map((k) => ['sound.' + k, [0, 2, 0.05]])),
 };
 
 // A copy of the shipped numbers, so the panel can put them back.

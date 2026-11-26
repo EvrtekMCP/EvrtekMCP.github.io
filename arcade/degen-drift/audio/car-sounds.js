@@ -258,6 +258,41 @@ const UP2 = { 'exhaust:1': 'catback', 'engine-1': 'sport', 'exhaust:2': 'straigh
 // a turbo kit on a car that had none needs the rest of a turbo's numbers
 const TURBO_KIT = { spool: 0.7, spoolRpm: 2800, fullRpm: 5000, whineLo: 1600, whineHi: 6500, whine: 0.16, hiss: 0.28, bovGain: 0.5, flutterGain: 0.5 };
 
+// ---- 11-26 (3), New+: the same six engines with depth ------------------------------------------------------------
+// Evrtek, 11-26: "give the engines a better sound and give our tires squeal a little bit more fidelity ... that cinema
+// quality depth". New+ is New (above) plus the layers in audio/drift-worklet.js (DEFAULT_PLUS: induction, mechanicals,
+// irregularity, load tone and burble, crackle, phone bass, shift clunk and pop, the turbo's whistle and surge). What
+// differs per car is the character: the KESTREL's intake is its compressor (a high, smooth roar), the VANTA a GT's quiet
+// airbox and little crackle, the HALBERD a big airbox honk, a pushrod's low tick and the burble, the ORBIT no valves at
+// all (its "mechanical" is the gear whine, its intake the port buzz), the SPECTRE flat-shift pops and two turbos, the
+// ZENITH the howl (a long-ringing runner resonance) and a busy valvetrain. Everything not named takes DEFAULT_PLUS.
+// trim: the car's level in New+ against New, in dB (tools/sound/depth-1126.mjs's pairs).
+export const PLUS = {
+  turbo4: { induction: { gain: 0.45, roarLo: 450, roarHi: 1800, roarQ: 1.4, honkHz: 210, honk: 0.3, runnerHz: 650, runner: 0.2 }, mech: { tick: 0.45, tickHz: 4400, chain: 0.25, teeth: 19 },
+    overrun: { burble: 0.3, crackle: 1.1 }, shift: { pop: 0.55, clunk: 0.5 }, turbo: { whistle: 1, surge: 1, surgeHz: 13 }, load: { odd: 0.5 }, bass: { gain: 1 } },
+  six: { induction: { gain: 0.5, roarLo: 300, roarHi: 1100, honkHz: 190, honk: 0.55, runnerHz: 560, runner: 0.35 }, mech: { tick: 0.35, tickHz: 4200, chain: 0.2, teeth: 21 },
+    overrun: { burble: 0.12, crackle: 0.4 }, shift: { pop: 0.12, clunk: 0.45 }, load: { odd: 0.4 }, irregular: { wander: 0.025 }, bass: { gain: 0.9 } },
+  v8: { trim: -1.2, induction: { gain: 0.35, roarLo: 220, roarHi: 800, honkHz: 120, honk: 0.8, runnerHz: 430, runner: 0.3 }, mech: { tick: 0.4, tickHz: 3200, tickQ: 2.5, chain: 0.15, teeth: 20 },
+    overrun: { burble: 0.65, late: 55, crackle: 0.8 }, shift: { pop: 0.35, clunk: 0.6, clunkHz: 48 }, load: { odd: 0.6 }, irregular: { wander: 0.04 }, bass: { gain: 1.1, fc: 200 } },
+  rotary: { induction: { gain: 0.5, roarLo: 400, roarHi: 1500, honkHz: 260, honk: 0.4, runnerHz: 760, runner: 0.45, buzz: 0.7, buzzHz: 2400 }, mech: { tick: 0, valves: 0, chain: 0.3, teeth: 33 },
+    overrun: { burble: 0.45, crackle: 1.3 }, shift: { pop: 0.7, clunk: 0.45 }, load: { odd: 0.6 }, irregular: { ar: 0.3, wander: 0.045 }, bass: { gain: 0.9 } },
+  v6tt: { induction: { gain: 0.45, roarLo: 450, roarHi: 1800, roarQ: 1.4, honkHz: 220, honk: 0.25, runnerHz: 620, runner: 0.2 }, mech: { tick: 0.4, tickHz: 4500, chain: 0.3, teeth: 19 },
+    overrun: { burble: 0.25, crackle: 1.1 }, shift: { pop: 0.9, clunk: 0.4 }, turbo: { whistle: 1, surge: 0.6 }, load: { odd: 0.55 }, bass: { gain: 0.9 } },
+  flat6: { induction: { gain: 0.5, roarLo: 350, roarHi: 1400, honkHz: 240, honk: 0.6, runnerHz: 720, runnerQ: 9, runner: 0.6 }, mech: { tick: 0.6, tickHz: 4800, chain: 0.35, teeth: 22 },
+    overrun: { burble: 0.3, crackle: 1.2 }, shift: { pop: 0.6, clunk: 0.5 }, load: { odd: 0.5 }, bass: { gain: 0.9 } },
+};
+// The five-tap panel's and the bench's switches and levels (js/config.js TUNING.sound), into the worklet's terms:
+// each layer on (1) or back to New's own (0), and a level (1 as built)
+export function plusFrom(s = {}) {
+  const n = (k, d = 1) => (s[k] == null || !isFinite(+s[k]) ? d : +s[k]);
+  return {
+    engine: { on: { induction: n('induction'), mech: n('mechanical'), irregular: n('irregular'), load: n('loadTone'), overrun: n('overrun'), bass: n('phoneBass'), shift: n('shiftFx'), turbo: n('turboFx') },
+      lvl: { exhaust: 1, induction: n('inductionLvl'), mech: n('mechLvl'), overrun: n('overrunLvl'), bass: n('bassLvl'), shift: n('shiftLvl'), turbo: n('turboLvl') }, solo: s.solo && !String(s.solo).startsWith('t:') ? s.solo : '' },
+    tyres: { on: { screech: n('screech'), four: n('fourTyres'), transitions: n('transitions') }, lvl: { screech: n('screechLvl'), front: n('frontLvl'), transitions: n('transLvl'), scrub: n('transLvl') }, solo: s.solo && String(s.solo).startsWith('t:') ? String(s.solo).slice(2) : '' },
+  };
+}
+const merge = (a, b) => { const o = Object.assign({}, a); for (const [k, v] of Object.entries(b || {})) o[k] = v && typeof v === 'object' && !Array.isArray(v) ? merge(a && a[k], v) : v; return o; };
+
 // ---- tyres ---------------------------------------------------------------------------------------------------
 // A squeal is a tread resonance excited by stick-slip: a tone (tonal share) plus noise through two narrow bands at
 // the squeal pitch and an overtone. At the edge of grip it comes in chirps; past fullDeg of slide it is a steady,
@@ -332,9 +367,18 @@ export function applyMods(entry, mods) {
 }
 
 // model 'new' (11-18): the combustion engine's preset and the three-layer squeal; anything else: the classic synth
+// model 'plus' (11-26 (3)): New's preset and parts, with New+'s layers (PLUS above, then over.plus: { engine, tyres } in
+// the worklet's terms, as plusFrom() makes them) and the stick-slip tyres
 export function resolveCarSound(engineId, upgrades = [], over = {}, model) {
   engineId = PRESET_ALIAS[engineId] || engineId;
   if (model === 'new') return resolveNew(engineId, upgrades, over);
+  if (model === 'plus') {
+    const r = resolveNew(engineId, upgrades, over), op = over.plus || {};
+    r.engine.plus = merge(PLUS[r.engine.id] || {}, op.engine || {}); if (over.lite) r.engine.plus.lite = true;
+    if (r.engine.plus.trim) r.engine.gain *= Math.pow(10, r.engine.plus.trim / 20); // a car's level in New+ (dB), measured against New
+    r.tyres.model = 'plus'; r.tyres.plus = merge({}, op.tyres || {}); if (over.lite) r.tyres.plus.lite = true;
+    return r;
+  }
   const engine = clone(ENGINES[engineId] || ENGINES.six);
   engine.id = ENGINES[engineId] ? engineId : 'six';
   const ups = new Set(upgrades || []);

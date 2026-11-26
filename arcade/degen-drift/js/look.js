@@ -5,7 +5,7 @@
 // Changing course (courses 0.2.0): setLook() copies the region's colours INTO the same PAL objects (so every importer
 // sees them), moves the sun, rewrites the fog chunks and bumps an epoch that is part of every material's program key,
 // so materials that already exist (the car's) recompile with the new fog when they are next marked for update.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.22';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.23';
 
 const lin = (hex) => new THREE.Color(hex); // three converts sRGB hex to linear on the way in
 const BASE = {

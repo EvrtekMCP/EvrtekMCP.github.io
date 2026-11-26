@@ -1,5 +1,5 @@
 // DRIFTLINE region 3, Mountain pass: forested switchbacks at blue hour, with tunnels (k2) and gorge bridges (k3).
-import { course } from './route.js?v=0.1.22';
+import { course } from './route.js?v=0.1.23';
 
 export const PINE_HOLLOW = course({
   id: 'pine-hollow', name: 'PINE HOLLOW', region: 'mountain', difficulty: 45, scenery: 'mountain',

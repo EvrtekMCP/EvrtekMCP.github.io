@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DEGEN DRIFT New+ bench</title>
+<link rel="icon" href="data:,">
+<style>
+  /* 11-26 (3): the New+ bench (Evrtek tunes each layer by ear on his phone). The game's own sound module, the same
+     switches and levels as the five-tap panel's "sound" group (js/config.js TUNING.sound), plus solos */
+  :root { --bg: #0d0b16; --panel: #171327; --line: #2c2545; --ink: #ece8ff; --dim: #9b93c2; --hot: #ff5fa2; --cool: #3fe0d0; --warn: #ffc857; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.4 system-ui, -apple-system, Segoe UI, sans-serif; }
+  header { padding: 12px 16px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; position: sticky; top: 0; background: var(--bg); z-index: 3; }
+  h1 { font-size: 17px; margin: 0; letter-spacing: 2px; color: var(--hot); }
+  h2 { font-size: 13px; margin: 0 0 8px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--cool); }
+  main { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(330px, 100%), 1fr)); gap: 12px; padding: 12px 16px 40px; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; min-width: 0; }
+  .row { display: grid; grid-template-columns: minmax(0, 1fr) 46px; gap: 4px 8px; align-items: center; margin: 8px 0; }
+  .row .name { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+  .row .v { text-align: right; color: var(--dim); font-variant-numeric: tabular-nums; font-size: 13px; }
+  input[type=range] { width: 100%; accent-color: var(--hot); min-height: 28px; }
+  button, select { background: #241d3d; color: var(--ink); border: 1px solid #3d3364; border-radius: 6px; padding: 8px 10px; font: inherit; cursor: pointer; touch-action: manipulation; max-width: 100%; }
+  button.on { background: var(--hot); color: #160b14; border-color: var(--hot); }
+  button.sw { min-width: 52px; padding: 4px 8px; font-size: 13px; }
+  button.solo { padding: 4px 8px; font-size: 13px; }
+  button.solo.on { background: var(--warn); border-color: var(--warn); color: #160b14; }
+  .btns { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+  .note { color: var(--dim); font-size: 12px; margin: 6px 0 0; }
+  #status { color: var(--warn); }
+  #status.ok { color: var(--cool); }
+  .meter { font-variant-numeric: tabular-nums; color: var(--dim); font-size: 13px; }
+  .meter b { color: var(--ink); }
+  .what { color: var(--dim); font-size: 12px; }
+  pre { white-space: pre-wrap; word-break: break-all; font-size: 11px; color: var(--dim); }
+  .tap { position: fixed; inset: 0; background: rgba(13,11,22,.9); display: flex; align-items: center; justify-content: center; z-index: 5; padding: 16px; text-align: center; }
+  .tap button { font-size: 18px; padding: 16px 28px; }
+</style>
+</head>
+<body>
+<div class="tap" id="tap"><button id="tapbtn">Tap to start the sound</button></div>
+<header>
+  <h1>NEW+ BENCH</h1>
+  <span id="status">loading</span>
+  <button id="ab">Playing: New+</button>
+  <button id="mute">Mute</button>
+  <span class="meter" id="meter"></span>
+</header>
+<main>
+  <section>
+    <h2>Car and drive</h2>
+    <div class="btns"><select id="preset"></select></div>
+    <div id="drive"></div>
+    <div class="btns"><button id="gas">GAS (hold)</button><button id="shiftup">Shift up</button><button id="shiftdn">Shift down</button><button id="paintbtn">Cross a painted line</button></div>
+    <p class="note">Hold GAS for free revs (they climb and fall like an engine). The tyre sliders are what the game hands New+ every frame.</p>
+  </section>
+  <section>
+    <h2>Drives</h2>
+    <div class="btns" id="scenes"></div>
+    <p class="note" id="scenenote">The same drives as the WAV demos' (audio/test-scenes.js), plus a pass along a wall and a tunnel.</p>
+  </section>
+  <section>
+    <h2>Engine layers</h2>
+    <div id="eng"></div>
+  </section>
+  <section>
+    <h2>Tyres, space, bus</h2>
+    <div id="tyr"></div>
+  </section>
+  <section>
+    <h2>The space round the car</h2>
+    <div class="btns"><select id="region"><option value="harbour">Harbour</option><option value="canyon">Canyon</option><option value="mountain">Mountain pass</option><option value="neon">Neon city</option><option value="summit">Summit</option></select>
+      <select id="kind"><option value="0">Open road</option><option value="1">The region's other walls</option><option value="2">Tunnel</option><option value="3">Bridge</option></select></div>
+    <div id="space"></div>
+  </section>
+  <section>
+    <h2>Keep it</h2>
+    <div class="btns"><button id="copy">Copy settings</button><button id="reset">Reset all</button></div>
+    <p class="note">Copy puts the switches and levels on the clipboard, as the five-tap panel's "sound" numbers (js/config.js TUNING.sound). Your settings stay in this browser.</p>
+    <pre id="out"></pre>
+  </section>
+</main>
+<script type="module">
+import { createDriftAudio } from './driftaudio.js';
+import { COMBUSTION, resolveCarSound } from './car-sounds.js';
+import { SCENES, at } from './test-scenes.js';
+
+const $ = (id) => document.getElementById(id);
+// the five-tap panel's sound group, by default (js/config.js TUNING.sound)
+const DEF = { induction: 1, mechanical: 1, irregular: 1, loadTone: 1, overrun: 1, phoneBass: 1, shiftFx: 1, turboFx: 1, screech: 1, fourTyres: 1, transitions: 1, reflections: 1, masterBus: 1,
+  inductionLvl: 1, mechLvl: 1, overrunLvl: 1, bassLvl: 1, shiftLvl: 1, turboLvl: 1, screechLvl: 1, frontLvl: 1, transLvl: 1, spaceLvl: 1, busDrive: 1 };
+const KEY = 'driftline.bench.plus.v1';
+let S = Object.assign({}, DEF); try { Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* none kept */ }
+let solo = '';
+const audio = createDriftAudio({ version: 'bench', engineSound: 'newplus', plus: S });
+window.driftAudio = audio; // the console and a headless check
+const keep = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* not kept */ } };
+const push = () => { audio.setPlus(Object.assign({}, S, solo ? { solo } : {})); keep(); $('out').textContent = JSON.stringify(S); };
+
+// ---- the layers: [switch, level, solo, label, what it is]
+const ENG = [
+  ['induction', 'inductionLvl', 'induction', 'Induction', 'the intake as a second mic: a roar opening with the throttle, the airbox honk, the runner ring'],
+  ['mechanical', 'mechLvl', 'mech', 'Mechanical', 'valvetrain ticks and the timing chain (the rotary: its gears)'],
+  ['irregular', null, null, 'Irregularity', 'every combustion a little different, and a slow wander'],
+  ['loadTone', null, 'odd', 'Load tone', 'harder on load (odd harmonics); solo plays what it adds, doubled'],
+  ['overrun', 'overrunLvl', 'crackle', 'Overrun and crackle', 'the burble off load and crackle after a lift'],
+  ['phoneBass', 'bassLvl', 'bass', 'Phone bass', 'the weight a phone cannot play, carried up where it can'],
+  ['shiftFx', 'shiftLvl', 'shift', 'Shift clunk and pop', 'the clutch taking up, a crackle on the cut'],
+  ['turboFx', 'turboLvl', 'turbo', 'Turbo', 'whistle by boost, the surge flutter and the blow-off'],
+];
+const TYR = [
+  ['screech', 'screechLvl', 't:screech', 'Tyre screech', 'a stick-slip screech per tyre, no loop (off: New\'s squeal)'],
+  ['fourTyres', 'frontLvl', 't:front', 'Four tyres', 'the fronts scrubbing as well as the rears screaming'],
+  ['transitions', 'transLvl', 't:transitions', 'Transitions', 'onset chirp, regrip bite, the scrub as it dies, paint squeaks'],
+  ['reflections', 'spaceLvl', null, 'Reflections', 'the walls beside the car, facades, canyon, tunnel boom'],
+  ['masterBus', 'busDrive', null, 'Master bus', 'saturation, glue and a limiter on the car (level: the drive)'],
+];
+const solos = [];
+function layer(el, [sw, lvl, so, label, what]) {
+  const d = document.createElement('div'); d.className = 'row';
+  d.innerHTML = `<div class="name"><span><b>${label}</b><br><span class="what">${what}</span></span><span class="btns" style="margin:0"><button class="sw"></button>${so ? '<button class="solo">Solo</button>' : ''}</span></div>` + (lvl ? `<input type="range" min="0" max="2" step="0.05"><span class="v"></span>` : '');
+  const b = d.querySelector('.sw'), r = d.querySelector('input'), v = d.querySelector('.v'), s = d.querySelector('.solo');
+  const show = () => { b.textContent = S[sw] ? 'ON' : 'OFF'; b.classList.toggle('on', !!S[sw]); if (r) { r.value = S[lvl]; v.textContent = (+S[lvl]).toFixed(2); } if (s) s.classList.toggle('on', solo === so); };
+  b.onclick = () => { S[sw] = S[sw] ? 0 : 1; show(); push(); };
+  if (r) r.oninput = () => { S[lvl] = +r.value; show(); push(); };
+  if (s) { solos.push(show); s.onclick = () => { solo = solo === so ? '' : so; solos.forEach((f) => f()); push(); }; }
+  d.show = show; show(); el.append(d); return d;
+}
+const rows = []; for (const L of ENG) rows.push(layer($('eng'), L)); for (const L of TYR) rows.push(layer($('tyr'), L));
+
+// ---- the car, the drive and the tyres' inputs
+for (const [id, e] of Object.entries(COMBUSTION)) $('preset').add(new Option(e.label, id));
+let car = null;
+function applyCar() { audio.setCar($('preset').value, []); car = resolveCarSound($('preset').value, [], {}, 'new'); sl.rpm.max = car.engine.redlineRpm + 150; sl.rpm.min = car.engine.idleRpm - 50; if (+sl.rpm.value < car.engine.idleRpm) set('rpm', car.engine.idleRpm); }
+const DRV = [['rpm', 'Revs', 600, 9300, 10, 900, (v) => Math.round(v) + ' rpm'], ['throttle', 'Throttle', 0, 1, 0.01, 0, (v) => v.toFixed(2)], ['speed', 'Speed', 0, 60, 0.5, 0, (v) => Math.round(v * 3.6) + ' km/h'],
+  ['alphaR', 'Rear slip angle', 0, 50, 0.5, 0, (v) => v.toFixed(1) + ' deg'], ['alphaF', 'Front slip angle', 0, 30, 0.5, 0, (v) => v.toFixed(1) + ' deg'], ['loadF', 'Front axle load', 0.3, 0.7, 0.01, 0.5, (v) => Math.round(v * 100) + '%'], ['latG', 'Lateral g', -1.2, 1.2, 0.05, 0, (v) => v.toFixed(2) + ' g']];
+const SPC = [['wl', 'Wall on the left', 0.4, 16, 0.1, 7, (v) => v.toFixed(1) + ' m'], ['wr', 'Wall on the right', 0.4, 16, 0.1, 7, (v) => v.toFixed(1) + ' m']];
+const sl = {}, fm = {};
+function slider(el, [k, name, mn, mx, st, v, f]) { const d = document.createElement('div'); d.className = 'row'; d.innerHTML = `<div class="name"><span>${name}</span></div><input type="range" min="${mn}" max="${mx}" step="${st}" value="${v}"><span class="v"></span>`; el.append(d); sl[k] = d.querySelector('input'); fm[k] = [d.querySelector('.v'), f]; sl[k].oninput = () => send(k); }
+for (const D of DRV) slider($('drive'), D); for (const D of SPC) slider($('space'), D);
+let paint = 0;
+function set(k, v) { sl[k].value = v; send(k); }
+function send(k) {
+  const v = +sl[k].value; fm[k][0].textContent = fm[k][1](v);
+  if (k === 'rpm') audio.setRPM(v); else if (k === 'throttle') audio.setThrottle(v); else if (k === 'speed') audio.setSpeed(v);
+  else if (k === 'wl' || k === 'wr') audio.setAcoustics({ wl: +sl.wl.value, wr: +sl.wr.value, kind: +$('kind').value });
+  else tyres();
+}
+// the slip share the game would hand New (js/car.js: the rear slip angle past 8 degrees, over 25; times a speed factor)
+function tyres() { const a = +sl.alphaR.value, sp = +sl.speed.value; audio.setSlipShare(Math.max(0, Math.min(1, (a - 8) / 25)) * Math.min(1, sp / 6)); audio.setTyreState({ alphaR: a, alphaF: +sl.alphaF.value, loadF: +sl.loadF.value, latG: +sl.latG.value * 9.81, paint }); }
+$('preset').onchange = applyCar;
+$('region').onchange = () => audio.setRegion($('region').value);
+$('kind').onchange = () => { send('wl'); audio.setSpace(['open', 'open', 'tunnel', 'bridge'][+$('kind').value]); };
+$('paintbtn').onclick = () => { paint = 0.5; tyres(); setTimeout(() => { paint = 0; tyres(); }, 90); };
+$('shiftup').onclick = () => audio.shift(true, 0.22, 3); $('shiftdn').onclick = () => audio.shift(false, 0.1, 2);
+
+// ---- free revs
+let gas = false, last = performance.now();
+const hold = (el, on, off) => { el.addEventListener('pointerdown', (e) => { e.preventDefault(); on(); }); for (const t of ['pointerup', 'pointerleave', 'pointercancel']) el.addEventListener(t, off); };
+hold($('gas'), () => { gas = true; $('gas').classList.add('on'); }, () => { gas = false; $('gas').classList.remove('on'); });
+// ---- drives: the WAV demos' scenes, a pass along a wall and a tunnel
+const EXTRA = {
+  wall: () => ({ dur: 9, tracks: { rpm: [[0, 5200], [9, 6200]], throttle: [[0, 0.8], [9, 0.8]], speed: [[0, 28], [9, 30]], wl: [[0, 8], [3, 1.0], [5, 0.9], [7.5, 8], [9, 8]], wr: [[0, 6], [9, 6]] }, events: [] }),
+  tunnel: () => ({ dur: 12, tracks: { rpm: [[0, 5400], [5, 7000], [5.1, 6900], [9, 4000], [12, 4000]], throttle: [[0, 1], [5, 1], [5.05, 0], [12, 0]], speed: [[0, 30], [5, 36], [12, 30]], wl: [[0, 6], [12, 6]], wr: [[0, 6], [12, 6]] }, events: [[0, 'kind', 0], [2.5, 'kind', 2], [9.5, 'kind', 0]] }),
+};
+const LIST = [['sweep', 'Idle to redline'], ['accel', '1-2-3-4'], ['liftoff', 'Lift-off'], ['drift6', '6 s drift'], ['drift', 'A long drift'], ['hold', 'Steady slide'], ['wall', 'Along a wall'], ['tunnel', 'Through a tunnel']];
+let scene = null;
+for (const [id, label] of LIST) { const b = document.createElement('button'); b.textContent = label; b.onclick = () => { const sc = (EXTRA[id] || SCENES[id])(car.engine); scene = { sc, t0: performance.now(), ev: sc.events.slice(), name: label }; }; $('scenes').append(b); }
+{ const b = document.createElement('button'); b.textContent = 'Stop'; b.onclick = () => { scene = null; $('scenenote').textContent = ''; }; $('scenes').append(b); }
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (scene) {
+    const t = (now - scene.t0) / 1000, T = scene.sc.tracks;
+    if (t > scene.sc.dur) { scene = null; $('scenenote').textContent = ''; }
+    else {
+      for (const k of ['rpm', 'throttle', 'speed', 'wl', 'wr']) if (T[k]) set(k, at(T[k], t));
+      if (T.slip) set('alphaR', at(T.slip, t)); else if (!T.alphaR) set('alphaR', 0);
+      while (scene.ev.length && scene.ev[0][0] <= t) { const [, k, v] = scene.ev.shift(); if (k === 'shift') audio.shift(true, v); else if (k === 'surface') audio.setSurface(v); else if (k === 'kind') { $('kind').value = String(v); $('kind').onchange(); } }
+      $('scenenote').textContent = scene.name + ': ' + t.toFixed(1) + ' / ' + scene.sc.dur + ' s';
+    }
+  } else if (car && (gas || +sl.throttle.value > 0.001)) {
+    const e = car.engine, th = +sl.throttle.value + ((gas ? 1 : 0) - +sl.throttle.value) * Math.min(1, dt / 0.06);
+    let r = +sl.rpm.value; r += (gas ? 9000 * (1 - r / (e.redlineRpm + 300)) : -(r - e.idleRpm) * 1.6) * dt; r = Math.min(r, e.redlineRpm + 40);
+    set('throttle', th < 0.002 ? 0 : th); set('rpm', Math.max(e.idleRpm, r));
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// ---- A/B, mute, copy, reset, meter
+const abShow = () => { const m = audio.engineSound; $('ab').textContent = 'Playing: ' + (m === 'newplus' ? 'New+' : 'New'); $('ab').classList.toggle('on', m === 'newplus'); };
+$('ab').onclick = () => { audio.setEngineSound(audio.engineSound === 'newplus' ? 'new' : 'newplus'); abShow(); };
+const muteShow = () => { $('mute').textContent = audio.muted ? 'Unmute' : 'Mute'; $('mute').classList.toggle('on', audio.muted); };
+$('mute').onclick = () => { audio.toggleMute(); muteShow(); };
+$('copy').onclick = () => { const s = JSON.stringify(S, null, 1); $('out').textContent = s; try { navigator.clipboard.writeText(s); } catch (e) { /* shown below */ } };
+$('reset').onclick = () => { S = Object.assign({}, DEF); solo = ''; rows.forEach((r) => r.show()); push(); };
+audio.onMeter((m) => { $('meter').innerHTML = '<b>' + Math.round(m.rpm) + '</b> rpm · boost <b>' + Math.round(m.boost * 100) + '%</b> · pops <b>' + m.pops + '</b>'; });
+const start = () => { audio.unlock(); $('tap').remove(); };
+$('tapbtn').onclick = start;
+audio.ready.then(() => { $('status').textContent = 'ready'; $('status').className = 'ok'; applyCar(); for (const k in sl) send(k); push(); abShow(); muteShow(); })
+  .catch((e) => { $('status').textContent = 'audio failed: ' + e.message; });
+</script>
+</body>
+</html>

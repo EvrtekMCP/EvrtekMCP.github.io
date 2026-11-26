@@ -15,17 +15,17 @@
 // cloud lit from the sun's side and rays, hazier far ranges, the sun's path and the lamps' streaks on the water, the
 // new roadside kit, contact shadows and light pools, and things that move (litter, steam, flags, flicker, machines).
 // Each Full layer answers a five-tap panel switch (TUNING.world), read in update().
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.22';
-import { PAL, sunDir, lampGrid, lampsAt, ambient, setLook, setDetail } from './look.js?v=0.1.22';
-import { TUNING } from './config.js?v=0.1.22';
-import * as D from './scenery/detail.js?v=0.1.22';
-import * as TX from './textures.js?v=0.1.22';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.23';
+import { PAL, sunDir, lampGrid, lampsAt, ambient, setLook, setDetail } from './look.js?v=0.1.23';
+import { TUNING } from './config.js?v=0.1.23';
+import * as D from './scenery/detail.js?v=0.1.23';
+import * as TX from './textures.js?v=0.1.23';
 // the regions' files import a few helpers from this one (a cycle that is safe: they touch them only inside functions)
-import * as harbour from './scenery/harbour.js?v=0.1.22';
-import * as canyon from './scenery/canyon.js?v=0.1.22';
-import * as mountain from './scenery/mountain.js?v=0.1.22';
-import * as neon from './scenery/neon.js?v=0.1.22';
-import * as summit from './scenery/summit.js?v=0.1.22';
+import * as harbour from './scenery/harbour.js?v=0.1.23';
+import * as canyon from './scenery/canyon.js?v=0.1.23';
+import * as mountain from './scenery/mountain.js?v=0.1.23';
+import * as neon from './scenery/neon.js?v=0.1.23';
+import * as summit from './scenery/summit.js?v=0.1.23';
 const SCENERY = { harbour, canyon, mountain, neon, summit };
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);

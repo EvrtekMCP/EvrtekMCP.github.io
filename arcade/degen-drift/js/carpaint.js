@@ -17,7 +17,7 @@
 // High tier only (groundK): the paint's downward reflections meet the road under the car, where the car's own
 // underglow and headlight pool are (a fake planar reflection, worked out in the shader), so a neon underglow shows in
 // the sills. Fog: the look's fog chunks, as every material (look.js bumps the program key on a new look).
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.22';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.23';
 
 // shared by every car: the sun's highlight and the five-tap panel's sliders (TUNING.reflect)
 export const SHARED = {

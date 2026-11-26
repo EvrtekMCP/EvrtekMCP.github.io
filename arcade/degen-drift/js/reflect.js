@@ -15,7 +15,7 @@
 // default, the live map gives way to the course map for the rest of the session if its own work averages over 1.5 ms
 // for a second, or if frames run slow (over 19.5 ms on average for two seconds of a race) with it on; a chosen Live
 // stays on, as a chosen quality tier does. The reason is kept (fallback) and shown on the FPS readout.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.22';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.23';
 
 export const COURSE_SIZE = 256, LIVE_SIZE = 128, BUDGET_MS = 1.5;
 

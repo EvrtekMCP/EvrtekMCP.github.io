@@ -5,7 +5,7 @@
 // waveshaper and a filter that opens with the throttle), a turbo whistle, a filtered-noise tire squeal, wind, knocks
 // and short interface blips. There is no music in the placeholder (no code-made music: the soundtrack is Eleven's).
 // Audio starts on the first tap or key (iPhone Safari unlocks it only inside a user gesture).
-import { SOUND, VERSION } from './config.js?v=0.1.22';
+import { SOUND, VERSION } from './config.js?v=0.1.23';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 // 11-19 (2): ?debug=sound prints the audio's life (made, state changes, resumes, hidden and shown, rebuilds) to the
@@ -26,7 +26,7 @@ const IOS = typeof navigator !== 'undefined' && (/iP(hone|ad|od)/.test(navigator
 //   - the pause is the game's state, followed every frame (main.js), so leaving a paused race by Quit or Restart can no
 //     longer leave the car's sound off (before 11-19 (2) it stayed off until the next pause and resume).
 export class Sound {
-  constructor() { this.ctx = null; this.mod = null; this.muted = false; this.state = { rpm: 900, thr: 0, slip: 0, speed: 0, boost: 0 }; this.redline = 7600; this.hints = {}; this.engineSound = 'new'; this.gears = null; this.paused = false; this.track = null; this.view = null; this.log = []; this.rebuilds = 0; this.failedWakes = 0; this.stalled = false; }
+  constructor() { this.ctx = null; this.mod = null; this.muted = false; this.state = { rpm: 900, thr: 0, slip: 0, speed: 0, boost: 0 }; this.redline = 7600; this.hints = {}; this.engineSound = 'newplus'; this.gears = null; this.paused = false; this.track = null; this.view = null; this.log = []; this.rebuilds = 0; this.failedWakes = 0; this.stalled = false; this.plus = null; this.region = null; this.tier = null; this.det = { alphaR: -1, alphaF: -1, loadF: 0, latG: 0, spinV: 0, paint: 0 }; this.ac = { wl: 7, wr: 7, kind: 0 }; }
   note(what, extra) {
     const e = Object.assign({ t: Math.round(performance.now()), what, state: this.ctx ? this.ctx.state : 'none' }, extra);
     this.log.push(e); if (this.log.length > 120) this.log.shift();
@@ -128,10 +128,31 @@ export class Sound {
   // the car's engine preset and the fitted parts that change its voice (data/cars.js sound, data/upgrades.js sound)
   // 11-18 (sound builder): and the gearbox's ratios, so the engine lands each shift at rpm x next / current ratio
   setEngine(hints, redline, gears) { this.hints = hints || {}; this.redline = redline || 7600; if (gears) this.gears = gears; this.applyEngine(); }
-  applyEngine() { if (this.mod && this.mod.setEngineSound) this.mod.setEngineSound(this.engineSound); if (this.mod && this.mod.setEngine) this.mod.setEngine(this.hints.preset, this.hints); if (this.mod && this.mod.setGears && this.gears) this.mod.setGears(this.gears); }
-  // 11-17 (sound builder): Settings > Engine sound. 11-18: 'new' (the default) the combustion engine, all six cars;
-  // 'recorded' a car's recorded engine and tyres where it has a set (the KESTREL); 'classic' the first engine made in code
-  setEngineSound(m) { this.engineSound = m === 'classic' || m === 'recorded' ? m : 'new'; if (this.mod && this.mod.setEngineSound) this.mod.setEngineSound(this.engineSound); }
+  applyEngine() {
+    const m = this.mod; if (!m) return;
+    if (m.setPlus && this.plus) m.setPlus(this.plus); if (m.setRegion && this.region) m.setRegion(this.region); if (m.setTierLite && this.tier != null) m.setTierLite(this.tier === 0); // 11-26 (3), before the car is built
+    if (m.setEngineSound) m.setEngineSound(this.engineSound); if (m.setEngine) m.setEngine(this.hints.preset, this.hints); if (m.setGears && this.gears) m.setGears(this.gears);
+  }
+  // 11-17 (sound builder): Settings > Engine sound. 11-18: 'new' the combustion engine, all six cars; 'recorded' a car's
+  // recorded engine and tyres where it has a set (the KESTREL); 'classic' the first engine made in code. 11-26 (3):
+  // 'newplus' (New+, the default) New with depth: more mics, the space round the car, the four-tyre screech
+  setEngineSound(m) { this.engineSound = m === 'classic' || m === 'recorded' || m === 'new' ? m : 'newplus'; if (this.mod && this.mod.setEngineSound) this.mod.setEngineSound(this.engineSound); }
+  // 11-26 (3): New+'s layer switches and levels (TUNING.sound, the five-tap panel), the course's region, the quality tier
+  setPlus(o) { this.plus = Object.assign({}, o); if (this.mod && this.mod.setPlus) this.mod.setPlus(this.plus); }
+  setRegion(r) { this.region = r; if (this.mod && this.mod.setRegion) this.mod.setRegion(r); }
+  setTier(t) { if (t === this.tier) return; this.tier = t; if (this.mod && this.mod.setTierLite) this.mod.setTierLite(t === 0); }
+  // 11-26 (3), every frame: what New+'s tyres and space read from the car and the road (js/carsurface.js), passed on only
+  // when it moved enough to matter (the slip angles to a tenth of a degree, the walls to a quarter metre). The rears' sliding speed
+  // counts only past their grip (car.spin): a tyre driving the car always turns a little faster than the road, silently
+  setDetail(car, surface) {
+    if (!this.mod || !this.mod.setTyreState || this.engineSound !== 'newplus') return;
+    const D = 57.29578, d = this.det, q = (v, s) => Math.round(v / s) * s;
+    const nd = { alphaR: q(Math.abs(car.alphaR || 0) * D, 0.1), alphaF: q(Math.abs(car.alphaF || 0) * D, 0.1), loadF: q(car.loadF || 0.5, 0.005), latG: q(car.ay || 0, 0.05), spinV: q(car.spin > 0 ? Math.max(0, (car.wheelSpin || 0) - Math.abs(car.u || 0)) : 0, 0.05), paint: surface.paint(car) };
+    let ch = false; for (const k in nd) if (nd[k] !== d[k]) { d[k] = nd[k]; ch = true; }
+    if (ch) this.mod.setTyreState(d);
+    const a = surface.acoustics(car, this.acTmp || (this.acTmp = {})), wl = q(a.wl, 0.25), wr = q(a.wr, 0.25);
+    if (wl !== this.ac.wl || wr !== this.ac.wr || a.kind !== this.ac.kind) { this.ac = { wl, wr, kind: a.kind }; this.mod.setAcoustics(this.ac); }
+  }
 
   setRPM(rpm) { this.state.rpm = rpm; if (this.mod) return this.mod.setRPM && this.mod.setRPM(rpm, this.redline); }
   setThrottle(t, boost = 0) { this.state.thr = t; this.state.boost = boost; if (this.mod) return this.mod.setThrottle && this.mod.setThrottle(t); }

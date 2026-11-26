@@ -30,4 +30,24 @@ export class Surface {
     return out;
   }
   space(car) { const k = this.track.kind[car.trackI]; return k === 2 ? 'tunnel' : k === 3 ? 'bridge' : 'open'; }
+  // 11-26 (3), for the sound's space (New+): how far the car is from the wall on each side (the walls stand 0.55 m past
+  // the road's edge, car.js walls()) and what kind of road it is on (the region's walls, 2 a tunnel, 3 a bridge)
+  acoustics(car, out = {}) {
+    const tr = this.track, i = car.trackI, lim = tr.half[i] + 0.55;
+    out.wl = Math.max(0.3, lim - car.lat); out.wr = Math.max(0.3, lim + car.lat); out.kind = tr.kind[i];
+    return out;
+  }
+  // 11-26 (3): the share of the rear tyres on paint (the lane's edge lines, the dashed centre line, the start line, as the
+  // road's shader paints them: js/world.js), so a sliding tyre squeaks crossing one
+  paint(car) {
+    const tr = this.track, i = car.trackI, lo = tr.laneOff ? tr.laneOff[i] : 0, lh = tr.laneHalf ? tr.laneHalf[i] : tr.half[i];
+    const rel = car.psi - tr.psi[i], sr = Math.sin(rel), cr = Math.cos(rel), C = car.T && car.T.car, a = C && C.wheelbase ? C.wheelbase * (C.frontWeight || 0.5) : 1.3;
+    const s = tr.wrapS(car.s - a * cr), dash = ((s / 10) % 1 + 1) % 1 < 0.42, start = s < 2.4;
+    let on = 0;
+    for (const side of [1, -1]) {
+      const x = car.lat - a * sr + side * 0.8 * cr - lo, ax = Math.abs(x);
+      if (Math.abs(ax - (lh - 0.42)) < 0.1 || (dash && ax < 0.09) || (start && ax < lh - 0.4)) on += 0.5;
+    }
+    return on;
+  }
 }
