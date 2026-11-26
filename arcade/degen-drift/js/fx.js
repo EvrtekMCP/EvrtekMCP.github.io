@@ -2,7 +2,7 @@
 // life (rise, spread, fade) is worked out on the GPU from their birth time, so the CPU writes one puff and forgets it.
 // Skid marks: a ring buffer of quads on the road, oldest overwritten, fading with age. Sparks off the walls: additive
 // points with gravity. Speed lines: streaks round the edge of the view, fed by speed.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.20';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.21';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 

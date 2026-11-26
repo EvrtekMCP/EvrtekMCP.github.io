@@ -4,21 +4,21 @@
 // never a system font; panels wear the key art's magenta-to-cyan edge; parts are illustrated; cars are drawn from their
 // own bodies; the results screen has its star and DEGENERATE moments; motion stops for reduced-motion. The garage's
 // actions call garage.js exactly as before (its logic is the cars builder's).
-import { VERSION, TEST_BUILD } from './config.js?v=0.1.20';
-import { CARS, carById } from './data/cars.js?v=0.1.20';
-import { CATEGORIES, COSMETICS, SETUP } from './data/upgrades.js?v=0.1.20';
-import { BODIES } from './carbodies.js?v=0.1.20';
-import { REGIONS, COURSES } from './courses/index.js?v=0.1.20';
-import { courseList, pick, mapSvg } from './courses/select.js?v=0.1.20';
-import * as G from './garage.js?v=0.1.20';
-import { ACTIONS, keyName } from './input.js?v=0.1.20';
-import * as ART from './art.js?v=0.1.20';
-import { Tips } from './tips.js?v=0.1.20';
-import { Ghost } from './ghost.js?v=0.1.20';
-import { Duel, record as duelRecord } from './duel/duelui.js?v=0.1.20';
-import { DUELS, duelPay } from './duel/duel.js?v=0.1.20';
-import { taps } from './loader.js?v=0.1.20';
-import { fsOK, isFs, toggleFs, iphoneHint } from './fit.js?v=0.1.20';
+import { VERSION, TEST_BUILD } from './config.js?v=0.1.21';
+import { CARS, carById } from './data/cars.js?v=0.1.21';
+import { CATEGORIES, COSMETICS, SETUP } from './data/upgrades.js?v=0.1.21';
+import { BODIES } from './carbodies.js?v=0.1.21';
+import { REGIONS, COURSES } from './courses/index.js?v=0.1.21';
+import { courseList, pick, mapSvg } from './courses/select.js?v=0.1.21';
+import * as G from './garage.js?v=0.1.21';
+import { ACTIONS, keyName } from './input.js?v=0.1.21';
+import * as ART from './art.js?v=0.1.21';
+import { Tips } from './tips.js?v=0.1.21';
+import { Ghost } from './ghost.js?v=0.1.21';
+import { Duel, record as duelRecord } from './duel/duelui.js?v=0.1.21';
+import { DUELS, duelPay } from './duel/duel.js?v=0.1.21';
+import { taps } from './loader.js?v=0.1.21';
+import { fsOK, isFs, toggleFs, iphoneHint } from './fit.js?v=0.1.21';
 
 // 11-16 (fit): full screen, where the browser allows it (js/fit.js); the icon shows what a tap will do
 const FS_ICON = ['<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>', '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>'];
@@ -337,6 +337,7 @@ export class UI {
       <div class="opt"><label>Steering</label><div>${seg('steer', [['stick', 'Thumb stick'], ['tilt', 'Tilt']])}${s.steer === 'tilt' ? '<div class="row-btns"><button class="btn small" data-act="tilt-centre">Centre tilt here</button></div><div class="note">Turn the phone like a wheel. It centres itself at the start of every run.</div>' : ''}</div></div>
       ${s.throttle === 'pressure' ? `<div class="opt"><label>Pressure from</label>${seg('pressure', [['auto', 'Auto'], ['force', 'Force'], ['area', 'Contact size'], ['position', 'Thumb height']])}</div>` : ''}` : ''}
       <div class="opt"><label>Quality</label><div>${seg('quality', [['auto', 'Auto'], ['low', 'Low'], ['med', 'Medium'], ['high', 'High']])}<div class="note">Auto starts high on computers and medium on phones, then trims the resolution, and drops to Low if it has to, to hold 60 frames a second.</div></div></div>
+      ${(() => { const v = g.reflectMode ? g.reflectMode() : 'off'; return `<div class="opt"><label>Car reflections</label><div><div class="seg">${[['off', 'Off'], ['course', 'Course'], ['live', 'Live']].map(([k, l]) => `<button class="${v === k ? 'on' : ''}" data-act="set" data-key="reflect" data-val="${k}">${l}</button>`).join('')}</div><div class="note">Live: the lamps and the street slide across the paint and glass as you drive. Course: the paint reflects the course from the start line, lighter work for an older phone. Off: plain paint. Starts on Live on medium and high quality, Course on low.</div></div></div>`; })()}<!-- 11-26 -->
       <div class="opt"><label>Sound</label><div>${seg('sound', [[true, 'On'], [false, 'Off']])}<div class="vols">${[['master', 'Everything'], ['music', 'Music'], ['sfx', 'Car and effects']].map(([ch, n]) => `<label class="sl"><span>${n}</span><input type="range" min="0" max="1" step="0.05" value="${(s.vol && s.vol[ch] != null) ? s.vol[ch] : 0.8}" data-vol="${ch}" aria-label="${n} volume"></label>`).join('')}</div></div></div>
       <div class="opt"><label>Tire smoke</label><div>${seg('smoke', [['full', 'Full'], ['less', 'Less'], ['min', 'Light']])}<div class="note">Less smoke is lighter work for an older phone.</div></div></div>
       ${(() => { const v = s.engineSound === 'classic' || s.engineSound === 'recorded' ? s.engineSound : 'new'; return `<div class="opt"><label>Engine sound</label><div><div class="seg">${[['new', 'New'], ['recorded', 'Recorded'], ['classic', 'Classic']].map(([k, l]) => `<button class="${v === k ? 'on' : ''}" data-act="set" data-key="engineSound" data-val="${k}">${l}</button>`).join('')}</div><div class="note">New: every engine built from its firing pulses and exhaust pipes. Recorded: engine and tire recordings (the KESTREL only). Classic: the original engine sound.</div></div></div>`; })()}<!-- 11-17, 11-18 (sound builder) -->

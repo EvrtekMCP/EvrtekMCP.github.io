@@ -1,12 +1,12 @@
 // DRIFTLINE: every tuning number in one place. The hidden debug panel (F9, or ?debug) edits these live and can copy
 // the result back out as JSON; nothing else in the game hard-codes a feel number.
 // Units: metres, seconds, kilograms, newtons, radians unless the name says otherwise (Deg, Kmh).
-export const VERSION = '0.1.20';
+export const VERSION = '0.1.21';
 // 11-21 (Evrtek: "an on screen notice of what test version we're looking at"): the test build's number, shown with the
 // version on the title and in the pause menu (js/ui.js testLabel()). From test v18 the version's last number IS the test
 // number (v19 = 0.1.19). `node tools/release.mjs --bump X.Y.Z` sets both: 0.x.N gives N, 1.0.0 and on give null (no
 // label, only the title's quiet version line). The release check fails if the two disagree.
-export const TEST_BUILD = 20;
+export const TEST_BUILD = 21;
 
 export const TUNING = {
   car: {
@@ -219,6 +219,11 @@ export const TUNING = {
     smokeRate: 70,           // puffs per second per wheel at full slip
     skidSlip: 0.22,          // tire slip that starts a skid mark
   },
+  // 11-26 the car reflections (carpaint.js; Settings > Car reflections picks Off / Course / Live)
+  reflect: {
+    coat: 1.7,               // the clear coat's strength on paint and glass: 0 none, 1 as built, 2 double (Dirigent 11-26: 1 read faint on the KESTREL; 1.7 no blow-out on the white SPECTRE)
+    rough: 0,                // added to every finish's roughness: 0 as built (mirror-sharp paint), up to 1 (satin)
+  },
 };
 
 // Where game sound goes (Dirigent 11-15): a second builder is making audio/driftaudio.js (ElevenLabs takes). Until it
@@ -256,6 +261,7 @@ export const RANGES = {
   'scoring.switchHold': [0.2, 1.5, 0.05], 'scoring.switchStep': [0, 4, 0.25],
   'scoring.wallWipe': [0, 1, 0.05],
   'camera.velocityBlend': [0, 1, 0.01], 'camera.fov': [40, 90, 1], 'camera.fovKick': [0, 30, 1],
+  'reflect.coat': [0, 2, 0.05], 'reflect.rough': [0, 1, 0.01],
 };
 
 // A copy of the shipped numbers, so the panel can put them back.

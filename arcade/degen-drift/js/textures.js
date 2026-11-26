@@ -1,7 +1,7 @@
 // DRIFTLINE: every texture is drawn at load time on a small canvas: asphalt grain, the pine cards, lit warehouse
 // windows, corner chevrons, the car's shadow, and the matcaps that give the paint its baked sunset reflection. Nothing
 // is downloaded; the whole set costs a few milliseconds and a couple of megabytes of video memory.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.20';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.21';
 
 function canvas(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return [c, c.getContext('2d')]; }
 function rng(seed) { let s = seed >>> 0; return () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }

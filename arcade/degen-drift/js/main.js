@@ -2,31 +2,33 @@
 // countdown, run, pause, results), steps the car at a fixed 120 Hz, feeds the scoring, the effects, the sound and the
 // HUD, and renders. The car list is an array of drivers so a rival car (downhill duels) can join later: each driver is
 // a car, its mesh and where its inputs come from; 0.1.0 has the player alone.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.20';
-import { TUNING, VERSION } from './config.js?v=0.1.20';
-import { installFog, PAL } from './look.js?v=0.1.20';
-import { Track } from './track.js?v=0.1.20';
-import { courseById } from './courses/index.js?v=0.1.20';
-import { DUELS } from './duel/duel.js?v=0.1.20';
-import { Car } from './car.js?v=0.1.20';
-import { DriftScore } from './scoring.js?v=0.1.20';
-import * as G from './garage.js?v=0.1.20';
-import { buildWorld } from './world.js?v=0.1.20';
-import { CarMesh } from './carmesh.js?v=0.1.20';
-import { Surface } from './carsurface.js?v=0.1.20';
-import { Smoke, Skids, Sparks, SpeedLines } from './fx.js?v=0.1.20';
-import { ChaseCam } from './camera.js?v=0.1.20';
-import { Post } from './post.js?v=0.1.20';
-import { Quality } from './quality.js?v=0.1.20';
-import { Input } from './input.js?v=0.1.20';
-import { Sound } from './sound.js?v=0.1.20';
-import { UI } from './ui.js?v=0.1.20';
-import { Hud } from './hud.js?v=0.1.20';
-import { Debug, loadTuning } from './debug.js?v=0.1.20';
-import { appIcon } from './art.js?v=0.1.20';
-import { Loader, painted } from './loader.js?v=0.1.20';
-import { TipScreen } from './tips.js?v=0.1.20';
-import { view, onFit } from './fit.js?v=0.1.20';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.21';
+import { TUNING, VERSION } from './config.js?v=0.1.21';
+import { installFog, PAL, sunDir } from './look.js?v=0.1.21';
+import { Reflections, LIVE_SIZE, COURSE_SIZE } from './reflect.js?v=0.1.21';
+import { SHARED as PAINT, setWorldLight } from './carpaint.js?v=0.1.21';
+import { Track } from './track.js?v=0.1.21';
+import { courseById } from './courses/index.js?v=0.1.21';
+import { DUELS } from './duel/duel.js?v=0.1.21';
+import { Car } from './car.js?v=0.1.21';
+import { DriftScore } from './scoring.js?v=0.1.21';
+import * as G from './garage.js?v=0.1.21';
+import { buildWorld } from './world.js?v=0.1.21';
+import { CarMesh, WET_VP } from './carmesh.js?v=0.1.21';
+import { Surface } from './carsurface.js?v=0.1.21';
+import { Smoke, Skids, Sparks, SpeedLines } from './fx.js?v=0.1.21';
+import { ChaseCam } from './camera.js?v=0.1.21';
+import { Post } from './post.js?v=0.1.21';
+import { Quality } from './quality.js?v=0.1.21';
+import { Input } from './input.js?v=0.1.21';
+import { Sound } from './sound.js?v=0.1.21';
+import { UI } from './ui.js?v=0.1.21';
+import { Hud } from './hud.js?v=0.1.21';
+import { Debug, loadTuning } from './debug.js?v=0.1.21';
+import { appIcon } from './art.js?v=0.1.21';
+import { Loader, painted } from './loader.js?v=0.1.21';
+import { TipScreen } from './tips.js?v=0.1.21';
+import { view, onFit } from './fit.js?v=0.1.21';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const params = new URLSearchParams(location.search);
@@ -81,6 +83,7 @@ class Game {
     this.smoke.setTint(G.looks(this.progress).smoke);
     this.cam = new ChaseCam(this.camera);
     this.post = new Post(this.renderer);
+    this.reflect = new Reflections(this.renderer); // 11-26: what the cars reflect (js/reflect.js)
     this.hud = new Hud();
     this.ui = new UI(this);
     this.tipScreen = new TipScreen(this, this.ui.tips); // 11-18 (2): the loading screen a race launches behind
@@ -88,7 +91,7 @@ class Game {
     this.fpsEl = document.getElementById('fps'); this.fpsEl.hidden = !this.settings.fps;
     this.frames = []; this.fpsT = 0;
     this.quality.onScale = () => this.resize();
-    this.quality.onTier = () => this.resize();
+    this.quality.onTier = () => { this.resize(); this.applyReflect(); };
     this.world.setPixelRatio(this.renderer.getPixelRatio());
     this.rnd = mulberry(42);
     this.light = [1, 1, 1];
@@ -99,12 +102,15 @@ class Game {
     this.resize();
     // warm every shader before the first real frame (no hitch at the first drift)
     this.car.reset(-8, 0); this.carMesh.update(this.car, [1, 1, 1], 0.016); this.cam.snap(this.car);
+    this.applyReflect();
     this.renderer.compile(this.scene, this.camera);
+    const warm = this.warmReflect(); // 11-26: linked beside the title; the first frame after makes the course's map
     progressBar(1);
     this.toTitle();
     this.bootEl = document.getElementById('boot'); this.bootEl.classList.add('title');
     this.last = performance.now();
     if (TEST) await this.testHooks();
+    if (TEST) await warm; // tests start from a linked map, so capture mode's frames are the same every run
     if (!this.capture) requestAnimationFrame((t) => this.loop(t));
     this.ready = true;
   }
@@ -179,10 +185,13 @@ class Game {
       this.parkAtStart(); this.cam.snap(this.car);
       await T.step(0.84);
       await this.renderer.compileAsync(this.scene, this.camera);
+      const warm = this.warmReflect(); // 11-26: the reflection's shaders link while the tip is read (the map follows)
       await T.step(0.9);
       this.warmFrame();
       await T.step(1);
-      how = await T.wait();
+      const waiting = T.wait();
+      await warm; if (this.needBake()) this.bakeReflections(); // under the tip's own 2.5 s, as a rule
+      how = await waiting;
     } finally {
       this.loading = false; this.last = performance.now(); this.quality.wait = Math.max(this.quality.wait, 1);
       T.hide();
@@ -201,7 +210,7 @@ class Game {
       await this.loader.show(label);
       await work((f) => this.loader.step(f));
       await this.loader.step(0.84);
-      await this.renderer.compileAsync(this.scene, this.camera);
+      await Promise.all([this.renderer.compileAsync(this.scene, this.camera), this.warmReflect()]);
       await this.loader.step(0.9);
       this.warmFrame();
       await this.loader.step(1);
@@ -212,7 +221,50 @@ class Game {
   }
   // one frame drawn under the loading screen: the new shaders link and the meshes and textures go up to the GPU here,
   // not on the first frame the player sees
-  warmFrame() { this.world.update(this.time); this.post.render(this.scene, this.camera, this.quality.bloom, 0); }
+  // (11-26: and a new course's reflection map is made here, once its shaders are linked)
+  warmFrame() { if (this.needBake()) this.bakeReflections(); this.world.update(this.time); this.post.render(this.scene, this.camera, this.quality.bloom, 0); }
+
+  // ---------------------------------------------------------------- 11-26 car reflections (js/reflect.js, js/carpaint.js)
+  // Settings > Car reflections: Off (the matcaps, the cars before 11-26), Course (the course's map), Live (a map riding
+  // with the car). Left on its default it is Live on medium and high and Course on low, and Live gives way to Course
+  // for the session if it runs over its budget (reflect.js watch). The rival in a duel reads the course's map.
+  reflectMode() {
+    const s = this.settings.reflect;
+    if (s === 'off' || s === 'course' || s === 'live') return s;
+    return this.quality.tier >= 1 && !this.reflect.fallback ? 'live' : 'course';
+  }
+  applyReflect() {
+    const R = this.reflect, mode = this.reflectMode(), high = this.quality.tier >= 2, live = mode === 'live';
+    const wet = ((this.world.look.road && this.world.look.road.sheen) || 0) > 0.1; // the neon city's wet streets
+    R.mode = mode; R.facesPerFrame = live ? (high ? 2 : 1) : 0;
+    if (live) R.primed = false;
+    setWorldLight(sunDir(), PAL, this.world.look);
+    this.carMesh.setReflect(mode, live ? R.live.texture : R.course.texture, live ? LIVE_SIZE : COURSE_SIZE, high, wet);
+    const rival = this.ui && this.ui.duel && this.ui.duel.mesh;
+    if (rival) rival.setReflect(mode, R.course.texture, COURSE_SIZE, high, wet);
+  }
+  // what a reflection leaves out: the player's car, the smoke, sparks, skid marks, speed lines and the ghost, and a
+  // rival's glows (sized for the screen); from the course's map the rival too (it waits on the grid at the bake)
+  reflectOpts(bake) {
+    const hide = [this.carMesh.group, this.smoke.mesh, this.sparks.mesh, this.skids.mesh, this.lines.mesh, this.ui.ghost && this.ui.ghost.mesh];
+    const rival = this.ui.duel && this.ui.duel.mesh;
+    if (rival) { if (bake) hide.push(rival.group); else hide.push(...rival.fxParts()); }
+    return { world: this.world, hide, fov: TUNING.camera.fov, viewH: view.h };
+  }
+  // the world's shaders for the reflection's faces, compiled in the background (reflect.js warm); the map is made once
+  // they are linked (warmFrame, launch, or the next frame drawn), so it never waits on a compile
+  // (with Car reflections Off nothing is compiled or made; a switch to Course or Live makes the map on the next frame)
+  warmReflect() { if (this.reflect.mode === 'off') { this.reflectReady = true; return Promise.resolve(); } this.reflectReady = false; const p = this.reflect.warm(this.scene, this.reflectOpts(false)); p.then(() => { this.reflectReady = true; }); return p; }
+  needBake() { return this.reflectReady && this.reflect.bakedFor !== this.world && this.reflect.mode !== 'off'; }
+  // the course's map: from 1.6 m over the road about 40 m before the start line. Not under the start gantry (its row
+  // of lights straight overhead would ride on every car's roof all lap) and not in a tunnel (its roof would)
+  bakeReflections() {
+    const T = this.track, tunnel = (s) => { for (let d = -12; d <= 12; d += 4) if (T.kind[Math.floor(T.wrapS(s + d) / T.step) % T.n] === 2) return true; return false; };
+    const s = [-40, -55, -28, -70, -90, -20].find((x) => !tunnel(x)) ?? -40, p = T.point(s, 0);
+    this.reflect.bake(this.scene, new THREE.Vector3(p[0], p[1] + 1.6, p[2]), this.reflectOpts(true));
+    this.applyReflect();
+  }
+  reflectInfo() { const R = this.reflect; return `${R.mode}${R.facesPerFrame ? ` (${R.facesPerFrame} face${R.facesPerFrame > 1 ? 's' : ''} a frame, ${R.ema.toFixed(2)} ms)` : ''}${R.fallback ? ', Live gave way: ' + R.fallback : ''}`; }
 
   bindGlobal() {
     // 11-16: the box (js/fit.js) follows the window, the visual viewport and how much of a host's frame is on the screen
@@ -238,6 +290,7 @@ class Game {
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h; this.camera.updateProjectionMatrix();
     if (this.post.rt) this.post.setSize();
+    this.renderer.getDrawingBufferSize(WET_VP.value); // 11-26: the lamps' streaks in the road are sized in pixels
     this.world.setPixelRatio(this.renderer.getPixelRatio()); this.sparks.uScale.value = this.renderer.getPixelRatio();
     const portrait = this.input.touch && h > w;
     document.getElementById('rotate').hidden = !portrait;
@@ -251,6 +304,7 @@ class Game {
     if (k === 'sound') this.sound.setMuted(!v);
     if (k === 'engineSound') this.sound.setEngineSound(v); // 11-17 (sound builder)
     if (k === 'palette') this.applyPalette();
+    if (k === 'reflect') this.applyReflect(); // 11-26
     if (k === 'steer' && v === 'tilt') this.input.startTilt(true).then((ok) => { if (!ok) { this.settings.steer = 'stick'; this.saveSettings(); this.input.applyLayout(); if (this.ui.name === 'settings') this.ui.settings(this.ui.from); } });
     this.input.applyLayout();
   }
@@ -389,9 +443,23 @@ class Game {
     if (draw) {
       // tests only: GPU time per frame (EXT_disjoint_timer_query_webgl2), the frame drawn reps times over so the card
       // runs at its working clocks (a light load idles it down and the timer reads several times too slow)
+      // 11-26: the live reflection's faces are drawn first (inside the timer, so the tests count them; reflect.js)
+      const R = this.reflect;
+      if (this.needBake()) this.bakeReflections(); // its shaders linked since the last frame (or Off was left)
+      const faces = R.bakedFor === this.world ? R.facesPerFrame : 0, ro = faces && this.reflectOpts(false), at = faces && (this._ra ||= new THREE.Vector3()).set(this.car.x, this.car.y + 1.1, this.car.z); // the probe at roof height
+      PAINT.coatK.value = TUNING.reflect.coat; PAINT.roughK.value = TUNING.reflect.rough; // the five-tap panel's sliders
+      let rms = -1;
       const q = this.gpuQ && this.gpuQ.begin();
-      for (let i = this.gpuQ ? this.gpuQ.reps : 1; i > 0; i--) this.post.render(this.scene, this.camera, this.quality.bloom, this.flashT > 0 ? this.flashT : 0);
+      for (let i = this.gpuQ ? this.gpuQ.reps : 1; i > 0; i--) {
+        if (faces) rms = R.update(this.scene, at, ro, faces);
+        this.post.render(this.scene, this.camera, this.quality.bloom, this.flashT > 0 ? this.flashT : 0);
+      }
       if (q) this.gpuQ.end(q);
+      // left on its default, Live gives way to Course if it runs over its budget (not while a test times the GPU)
+      if (rms >= 0 && !this.gpuQ && !this.settings.reflect && !R.fallback && this.quality.wait <= 0) {
+        const why = R.watch(dt, this.quality.ema, this.state === 'run');
+        if (why) { R.fallback = why; this.applyReflect(); }
+      }
     }
     this.flashT = Math.max(0, (this.flashT || 0) - dt * 3);
     this.debug.tick(dt);
@@ -551,12 +619,12 @@ class Game {
     this.fpsT += dt; if (this.fpsT < 0.25 || this.fpsEl.hidden) return; this.fpsT = 0;
     const f = this.frames.slice(-60), avg = f.reduce((a, b) => a + b, 0) / f.length, worst = Math.max(...f);
     const info = this.renderer.info.render;
-    this.fpsEl.textContent = `${(1000 / avg).toFixed(0)} fps  ${avg.toFixed(1)} ms (worst ${worst.toFixed(0)})\n${['LOW', 'MEDIUM', 'HIGH'][this.quality.tier]}  res ${(this.quality.scale * 100).toFixed(0)}%  x${this.renderer.getPixelRatio().toFixed(2)}\ndraws ${info.calls}  tris ${(info.triangles / 1000).toFixed(0)}k`;
+    this.fpsEl.textContent = `${(1000 / avg).toFixed(0)} fps  ${avg.toFixed(1)} ms (worst ${worst.toFixed(0)})\n${['LOW', 'MEDIUM', 'HIGH'][this.quality.tier]}  res ${(this.quality.scale * 100).toFixed(0)}%  x${this.renderer.getPixelRatio().toFixed(2)}\ndraws ${info.calls}  tris ${(info.triangles / 1000).toFixed(0)}k\nreflections ${this.reflectInfo()}`; // 11-26
   }
 
   // ---------------------------------------------------------------- test hooks (?test): never loaded for players
   async testHooks() {
-    const { Autopilot } = await import('./autopilot.js?v=0.1.20');
+    const { Autopilot } = await import('./autopilot.js?v=0.1.21');
     this.capture = params.has('capture');
     const g = this;
     window.__dl = {

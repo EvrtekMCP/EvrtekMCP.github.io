@@ -1,5 +1,5 @@
 // DRIFTLINE region 4, Neon city: closed street circuits after dark. Square corners between walls, long boulevards.
-import { course } from './route.js?v=0.1.20';
+import { course } from './route.js?v=0.1.21';
 
 export const AFTERGLOW = course({
   id: 'afterglow-boulevard', name: 'AFTERGLOW BOULEVARD', region: 'neon', difficulty: 64, scenery: 'neon',

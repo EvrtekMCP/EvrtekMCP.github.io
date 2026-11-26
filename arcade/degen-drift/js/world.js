@@ -8,15 +8,15 @@
 // and picking a course never fetches anything (about 20 KB gzipped for all five). The craft
 // rules (the mixed physics stance) are checked by audit(): no ground over the road, no road left hanging, nothing
 // standing on the road, nothing floating.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.20';
-import { PAL, sunDir, lampGrid, lampsAt, ambient, setLook } from './look.js?v=0.1.20';
-import * as TX from './textures.js?v=0.1.20';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.21';
+import { PAL, sunDir, lampGrid, lampsAt, ambient, setLook } from './look.js?v=0.1.21';
+import * as TX from './textures.js?v=0.1.21';
 // the regions' files import a few helpers from this one (a cycle that is safe: they touch them only inside functions)
-import * as harbour from './scenery/harbour.js?v=0.1.20';
-import * as canyon from './scenery/canyon.js?v=0.1.20';
-import * as mountain from './scenery/mountain.js?v=0.1.20';
-import * as neon from './scenery/neon.js?v=0.1.20';
-import * as summit from './scenery/summit.js?v=0.1.20';
+import * as harbour from './scenery/harbour.js?v=0.1.21';
+import * as canyon from './scenery/canyon.js?v=0.1.21';
+import * as mountain from './scenery/mountain.js?v=0.1.21';
+import * as neon from './scenery/neon.js?v=0.1.21';
+import * as summit from './scenery/summit.js?v=0.1.21';
 const SCENERY = { harbour, canyon, mountain, neon, summit };
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -617,9 +617,9 @@ export async function buildWorld(track, course, tier, step = null) {
   const SK = Object.assign({ disc: 0.085, bands: true, clouds: 0.85, stars: 1, moon: null, haze: 0 }, look.sky || {});
   const moon = SK.moon ? new THREE.Vector3().fromArray(SK.moon).normalize() : null;
   const skyMat = new THREE.ShaderMaterial({
-    uniforms: { time: uTime }, depthWrite: false, side: THREE.BackSide, fog: false,
+    uniforms: { time: uTime, stars: { value: 1 } }, depthWrite: false, side: THREE.BackSide, fog: false, // stars: 0 in the cars' reflections (reflect.js)
     vertexShader: `varying vec3 vDir; void main() { vDir = position; vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_Position = p.xyww; }`,
-    fragmentShader: `uniform float time; varying vec3 vDir;
+    fragmentShader: `uniform float time; uniform float stars; varying vec3 vDir;
       ${SKY_GLSL(sun)}
       float h1(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(h1(i), h1(i + vec2(1, 0)), f.x), mix(h1(i + vec2(0, 1)), h1(i + vec2(1, 1)), f.x), f.y); }
@@ -648,14 +648,14 @@ export async function buildWorld(track, course, tier, step = null) {
           c = mix(c, vec3(0.92, 0.9, 1.0) * (0.85 - mot), disc); }` : ''}
         // stars, fading in toward the top
         vec2 sp = floor(vec2(az * 260.0, d.y * 260.0));
-        float st = step(0.9965, h1(sp)) * smoothstep(0.18, 0.6, d.y) * (0.6 + 0.4 * sin(time * 2.0 + h1(sp + 3.0) * 40.0)) * ${SK.stars.toFixed(3)};
+        float st = step(0.9965, h1(sp)) * smoothstep(0.18, 0.6, d.y) * (0.6 + 0.4 * sin(time * 2.0 + h1(sp + 3.0) * 40.0)) * ${SK.stars.toFixed(3)} * stars;
         c += vec3(0.9, 0.85, 1.0) * st;
         gl_FragColor = vec4(c, 1.0);
         #include <colorspace_fragment>
       }`,
   });
   const sky = new THREE.Mesh(new THREE.SphereGeometry(3000, 32, 16), skyMat); sky.name = 'sky'; sky.renderOrder = -2; sky.frustumCulled = false;
-  root.add(sky);
+  root.add(sky); root.userData.skyMat = skyMat;
   const WA = (S.water && S.water(ctx)) || look.water || { kind: 'sea', level: course.seaLevel ?? -1.6 };
   if (WA.kind !== 'none') {
     const seaG = new THREE.PlaneGeometry(9000, 9000, 1, 1); seaG.rotateX(-Math.PI / 2);

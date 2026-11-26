@@ -6,15 +6,18 @@
 // mirrors, the livery (painted bands and glowing pinstripes), and its own rims.
 // The paint is a matcap drawn at load: a metallic base whose reflections take the paint's colour, under a clear coat
 // that mirrors the sunset at grazing angles. The baked lamp light under the car brightens it without shifting its hue.
+// 11-26: beside the matcaps, the same parts under a reflection of the world (carpaint.js, reflect.js); setReflect
+// switches between them (Settings > Car reflections: Off is the matcaps).
 // Upgrades show: calipers colour with the brakes, coilovers lower it, a carbon bonnet comes with the lightest level,
 // the straight pipe pops flame on the lift, nitrous burns blue. It leans on its springs, dents where it hits, and
 // smokes from the bonnet when the engine is hurt. Local axes: +z forward, +x left, y up.
 // Draws per car: body (paint, cabin and painted parts in one), glass, trim (black parts, seams, pipes), head lamps,
 // tail lamps, livery (when it has painted bands), pinstripes (when it has them), four wheels of three each (tyre, rim
 // with its disc, caliper), and the shadow, light pool, halos and flames.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.20';
-import * as TX from './textures.js?v=0.1.20';
-import { BODIES, shapeOf } from './carbodies.js?v=0.1.20';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.21';
+import * as TX from './textures.js?v=0.1.21';
+import { BODIES, shapeOf } from './carbodies.js?v=0.1.21';
+import { finish, carUniforms } from './carpaint.js?v=0.1.21';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -404,6 +407,26 @@ export class CarMesh {
     this.mats.caliper.userData = { name: 'caliper', base: '#3a3a40', metal: 0.2, rough: 0.5 };
     this.mats.livery.userData = { name: 'livery', base: '#ffffff', metal: 0.4, rough: 0.3 };
     this.tintables = [this.mats.paint, this.mats.glass, this.mats.trim, this.mats.rubber, this.mats.rim, this.mats.caliper, this.mats.decal, this.mats.livery];
+    // 11-26: the same parts under a reflection of the world (carpaint.js), and a switch between the two sets (setReflect:
+    // Settings > Car reflections > Off keeps the matcaps above). this.mats is the set in use; new parts take from it.
+    this.uCar = carUniforms();
+    const DS = THREE.DoubleSide;
+    this.sets = {
+      old: this.mats,
+      new: {
+        paint: finish('paint', this.uCar, { base: look.paint, rough: 0.04, coatAttr: true, vertexColors: true }),
+        glass: finish('glass', this.uCar, { base: '#2c323e', rough: 0, side: DS }),
+        trim: finish('trim', this.uCar, Object.assign({ base: '#b4b7bf', rough: 0.08, vertexColors: true, side: DS }, PO)),
+        rubber: finish('rubber', this.uCar, { base: '#111111', rough: 0.7 }),
+        rim: finish('rim', this.uCar, { base: '#c8ccd8', rough: 0.06, vertexColors: true, side: DS }),
+        caliper: finish('paint', this.uCar, { base: '#3a3a40', rough: 0.15 }),
+        livery: finish('paint', this.uCar, Object.assign({ base: '#ffffff', rough: 0.04, vertexColors: true, side: DS }, PO)),
+        decal: finish('paint', this.uCar, { base: '#f4f1f8', rough: 0.04, side: DS, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }),
+      },
+    };
+    for (const set of Object.values(this.sets)) for (const [k, m] of Object.entries(set)) m.userData.key = k;
+    for (const [k, m] of Object.entries(this.sets.new)) m.userData.name = this.mats[k].userData.name || k;
+    this.active = 'old';
     const LO = { polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 };
     this.headMat = new THREE.MeshBasicMaterial(Object.assign({ color: new THREE.Color(3.2, 3.4, 3.8), side: THREE.DoubleSide, vertexColors: true }, LO));
     this.tailMat = new THREE.MeshBasicMaterial(Object.assign({ color: new THREE.Color(0.5, 0.004, 0.008), side: THREE.DoubleSide, vertexColors: true }, LO));
@@ -419,6 +442,8 @@ export class CarMesh {
     // lamp halos and exhaust flames: soft additive points riding on the body
     this.halo = new THREE.Points(new THREE.BufferGeometry(), haloMaterial()); this.halo.frustumCulled = false; this.halo.renderOrder = 6; this.body.add(this.halo);
     this.flame = new THREE.Points(new THREE.BufferGeometry(), haloMaterial()); this.flame.frustumCulled = false; this.flame.renderOrder = 6; this.body.add(this.flame);
+    // 11-26, high tier: the lamps mirrored in the road (the halos' own points, drawn where the eye meets their mirror image)
+    this.wet = new THREE.Points(this.halo.geometry, wetMaterial()); this.wet.frustumCulled = false; this.wet.renderOrder = 5; this.wet.visible = false; this.body.add(this.wet);
     this.bodyId = null; this.look = {}; this.damageKey = ''; this._c = new THREE.Color(); this.flameT = 0; this.lastThr = 0;
     this.build(bodyId, look);
   }
@@ -447,6 +472,11 @@ export class CarMesh {
       // the carbon bonnet: the top of the nose ahead of the screen, a weave under the clear coat (0 = not bonnet)
       if (z > B.cabin.screen + 0.02 && z < S.zF - 0.03 && y > S.shoulder(z) - 0.03 && Math.abs(x) < S.plan(z) * 0.8) this.carbonW[i] = 0.07 + 0.03 * ((Math.floor(x * 40) + Math.floor(z * 40)) & 1);
     }
+    // 11-26: the clear coat per vertex (carpaint.js 'coat': its strength and the roughness damage adds): full on the
+    // painted body, none in the wheel arches (shade 0.1), most of it on the darker sills (0.22); setDamage takes it down
+    this.baseCoat = new Float32Array(nv); const coat = new Float32Array(nv * 2);
+    for (let i = 0; i < nv; i++) { const c = clamp((this.baseCol[i * 3] - 0.1) / 0.15, 0, 1); this.baseCoat[i] = c * c * (3 - 2 * c); coat[i * 2] = this.baseCoat[i]; }
+    bg.setAttribute('coat', new THREE.BufferAttribute(coat, 2));
     this.normalsDirty = false; this.normalsT = 0;
     add(bg, this.mats.paint, 'body');
     add(glassGeo(S), this.mats.glass, 'glass');
@@ -494,8 +524,10 @@ export class CarMesh {
     const tire = new THREE.LatheGeometry(prof, 16); tire.rotateZ(Math.PI / 2);
     const rim = rimGeo(B, style), cal = new THREE.BoxGeometry(0.05, 0.09, 0.16); cal.translate(-tw * 0.1, rr * 0.6, -0.05);
     this.wheelGeos = [tire, rim.geo, cal];
-    if (this.mats.rim.matcap) this.mats.rim.matcap.dispose();
-    this.mats.rim.matcap = TX.matcap(style === 'mesh' ? 'gold' : 'chrome', rim.col); this.mats.rim.needsUpdate = true; this.mats.rim.userData.base = rim.col;
+    const O = this.sets.old;
+    if (O.rim.matcap) O.rim.matcap.dispose();
+    O.rim.matcap = TX.matcap(style === 'mesh' ? 'gold' : 'chrome', rim.col); O.rim.needsUpdate = true; O.rim.userData.base = rim.col;
+    this.sets.new.rim.uniforms.base.value.set(rim.col);
     for (const [z, s] of [[W.f, 1], [W.f, -1], [W.r, 1], [W.r, -1]]) {
       const x = s * this.S.track(z) / 2;
       const pivot = new THREE.Group(); pivot.position.set(x, R, z);
@@ -512,13 +544,14 @@ export class CarMesh {
   setLook(look, force = false) {
     const prev = this.look || {};
     this.look = look;
-    if (force || prev.paint !== look.paint) { if (this.mats.paint.matcap) this.mats.paint.matcap.dispose(); this.mats.paint.matcap = TX.matcap('paint', look.paint); this.mats.paint.needsUpdate = true; this.mats.paint.userData.base = look.paint; }
+    const O = this.sets.old, N = this.sets.new;
+    if (force || prev.paint !== look.paint) { if (O.paint.matcap) O.paint.matcap.dispose(); O.paint.matcap = TX.matcap('paint', look.paint); O.paint.needsUpdate = true; O.paint.userData.base = look.paint; N.paint.uniforms.base.value.set(look.paint); }
     if (!force && (prev.rim || 'spoke') !== (look.rim || 'spoke')) this.buildWheels(look.rim || 'spoke');
     if (force || prev.decal !== look.decal) {
       if (this.decalMesh) { this.decalMesh.parent.remove(this.decalMesh); this.decalMesh.geometry.dispose(); this.parts = this.parts.filter((o) => o !== this.decalMesh); this.decalMesh = null; }
       const g = this.decalGeom(look.decal); if (g) { this.decalMesh = new THREE.Mesh(g, this.mats.decal); this.decalMesh.name = 'decal'; this.body.add(this.decalMesh); this.parts.push(this.decalMesh); }
     }
-    if (force || prev.brakes !== look.brakes) { const c = ['#3a3a40', '#c4182c', '#d8a02a', '#2a7bff'][look.brakes || 0]; this.mats.caliper.matcap.dispose(); this.mats.caliper.matcap = TX.matcap('paint', c); this.mats.caliper.needsUpdate = true; this.mats.caliper.userData.base = c; }
+    if (force || prev.brakes !== look.brakes) { const c = ['#3a3a40', '#c4182c', '#d8a02a', '#2a7bff'][look.brakes || 0]; O.caliper.matcap.dispose(); O.caliper.matcap = TX.matcap('paint', c); O.caliper.needsUpdate = true; O.caliper.userData.base = c; N.caliper.uniforms.base.value.set(c); }
     const gc = look.glow ? new THREE.Color(look.glow).multiplyScalar(0.9) : new THREE.Color(0, 0, 0);
     this.glow.material.uniforms.color.value.copy(gc); this.glow.visible = !!look.glow;
     this.rideDrop = 0.025 * (look.ride || 0);
@@ -531,6 +564,7 @@ export class CarMesh {
     const key = ['engine', 'fl', 'fr', 'rl', 'rr', 'body'].map((k) => (d[k] || 0).toFixed(2)).join(',') + (this.look.carbon ? 'c' : '');
     if (key === this.damageKey) return; this.damageKey = key;
     const pos = this.bodyGeo.attributes.position, col = this.bodyGeo.attributes.color, Bp = this.basePos, Bc = this.baseCol, W = this.dmgW, N = this.dmgNoise, CB = this.carbonW;
+    const coat = this.bodyGeo.attributes.coat, C0 = this.baseCoat; // 11-26: the clear coat dulls and roughens where it is hurt
     const amt = this.dmgCorners.map(([k]) => Math.max(0, d[k] || 0)), sx = this.dmgCorners.map(([, cx]) => (cx !== 0 ? -Math.sign(cx) * 0.08 : 0)), sz = this.dmgCorners.map(([, , cz]) => -Math.sign(cz) * 0.1);
     const body = (d.body || 0) * 0.25, carbon = !!this.look.carbon;
     let dented = false;
@@ -541,11 +575,32 @@ export class CarMesh {
       pos.setXYZ(i, Bp[i * 3] + dx, Bp[i * 3 + 1] - dark * 0.02, Bp[i * 3 + 2] + dz);
       const v = 1 - clamp(dark, 0, 0.6);
       if (carbon && CB[i]) col.setXYZ(i, CB[i], CB[i], CB[i] * 1.1); else col.setXYZ(i, v * Bc[i * 3], v * 0.97 * Bc[i * 3 + 1], v * 0.95 * Bc[i * 3 + 2]);
+      coat.setXY(i, C0[i] * (1 - clamp(dark * 1.3, 0, 0.75)), clamp(dark * 0.9, 0, 0.6));
     }
-    pos.needsUpdate = true; col.needsUpdate = true;
+    pos.needsUpdate = true; col.needsUpdate = true; coat.needsUpdate = true;
     if (dented) this.normalsDirty = true;
     else { this.bodyGeo.attributes.normal.array.set(this.baseNor); this.bodyGeo.attributes.normal.needsUpdate = true; this.normalsDirty = false; }
   }
+  // 11-26, Settings > Car reflections. mode 'off': the matcaps (the cars before 11-26); 'course' or 'live': the finishes
+  // under reflection (carpaint.js), reading env (a cube map) of size px a face. high: the high tier's extras (the road's
+  // pools in the sills, and on a wet road the lamps mirrored in it); wet: the course's road shines (the neon city).
+  setReflect(mode, env, size, high = false, wet = false) {
+    const want = mode === 'off' ? 'old' : 'new';
+    if (want !== this.active) {
+      const from = this.sets[this.active], to = this.sets[want];
+      this.group.traverse((o) => { const m = o.material, k = m && m.userData && m.userData.key; if (k && from[k] === m) o.material = to[k]; });
+      for (const m of Object.values(to)) m.needsUpdate = true; // compiled with the look's fog now (look.js epoch)
+      this.active = want; this.mats = to;
+    }
+    this.uCar.envMap.value = env; this.uCar.envBias.value = Math.log2(256 / (size || 256));
+    const on = want === 'new' && high;
+    this.uCar.groundK.value = on ? 1 : 0;
+    this.wet.visible = on && wet; // only a wet road (the neon city) holds a lamp's image; on a dry one it read as stray lights
+    const u = this.wet.material.uniforms; u.k.value = 0.55; u.stretch.value = 1; u.size.value = 2.4;
+  }
+  // what a reflection of this car must leave out when it is not the car being reflected (a rival in your paint):
+  // its additive glows and pools, sized for the screen
+  fxParts() { return [this.halo, this.flame, this.wet, this.pool, this.glow]; }
   // car: the physics state; light: the baked light under it (linear rgb); dt
   update(car, light, dt) {
     this.normalsT += dt;
@@ -566,6 +621,12 @@ export class CarMesh {
     const k = clamp(0.62 + lum * 0.95, 0.62, 1.55);
     this._c.setRGB(k, k * 0.985, k * 0.97);
     for (const m of this.tintables) m.color.copy(this._c);
+    // 11-26: the finishes under reflection read the same light, where the car is (its own pools under it, high tier),
+    // and the lamps' mirror images sit on the road the car is on
+    const U = this.uCar;
+    U.tint.value.copy(this._c); U.carPos.value.set(car.x, car.y, car.z); U.carDir.value.set(Math.sin(car.psi), Math.cos(car.psi));
+    if (this.glow.visible) U.glowCol.value.copy(this.glow.material.uniforms.color.value); else U.glowCol.value.setRGB(0, 0, 0);
+    if (this.wet.visible) this.wet.material.uniforms.roadY.value = car.y;
     // brake lights and their halos
     const br = car.brake > 0.1 || car.handbrake > 0.1 ? 1 : 0;
     this.tailMat.color.setRGB(0.5 + br * 1.2, 0.004 + br * 0.035, 0.008 + br * 0.04);
@@ -592,6 +653,41 @@ function poolMaterial(color) {
     uniforms: { color: { value: color } }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -6,
     vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
     fragmentShader: 'uniform vec3 color; varying vec2 vUv; void main() { vec2 q = (vUv - 0.5) * 2.0; float d = dot(q, q); float a = exp(-d * 3.0) * (1.0 - smoothstep(0.7, 1.0, d)); gl_FragColor = vec4(color * a, 1.0); }',
+  });
+}
+// 11-26, high tier: a lamp mirrored in the road. Its mirror image lies under the road; it is drawn where the eye's ray
+// to it meets the road (just above it, so the road never hides it and the car still does), at the size its true
+// distance gives, and only from the side the lamp faces (head lamps forward, tail lamps back: the car's own body hides
+// the others): a thin streak from the road under the lamp down to its image, the way lights lie on a wet street (stretch
+// 1; stretch 0, a round soft glow, was the first try on every course and read as stray lights on a dry road, so only
+// the wet neon city shows them now). vp: the drawing buffer's size (main.js resize).
+export const WET_VP = { value: new THREE.Vector2(1, 1) };
+function wetMaterial() {
+  return new THREE.ShaderMaterial({
+    uniforms: { roadY: { value: 0 }, k: { value: 0.2 }, stretch: { value: 0 }, size: { value: 1.4 }, vp: WET_VP },
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: `attribute float aSize; attribute vec3 color; uniform float roadY; uniform float k; uniform float size; uniform float stretch; uniform vec2 vp;
+      varying vec3 vC; varying float vWr;
+      void main() {
+        vec3 L = (modelMatrix * vec4(position, 1.0)).xyz, M = vec3(L.x, 2.0 * roadY - L.y, L.z), C = cameraPosition;
+        vec3 P = C + (M - C) * clamp((roadY + 0.04 - C.y) / min(M.y - C.y, -1e-3), 0.0, 1.0);
+        vec3 face = normalize(mat3(modelMatrix) * vec3(0.0, 0.0, position.z > 0.0 ? 1.0 : -1.0));
+        float vis = smoothstep(0.05, 0.35, dot(face, normalize(C - L)));
+        vec4 cp = projectionMatrix * viewMatrix * vec4(P, 1.0), cf = projectionMatrix * viewMatrix * vec4(L.x, roadY + 0.04, L.z, 1.0);
+        vec2 b = cp.xy / cp.w, a = cf.xy / max(cf.w, 1e-3);
+        float lampPx = aSize * size * 300.0 / max(length(M - C), 0.5);
+        float px = mix(lampPx, max(lampPx, length((a - b) * vp * 0.5) * 1.35), stretch);
+        gl_Position = vec4(mix(b, (a + b) * 0.5, stretch) * cp.w, cp.z, cp.w);
+        gl_PointSize = clamp(px, 2.0, 220.0);
+        vWr = clamp(lampPx * 0.28 / max(px, 1.0), 0.03, 1.0);
+        vC = color * k * vis;
+      }`,
+    fragmentShader: `uniform float stretch; varying vec3 vC; varying float vWr;
+      void main() { vec2 q = (gl_PointCoord - 0.5) * 2.0;
+        float soft = exp(-dot(q, q) * 4.0) * (1.0 - smoothstep(0.75, 1.0, length(q)));
+        float streak = exp(-q.x * q.x / (vWr * vWr) * 1.5) * exp(-(q.y - 0.45) * (q.y - 0.45) * 2.5) * (1.0 - smoothstep(0.85, 1.0, abs(q.y))); // brightest near the image
+        float a = mix(soft, streak, stretch);
+        if (a < 0.004) discard; gl_FragColor = vec4(vC * a, 1.0); }`,
   });
 }
 // soft additive points that keep a sensible size on screen (lamp halos, flames)
