@@ -11,7 +11,7 @@ export const EMBER_BAY = {
   dressing: 'harbour-pass', // the scenery preset (world.js)
   stars: [25000, 61000, 111000], // day 3: tools/starlines.mjs (zone worth and chain worth); his play retunes them
   degenerate: 196000,
-  startOffset: 62,
+  startOffset: 305,
   points: [
     [230, 0, 0.6, 6.5, 0],
     [100, 0, 0.6, 6.5, 0],

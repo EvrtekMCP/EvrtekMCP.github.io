@@ -2,7 +2,7 @@
 // drifting each zone: a handbrake flick to turn in, then the nose held inside the travel by steering, the angle held
 // by throttle, the line followed by trimming the angle. Used by the Node simulator to tune the car and set the star
 // tiers, and by the capture tool for DRIFT-TEST.mp4. Never loaded for players (main.js imports it only in test mode).
-import { TUNING } from './config.js?v=0.1.19';
+import { TUNING } from './config.js?v=0.1.20';
 
 const DEG = Math.PI / 180;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -30,7 +30,7 @@ export class Autopilot {
   }
   drive(car, dt) {
     const tr = this.track, s = car.s, v = car.speed;
-    const inp = { steer: 0, throttle: 0, brake: 0, handbrake: 0, analog: true };
+    const inp = { steer: 0, throttle: 0, brake: 0, handbrake: 0, analog: true, ai: true }; // 11-25 ai: no thumbs, so no response curve (car.js)
     // the line: in or near a zone follow its racing line, otherwise drift back to the middle
     const look = clamp(7 + v * 0.42, 9, 30);
     const sa = s + look;

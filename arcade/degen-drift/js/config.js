@@ -1,12 +1,12 @@
 // DRIFTLINE: every tuning number in one place. The hidden debug panel (F9, or ?debug) edits these live and can copy
 // the result back out as JSON; nothing else in the game hard-codes a feel number.
 // Units: metres, seconds, kilograms, newtons, radians unless the name says otherwise (Deg, Kmh).
-export const VERSION = '0.1.19';
+export const VERSION = '0.1.20';
 // 11-21 (Evrtek: "an on screen notice of what test version we're looking at"): the test build's number, shown with the
 // version on the title and in the pause menu (js/ui.js testLabel()). From test v18 the version's last number IS the test
 // number (v19 = 0.1.19). `node tools/release.mjs --bump X.Y.Z` sets both: 0.x.N gives N, 1.0.0 and on give null (no
 // label, only the title's quiet version line). The release check fails if the two disagree.
-export const TEST_BUILD = 19;
+export const TEST_BUILD = 20;
 
 export const TUNING = {
   car: {
@@ -63,6 +63,12 @@ export const TUNING = {
     // 11-17 (2) the phone stick's shaping (js/stick.js), off with assist.launchGrip 0
     stickDead: 0.05,         // share of the stick's travel (62 px) that does nothing: a resting thumb's wander
     stickCurve: 1.15,        // 1 = straight; more = the first px of a correction give less (full travel is full lock)
+    // 11-25 the steering's grip mode (car.js step; off with assist.straightAid 0): at speed, while no drift is asked for
+    gripFromKmh: 40,         // it comes in from this speed...
+    gripFullKmh: 90,         // ...and is all there by this one (hairpins and the launch steer as before)
+    centreGain: 0.7,         // the wheel's gain near the middle (1 = straight; full lock is always full lock)
+    keyGripShare: 0.5,       // the keys turn the wheel at this share of `rate` (a 0.1 s tap is a nudge)
+    modeLag: 0.15,           // s: how smoothly it hands back to the old steering when a drift is asked for
   },
   assist: {
     driftHold: 0.8,          // 0 = raw tires only; 1 = the slide's angle follows the target below firmly
@@ -91,6 +97,14 @@ export const TUNING = {
     intentDeg: 8,            // the ask lasts while the slide is past this angle (or the lever is pulled)...
     intentKeep: 1.0,         // ...and this many s after it straightens...
     intentFade: 0.4,         // ...then fades over this many s
+    // 11-25 the straight aid (car.js step, Evrtek: "even the slightest tap of the steering wheel can cause you to start a
+    // drift/skid"): the launch grip's traction control at every speed while no drift is asked for
+    straightAid: 1,          // 1 = on; 0 = the feel before 11-25 (steering and aid; the tuning panel's switch); no player setting
+    aidSteer: 0.45,          // it hands over to the player from this much wheel...
+    aidSteerOff: 0.75,       // ...and is gone by this much (a big steer is the player's)
+    aidSlipDeg: 5,           // it lets go from this much slide...
+    aidSlipOffDeg: 10,       // ...and is gone by this much (the slide is the player's)
+    aidBiteDeg: 1.5,         // its traction control bites as the rear tyres slip sideways, all there by this angle
   },
   wall: {
     restitution: 0.18,       // bounce off the wall
@@ -101,6 +115,13 @@ export const TUNING = {
     grazeSpeed: 2.0,         // m/s: the corner closing on the wall slower than this is a graze, faster is a hit
     noseDeg: 8,              // a front corner meeting the wall with the nose turned in past this is a hit at any speed
     grazePay: 0,             // share of the zone's points paid while touching the wall (0: a scrape pays nothing)
+    // 11-25 the wall kiss (Evrtek: "If you manage to get your car to touch a wall close to perfectly sideways so the impact
+    // is very light, that should not reset your drift, it should count as a wall kiss"): the flank judged on its own speed
+    kisses: 1,               // 1 = on; 0 = 11-19's rule (the flank judged at its corner, like every contact)
+    kissSpeed: 2.5,          // m/s: the flank's middle closing on the wall slower than this is a WALL KISS (corners: grazeSpeed)
+    kissDeg: 12,             // the flank: within noseDeg of parallel, or with the tail end in, within this (the nose: noseDeg)
+    kissPoints: 150,         // points a kiss adds to a live chain (its multiplier applies when it banks)
+    kissGap: 1.0,            // s: at most one kiss paid in this time
     wipeSpeed: 0.8,          // (grazes 0) m/s into the wall that counts as a touch (wipes the chain)
     scrapeTime: 0.18,        // (grazes 0) s of continuous scraping that also counts as a touch
   },
@@ -159,6 +180,8 @@ export const TUNING = {
     // (flat at both ends) to +5% on the hardest, so it favours the low end of play instead of lifting everything.
     payBoost: { low: 0.20, high: 0.05, from: 10, to: 95 }, // boost at difficulty <= from, at difficulty >= to
     repair: { engine: 1650, front: 675, rear: 600, body: 375 }, // full repair of one part from 1.0 damage (Evrtek 11-25: all 25% off, was 2200/900/800/500)
+    resaleCar: 0.6,          // Evrtek 11-25: selling a car returns this share of its price...
+    resaleParts: 0.4,        // ...plus this share of what was spent on its parts and looks
     repairCap: 1350,         // a full repair never costs more than this (11-25: was 1800)
     patchShare: 0.3,         // a patch-up costs this share of the full repair...
     patchFix: 0.6,           // ...and takes this share off every part's damage
@@ -219,8 +242,14 @@ export const RANGES = {
   'assist.flickSteer': [0.1, 1, 0.05], 'assist.flickGap': [0.1, 2, 0.05], 'assist.powerSteer': [0.1, 0.95, 0.05],
   'assist.intentDeg': [0, 30, 0.5], 'assist.intentKeep': [0, 3, 0.05], 'assist.intentFade': [0.05, 2, 0.05],
   'steer.stickDead': [0, 0.3, 0.01], 'steer.stickCurve': [1, 3, 0.05],
+  // 11-25 the straight aid and the steering's grip mode: straightAid is the switch (1 on, 0 the old feel)
+  'assist.straightAid': [0, 1, 1], 'assist.aidSteer': [0.1, 1, 0.05], 'assist.aidSteerOff': [0.15, 1, 0.05],
+  'assist.aidSlipDeg': [0, 20, 0.5], 'assist.aidSlipOffDeg': [1, 30, 0.5], 'assist.aidBiteDeg': [0, 8, 0.25],
+  'steer.gripFromKmh': [0, 150, 1], 'steer.gripFullKmh': [1, 200, 1], 'steer.centreGain': [0.1, 1, 0.05],
+  'steer.keyGripShare': [0.1, 1, 0.05], 'steer.modeLag': [0.02, 1, 0.01],
   'wall.restitution': [0, 0.8, 0.01], 'wall.scrub': [0.5, 1, 0.01],
   'wall.grazes': [0, 1, 1], 'wall.grazeSpeed': [0.5, 5, 0.1], 'wall.noseDeg': [0, 30, 1], 'wall.grazePay': [0, 1, 0.05],
+  'wall.kisses': [0, 1, 1], 'wall.kissSpeed': [0.5, 6, 0.1], 'wall.kissDeg': [0, 30, 1], 'wall.kissPoints': [0, 1000, 10], 'wall.kissGap': [0, 5, 0.1],
   'scoring.sweetMult': [1, 4, 0.1], 'scoring.speedExp': [0, 3, 0.05], 'scoring.angleWeight': [0, 1, 0.01],
   'scoring.linkWindow': [0.5, 6, 0.1], 'scoring.multStep': [0, 2, 0.25], 'scoring.multCap': [1, 20, 1],
   'scoring.holdSec': [0.25, 3, 0.05], 'scoring.holdStep': [0, 3, 0.25], 'scoring.holdGrace': [0, 0.6, 0.05],

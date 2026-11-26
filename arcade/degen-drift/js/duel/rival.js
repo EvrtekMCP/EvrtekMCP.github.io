@@ -31,7 +31,7 @@ export class Rival {
   // car: the rival's car; dt: step; other: the player's car (to drive round, never at)
   drive(car, dt, other) {
     const tr = this.track, s = car.s, v = car.speed;
-    const inp = { steer: 0, throttle: 0, brake: 0, handbrake: 0, analog: true };
+    const inp = { steer: 0, throttle: 0, brake: 0, handbrake: 0, analog: true, ai: true }; // 11-25 ai: no thumbs, so no response curve (car.js)
     // stopped against something: back onto the road, as a player would
     this.stuck = v < 2 && car.contact ? this.stuck + dt : v < 1 ? this.stuck + dt * 0.5 : 0;
     if (this.stuck > 2.5) { car.reset(s + 2, 0); this.stuck = 0; this.log.push('reset'); return inp; }

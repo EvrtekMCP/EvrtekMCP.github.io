@@ -2,31 +2,31 @@
 // countdown, run, pause, results), steps the car at a fixed 120 Hz, feeds the scoring, the effects, the sound and the
 // HUD, and renders. The car list is an array of drivers so a rival car (downhill duels) can join later: each driver is
 // a car, its mesh and where its inputs come from; 0.1.0 has the player alone.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.19';
-import { TUNING, VERSION } from './config.js?v=0.1.19';
-import { installFog, PAL } from './look.js?v=0.1.19';
-import { Track } from './track.js?v=0.1.19';
-import { courseById } from './courses/index.js?v=0.1.19';
-import { DUELS } from './duel/duel.js?v=0.1.19';
-import { Car } from './car.js?v=0.1.19';
-import { DriftScore } from './scoring.js?v=0.1.19';
-import * as G from './garage.js?v=0.1.19';
-import { buildWorld } from './world.js?v=0.1.19';
-import { CarMesh } from './carmesh.js?v=0.1.19';
-import { Surface } from './carsurface.js?v=0.1.19';
-import { Smoke, Skids, Sparks, SpeedLines } from './fx.js?v=0.1.19';
-import { ChaseCam } from './camera.js?v=0.1.19';
-import { Post } from './post.js?v=0.1.19';
-import { Quality } from './quality.js?v=0.1.19';
-import { Input } from './input.js?v=0.1.19';
-import { Sound } from './sound.js?v=0.1.19';
-import { UI } from './ui.js?v=0.1.19';
-import { Hud } from './hud.js?v=0.1.19';
-import { Debug, loadTuning } from './debug.js?v=0.1.19';
-import { appIcon } from './art.js?v=0.1.19';
-import { Loader, painted } from './loader.js?v=0.1.19';
-import { TipScreen } from './tips.js?v=0.1.19';
-import { view, onFit } from './fit.js?v=0.1.19';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.20';
+import { TUNING, VERSION } from './config.js?v=0.1.20';
+import { installFog, PAL } from './look.js?v=0.1.20';
+import { Track } from './track.js?v=0.1.20';
+import { courseById } from './courses/index.js?v=0.1.20';
+import { DUELS } from './duel/duel.js?v=0.1.20';
+import { Car } from './car.js?v=0.1.20';
+import { DriftScore } from './scoring.js?v=0.1.20';
+import * as G from './garage.js?v=0.1.20';
+import { buildWorld } from './world.js?v=0.1.20';
+import { CarMesh } from './carmesh.js?v=0.1.20';
+import { Surface } from './carsurface.js?v=0.1.20';
+import { Smoke, Skids, Sparks, SpeedLines } from './fx.js?v=0.1.20';
+import { ChaseCam } from './camera.js?v=0.1.20';
+import { Post } from './post.js?v=0.1.20';
+import { Quality } from './quality.js?v=0.1.20';
+import { Input } from './input.js?v=0.1.20';
+import { Sound } from './sound.js?v=0.1.20';
+import { UI } from './ui.js?v=0.1.20';
+import { Hud } from './hud.js?v=0.1.20';
+import { Debug, loadTuning } from './debug.js?v=0.1.20';
+import { appIcon } from './art.js?v=0.1.20';
+import { Loader, painted } from './loader.js?v=0.1.20';
+import { TipScreen } from './tips.js?v=0.1.20';
+import { view, onFit } from './fit.js?v=0.1.20';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const params = new URLSearchParams(location.search);
@@ -455,10 +455,13 @@ class Game {
     }
     // 11-19 (Evrtek: "if you graze the wall gently, then I don't want that to be a punishment"): a graze keeps the chain
     // (car.js judges each contact). It says so in a small pop, not more than once in 1.2 s along a wall
+    // 11-25: "Brushed the wall" (was "Kissed the wall"): the kiss is now its own thing, the flank laid on the wall (below)
     if (e.type === 'graze') {
       this.grazeFx(e);
-      if (!coasting && !(this.time - this.grazeT < 1.2)) { this.hud.pop('Kissed the wall', 'graze'); this.grazeT = this.time; }
+      if (!coasting && !(this.time - this.grazeT < 1.2)) { this.hud.pop('Brushed the wall', 'graze'); this.grazeT = this.time; }
     }
+    // 11-25 (Evrtek: "it should count as a wall kiss"): felt like a graze; its callout comes with the score's 'kiss'
+    if (e.type === 'kiss') this.grazeFx(e);
   }
   // 11-19: a graze, felt: a few sparks where the corner met the wall and the light scrape (the sound module maps
   // 'graze' to its scrape takes), no camera kick, no damage
@@ -474,6 +477,9 @@ class Game {
     // 11-18 (game builder): the new multiplier steps. A hold ticks the HUD's badge (its ring) and chimes; a switchback pops
     if (e.type === 'hold' && e.add > 0) this.sound.ui('sweet');
     if (e.type === 'switch') { this.hud.pop(`Switchback ×${e.mult}`, 'link switch'); this.sound.ui('link'); }
+    // 11-25 the wall kiss (scoring.js): the callout, with what it added to the chain; an unpaid one (no chain live, or
+    // one too soon after the last) says so no more than once in 1.2 s along a wall, as a graze does
+    if (e.type === 'kiss' && (e.points > 0 || !(this.time - this.grazeT < 1.2))) { this.hud.pop(e.points > 0 ? `WALL KISS +${e.points.toLocaleString('en-US')}` : 'WALL KISS', 'kiss'); this.grazeT = this.time; }
   }
   resetCar() {
     const s = this.car.s;
@@ -550,7 +556,7 @@ class Game {
 
   // ---------------------------------------------------------------- test hooks (?test): never loaded for players
   async testHooks() {
-    const { Autopilot } = await import('./autopilot.js?v=0.1.19');
+    const { Autopilot } = await import('./autopilot.js?v=0.1.20');
     this.capture = params.has('capture');
     const g = this;
     window.__dl = {

@@ -8,15 +8,15 @@
 // and picking a course never fetches anything (about 20 KB gzipped for all five). The craft
 // rules (the mixed physics stance) are checked by audit(): no ground over the road, no road left hanging, nothing
 // standing on the road, nothing floating.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.19';
-import { PAL, sunDir, lampGrid, lampsAt, ambient, setLook } from './look.js?v=0.1.19';
-import * as TX from './textures.js?v=0.1.19';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.20';
+import { PAL, sunDir, lampGrid, lampsAt, ambient, setLook } from './look.js?v=0.1.20';
+import * as TX from './textures.js?v=0.1.20';
 // the regions' files import a few helpers from this one (a cycle that is safe: they touch them only inside functions)
-import * as harbour from './scenery/harbour.js?v=0.1.19';
-import * as canyon from './scenery/canyon.js?v=0.1.19';
-import * as mountain from './scenery/mountain.js?v=0.1.19';
-import * as neon from './scenery/neon.js?v=0.1.19';
-import * as summit from './scenery/summit.js?v=0.1.19';
+import * as harbour from './scenery/harbour.js?v=0.1.20';
+import * as canyon from './scenery/canyon.js?v=0.1.20';
+import * as mountain from './scenery/mountain.js?v=0.1.20';
+import * as neon from './scenery/neon.js?v=0.1.20';
+import * as summit from './scenery/summit.js?v=0.1.20';
 const SCENERY = { harbour, canyon, mountain, neon, summit };
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);

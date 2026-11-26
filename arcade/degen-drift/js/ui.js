@@ -4,21 +4,21 @@
 // never a system font; panels wear the key art's magenta-to-cyan edge; parts are illustrated; cars are drawn from their
 // own bodies; the results screen has its star and DEGENERATE moments; motion stops for reduced-motion. The garage's
 // actions call garage.js exactly as before (its logic is the cars builder's).
-import { VERSION, TEST_BUILD } from './config.js?v=0.1.19';
-import { CARS, carById } from './data/cars.js?v=0.1.19';
-import { CATEGORIES, COSMETICS, SETUP } from './data/upgrades.js?v=0.1.19';
-import { BODIES } from './carbodies.js?v=0.1.19';
-import { REGIONS, COURSES } from './courses/index.js?v=0.1.19';
-import { courseList, pick, mapSvg } from './courses/select.js?v=0.1.19';
-import * as G from './garage.js?v=0.1.19';
-import { ACTIONS, keyName } from './input.js?v=0.1.19';
-import * as ART from './art.js?v=0.1.19';
-import { Tips } from './tips.js?v=0.1.19';
-import { Ghost } from './ghost.js?v=0.1.19';
-import { Duel, record as duelRecord } from './duel/duelui.js?v=0.1.19';
-import { DUELS, duelPay } from './duel/duel.js?v=0.1.19';
-import { taps } from './loader.js?v=0.1.19';
-import { fsOK, isFs, toggleFs, iphoneHint } from './fit.js?v=0.1.19';
+import { VERSION, TEST_BUILD } from './config.js?v=0.1.20';
+import { CARS, carById } from './data/cars.js?v=0.1.20';
+import { CATEGORIES, COSMETICS, SETUP } from './data/upgrades.js?v=0.1.20';
+import { BODIES } from './carbodies.js?v=0.1.20';
+import { REGIONS, COURSES } from './courses/index.js?v=0.1.20';
+import { courseList, pick, mapSvg } from './courses/select.js?v=0.1.20';
+import * as G from './garage.js?v=0.1.20';
+import { ACTIONS, keyName } from './input.js?v=0.1.20';
+import * as ART from './art.js?v=0.1.20';
+import { Tips } from './tips.js?v=0.1.20';
+import { Ghost } from './ghost.js?v=0.1.20';
+import { Duel, record as duelRecord } from './duel/duelui.js?v=0.1.20';
+import { DUELS, duelPay } from './duel/duel.js?v=0.1.20';
+import { taps } from './loader.js?v=0.1.20';
+import { fsOK, isFs, toggleFs, iphoneHint } from './fit.js?v=0.1.20';
 
 // 11-16 (fit): full screen, where the browser allows it (js/fit.js); the icon shows what a tap will do
 const FS_ICON = ['<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>', '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>'];
@@ -107,11 +107,12 @@ export class UI {
       case 'duel': this.launch('duel', 'duel'); break;
       case 'duel-next': this.duel.next(); break;
       case 'back': if (d.to === 'pause') this.pause(); else if (d.to === 'course') this.course(); else if (d.to === 'courses') this.courses(); else g.toTitle(); break;
-      case 'tab': this.garageTab = d.tab; this.garage(); break;
+      case 'tab': this.garageTab = d.tab; this.sellAsk = null; this.garage(); break;
       case 'buy': if (G.buyLevel(g.progress, d.cat)) { g.sound.ui('buy'); g.afterGarageChange(); } this.garage(); break;
       case 'cos': if (G.buyCosmetic(g.progress, d.cos, d.opt)) { g.sound.ui('buy'); g.afterGarageChange(); } this.garage(); break;
       case 'repair': if (G.repair(g.progress, d.patch === '1')) { g.sound.ui('buy'); g.afterGarageChange(); } this.garage(); break;
       case 'buycar': this.swapCar('buycar', d.car, () => { if (G.buyCar(g.progress, d.car)) { g.sound.ui('buy'); g.afterGarageChange(); } this.garage(); }); break;
+      case 'sellcar': if (this.sellAsk !== d.car) { this.sellAsk = d.car; this.garage(); break; } this.sellAsk = null; if (G.sellCar(g.progress, d.car)) { g.sound.ui('buy'); g.afterGarageChange(); } this.garage(); break;
       case 'drivecar': this.swapCar('drivecar', d.car, () => { if (G.switchCar(g.progress, d.car)) { g.afterGarageChange(); } this.garage(); }); break;
       case 'setup-reset': { const st = G.carState(g.progress); for (const k of Object.keys(st.setup)) st.setup[k] = 0; g.afterGarageChange(); this.garage(); break; }
       case 'set': g.setSetting(d.key, d.val === 'true' ? true : d.val === 'false' ? false : d.val); this.settings(this.from); break;
@@ -303,7 +304,7 @@ export class UI {
       const paintNow = G.looks(p).paint;
       for (const c of CARS) {
         const own = p.garage.includes(c.id), cur = p.car === c.id, r0 = c.rating[0], r1 = c.rating[1];
-        const act = cur ? '<span class="maxed">DRIVING</span>' : own ? `<button class="btn small cyan" data-act="drivecar" data-car="${c.id}">Drive</button>` : `<span class="num">${fmt(c.price)}</span><br><button class="btn small ${p.credits >= c.price ? 'primary' : ''}" data-act="buycar" data-car="${c.id}" ${p.credits < c.price ? 'disabled' : ''}>${p.credits >= c.price ? 'Buy' : 'Need ' + fmt(c.price - p.credits)}</button>`;
+        const act = cur ? '<span class="maxed">DRIVING</span>' : own ? `<button class="btn small cyan" data-act="drivecar" data-car="${c.id}">Drive</button>${G.canSell(p, c.id) ? `<br><button class="btn small ${this.sellAsk === c.id ? 'primary' : ''}" data-act="sellcar" data-car="${c.id}">${this.sellAsk === c.id ? 'Sure? ' : 'Sell '}${fmt(G.saleValue(p, c.id))}</button>` : ''}` : `<span class="num">${fmt(c.price)}</span><br><button class="btn small ${p.credits >= c.price ? 'primary' : ''}" data-act="buycar" data-car="${c.id}" ${p.credits < c.price ? 'disabled' : ''}>${p.credits >= c.price ? 'Buy' : 'Need ' + fmt(c.price - p.credits)}</button>`;
         list += `<div class="carcard ${cur ? 'cur' : ''} ${own ? '' : 'locked'}">${ART.carSide(BODIES[c.id] || BODIES.kestrel, cur ? paintNow : c.paint, 'carside', c.id)}
           <div>${ART.title(c.name)}<div class="meta">${esc(c.cls.toUpperCase())} &middot; ${esc(c.engine.toUpperCase())} &middot; RATING ${own ? G.rating(p, c.id) + ' / ' : ''}${r0}&ndash;${r1}</div>
             <div class="rbar"><i style="left:${r0}%;width:${r1 - r0}%"></i></div><p class="note">${esc(c.blurb)} <i>${esc(c.feel)}</i></p></div>

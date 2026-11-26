@@ -1,10 +1,10 @@
 // DRIFTLINE region 1, Harbour: closed industrial docks at sunset (EMBER BAY PASS lives in its own file).
 // Each route is a turtle walk (see route.js): S straight, L/R bends (radius:degrees), w lane half width, o runoff,
 // g grade %, k kind, C close. Difficulty rises with narrower lanes, less runoff, tighter and quicker corners.
-import { course } from './route.js?v=0.1.19';
+import { course } from './route.js?v=0.1.20';
 
 export const DRYDOCK = course({
-  id: 'drydock-run', name: 'DRYDOCK RUN', region: 'harbour', difficulty: 10, scenery: 'harbour',
+  id: 'drydock-run', name: 'DRYDOCK RUN', region: 'harbour', difficulty: 10, scenery: 'harbour', startOffset: 75, // 11-25: start 51 m on, the first corner a first drift can make
   blurb: 'Wide lanes between the container stacks and plenty of room to run wide. The place to learn linking.',
   route: 'w7.6 o6 S260* R50:90 S160* R70:50 L60:50 S90 R40:90 S140 R38:90 S60 L60:45 R50:45 S220 R60:?',
   zones: { zoneHalf: 3.4, sweetHalf: 1.4 },

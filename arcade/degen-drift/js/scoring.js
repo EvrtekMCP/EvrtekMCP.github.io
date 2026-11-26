@@ -8,7 +8,8 @@
 //   - touching a wall wipes the unbanked points and the multiplier. 11-19 (Evrtek: "if you graze the wall gently, then
 //     I don't want that to be a punishment"): only a HIT does (car.js judges every contact); a GRAZE keeps the chain,
 //     its multiplier and its points, but the wall pays nothing while the car touches it (wall.grazePay) and touching
-//     is no time on the sweet spot, so riding the wall is never a drift.
+//     is no time on the sweet spot, so riding the wall is never a drift. 11-25: a WALL KISS (the flank meeting the
+//     wall flat and light) keeps the chain too, and adds a little to it (wall.kissPoints).
 // 11-18 (Evrtek's multiplier, after test v12): two more ways up for the same multiplier, while a chain is live:
 //   - HOLD the sweet spot: every full second held in it (still sliding) is a step;
 //   - a SWITCHBACK: a slide one way, then a flip to a slide the other way, each held at least half a second, is a
@@ -16,7 +17,7 @@
 //     live: inside one bend, through an S, between zones in the link window.
 //   The link stays as it was (a step, and the window that carries the chain from zone to zone). The cap is higher.
 // Pure JS; every number lives in TUNING.scoring.
-import { TUNING } from './config.js?v=0.1.19';
+import { TUNING } from './config.js?v=0.1.20';
 
 const DEG = 180 / Math.PI;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -57,7 +58,8 @@ export class DriftScore {
     this.rate = 0; this.angle = 0;
     this.steps.reset(); this.holdFrac = 0;
     this.events.length = 0;
-    this.stats = { chains: 0, bestChain: 0, links: 0, holds: 0, switches: 0, maxMult: 1, walls: 0, wiped: 0, zoneTime: 0, sweetTime: 0, driftTime: 0, maxAngle: 0 };
+    this.kissSeen = null; this.kissT = 9; // 11-25: the car's kiss count last seen; s since a kiss was paid
+    this.stats = { chains: 0, bestChain: 0, links: 0, holds: 0, switches: 0, maxMult: 1, walls: 0, wiped: 0, zoneTime: 0, sweetTime: 0, driftTime: 0, maxAngle: 0, kisses: 0, kissPaid: 0 };
   }
   get chainValue() { return Math.round(this.acc * this.mult); }
   // a step up the multiplier (to the cap); the event says what earned it and what it added (0 at the cap)
@@ -75,6 +77,18 @@ export class DriftScore {
     const sliding = angle >= Sc.minAngleDeg && kmh >= Sc.minSpeedKmh && car.u > 0;
     if (sliding) { this.dropT = 0; this.drifting = true; this.driftT += dt; this.stats.driftTime += dt; this.stats.maxAngle = Math.max(this.stats.maxAngle, angle); }
     else if (this.drifting) { this.dropT += dt; if (this.dropT > Sc.dropGrace) { this.drifting = false; this.driftT = 0; this.bank('ended'); } }
+    // 11-25 the wall kiss (car.js judge: the flank meeting the wall flat and light): the chain and its multiplier were
+    // never at risk; each new kiss adds wall.kissPoints to a live chain (at most one in wall.kissGap s), which the
+    // multiplier then pays on when it banks. The 'kiss' event carries what it paid (0 with no chain, or too soon)
+    const kn = car.kisses || 0;
+    this.kissT += dt;
+    if (this.kissSeen === null || kn < this.kissSeen) this.kissSeen = kn;
+    else if (kn > this.kissSeen) {
+      this.kissSeen = kn; this.stats.kisses++;
+      const W = TUNING.wall, paid = this.acc > 0 && this.kissT >= W.kissGap ? W.kissPoints : 0;
+      if (paid > 0) { this.acc += paid; this.kissT = 0; this.stats.kissPaid += paid; }
+      this.events.push({ type: 'kiss', points: paid, mult: this.mult });
+    }
 
     // where the car sits against the zone bands
     const zn = tr.zoneAt(car.s);

@@ -4,7 +4,7 @@
 // three assists: the counter-steer (front wheels follow the slide), the drift hold (keeps the angle where the player
 // asks for it) and the spin guard. Every number comes from the tune (config.js TUNING with the garage's parts and the
 // car's damage applied: garage.js deriveTune). Pure JS: the browser and the Node simulator share it.
-import { TUNING } from './config.js?v=0.1.19';
+import { TUNING } from './config.js?v=0.1.20';
 
 const DEG = Math.PI / 180, G = 9.81;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -37,10 +37,12 @@ export class Car {
     this.gear = 1; this.rpm = this.T.car.idleRpm; this.wheelSpin = 0; this.ws = 0; this.reverse = false; this.cut = 0;
     this.vRoad = 0; this.shiftT = 9; this.lastUp = true; this.overT = 0; this.slipping = true; this.launchT = 0; this.held = false; // the gearbox (gearbox() below; slipping, launchT: the launch clutch)
     this.intent = 0; this.liftT = 9; this.turnT = 0; this.bigT = 0; this.flickT = 9; this.flickSide = 0; this.calmT = 0; this.grip = 0; // launch grip (step)
+    this.aid = 0; this.gm = 0; // 11-25: the straight aid and the steering's grip mode (step)
     this.spin = 0; this.slipF = 0; this.slipR = 0; this.alphaF = 0; this.alphaR = 0;
     this.loadF = 0.5; this.wheelRot = 0; this.boost = 0; this.nosOn = false;
     this.hint = -1; this.contact = 0; this.scrape = 0; this.noContact = 1; this.touchFired = false;
     this.grazeFired = false; this.wallPeak = 0; // 11-19: this contact forgiven so far; its hardest step (walls())
+    this.kissFired = false; this.kisses = 0; // 11-25: this contact a wall kiss already; the kisses so far (the score pays from it)
     this.touch = { closing: 0, into: 0, angle: 0, part: 'side', side: 0, rel: 0, x: 0, z: 0, hit: false };
     this.s = s; this.lat = lat; this.trackI = 0;
     this.throttle = 0; this.brake = 0; this.handbrake = 0;
@@ -67,20 +69,33 @@ export class Car {
 
     // ---- steering: the stick's range narrows with speed; the assist adds lock toward the slide on top
     const target = clamp(inp.steer || 0, -1, 1);
+    // 11-25 (Evrtek: "when you are driving straight aways, it seems that even the slightest tap of the steering wheel
+    // can cause you to start a drift/skid"): the steering's grip mode. At speed, while no drift is asked for (last
+    // step's ask, below), the keys ramp slower (steer.keyGripShare of their rate) and the first part of the wheel
+    // gives less (steer.centreGain near the middle, rising to all of it at full lock: full lock is unchanged), so a tap
+    // is a nudge. Any ask (the handbrake, the kick, the flick, a big steer) puts the steering back as it was, smoothly
+    // (steer.modeLag), so every drift steers exactly as before. straightAid 0 is the steering before 11-25.
+    const SA = A.straightAid || 0;
+    const gmWant = SA > 0 ? Math.min(1, SA) * sstep(S.gripFromKmh, S.gripFullKmh, kmh) * (1 - (this.intent || 0)) : 0;
+    this.gm = (this.gm ?? gmWant) + (gmWant - (this.gm ?? gmWant)) * Math.min(1, dt / Math.max(dt, S.modeLag || 0.15));
     if (inp.analog) this.steerIn += (target - this.steerIn) * Math.min(1, dt * 18);
     else {
       const toward = target !== 0 && (Math.sign(target) === Math.sign(this.steerIn) || this.steerIn === 0);
-      const rate = (toward ? S.rate : S.returnRate) * dt;
+      const rate = (toward ? S.rate * (1 - this.gm * (1 - (S.keyGripShare ?? 1))) : S.returnRate) * dt;
       this.steerIn += clamp(target - this.steerIn, -rate, rate);
     }
     const range = (S.highSpeedDeg + (S.maxDeg - S.highSpeedDeg) / (1 + (kmh / S.highSpeedKmh) ** 2)) * DEG;
+    // the response curve: x (c + (1 - c) x^2), c = 1 straight, c = centreGain in full grip mode; 1 at full lock. It is
+    // for thumbs (like the stick's dead zone): the test driver and the rival (inp.ai) steer straight, as before; with it
+    // their fixed-gain line-following lost a ninth of their sweet-spot time, which measures them, not a player
+    const cg = inp.ai ? 1 : 1 - this.gm * (1 - (S.centreGain ?? 1)), wheel = this.steerIn * (cg + (1 - cg) * this.steerIn * this.steerIn);
     const beta = speed > 0.5 ? Math.atan2(w, Math.abs(u)) : 0;   // the slide angle: + when travel is left of the nose
     this.beta = u >= 0 ? beta : 0;
     const assistFade = sstep(A.lowSpeedKmh, A.lowSpeedKmh + 15, kmh) * (u > 0 ? 1 : 0);
     const assist = S.counterAssist * clamp(beta, -S.counterMaxDeg * DEG, S.counterMaxDeg * DEG) * assistFade;
     // a bent front corner pulls the wheel a little toward it (garage.js; capped at damage.steerPullDeg)
     const pull = (S.pullDeg || 0) * DEG * clamp(speed / 10, 0, 1);
-    const delta = clamp(this.steerIn * range + assist + pull, -S.lockDeg * DEG, S.lockDeg * DEG);
+    const delta = clamp(wheel * range + assist + pull, -S.lockDeg * DEG, S.lockDeg * DEG);
     this.delta = delta;
 
     // ---- pedals, with reverse when stopped and holding brake
@@ -124,9 +139,18 @@ export class Car {
     // other, or a big steer at speed. The ask lasts while the car slides, and fades soon after it
     // straightens. Both the help and the ask fade out with speed (gripFullKmh .. gripOffKmh), so at drift speed and
     // in every chosen drift the car is exactly what it was. launchGrip 0 (the tuning panel's switch) is the old feel.
+    // 11-25: the straight aid (sa), the launch grip's help carried to every speed, but only while the player is not
+    // asking for a drift: no ask (the same asks), the wheel under assist.aidSteer (all the player's by aidSteerOff), and
+    // the car near straight (it lets go from aidSlipDeg of slide, gone by aidSlipOffDeg: past that the slide is the
+    // player's). The cause it answers: flat out (a phone's GAS, a key's W) the HALBERD, SPECTRE and ZENITH, and any car
+    // with its engine built, spin their rear wheels at 3 to 9 times the tyre's peak slip from 80 to 140 km/h, where the
+    // launch grip has faded, so the rears have almost no side grip left, and the smallest steer swings the tail; past
+    // 9 degrees the drift hold takes it to a full drift. Its traction control bites only once the rear tyres begin to
+    // slip sideways (assist.aidBiteDeg of rear slip angle), so a dead-straight run accelerates exactly as before (to
+    // hold the wheels on a straight too cost 0.4-0.7 s of 0-100 and up to 1.3 s of 60-140).
     const LG = A.launchGrip || 0, ab0 = Math.abs(this.beta);
-    let grip = 0;
-    if (LG > 0) {
+    let grip = 0, sa = 0;
+    if (LG > 0 || SA > 0) {
       const st = Math.abs(this.steerIn), cart = A.lowSpeedKmh;
       this.liftT = throttle < 0.25 ? 0 : (this.liftT ?? 9) + dt;      // time since the gas was last off
       this.turnT = st >= A.kickSteer ? (this.turnT ?? 0) + dt : 0;        // time the wheel has been held turned
@@ -147,8 +171,11 @@ export class Car {
       this.calmT = ab0 > A.intentDeg * DEG || hand > 0.05 ? 0 : (this.calmT ?? 0) + dt;
       if (this.calmT > A.intentKeep || kmh < cart) this.intent = Math.max(0, (this.intent || 0) - dt / A.intentFade);
       grip = LG * (1 - sstep(A.gripFullKmh, Math.max(A.gripOffKmh, A.gripFullKmh + 1), kmh)) * (1 - (this.intent || 0)) * (1 - power);
+      if (SA > 0) sa = Math.min(1, SA) * (1 - (this.intent || 0)) * (1 - power)
+        * (1 - sstep(A.aidSteer, Math.max(A.aidSteerOff, A.aidSteer + 0.01), st))
+        * (1 - sstep(A.aidSlipDeg * DEG, Math.max(A.aidSlipOffDeg, A.aidSlipDeg + 0.1) * DEG, ab0));
     }
-    this.grip = grip;
+    this.grip = grip; this.aid = sa;
 
     // ---- weight transfer: the longitudinal acceleration of the last step loads one axle and unloads the other
     const shift = C.transferScale * m * this.ax * C.cgHeight / L;
@@ -220,7 +247,9 @@ export class Car {
       this.ws = (lo + hi) / 2;
       // 11-17 (2) the traction control (launch grip above): the wheels' spin held under tcSlip of the peak slip ratio,
       // so the rears keep their side grip; the engine's torque is what gives way
-      if (grip > 0) { const wsMax = rvx + vden * kP * A.tcSlip; if (this.ws > wsMax) this.ws -= (this.ws - wsMax) * grip; }
+      // 11-25 and the straight aid's, the same hold, biting as the rear tyres begin to slip sideways (sa above)
+      const tc = sa > 0 ? Math.max(grip, sa * sstep(0, A.aidBiteDeg * DEG, Math.abs(alphaR))) : grip;
+      if (tc > 0) { const wsMax = rvx + vden * kP * A.tcSlip; if (this.ws > wsMax) this.ws -= (this.ws - wsMax) * tc; }
       Frx = force(this.ws); Fry = fy;
       spin = clamp((this.ws - rvx) / Math.max(rvx, 4) / kP - 1, 0, 3) / 3;
     }
@@ -244,7 +273,8 @@ export class Car {
         const sg = Math.sign(beta), into = -sg * this.steerIn;
         // 11-17 (2): a slide nobody asked for, below drift speed, is held toward straight, not toward a drift's angle
         // (launch grip above: grip is 0 in any chosen drift and at drift speed, so there the target is as it was)
-        const tgt = clamp(A.holdBaseDeg + A.holdThrottleDeg * throttle + A.holdSteerDeg * into, 0, A.guardDeg) * DEG * (1 - grip);
+        // (11-25: and the straight aid's, which has let go by aidSlipOffDeg, so in practice only a slide it has not yet released)
+        const tgt = clamp(A.holdBaseDeg + A.holdThrottleDeg * throttle + A.holdSteerDeg * into, 0, A.guardDeg) * DEG * (1 - Math.max(grip, sa));
         const bdot = (ab - (this.prevAb ?? ab)) / dt;
         tq += -sg * on * A.driftHold * I * (A.holdK * (tgt - ab) - A.holdD * bdot);
       }
@@ -417,7 +447,7 @@ export class Car {
       this.contact = 1;
     } else {
       this.noContact += dt; this.contact = 0;
-      if (this.noContact > 0.35) { this.scrape = 0; this.touchFired = false; this.grazeFired = false; this.wallPeak = 0; }
+      if (this.noContact > 0.35) { this.scrape = 0; this.touchFired = false; this.grazeFired = false; this.kissFired = false; this.wallPeak = 0; }
     }
     this.locate();
   }
@@ -441,19 +471,39 @@ export class Car {
     t.closing = Math.max(0, vx * nx + vz * nz);
     t.into = Math.max(0, this.vx * nx + this.vz * nz);
     t.angle = Math.atan2(Math.abs(sr), Math.abs(cr)) / DEG;
-    t.part = t.angle <= this.T.wall.noseDeg ? 'side' : fx > 0 ? 'front' : 'rear';
-    t.side = side; t.rel = wallRel; t.x = this.x + ox; t.z = this.z + oz; t.hit = false;
+    // 11-25 the wall kiss: the flank is the side within noseDeg of parallel, or with the tail end in, within kissDeg (a
+    // nose turned in past noseDeg is still the front corner); and the flank's own closing speed, its middle's (the body's
+    // velocity there plus the spin's, which along a flat flank is small), with the wall's normal where the middle is
+    const W = this.T.wall, flankDeg = fx < 0 && W.kisses > 0 ? Math.max(W.noseDeg, W.kissDeg) : W.noseDeg;
+    t.part = t.angle <= flankDeg ? 'side' : fx > 0 ? 'front' : 'rear';
+    if (W.kisses > 0) {
+      const mvx = this.vx - this.r * ly * sp, mvz = this.vz - this.r * ly * cp;
+      const km = tr.closest(this.x + ly * cp, this.z - ly * sp, this.hint).i;
+      t.flank = Math.max(0, (mvx * tr.tz[km] - mvz * tr.tx[km]) * side);
+    } else t.flank = t.closing;
+    t.side = side; t.rel = wallRel; t.x = this.x + ox; t.z = this.z + oz; t.hit = false; t.kiss = false;
     return t;
   }
   // 11-19: graze or hit, once per contact (walls() above). A hit fires 'wall' (as every touch did before); the first
   // forgiven step fires 'graze'. After a hit the contact stays one (touchFired) until the car is off the wall.
+  // 11-25 (Evrtek: "If you manage to get your car to touch a wall close to perfectly sideways so the impact is very
+  // light, that should not reset your drift, it should count as a wall kiss"): with wall.kisses on, the flank (contactAt:
+  // the side lying along the wall) is judged on its own middle's closing speed against wall.kissSpeed, a looser line than
+  // the corners' grazeSpeed. The cause: a flank meeting the wall flat was judged at its far corner, 2.2 m from the
+  // middle, where the car's own turning added 2-3 m/s (median) to a body coming in at 0.2-1.1 m/s, so 302 of the 437
+  // flank contacts that came in at 3 m/s or less wiped the chain (tools/walls.mjs, 11-25). Under the line it is a WALL
+  // KISS: the chain and its multiplier kept, once per contact a 'kiss' event, and this.kisses counted, which the score
+  // pays from (scoring.js, wall.kissPoints). The corners keep 11-19's rule; a nose in past noseDeg is a hit at any speed.
   judge(c) {
-    const W = this.T.wall;
-    c.hit = c.closing > W.grazeSpeed || c.part === 'front';
-    this.wallPeak = Math.max(this.wallPeak, c.closing);
+    const W = this.T.wall, flank = W.kisses > 0 && c.part === 'side';
+    const speed = flank ? c.flank : c.closing;
+    c.hit = flank ? speed > W.kissSpeed : speed > W.grazeSpeed || c.part === 'front';
+    c.kiss = flank && !c.hit;
+    this.wallPeak = Math.max(this.wallPeak, speed);
     if (this.touchFired) return;
-    const e = { type: c.hit ? 'wall' : 'graze', speed: c.closing, side: c.side, rel: c.rel, part: c.part, angle: c.angle, x: c.x, z: c.z };
-    if (c.hit) { e.grazed = this.grazeFired; this.events.push(e); this.touchFired = true; }
+    const e = { type: c.hit ? 'wall' : 'graze', speed, side: c.side, rel: c.rel, part: c.part, angle: c.angle, x: c.x, z: c.z };
+    if (c.hit) { e.grazed = this.grazeFired || this.kissFired; this.events.push(e); this.touchFired = true; }
+    else if (c.kiss) { if (!this.kissFired) { e.type = 'kiss'; this.events.push(e); this.kissFired = true; this.kisses = (this.kisses || 0) + 1; } }
     else if (!this.grazeFired) { this.events.push(e); this.grazeFired = true; }
   }
 

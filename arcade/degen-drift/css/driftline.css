@@ -142,6 +142,7 @@ html { font-size: clamp(13px, calc(0.55vw + 0.9 * var(--vh1, 1vh)), 19px); } /* 
 .pop.link { color: var(--amber); } .pop.bank { color: var(--good); } .pop.wipe { color: var(--bad); font-size: 1.6rem; } .pop.info { color: var(--cyan); font-size: 1rem; }
 .pop.switch { color: var(--pink); font-size: 1.75rem; letter-spacing: 0.08em; } .cb-safe .pop.switch { color: #ffb000; }
 .pop.graze { color: var(--cyan); font-size: 1.05rem; } /* 11-19: a graze kept the chain */
+.pop.kiss { color: var(--cyan); font-size: 1.45rem; letter-spacing: 0.06em; } /* 11-25: a wall kiss kept the chain and added to it */
 @keyframes pop { 0% { opacity: 0; transform: translateY(10px) scale(0.9); } 12% { opacity: 1; transform: none; } 75% { opacity: 1; } 100% { opacity: 0; transform: translateY(-24px); } }
 .hud-bottom { position: absolute; bottom: calc(0.5rem + var(--sb)); left: 50%; transform: translateX(-50%); text-align: center; width: 11rem; }
 .angle { width: 9rem; height: 5rem; display: block; margin: 0 auto -2.7rem; }

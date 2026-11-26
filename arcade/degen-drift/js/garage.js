@@ -2,9 +2,9 @@
 // what it is worth on a course (the ability rating against the course's difficulty), what a run pays, what repairs
 // cost, and the saved progress. Pure JS: the economy simulator (tools/economy.mjs) uses it too.
 // No pay-to-win: credits come from play only, and nothing is ever sold.
-import { TUNING } from './config.js?v=0.1.19';
-import { CARS, carById } from './data/cars.js?v=0.1.19';
-import { CATEGORIES, COSMETICS, SETUP, category, cosmetic } from './data/upgrades.js?v=0.1.19';
+import { TUNING } from './config.js?v=0.1.20';
+import { CARS, carById } from './data/cars.js?v=0.1.20';
+import { CATEGORIES, COSMETICS, SETUP, category, cosmetic } from './data/upgrades.js?v=0.1.20';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 export const PARTS = ['engine', 'fl', 'fr', 'rl', 'rr', 'body'];
@@ -29,6 +29,20 @@ export function ownsCar(p, id) { return p.garage.includes(id); }
 export function buyCar(p, id) {
   const c = carById(id); if (!c || c.id !== id || ownsCar(p, id) || p.credits < c.price) return false;
   p.credits -= c.price; p.garage.push(id); carState(p, id); p.car = id; return true;
+}
+// Evrtek 11-25: sell any car but the one being driven, never the last; it returns a share of the car's price and a
+// smaller share of what its parts and looks cost (economy.resaleCar / resaleParts). Bought again later, it starts stock.
+export function partsSpent(p, id) {
+  const st = p.cars[id]; if (!st) return 0; let s = 0;
+  for (const cat of CATEGORIES) for (let L = 1; L <= (st.levels[cat.id] || 0); L++) s += levelPrice(id, cat.id, L);
+  for (const cos of COSMETICS) for (const o of st.owned[cos.id] || []) if (o !== cos.options[0].id) s += cosmeticPrice(id, cos.id, o);
+  return s;
+}
+export function saleValue(p, id) { const E = TUNING.economy, c = carById(id); return Math.round((c.price * E.resaleCar + partsSpent(p, id) * E.resaleParts) / 50) * 50; }
+export function canSell(p, id) { return ownsCar(p, id) && p.car !== id && p.garage.length > 1; }
+export function sellCar(p, id) {
+  if (!canSell(p, id)) return false;
+  p.credits += saleValue(p, id); p.garage = p.garage.filter((x) => x !== id); delete p.cars[id]; return true;
 }
 export function switchCar(p, id) { if (!ownsCar(p, id)) return false; p.car = id; carState(p, id); return true; }
 
