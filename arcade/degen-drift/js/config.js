@@ -1,12 +1,12 @@
 // DRIFTLINE: every tuning number in one place. The hidden debug panel (F9, or ?debug) edits these live and can copy
 // the result back out as JSON; nothing else in the game hard-codes a feel number.
 // Units: metres, seconds, kilograms, newtons, radians unless the name says otherwise (Deg, Kmh).
-export const VERSION = '0.1.23';
+export const VERSION = '0.1.24';
 // 11-21 (Evrtek: "an on screen notice of what test version we're looking at"): the test build's number, shown with the
 // version on the title and in the pause menu (js/ui.js testLabel()). From test v18 the version's last number IS the test
 // number (v19 = 0.1.19). `node tools/release.mjs --bump X.Y.Z` sets both: 0.x.N gives N, 1.0.0 and on give null (no
 // label, only the title's quiet version line). The release check fails if the two disagree.
-export const TEST_BUILD = 23;
+export const TEST_BUILD = 24;
 
 export const TUNING = {
   car: {
@@ -105,6 +105,26 @@ export const TUNING = {
     aidSlipDeg: 5,           // it lets go from this much slide...
     aidSlipOffDeg: 10,       // ...and is gone by this much (the slide is the player's)
     aidBiteDeg: 1.5,         // its traction control bites as the rear tyres slip sideways, all there by this angle
+    // 11-26 (4) calmer between the sections (car.js step, Evrtek: "How can we make it slightly easier for a normal drive if
+    // you're obviously not trying to break the tires loose?"): on the road between the drift zones only (a player's car)
+    calm: 1,                 // 1 = on; 0 = the handling of 0.1.23 (the tuning panel's switch); no player setting
+    calmBefore: 40,          // m before a zone's entry it is back to the zone's handling...
+    calmAfter: 25,           // ...and m past its exit (a link to the next zone keeps today's asks)
+    calmRamp: 20,            // m over which it comes in and goes out
+    calmKickSteer: 0.35,     // between the zones a stab needs this much wheel (as in a zone: tip 2's half stick is 0.42)...
+    calmKickLift: 0.4,       // ...and the gas back within this many s of letting it go (a quick re-press, not a re-tap)
+    calmFlickSteer: 0.55,    // a flick: past this much wheel one way, then the other (a key's 0.3 s tap reaches 0.64)...
+    calmFlickGap: 0.45,      // ...within this many s
+    calmPowerSteer: 0.75,    // a big steer: from this much wheel
+    calmAidSteer: 0.6,       // the straight aid hands over from this much wheel...
+    calmAidSteerOff: 0.9,    // ...and is gone by this much
+    calmAidSlipDeg: 8,       // it lets go from this much slide...
+    calmAidSlipOffDeg: 16,   // ...and is gone by this much
+    calmTc: 1,               // the catch's traction control (the straight aid's, kept whatever the wheel and the slide)
+    calmCatchK: 10,          // the catch: how hard a slide nobody asked for is pulled back (1/s^2)...
+    calmCatchD: 2.5,         // ...and its swing damped (1/s)
+    calmSteer: 0.5,          // its counter-steer: this share of the slide angle on the front wheels...
+    calmSteerMaxDeg: 6,      // ...up to this many degrees
   },
   wall: {
     restitution: 0.18,       // bounce off the wall
@@ -280,6 +300,12 @@ export const RANGES = {
   // 11-25 the straight aid and the steering's grip mode: straightAid is the switch (1 on, 0 the old feel)
   'assist.straightAid': [0, 1, 1], 'assist.aidSteer': [0.1, 1, 0.05], 'assist.aidSteerOff': [0.15, 1, 0.05],
   'assist.aidSlipDeg': [0, 20, 0.5], 'assist.aidSlipOffDeg': [1, 30, 0.5], 'assist.aidBiteDeg': [0, 8, 0.25],
+  // 11-26 (4) calmer between the sections: calm is the switch (1 on, 0 the handling of 0.1.23)
+  'assist.calm': [0, 1, 1], 'assist.calmBefore': [0, 150, 1], 'assist.calmAfter': [0, 150, 1], 'assist.calmRamp': [1, 80, 1],
+  'assist.calmKickSteer': [0, 1, 0.05], 'assist.calmKickLift': [0.05, 2, 0.05], 'assist.calmFlickSteer': [0.1, 1, 0.05], 'assist.calmFlickGap': [0.1, 2, 0.05],
+  'assist.calmPowerSteer': [0.1, 0.95, 0.05], 'assist.calmAidSteer': [0.1, 1, 0.05], 'assist.calmAidSteerOff': [0.15, 1, 0.05],
+  'assist.calmAidSlipDeg': [0, 30, 0.5], 'assist.calmAidSlipOffDeg': [1, 40, 0.5], 'assist.calmCatchK': [0, 60, 0.5], 'assist.calmCatchD': [0, 20, 0.25],
+  'assist.calmSteer': [0, 1.5, 0.05], 'assist.calmSteerMaxDeg': [0, 20, 0.5], 'assist.calmTc': [0, 1, 0.05],
   'steer.gripFromKmh': [0, 150, 1], 'steer.gripFullKmh': [1, 200, 1], 'steer.centreGain': [0.1, 1, 0.05],
   'steer.keyGripShare': [0.1, 1, 0.05], 'steer.modeLag': [0.02, 1, 0.01],
   'wall.restitution': [0, 0.8, 0.01], 'wall.scrub': [0.5, 1, 0.01],

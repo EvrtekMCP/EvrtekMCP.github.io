@@ -11,7 +11,8 @@
 //   beams    searchlights sweeping the neon city's sky.
 // Every layer registers under a five-tap panel switch (TUNING.world: road, sky, water, kit, motion, pools) and asks to be
 // left out of the cars' reflection cube (ctx.noReflect), so the cube passes stay as cheap as 0.1.21's.
-import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.23';
+import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.24';
+import { SAFE } from '../glsafe.js?v=0.1.24';
 
 const m4 = new THREE.Matrix4(), qa = new THREE.Quaternion(), qb = new THREE.Quaternion(), eu = new THREE.Euler(), v3 = new THREE.Vector3(), sc = new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0), nv = new THREE.Vector3();
 export function rng(seed) { let s = seed >>> 0; return () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
@@ -47,14 +48,14 @@ export function decals(ctx, items, { light = false, name = light ? 'light-pools'
       void main() { vQ = position.xz * 2.0; vK = aK; vC = aC; vec4 mvPosition = modelViewMatrix * instanceMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mvPosition;
       #include <fog_vertex>
       }`,
-    fragmentShader: `varying vec2 vQ; varying float vK; varying vec3 vC;
+    fragmentShader: `varying vec2 vQ; varying float vK; varying vec3 vC;${SAFE}
       #include <fog_pars_fragment>
       void main() {
         ${FOG_F}
         ${light ? `float r = length(vQ); float a = (exp(-r * r * 3.2) * 0.85 + 0.15 * (1.0 - r)) * (1.0 - smoothstep(0.75, 1.0, r)) * vK * (1.0 - fogF);
-        gl_FragColor = vec4(vC * a, 1.0);`
+        gl_FragColor = vec4(ddSafe(vC * a), 1.0);`
         : `vec2 q = abs(vQ); float a = (1.0 - smoothstep(0.3, 1.0, q.x)) * (1.0 - smoothstep(0.3, 1.0, q.y)) * vK * (1.0 - fogF * 0.9);
-        gl_FragColor = vec4(mix(vec3(1.0), vC, a), 1.0);`}
+        gl_FragColor = vec4(mix(vec3(1.0), vC, clamp(ddSafe(a), 0.0, 1.0)), 1.0);`}
       }`,
   });
   const im = new THREE.InstancedMesh(g, mat, n);
@@ -106,15 +107,15 @@ export function streaks(ctx, items, { name = 'water-streaks' } = {}) {
         vec4 mvPosition = viewMatrix * vec4(wp, 1.0); gl_Position = projectionMatrix * mvPosition;
         #include <fog_vertex>
       }`,
-    fragmentShader: `uniform float time; uniform float on; varying vec2 vQ; varying vec3 vC; varying float vL; varying float vS;
+    fragmentShader: `uniform float time; uniform float on; varying vec2 vQ; varying vec3 vC; varying float vL; varying float vS;${SAFE}
       #include <fog_pars_fragment>
       void main() {
         ${FOG_F}
         float d = vQ.y * vL;
         float across = exp(-vQ.x * vQ.x * 9.0);
         float waves = 0.35 + 0.65 * smoothstep(0.15, 0.9, sin(d * 0.9 + time * 2.3 + vS) * 0.5 + 0.5 + sin(d * 2.7 - time * 3.1 + vS * 2.0) * 0.35);
-        float a = across * waves * pow(1.0 - vQ.y, 1.4) * smoothstep(0.0, 0.04, vQ.y) * on * (1.0 - fogF * 0.8);
-        gl_FragColor = vec4(vC * a, 1.0);
+        float a = across * waves * pow(clamp(1.0 - vQ.y, 0.0, 1.0), 1.4) * smoothstep(0.0, 0.04, vQ.y) * on * (1.0 - fogF * 0.8);
+        gl_FragColor = vec4(ddSafe(vC * a), 1.0);
       }`,
   });
   const mesh = new THREE.Mesh(g, mat); mesh.frustumCulled = false; mesh.name = name; mesh.renderOrder = 2;
@@ -141,18 +142,18 @@ export function drift(ctx, { kind = 'paper', count = 160, box = [70, 2.4, 70], l
         vec3 p = aB.xyz * BOX + WIND * sp * time + vec3(sin(time * 1.3 + ph) * 0.8, sin(time * 2.1 + ph * 1.7) * 0.35, cos(time * 1.1 + ph) * 0.8);
         vec3 c0 = vec3(cameraPosition.x - BOX.x * 0.5, floorY + (${lo.toFixed(2)}), cameraPosition.z - BOX.z * 0.5);
         p = c0 + mod(p - c0, BOX);
-        vec3 rel = (p - c0) / BOX; vA = smoothstep(0.0, 0.12, rel.x) * smoothstep(1.0, 0.88, rel.x) * smoothstep(0.0, 0.12, rel.z) * smoothstep(1.0, 0.88, rel.z) * smoothstep(0.0, 0.15, rel.y) * smoothstep(1.0, 0.8, rel.y);
+        vec3 rel = (p - c0) / BOX; vA = smoothstep(0.0, 0.12, rel.x) * (1.0 - smoothstep(0.88, 1.0, rel.x)) * smoothstep(0.0, 0.12, rel.z) * (1.0 - smoothstep(0.88, 1.0, rel.z)) * smoothstep(0.0, 0.15, rel.y) * (1.0 - smoothstep(0.8, 1.0, rel.y)); // 11-26 (4): edges in order (reversed edges are undefined in GLSL: on a phone's GPU it read as 0)
         vCol = aCol; vRot = time * (2.0 + aB.w * 5.0) + ph;
         vec4 mvPosition = viewMatrix * vec4(p, 1.0); gl_Position = projectionMatrix * mvPosition;
-        gl_PointSize = clamp(${size.toFixed(3)} * 300.0 * scale / -mvPosition.z, 0.0, 22.0 * scale);
+        gl_PointSize = clamp(${size.toFixed(3)} * 300.0 * scale / max(-mvPosition.z, 0.05), 0.0, 22.0 * scale);
         #include <fog_vertex>
       }`,
-    fragmentShader: `uniform vec3 tint; varying vec3 vCol; varying float vRot; varying float vA;
+    fragmentShader: `uniform vec3 tint; varying vec3 vCol; varying float vRot; varying float vA;${SAFE}
       #include <fog_pars_fragment>
       void main() {
         ${FOG_F}
         vec2 q = gl_PointCoord - 0.5; float cs = cos(vRot), sn = sin(vRot); ${kind === 'snow' || kind === 'dust' ? '' : 'q = vec2(q.x * cs - q.y * sn, q.x * sn + q.y * cs * (0.35 + 0.65 * abs(sin(vRot * 0.7))));'}
-        ${shape} a *= vA; if (a < 0.02) discard;
+        ${shape} a = ddSafe(a * vA); if (a < 0.02) discard;
         vec3 c = vCol * tint;
         ${kind === 'dust' || kind === 'snow' ? 'gl_FragColor = vec4(c * a * (1.0 - fogF), 1.0);' : 'gl_FragColor = vec4(mix(c, fogColor, fogF), a * 0.9);'}
       }`,
@@ -178,16 +179,16 @@ export function plumes(ctx, emitters, { per = 10, height = 7, speed = 0.12, size
         vec3 p = position + vec3((aK.y - 0.5) * 0.7, age * ${height.toFixed(2)}, (aK.z - 0.5) * 0.7) + vec3(${wind[0].toFixed(2)}, 0.0, ${wind[2].toFixed(2)}) * age * age * ${height.toFixed(2)} * 0.4;
         vA = smoothstep(0.0, 0.12, age) * (1.0 - age) * (1.0 - age); vT = aT; vR = aK.z * 6.28 + age * 2.0;
         vec4 mvPosition = modelViewMatrix * vec4(p, 1.0); gl_Position = projectionMatrix * mvPosition;
-        gl_PointSize = clamp(mix(${size[0].toFixed(2)}, ${size[1].toFixed(2)}, age) * 300.0 * scale / -mvPosition.z, 0.0, 220.0 * scale);
+        gl_PointSize = clamp(mix(${size[0].toFixed(2)}, ${size[1].toFixed(2)}, age) * 300.0 * scale / max(-mvPosition.z, 0.05), 0.0, 220.0 * scale);
         #include <fog_vertex>
       }`,
-    fragmentShader: `uniform vec3 tint; varying float vA; varying vec3 vT; varying float vR;
+    fragmentShader: `uniform vec3 tint; varying float vA; varying vec3 vT; varying float vR;${SAFE}
       #include <fog_pars_fragment>
       void main() {
         ${FOG_F}
         vec2 q = gl_PointCoord - 0.5; float d = dot(q, q) * 4.0;
         float a = exp(-d * 3.0) * (1.0 - smoothstep(0.6, 1.0, d)) * (0.75 + 0.25 * sin(q.x * 9.0 + vR) * sin(q.y * 7.0 - vR)) * vA * ${alpha.toFixed(3)};
-        if (a < 0.004) discard;
+        a = ddSafe(a); if (a < 0.004) discard;
         gl_FragColor = vec4(mix(tint * vT, fogColor, fogF), a);
       }`,
   });
@@ -238,7 +239,7 @@ export function beams(ctx, items, { length = 900, name = 'searchlights' } = {}) 
     const mat = new THREE.ShaderMaterial({
       uniforms: Object.assign(fogU(), { col: { value: new THREE.Vector3(...col) } }), fog: false, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
       vertexShader: `varying float vY; varying vec3 vN; varying vec3 vV; varying float vD; void main() { vY = position.y / ${length.toFixed(1)}; vec4 wp = modelMatrix * vec4(position, 1.0); vN = normalize(mat3(modelMatrix) * normal); vV = normalize(cameraPosition - wp.xyz); vD = distance(cameraPosition, wp.xyz); gl_Position = projectionMatrix * viewMatrix * wp; }`,
-      fragmentShader: `uniform vec3 col; varying float vY; varying vec3 vN; varying vec3 vV; varying float vD; void main() { float f = abs(dot(normalize(vN), normalize(vV))); float a = pow(f, 2.5) * (1.0 - vY) * (1.0 - vY) * smoothstep(0.0, 0.03, vY) * 0.16 * smoothstep(60.0, 220.0, vD); gl_FragColor = vec4(col * a, 1.0); }`,
+      fragmentShader: `uniform vec3 col; varying float vY; varying vec3 vN; varying vec3 vV; varying float vD;${SAFE} void main() { float f = abs(dot(normalize(vN), normalize(vV))); float a = pow(f, 2.5) * (1.0 - vY) * (1.0 - vY) * smoothstep(0.0, 0.03, vY) * 0.16 * smoothstep(60.0, 220.0, vD); gl_FragColor = vec4(ddSafe(col * a), 1.0); }`,
     });
     const m = new THREE.Mesh(g, mat); m.position.set(x, y, z); m.frustumCulled = false; m.renderOrder = 3; m.userData.ph = ph; group.add(m); meshes.push(m);
   }

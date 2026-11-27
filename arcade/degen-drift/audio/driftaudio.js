@@ -14,7 +14,7 @@
 // the gearbox clunk, interface sounds and fanfares are ElevenLabs recordings (audio/sfx). The music is whole
 // ElevenLabs takes, streamed in bar-line chunks after the game starts (audio/music), never at load.
 // Formats: Ogg Opus where the browser plays it, AAC in .mp4 otherwise (Safari). Every URL carries ?v=<version>: the
-// game's stamp when it imports this module stamped (driftaudio.js?v=0.1.23), or opts.version.
+// game's stamp when it imports this module stamped (driftaudio.js?v=0.1.24), or opts.version.
 //
 // THE GAME'S ADAPTER (js/sound.js) uses the module-level functions at the bottom instead: init({ context }) once, then
 // setEngine(preset, hints), setRPM(rpm, redline), setThrottle(t), setSlip(share 0..1), setSpeed(m/s), impact(kind,
@@ -124,6 +124,7 @@ export function createDriftAudio(opts = {}) {
   let lite = opts.lite != null ? !!opts.lite : null; // null: decided when the car starts (the main-thread fallback is lite)
   const recSets = new Map(), voices = new Set(); // voices: each rival's re-sync, run when the mode changes
   let taps = null; // 11-19 (2): analysers on the buses, made by levels()
+  let healthBuf = null; // 11-26 (4): health()'s scratch
 
   function load() { try { return JSON.parse(localStorage.getItem(STORE) || '{}'); } catch (e) { return {}; } }
   function save() { try { localStorage.setItem(STORE, JSON.stringify({ vol, muted })); } catch (e) { /* private mode: fine */ } }
@@ -144,6 +145,9 @@ export function createDriftAudio(opts = {}) {
     // 11-26 (3): the car straight to sfx (dry) as before, or (New+) into its bus with the space's returns
     nodes.dry = g(engineMode === 'newplus' ? 0 : 1); nodes.car.connect(nodes.dry).connect(nodes.sfx); nodes.engine.connect(nodes.car); nodes.tyres.connect(nodes.car);
     nodes.master.connect(limiter).connect(ctx.destination);
+    // 11-26 (4): what actually leaves for the speaker, read by health() (a NaN anywhere upstream ends here and stays: a
+    // compressor or a filter that takes one in keeps it in its state for good; the game then rebuilds the sound)
+    nodes.out = ctx.createAnalyser(); nodes.out.fftSize = 512; limiter.connect(nodes.out);
     // day 3 (Fundi): the space round the car. A tunnel is a long dense reverb, a bridge a short slap off the deck and the
     // parapets; both are sends from the car, faded in and out by setSpace()
     const conv = ctx.createConvolver(), len = Math.floor(ctx.sampleRate * 1.8), ir = ctx.createBuffer(2, len, ctx.sampleRate);
@@ -739,6 +743,14 @@ export function createDriftAudio(opts = {}) {
     shift, impact, nos, ui, music, voice,
     setVolume, getVolume: (ch) => vol[ch], setMuted, toggleMute() { setMuted(!muted); return muted; }, get muted() { return muted; },
     setMix(k, v) { if (k in mix) { mix[k] = +v; if (nodes && nodes[k]) nodes[k].gain.setTargetAtTime(mix[k], ctx.currentTime, 0.03); } },
+    // 11-26 (4): the output's health, cheap enough for twice a second: bad (a NaN or an infinity reached the speaker's feed)
+    // and its level (dB RMS of the last 512 samples; -120 for digital silence)
+    health() {
+      if (!nodes || !nodes.out) return null;
+      const b = healthBuf || (healthBuf = new Float32Array(nodes.out.fftSize)); nodes.out.getFloatTimeDomainData(b);
+      let e = 0, bad = false; for (let i = 0; i < b.length; i++) { const v = b[i]; if (!Number.isFinite(v)) { bad = true; break; } e += v * v; }
+      return { bad, db: bad ? null : Math.max(-120, 10 * Math.log10(e / b.length || 1e-12)), state: ctx.state };
+    },
     debug() { return { state: ctx && ctx.state, time: ctx && ctx.currentTime, format: ext, sfx: buffers.size, worklet: !!(carNode && carNode.port), engineSound: engineMode, lite: !!lite, takes2: takes2Bufs ? Object.keys(takes2Bufs).length : 0, recorded: recCar ? recCar.set.id : null, recPlaying: !!(recCar && recCar.on), track: player && player.id, nextChunk: player && player.next, scheduledTo: player && player.at, playing: player ? player.srcs.length : 0, region, tierLite, bus: engineMode === 'newplus' && num('masterBus') > 0, space: engineMode === 'newplus' && num('reflections') > 0 }; },
     onMeter(fn) { meterFn = fn; if (carPort && carPort.postMessage) carPort.postMessage({ type: 'meter', on: !!fn }); },
     // 11-19 (2): the context, the buses' gains and what each bus is putting out now (dB, RMS of the last 2,048 samples):

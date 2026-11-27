@@ -1,11 +1,11 @@
 // DRIFTLINE region 2, Canyon: a hot dusk in red rock country. A huge banded sun low in a magenta sky, terraced
 // sandstone walls rising beside the road and flat-topped mesas beyond, cacti and scrub on the floor, boulders at the
 // road's edge, a line of telephone poles, a water tower and a roadside gas stop under a neon sun.
-import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.23';
-import { sstep, fbm, colorGeom, mergeGeoms } from '../world.js?v=0.1.23';
-import * as K from './kit.js?v=0.1.23';
-import * as D from './detail.js?v=0.1.23';
-import * as P from './props.js?v=0.1.23';
+import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.24';
+import { sstep, fbm, colorGeom, mergeGeoms } from '../world.js?v=0.1.24';
+import * as K from './kit.js?v=0.1.24';
+import * as D from './detail.js?v=0.1.24';
+import * as P from './props.js?v=0.1.24';
 
 const C = (h) => new THREE.Color(h);
 

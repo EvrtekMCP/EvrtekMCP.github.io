@@ -17,7 +17,8 @@
 // High tier only (groundK): the paint's downward reflections meet the road under the car, where the car's own
 // underglow and headlight pool are (a fake planar reflection, worked out in the shader), so a neon underglow shows in
 // the sills. Fog: the look's fog chunks, as every material (look.js bumps the program key on a new look).
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.23';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.24';
+import { SAFE } from './glsafe.js?v=0.1.24';
 
 // shared by every car: the sun's highlight and the five-tap panel's sliders (TUNING.reflect)
 export const SHARED = {
@@ -82,11 +83,11 @@ uniform float coatK; uniform float roughK;
 uniform float groundK; uniform vec3 carPos; uniform vec2 carDir; uniform vec3 poolCol; uniform vec3 glowCol;
 varying vec3 vW; varying vec3 vN; varying vec3 vV; varying vec3 vVN; varying vec3 vCol; varying vec2 vCoat; varying vec3 vObj;
 #include <fog_pars_fragment>
-
+${SAFE}
 float lum(vec3 c) { return dot(c, vec3(0.3, 0.55, 0.15)); } // the matcap's own weights
 // the world along a ray, blurred by lod (in steps of the course map's 256 px faces; the live map is 128, envBias 1).
 // The lookup keeps the GPU's own mip choice and adds the blur to it, so a small or curved patch never sparkles.
-vec3 envAt(vec3 R, float lod) { return textureCube(envMap, R, max(lod - envBias, 0.0)).rgb; }
+vec3 envAt(vec3 R, float lod) { return ddSafe(textureCube(envMap, R, max(lod - envBias, 0.0)).rgb); } // 11-26 (4): never a NaN or infinity out of a half-float face
 // the matcap's painted sunset by the reflected ray's height (textures.js matcap() env), for the metal flake's share
 vec3 matEnv(float ry) {
   if (ry > 0.18) return mix(vec3(0.32, 0.16, 0.55), vec3(0.08, 0.05, 0.22), min(1.0, (ry - 0.18) / 0.8));
@@ -100,7 +101,7 @@ vec3 sunGlint(vec3 R, float rough) {
   if (sunOn < 0.5 || s < 0.9) return vec3(0.0);
   float sr = sqrt(rough);
   float g = pow(s, mix(1400.0, 60.0, sr)) * mix(5.0, 0.5, sr) + pow(s, mix(90.0, 12.0, sr)) * 0.12;
-  float vis = smoothstep(0.25, 0.65, lum(textureLod(envMap, sunDir, max(2.0 - envBias, 0.0)).rgb) / sunRef);
+  float vis = smoothstep(0.25, 0.65, lum(ddSafe(textureLod(envMap, sunDir, max(2.0 - envBias, 0.0)).rgb)) / sunRef);
   return sunCol * g * vis;
 }
 float schlick(float c, float f0) { return f0 + (1.0 - f0) * pow(1.0 - c, 5.0); }
@@ -187,7 +188,7 @@ void main() {
   float fres = 0.12 + 0.88 * pow(1.0 - mz, 3.0);
   col = base * 0.06 * lam * tint + envAt(R, 5.0) * 0.18 * (0.6 + 0.4 * fres) + sunGlint(R, 0.8) * 0.1;
 #endif
-  gl_FragColor = vec4(col, 1.0);
+  gl_FragColor = vec4(ddSafe(col), 1.0); // 11-26 (4): the guard (glsafe.js)
   #include <fog_fragment>
   #include <colorspace_fragment>
 }`;

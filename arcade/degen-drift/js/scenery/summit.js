@@ -1,11 +1,11 @@
 // DRIFTLINE region 5, Summit: the hard high touge just before dawn. A pink sun breaking over a sea of cloud far
 // below, a pale moon setting behind, snow and bare rock falling away on both sides of a narrow road, red-and-white
 // snow poles, a radio mast blinking on the highest crag and an observatory dome at the top.
-import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.23';
-import { sstep, fbm, colorGeom, mergeGeoms } from '../world.js?v=0.1.23';
-import * as K from './kit.js?v=0.1.23';
-import * as D from './detail.js?v=0.1.23';
-import * as P from './props.js?v=0.1.23';
+import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.24';
+import { sstep, fbm, colorGeom, mergeGeoms } from '../world.js?v=0.1.24';
+import * as K from './kit.js?v=0.1.24';
+import * as D from './detail.js?v=0.1.24';
+import * as P from './props.js?v=0.1.24';
 
 const C = (h) => new THREE.Color(h);
 

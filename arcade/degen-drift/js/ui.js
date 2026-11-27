@@ -4,21 +4,21 @@
 // never a system font; panels wear the key art's magenta-to-cyan edge; parts are illustrated; cars are drawn from their
 // own bodies; the results screen has its star and DEGENERATE moments; motion stops for reduced-motion. The garage's
 // actions call garage.js exactly as before (its logic is the cars builder's).
-import { VERSION, TEST_BUILD } from './config.js?v=0.1.23';
-import { CARS, carById } from './data/cars.js?v=0.1.23';
-import { CATEGORIES, COSMETICS, SETUP } from './data/upgrades.js?v=0.1.23';
-import { BODIES } from './carbodies.js?v=0.1.23';
-import { REGIONS, COURSES } from './courses/index.js?v=0.1.23';
-import { courseList, pick, mapSvg } from './courses/select.js?v=0.1.23';
-import * as G from './garage.js?v=0.1.23';
-import { ACTIONS, keyName } from './input.js?v=0.1.23';
-import * as ART from './art.js?v=0.1.23';
-import { Tips } from './tips.js?v=0.1.23';
-import { Ghost } from './ghost.js?v=0.1.23';
-import { Duel, record as duelRecord } from './duel/duelui.js?v=0.1.23';
-import { DUELS, duelPay } from './duel/duel.js?v=0.1.23';
-import { taps } from './loader.js?v=0.1.23';
-import { fsOK, isFs, toggleFs, iphoneHint } from './fit.js?v=0.1.23';
+import { VERSION, TEST_BUILD } from './config.js?v=0.1.24';
+import { CARS, carById } from './data/cars.js?v=0.1.24';
+import { CATEGORIES, COSMETICS, SETUP } from './data/upgrades.js?v=0.1.24';
+import { BODIES } from './carbodies.js?v=0.1.24';
+import { REGIONS, COURSES } from './courses/index.js?v=0.1.24';
+import { courseList, pick, mapSvg } from './courses/select.js?v=0.1.24';
+import * as G from './garage.js?v=0.1.24';
+import { ACTIONS, keyName } from './input.js?v=0.1.24';
+import * as ART from './art.js?v=0.1.24';
+import { Tips } from './tips.js?v=0.1.24';
+import { Ghost } from './ghost.js?v=0.1.24';
+import { Duel, record as duelRecord } from './duel/duelui.js?v=0.1.24';
+import { DUELS, duelPay } from './duel/duel.js?v=0.1.24';
+import { taps } from './loader.js?v=0.1.24';
+import { fsOK, isFs, toggleFs, iphoneHint } from './fit.js?v=0.1.24';
 
 // 11-16 (fit): full screen, where the browser allows it (js/fit.js); the icon shows what a tap will do
 const FS_ICON = ['<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>', '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>'];
@@ -340,8 +340,8 @@ export class UI {
       ${(() => { const v = g.reflectMode ? g.reflectMode() : 'off'; return `<div class="opt"><label>Car reflections</label><div><div class="seg">${[['off', 'Off'], ['course', 'Course'], ['live', 'Live']].map(([k, l]) => `<button class="${v === k ? 'on' : ''}" data-act="set" data-key="reflect" data-val="${k}">${l}</button>`).join('')}</div><div class="note">Live: the lamps and the street slide across the paint and glass as you drive. Course: the paint reflects the course from the start line, lighter work for an older phone. Off: plain paint. Starts on Live on medium and high quality, Course on low.</div></div></div>`; })()}<!-- 11-26 -->
       ${(() => { const v = s.world === 'classic' ? 'classic' : 'full'; return `<div class="opt"><label>World detail</label><div><div class="seg">${[['classic', 'Classic'], ['full', 'Full']].map(([k, l]) => `<button class="${v === k ? 'on' : ''}" data-act="set" data-key="world" data-val="${k}">${l}</button>`).join('')}</div><div class="note">Full: worn roads, richer light, drifting clouds, more at the roadside and things that move. Classic: the worlds as they were. Low quality gets a lighter Full.</div></div></div>`; })()}<!-- 11-26 (graphics uplift part 2) -->
       <div class="opt"><label>Sound</label><div>${seg('sound', [[true, 'On'], [false, 'Off']])}<div class="vols">${[['master', 'Everything'], ['music', 'Music'], ['sfx', 'Car and effects']].map(([ch, n]) => `<label class="sl"><span>${n}</span><input type="range" min="0" max="1" step="0.05" value="${(s.vol && s.vol[ch] != null) ? s.vol[ch] : 0.8}" data-vol="${ch}" aria-label="${n} volume"></label>`).join('')}</div></div></div>
-      <div class="opt"><label>Tire smoke</label><div>${seg('smoke', [['full', 'Full'], ['less', 'Less'], ['min', 'Light']])}<div class="note">Less smoke is lighter work for an older phone.</div></div></div>
       ${(() => { const v = s.engineSound === 'classic' || s.engineSound === 'recorded' || s.engineSound === 'new' ? s.engineSound : 'newplus'; return `<div class="opt"><label>Engine sound</label><div><div class="seg">${[['newplus', 'New+'], ['new', 'New'], ['recorded', 'Recorded'], ['classic', 'Classic']].map(([k, l]) => `<button class="${v === k ? 'on' : ''}" data-act="set" data-key="engineSound" data-val="${k}">${l}</button>`).join('')}</div><div class="note">New+: New with depth: the intake and the engine's mechanicals heard too, the tires each their own voice, the walls, tunnels and city round the car. New: every engine built from its firing pulses and exhaust pipes. Recorded: engine and tire recordings (the KESTREL only). Classic: the original engine sound.</div></div></div>`; })()}<!-- 11-17, 11-18, 11-26 (3) (sound builder) -->
+      <div class="opt"><label>Tire smoke</label><div>${seg('smoke', [['full', 'Full'], ['less', 'Less'], ['min', 'Light']])}<div class="note">Less smoke is lighter work for an older phone.</div></div></div>
       <div class="opt"><label>Zone colours</label><div>${seg('palette', [['neon', 'Cyan and pink'], ['safe', 'Blue and amber']])}<div class="note">Blue and amber stay apart for the common kinds of colour blindness.</div></div></div>
       <div class="opt"><label>Ghost</label><div>${seg('ghost', [[true, 'On'], [false, 'Off']])}<div class="note">Your best run on each course drives beside you, see-through.</div></div></div>
       <div class="opt"><label>Tips</label><div><button class="btn small" data-act="tips-again" ${this.tips.fresh ? 'disabled' : ''}>${this.tips.fresh ? 'The basics come first next race' : 'Show the tips again'}</button><div class="note">A tip shows while each race loads. This starts them again from the basics.</div></div></div>

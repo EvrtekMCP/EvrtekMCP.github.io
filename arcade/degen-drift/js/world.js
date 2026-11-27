@@ -15,17 +15,18 @@
 // cloud lit from the sun's side and rays, hazier far ranges, the sun's path and the lamps' streaks on the water, the
 // new roadside kit, contact shadows and light pools, and things that move (litter, steam, flags, flicker, machines).
 // Each Full layer answers a five-tap panel switch (TUNING.world), read in update().
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.23';
-import { PAL, sunDir, lampGrid, lampsAt, ambient, setLook, setDetail } from './look.js?v=0.1.23';
-import { TUNING } from './config.js?v=0.1.23';
-import * as D from './scenery/detail.js?v=0.1.23';
-import * as TX from './textures.js?v=0.1.23';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.24';
+import { PAL, sunDir, lampGrid, lampsAt, ambient, setLook, setDetail } from './look.js?v=0.1.24';
+import { TUNING } from './config.js?v=0.1.24';
+import * as D from './scenery/detail.js?v=0.1.24';
+import * as TX from './textures.js?v=0.1.24';
+import { SAFE } from './glsafe.js?v=0.1.24';
 // the regions' files import a few helpers from this one (a cycle that is safe: they touch them only inside functions)
-import * as harbour from './scenery/harbour.js?v=0.1.23';
-import * as canyon from './scenery/canyon.js?v=0.1.23';
-import * as mountain from './scenery/mountain.js?v=0.1.23';
-import * as neon from './scenery/neon.js?v=0.1.23';
-import * as summit from './scenery/summit.js?v=0.1.23';
+import * as harbour from './scenery/harbour.js?v=0.1.24';
+import * as canyon from './scenery/canyon.js?v=0.1.24';
+import * as mountain from './scenery/mountain.js?v=0.1.24';
+import * as neon from './scenery/neon.js?v=0.1.24';
+import * as summit from './scenery/summit.js?v=0.1.24';
 const SCENERY = { harbour, canyon, mountain, neon, summit };
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -292,7 +293,7 @@ export async function buildWorld(track, course, tier, step = null, detail = 'ful
         void main() { vLight = color; vUv = uv; vHalf = aHalf; vKerb = aKerb; vRun = aRun;${F ? ' vWear = aWear;' : ''} vec4 wp = modelMatrix * vec4(position, 1.0); vWorld = wp.xyz; vec4 mvPosition = viewMatrix * wp; gl_Position = projectionMatrix * mvPosition;
         #include <fog_vertex>
         }`,
-      fragmentShader: `uniform sampler2D grain; varying vec3 vLight; varying vec2 vUv; varying vec3 vWorld; varying float vHalf; varying float vKerb; varying float vRun;${F ? ' varying vec2 vWear; uniform float time; uniform float uRoad;' : ''}
+      fragmentShader: `uniform sampler2D grain; varying vec3 vLight; varying vec2 vUv; varying vec3 vWorld; varying float vHalf; varying float vKerb; varying float vRun;${F ? ' varying vec2 vWear; uniform float time; uniform float uRoad;' + SAFE : ''}
         #include <fog_pars_fragment>
         const vec3 SUNV = normalize(vec3(${sun.x.toFixed(4)}, ${sun.y.toFixed(4)}, ${sun.z.toFixed(4)}));
         void main() {
@@ -339,7 +340,7 @@ ${F ? `          // the racing line: two rubbered tyre tracks either side of it 
           col += ${g3(PAL.sunLight)} * gl * ${RS.glare.toFixed(3)} * (0.55 + 0.6 * gr.r);
           col += vLight * pow(max(-V.y, 0.0), 0.5) * ${RS.sheen.toFixed(3)} * gr.r;
 ${F ? `          // 11-26 Full: a broad sheen toward the low sun, strongest looking along the road and on the polished line
-          float fres = pow(1.0 - max(-V.y, 0.0), 4.0);
+          float fres = pow(clamp(1.0 + V.y, 0.0, 1.0), 4.0); // 11-26 (4): never pow() of a negative (V.y can round past -1)
           float sl = pow(max(dot(normalize(vec3(Rr.x, Rr.y * 2.5, Rr.z)), normalize(vec3(SUNV.x, SUNV.y * 2.5, SUNV.z))), 0.0), 7.0);
           col += ${g3(PAL.sunLight)} * sl * fres * ${RS.sunSheen.toFixed(3)} * (0.4 + polish * 0.9) * uRoad;
 ${RS.puddles ? `          // rain-sheen puddles off the line: dark, mirror-wet, the street's light doubled in them, rain rings
@@ -358,7 +359,7 @@ ${RS.puddles ? `          // rain-sheen puddles off the line: dark, mirror-wet, 
           { vec2 sp = vec2(vWorld.x * 0.8 + vWorld.z * 0.6, vWorld.z * 0.8 - vWorld.x * 0.6) + vec2(time * 3.2, time * 0.7);
             float sd = smoothstep(0.52, 0.8, texture2D(grain, sp * vec2(0.03, 0.11)).g) * smoothstep(0.35, 0.7, texture2D(grain, sp * 0.013 + 0.5).g);
             col += (vLight * 0.7 + 0.03) * sd * ${RS.spindrift.toFixed(2)} * uRoad; }
-` : ''}` : ''}          gl_FragColor = vec4(col, 1.0);
+` : ''}` : ''}          gl_FragColor = vec4(${F ? 'ddSafe(col)' : 'col'}, 1.0);
           #include <fog_fragment>
           #include <colorspace_fragment>
         }`,
@@ -712,7 +713,7 @@ ${RS.puddles ? `          // rain-sheen puddles off the line: dark, mirror-wet, 
   const skyMat = new THREE.ShaderMaterial({
     uniforms: Object.assign({ time: uTime, stars: { value: 1 } }, FULL ? { grain: { value: grainTex }, uSky } : {}), depthWrite: false, side: THREE.BackSide, fog: false, // stars: 0 in the cars' reflections (reflect.js)
     vertexShader: `varying vec3 vDir; void main() { vDir = position; vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_Position = p.xyww; }`,
-    fragmentShader: `uniform float time; uniform float stars; varying vec3 vDir;${FULL ? ' uniform sampler2D grain; uniform float uSky;' : ''}
+    fragmentShader: `uniform float time; uniform float stars; varying vec3 vDir;${FULL ? ' uniform sampler2D grain; uniform float uSky;' + SAFE : ''}
       ${SKY_GLSL(sun)}
       float h1(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(h1(i), h1(i + vec2(1, 0)), f.x), mix(h1(i + vec2(0, 1)), h1(i + vec2(1, 1)), f.x), f.y); }
@@ -740,10 +741,12 @@ ${RS.puddles ? `          // rain-sheen puddles off the line: dark, mirror-wet, 
           float disc = 1.0 - smoothstep(MR * 0.95, MR, ma); float mot = vn(d.xz * 90.0) * 0.18;
           c = mix(c, vec3(0.92, 0.9, 1.0) * (0.85 - mot), disc); }` : ''}
 ${FULL ? `        // 11-26 Full: a deck of cloud overhead receding to the horizon, drifting, lit on its edges toward the light
+        // 11-26 (4): no branch round the lookups (a texture read inside a branch the horizon splits has no defined level of
+        // detail on a phone's GPU); below the horizon the deck's own fade (cdn) is 0
         float cdn = 0.0;
-        if (d.y > 0.0) {
+        {
           const vec3 LDIR = normalize(vec3(${LDIR.x.toFixed(4)}, ${LDIR.y.toFixed(4)}, ${LDIR.z.toFixed(4)}));
-          vec2 cp = d.xz / (d.y + 0.08) * ${SF.scale.toFixed(4)} + vec2(time * ${SF.drift[0].toFixed(5)}, time * ${SF.drift[1].toFixed(5)});
+          vec2 cp = d.xz / (max(d.y, 0.0) + 0.08) * ${SF.scale.toFixed(4)} + vec2(time * ${SF.drift[0].toFixed(5)}, time * ${SF.drift[1].toFixed(5)});
           float a1 = texture2D(grain, cp).g, a2 = texture2D(grain, cp * 2.37 + 0.31).g, a3 = texture2D(grain, cp * 5.11 + 0.67).g;
           vec2 tl = normalize(LDIR.xz + vec2(0.0001)) * 0.05;
           float b1 = texture2D(grain, cp + tl).g, b2 = texture2D(grain, (cp + tl) * 2.37 + 0.31).g;
@@ -753,15 +756,15 @@ ${FULL ? `        // 11-26 Full: a deck of cloud overhead receding to the horizo
           vec3 body = mix(${g3(cShadow)}, ${g3(cLit)}, rim * (0.25 + 0.75 * pow(la, 2.0))) + ${g3(cLit)} * pow(la, 10.0) * 0.55;
           c = mix(c, body, cdn);
         }
-${SF.rays ? `        { vec3 ax1 = normalize(cross(SUN, vec3(0.0, 1.0, 0.0))), ax2 = cross(ax1, SUN); float ang = atan(dot(d, ax2), dot(d, ax1));
+${SF.rays ? `        { vec3 ax1 = normalize(cross(SUN, vec3(0.0, 1.0, 0.0))), ax2 = cross(ax1, SUN); float ang = atan(dot(d, ax2), dot(d, ax1) + 1e-6);
           float ry = texture2D(grain, vec2(ang * 0.477465, time * 0.004)).g;
           c += ${g3(PAL.horizonSun)} * smoothstep(0.42, 0.85, ry) * pow(max(dot(d, SUN), 0.0), 5.0) * ${SF.rays.toFixed(3)} * uSky * (1.0 - cdn * 0.5); }
-` : ''}${SF.halo && moon ? `        { vec3 M = normalize(vec3(${moon.x.toFixed(4)}, ${moon.y.toFixed(4)}, ${moon.z.toFixed(4)})); float ma = acos(clamp(dot(d, M), -1.0, 1.0)); c += vec3(0.42, 0.48, 0.75) * exp(-pow((ma - 0.38) / 0.03, 2.0)) * ${SF.halo.toFixed(3)} * uSky; }
+` : ''}${SF.halo && moon ? `        { vec3 M = normalize(vec3(${moon.x.toFixed(4)}, ${moon.y.toFixed(4)}, ${moon.z.toFixed(4)})); float ma = acos(clamp(dot(d, M), -1.0, 1.0)); float hd = (ma - 0.38) / 0.03; c += vec3(0.42, 0.48, 0.75) * exp(-hd * hd) * ${SF.halo.toFixed(3)} * uSky; } // 11-26 (4): was pow() of a negative number inside the ring (undefined: NaN on a phone's GPU, a black ring round the moon)
 ` : ''}` : ''}        // stars, fading in toward the top
         vec2 sp = floor(vec2(az * 260.0, d.y * 260.0));
         float st = step(0.9965, h1(sp)) * smoothstep(0.18, 0.6, d.y) * (0.6 + 0.4 * sin(time * 2.0 + h1(sp + 3.0) * 40.0)) * ${SK.stars.toFixed(3)} * stars${FULL ? ' * (1.0 - cdn)' : ''};
         c += vec3(0.9, 0.85, 1.0) * st;
-        gl_FragColor = vec4(c, 1.0);
+        gl_FragColor = vec4(${FULL ? 'ddSafe(c)' : 'c'}, 1.0);
         #include <colorspace_fragment>
       }`,
   });
@@ -835,7 +838,7 @@ export function waterMaterial(sun, uTime, kind = 'sea', uWater = null) {
       void main() { vec4 wp = modelMatrix * vec4(position, 1.0); vWorld = wp.xyz; vec4 mvPosition = viewMatrix * wp; gl_Position = projectionMatrix * mvPosition;
       #include <fog_vertex>
       }`,
-    fragmentShader: `uniform float time; varying vec3 vWorld;${F ? ' uniform float uWater;' : ''}
+    fragmentShader: `uniform float time; varying vec3 vWorld;${F ? ' uniform float uWater;' + SAFE : ''}
       #include <fog_pars_fragment>
       ${SKY_GLSL(sun)}
       float h1(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -852,12 +855,12 @@ export function waterMaterial(sun, uTime, kind = 'sea', uWater = null) {
         c += ${g3(PAL.sunLight)} * pow(b, 3.0) * sa * 0.35;
 ${F ? `        // 11-26 Full: the low sun's road of light across the cloud tops
         c += ${g3(PAL.sunLight)} * pow(max(dot(normalize(vec3(V.x, V.y * 0.25, V.z)), normalize(vec3(SUN.x, -SUN.y * 0.25, SUN.z))), 0.0), 40.0) * (0.25 + 0.5 * pow(b, 2.0)) * uWater;
-` : ''}        gl_FragColor = vec4(c, 1.0);` : `
+` : ''}        gl_FragColor = vec4(${F ? 'ddSafe(c)' : 'c'}, 1.0);` : `
         float a = time * 0.9;
         vec2 g = vec2(cos(p.x * 0.09 + a) * 0.5 + cos((p.x + p.y) * 0.05 - a * 0.7) * 0.4, cos(p.y * 0.11 + a * 1.2) * 0.5 + cos((p.x - p.y) * 0.21 + a * 1.6) * 0.25);
         vec3 n = normalize(vec3(g.x * ${kind === 'river' ? '0.14' : '0.08'}, 1.0, g.y * 0.08));
         vec3 Rr = reflect(V, n); Rr.y = abs(Rr.y);
-        float fres = 0.04 + 0.96 * pow(1.0 - max(dot(-V, n), 0.0), 5.0);
+        float fres = 0.04 + 0.96 * pow(${F ? 'clamp(1.0 - dot(-V, n), 0.0, 1.0)' : '1.0 - max(dot(-V, n), 0.0)'}, 5.0);
         vec3 c = mix(${g3(PAL.seaDeep)}, skyCol(Rr), clamp(fres + 0.18, 0.0, 1.0));
         float sd = max(dot(Rr, SUN), 0.0);
         c += ${g3(PAL.sunLight)} * (pow(sd, 260.0) * 6.0 + pow(sd, 22.0) * 0.35);
@@ -867,7 +870,7 @@ ${F ? `        // 11-26 Full: the sun's path, a long column of glints from the h
           vec2 gp = p * 0.45 + vec2(time * 0.5, -time * 0.35);
           float glint = step(0.7, fract(sin(dot(floor(gp), vec2(127.1, 311.7)) + floor(time * 4.0 + h1(floor(gp)) * 4.0) * 0.37) * 43758.5453));
           c += ${g3(PAL.sunLight)} * path * (0.18 + 2.4 * glint) * fres * 1.4 * uWater; }
-` : ''}        gl_FragColor = vec4(c, 1.0);`}
+` : ''}        gl_FragColor = vec4(${F ? 'ddSafe(c)' : 'c'}, 1.0);`}
         #include <fog_fragment>
         #include <colorspace_fragment>
       }`,
@@ -890,14 +893,14 @@ ${full ? `      // 11-26 Full: a lamp whose blink is negative flickers: now and 
         gl_PointSize = clamp(aSize * 260.0 * scale / -mvPosition.z, 1.5, 160.0 * scale);
         #include <fog_vertex>
       }`,
-    fragmentShader: `varying vec3 vCol;
+    fragmentShader: `varying vec3 vCol;${full ? SAFE : ''}
       #include <fog_pars_fragment>
       void main() { vec2 q = gl_PointCoord - 0.5; float d = dot(q, q) * 4.0; float a = (exp(-d * 6.0) + 0.3 * exp(-d * 2.2)) * (1.0 - smoothstep(0.55, 1.0, d)); if (a < 0.003) discard;
         vec3 c = vCol * a;
         #ifdef USE_FOG
         float fogF = 1.0 - exp(-fogDensity * fogDensity * vFogDepth * vFogDepth); c *= 1.0 - fogF * 0.85;
         #endif
-        gl_FragColor = vec4(c, 1.0); }`,
+        gl_FragColor = vec4(${full ? 'ddSafe(c)' : 'c'}, 1.0); }`,
   });
 }
 

@@ -2,33 +2,34 @@
 // countdown, run, pause, results), steps the car at a fixed 120 Hz, feeds the scoring, the effects, the sound and the
 // HUD, and renders. The car list is an array of drivers so a rival car (downhill duels) can join later: each driver is
 // a car, its mesh and where its inputs come from; 0.1.0 has the player alone.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.23';
-import { TUNING, VERSION } from './config.js?v=0.1.23';
-import { installFog, PAL, sunDir } from './look.js?v=0.1.23';
-import { Reflections, LIVE_SIZE, COURSE_SIZE } from './reflect.js?v=0.1.23';
-import { SHARED as PAINT, setWorldLight } from './carpaint.js?v=0.1.23';
-import { Track } from './track.js?v=0.1.23';
-import { courseById } from './courses/index.js?v=0.1.23';
-import { DUELS } from './duel/duel.js?v=0.1.23';
-import { Car } from './car.js?v=0.1.23';
-import { DriftScore } from './scoring.js?v=0.1.23';
-import * as G from './garage.js?v=0.1.23';
-import { buildWorld } from './world.js?v=0.1.23';
-import { CarMesh, WET_VP } from './carmesh.js?v=0.1.23';
-import { Surface } from './carsurface.js?v=0.1.23';
-import { Smoke, Skids, Sparks, SpeedLines } from './fx.js?v=0.1.23';
-import { ChaseCam } from './camera.js?v=0.1.23';
-import { Post } from './post.js?v=0.1.23';
-import { Quality } from './quality.js?v=0.1.23';
-import { Input } from './input.js?v=0.1.23';
-import { Sound } from './sound.js?v=0.1.23';
-import { UI } from './ui.js?v=0.1.23';
-import { Hud } from './hud.js?v=0.1.23';
-import { Debug, loadTuning } from './debug.js?v=0.1.23';
-import { appIcon } from './art.js?v=0.1.23';
-import { Loader, painted } from './loader.js?v=0.1.23';
-import { TipScreen } from './tips.js?v=0.1.23';
-import { view, onFit } from './fit.js?v=0.1.23';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.24';
+import { TUNING, VERSION } from './config.js?v=0.1.24';
+import { installFog, PAL, sunDir } from './look.js?v=0.1.24';
+import { Reflections, LIVE_SIZE, COURSE_SIZE } from './reflect.js?v=0.1.24';
+import { SHARED as PAINT, setWorldLight } from './carpaint.js?v=0.1.24';
+import { Track } from './track.js?v=0.1.24';
+import { courseById } from './courses/index.js?v=0.1.24';
+import { DUELS } from './duel/duel.js?v=0.1.24';
+import { Car } from './car.js?v=0.1.24';
+import { DriftScore } from './scoring.js?v=0.1.24';
+import * as G from './garage.js?v=0.1.24';
+import { buildWorld } from './world.js?v=0.1.24';
+import { CarMesh, WET_VP } from './carmesh.js?v=0.1.24';
+import { Surface } from './carsurface.js?v=0.1.24';
+import { Smoke, Skids, Sparks, SpeedLines } from './fx.js?v=0.1.24';
+import { ChaseCam } from './camera.js?v=0.1.24';
+import { Post } from './post.js?v=0.1.24';
+import { Quality } from './quality.js?v=0.1.24';
+import { Input } from './input.js?v=0.1.24';
+import { Sound } from './sound.js?v=0.1.24';
+import { UI } from './ui.js?v=0.1.24';
+import { Hud } from './hud.js?v=0.1.24';
+import { Debug, loadTuning } from './debug.js?v=0.1.24';
+import { appIcon } from './art.js?v=0.1.24';
+import { Loader, painted } from './loader.js?v=0.1.24';
+import { TipScreen } from './tips.js?v=0.1.24';
+import { view, onFit } from './fit.js?v=0.1.24';
+import { DIAG, installNanView } from './glsafe.js?v=0.1.24';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const params = new URLSearchParams(location.search);
@@ -64,7 +65,11 @@ class Game {
     const canvas = document.getElementById('view');
     // 11-26 (Evrtek: "a lot of jagged lines in the cars"): 4x MSAA on phones too. Apple's GPUs draw in tiles, where it is close
     // to free (measured on this PC's phone viewport: WORKBENCH 11-26, the worlds); before, touch devices had none
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance', alpha: false, stencil: false });
+    // 11-26 (4): the two diagnostic switches (js/glsafe.js): the NaN view patches every shader before the first compiles; MSAA
+    // off starts the context without multisampling (to tell a multisampling fault on his phone from anything else)
+    installNanView();
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: DIAG.aa, powerPreference: 'high-performance', alpha: false, stencil: false });
+    this.watchContext(canvas);
     this.renderer.setPixelRatio(this.quality.pixelRatio());
     this.renderer.setSize(view.w, view.h, false);
     this.renderer.info.autoReset = false;
@@ -289,6 +294,23 @@ class Game {
   }
   reflectInfo() { const R = this.reflect; return `${R.mode}${R.facesPerFrame ? ` (${R.facesPerFrame} face${R.facesPerFrame > 1 ? 's' : ''} a frame, ${R.ema.toFixed(2)} ms)` : ''}${R.fallback ? ', Live gave way: ' + R.fallback : ''}`; }
 
+  // 11-26 (4): the picture's WebGL context lost and restored. three.js rebuilds its own state; the game re-makes the reflection
+  // maps and compiles every shader again in the background under the loading screen (all at once on the next frame would
+  // be seconds on a phone's GPU), and since on an iPhone a lost context means the GPU process restarted, which carries the
+  // page's audio too, the sound is rebuilt at the next tap
+  watchContext(canvas) {
+    this.lost = 0;
+    canvas.addEventListener('webglcontextlost', () => { this.lost++; if (this.sound) this.sound.note('picture lost'); });
+    canvas.addEventListener('webglcontextrestored', () => {
+      if (this.sound) this.sound.suspect('the picture was lost');
+      if (this.reflect) { this.reflect.bakedFor = null; this.reflect.primed = false; }
+      if (this.ready) this.busy('Restoring the picture', async () => {});
+    });
+  }
+  healthInfo() {
+    const S = this.sound, h = S.health, st = S.ctx ? S.ctx.state : 'none';
+    return `sound ${st}${h && h.db != null ? ' ' + h.db.toFixed(0) + ' dB' : ''}${S.deaf ? ', DEAF: ' + S.deaf : ''}${S.rebuilds ? ', rebuilt ' + S.rebuilds : ''}  picture lost ${this.lost || 0}  stalls ${this.stalls || 0}${this.stalls ? ' (longest ' + (this.longestStall / 1000).toFixed(1) + ' s)' : ''}${DIAG.nan ? '  NaN VIEW' : ''}${DIAG.aa ? '' : '  MSAA OFF'}`;
+  }
   bindGlobal() {
     // 11-16: the box (js/fit.js) follows the window, the visual viewport and how much of a host's frame is on the screen
     addEventListener('resize', () => this.resize());
@@ -413,6 +435,8 @@ class Game {
   loop(now) {
     requestAnimationFrame((t) => this.loop(t));
     const ms = now - this.last; this.last = now;
+    // 11-26 (4): a main-thread stall (not a hidden page, not a loading screen): noted, counted, shown on the FPS readout
+    if (ms > 1500 && !this.loading && !document.hidden && this.ready) { this.stalls = (this.stalls || 0) + 1; this.longestStall = Math.max(this.longestStall || 0, ms); this.sound.stall(ms); }
     this.frame(Math.min(ms, 100) / 1000, ms);
   }
   frame(dt, ms) {
@@ -458,6 +482,7 @@ class Game {
     this.world.update(this.time);
     // sound (11-19 (2): the pause is the game's state, so no way out of a paused race can leave the car's sound off)
     this.sound.setPaused(this.state === 'paused');
+    { const v = this.settings.vol || {}; this.sound.expect = (this.state === 'run' || this.state === 'countdown' || this.state === 'results') && this.settings.sound !== false && (v.master ?? 0.8) > 0.02 && (v.sfx ?? 0.8) > 0.02; } // 11-26 (4): the silence rule's 'should play'
     this.sound.setRPM(this.car.rpm); this.sound.setThrottle(this.state === 'run' || this.state === 'countdown' ? this.car.throttle : 0, this.car.boost);
     this.sound.setSlip(Math.max(this.car.slipR, this.car.slipF)); this.sound.setSpeed(this.car.speed); this.sound.setSurface(this.surface.under(this.car)); this.car.surfGrip = this.surface.grip; this.sound.setSpace(this.surface.space(this.car)); this.sound.setDetail(this.car, this.surface); this.sound.tick(); // 11-26 (3): setDetail, New+'s tyres and walls
     if (this.state === 'run' || this.state === 'countdown') this.hud.update(this.car, this.score, this.run, this.car.T.car.nos, TUNING.scoring.linkWindow);
@@ -645,12 +670,12 @@ class Game {
     this.fpsT += dt; if (this.fpsT < 0.25 || this.fpsEl.hidden) return; this.fpsT = 0;
     const f = this.frames.slice(-60), avg = f.reduce((a, b) => a + b, 0) / f.length, worst = Math.max(...f);
     const info = this.renderer.info.render;
-    this.fpsEl.textContent = `${(1000 / avg).toFixed(0)} fps  ${avg.toFixed(1)} ms (worst ${worst.toFixed(0)})\n${['LOW', 'MEDIUM', 'HIGH'][this.quality.tier]}  ${this.bufW || 0}x${this.bufH || 0}  x${this.renderer.getPixelRatio().toFixed(2)} (res ${(this.quality.scale * 100).toFixed(0)}%)  ${this.aaSamples ? 'AA ' + this.aaSamples + 'x' : 'no AA'}\ndraws ${info.calls}  tris ${(info.triangles / 1000).toFixed(0)}k\nreflections ${this.reflectInfo()}`; // 11-26
+    this.fpsEl.textContent = `${(1000 / avg).toFixed(0)} fps  ${avg.toFixed(1)} ms (worst ${worst.toFixed(0)})\n${['LOW', 'MEDIUM', 'HIGH'][this.quality.tier]}  ${this.bufW || 0}x${this.bufH || 0}  x${this.renderer.getPixelRatio().toFixed(2)} (res ${(this.quality.scale * 100).toFixed(0)}%)  ${this.aaSamples ? 'AA ' + this.aaSamples + 'x' : 'no AA'}\ndraws ${info.calls}  tris ${(info.triangles / 1000).toFixed(0)}k\nreflections ${this.reflectInfo()}\n${this.healthInfo()}`; // 11-26
   }
 
   // ---------------------------------------------------------------- test hooks (?test): never loaded for players
   async testHooks() {
-    const { Autopilot } = await import('./autopilot.js?v=0.1.23');
+    const { Autopilot } = await import('./autopilot.js?v=0.1.24');
     this.capture = params.has('capture');
     const g = this;
     window.__dl = {

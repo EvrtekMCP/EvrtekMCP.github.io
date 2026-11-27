@@ -3,10 +3,10 @@
 // is ever locked: the verdict on each card is the honest "level cap" signal (DESIGN.md). Picking a course opens its
 // course card at once (11-18 (2): its world is built when a race on it launches, under the tip screen, main.js
 // launch). Drawn as plain DOM inside js/ui.js's screen.
-import { REGIONS, COURSES } from './index.js?v=0.1.23';
-import { miniMap } from './route.js?v=0.1.23';
-import * as G from '../garage.js?v=0.1.23';
-import * as ART from '../art.js?v=0.1.23';
+import { REGIONS, COURSES } from './index.js?v=0.1.24';
+import { miniMap } from './route.js?v=0.1.24';
+import * as G from '../garage.js?v=0.1.24';
+import * as ART from '../art.js?v=0.1.24';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const fmt = (n) => Math.round(n).toLocaleString('en-US');

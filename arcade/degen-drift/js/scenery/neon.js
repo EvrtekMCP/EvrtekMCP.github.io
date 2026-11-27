@@ -1,11 +1,11 @@
 // DRIFTLINE region 4, Neon city: a closed street circuit after dark. Towers whose windows the shader lights, neon
 // pictograms on the facades, pink and cyan pools of light on wet asphalt, an elevated rail line crossing the circuit
 // on columns, beacons blinking on the rooftops, and a skyline glowing all round.
-import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.23';
-import { sstep, fbm, colorGeom, mergeGeoms } from '../world.js?v=0.1.23';
-import * as K from './kit.js?v=0.1.23';
-import * as D from './detail.js?v=0.1.23';
-import * as P from './props.js?v=0.1.23';
+import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.24';
+import { sstep, fbm, colorGeom, mergeGeoms } from '../world.js?v=0.1.24';
+import * as K from './kit.js?v=0.1.24';
+import * as D from './detail.js?v=0.1.24';
+import * as P from './props.js?v=0.1.24';
 
 const C = (h) => new THREE.Color(h);
 

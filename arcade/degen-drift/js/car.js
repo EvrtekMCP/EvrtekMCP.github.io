@@ -4,7 +4,7 @@
 // three assists: the counter-steer (front wheels follow the slide), the drift hold (keeps the angle where the player
 // asks for it) and the spin guard. Every number comes from the tune (config.js TUNING with the garage's parts and the
 // car's damage applied: garage.js deriveTune). Pure JS: the browser and the Node simulator share it.
-import { TUNING } from './config.js?v=0.1.23';
+import { TUNING } from './config.js?v=0.1.24';
 
 const DEG = Math.PI / 180, G = 9.81;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -38,6 +38,7 @@ export class Car {
     this.vRoad = 0; this.shiftT = 9; this.lastUp = true; this.overT = 0; this.slipping = true; this.launchT = 0; this.held = false; // the gearbox (gearbox() below; slipping, launchT: the launch clutch)
     this.intent = 0; this.liftT = 9; this.turnT = 0; this.bigT = 0; this.flickT = 9; this.flickSide = 0; this.calmT = 0; this.grip = 0; // launch grip (step)
     this.aid = 0; this.gm = 0; // 11-25: the straight aid and the steering's grip mode (step)
+    this.asks = this.asks || { hand: 0, stab: 0, flick: 0, big: 0 }; this.askWhy = this.askWhy || ''; // 11-26 (4): the asks, counted by kind
     this.spin = 0; this.slipF = 0; this.slipR = 0; this.alphaF = 0; this.alphaR = 0;
     this.loadF = 0.5; this.wheelRot = 0; this.boost = 0; this.nosOn = false;
     this.hint = -1; this.contact = 0; this.scrape = 0; this.noContact = 1; this.touchFired = false;
@@ -48,6 +49,15 @@ export class Car {
     this.throttle = 0; this.brake = 0; this.handbrake = 0;
     this.events.length = 0;
     this.locate();
+  }
+  // 11-26 (4) calmer between the sections: 1 on the road between the drift zones, 0 inside a zone and within its margins
+  // (assist.calmBefore m before its entry, calmAfter m past its exit), ramped over calmRamp m; 0 on a road with no zones
+  between(A) {
+    const Z = this.track.zones; if (!Z || !Z.length) return 0;
+    const s = this.s, ramp = Math.max(1, A.calmRamp ?? 20), before = A.calmBefore ?? 40, after = A.calmAfter ?? 25;
+    let near = 0;
+    for (const z of Z) { const c = Math.min(this.track.ds(z.s0, s) + before, this.track.ds(s, z.s1) + after); if (c > -ramp) near = Math.max(near, sstep(-ramp, 0, c)); }
+    return 1 - near;
   }
   locate() {
     const q = this.track.closest(this.x, this.z, this.hint);
@@ -93,9 +103,12 @@ export class Car {
     this.beta = u >= 0 ? beta : 0;
     const assistFade = sstep(A.lowSpeedKmh, A.lowSpeedKmh + 15, kmh) * (u > 0 ? 1 : 0);
     const assist = S.counterAssist * clamp(beta, -S.counterMaxDeg * DEG, S.counterMaxDeg * DEG) * assistFade;
+    // 11-26 (4) calmer between the sections: the catch's own counter-steer (its share from the last step, below), toward the
+    // slide nobody asked for, between the zones only
+    const catchSteer = (this.catchK || 0) * (A.calmSteer || 0) * clamp(beta, -(A.calmSteerMaxDeg ?? 8) * DEG, (A.calmSteerMaxDeg ?? 8) * DEG) * assistFade;
     // a bent front corner pulls the wheel a little toward it (garage.js; capped at damage.steerPullDeg)
     const pull = (S.pullDeg || 0) * DEG * clamp(speed / 10, 0, 1);
-    const delta = clamp(wheel * range + assist + pull, -S.lockDeg * DEG, S.lockDeg * DEG);
+    const delta = clamp(wheel * range + assist + catchSteer + pull, -S.lockDeg * DEG, S.lockDeg * DEG);
     this.delta = delta;
 
     // ---- pedals, with reverse when stopped and holding brake
@@ -148,34 +161,58 @@ export class Car {
     // 9 degrees the drift hold takes it to a full drift. Its traction control bites only once the rear tyres begin to
     // slip sideways (assist.aidBiteDeg of rear slip angle), so a dead-straight run accelerates exactly as before (to
     // hold the wheels on a straight too cost 0.4-0.7 s of 0-100 and up to 1.3 s of 60-140).
+    // 11-26 (4) calmer between the sections (Evrtek on v23: "the tires still break too easily when the player is trying to
+    // drive in a straight line. Its good for linking switchbacks but not good if you're between drift sections"). Measured
+    // (tools/casual.mjs): on a phone the GAS is on or off, so ordinary driving re-presses it with some wheel on, and that
+    // read as the clutch kick (the stab: 24 a km between the zones for a casual thumb), which turned the aid off and let
+    // the drift hold take the tail. Between the zones (cb: Car.between(), a player's car only, not the test driver or a
+    // rival), the stab, the flick and the big steer ask for more (calmKickSteer and a quick re-press, calmKickLift;
+    // calmFlickSteer inside calmFlickGap; calmPowerSteer), the aid hands over later (calmAidSteer.., calmAidSlipDeg..), and
+    // a slide nobody asked for is caught (catchK: calmCatchK / calmCatchD pull the slide back, calmSteer counter-steers,
+    // and the drift hold aims straight). The handbrake means drift anywhere. Any ask ends the catch at once. Inside the
+    // zones and calmBefore / calmAfter m round them, nothing changes. calm 0 is the handling of 0.1.23.
+    const CB = (A.calm || 0) > 0 && !inp.ai ? Math.min(1, A.calm) * this.between(A) : 0;
+    const mix = (a, b) => (b == null ? a : a + (b - a) * CB);
+    const kickSteer = mix(A.kickSteer, A.calmKickSteer), flickSteer = mix(A.flickSteer, A.calmFlickSteer), flickGap = mix(A.flickGap, A.calmFlickGap), powerSteer = mix(A.powerSteer, A.calmPowerSteer);
+    const aidSteer = mix(A.aidSteer, A.calmAidSteer), aidSteerOff = mix(A.aidSteerOff, A.calmAidSteerOff), aidSlipDeg = mix(A.aidSlipDeg, A.calmAidSlipDeg), aidSlipOffDeg = mix(A.aidSlipOffDeg, A.calmAidSlipOffDeg);
     const LG = A.launchGrip || 0, ab0 = Math.abs(this.beta);
-    let grip = 0, sa = 0;
+    let grip = 0, sa = 0, power = 0;
     if (LG > 0 || SA > 0) {
       const st = Math.abs(this.steerIn), cart = A.lowSpeedKmh;
+      // 11-26 (4): how long the gas was off before it came back (offT while off, lastOff once it is pressed again)
+      if (throttle < 0.25) this.offT = (this.offT || 0) + dt; else if (this.offT) { this.lastOff = this.offT; this.offT = 0; }
       this.liftT = throttle < 0.25 ? 0 : (this.liftT ?? 9) + dt;      // time since the gas was last off
-      this.turnT = st >= A.kickSteer ? (this.turnT ?? 0) + dt : 0;        // time the wheel has been held turned
-      if (hand > 0.05 && kmh > cart) this.intent = 1;                     // the handbrake (not the line's hold)
+      this.turnT = st >= kickSteer ? (this.turnT ?? 0) + dt : 0;          // time the wheel has been held turned
+      // 11-26 (4): each ask counted as it fires (this.asks, by kind), for tools/casual.mjs and the five-tap panel
+      // (between the zones an ask also holds for intentKeep s from when it fires, so the slide it starts has time to grow
+      // before the catch comes back: on a straight the old count had long run out, and the ask faded at once)
+      const ask = (why) => { if ((this.intent || 0) < 0.999) { this.asks[why] = (this.asks[why] || 0) + 1; this.askWhy = why; } this.intent = 1; if (CB > 0) this.calmT = Math.min(this.calmT || 0, A.intentKeep * (1 - CB)); };
+      if (hand > 0.05 && kmh > cart) ask('hand');                          // the handbrake (not the line's hold)
       // the stab: the gas from off to flat quickly, with the wheel held turned (a key tap or a small touch never is)
-      if (throttle > 0.75 && this.liftT < A.kickRise && this.turnT >= A.kickHold && kmh >= A.kickKmh) this.intent = 1;
+      // (11-26 (4): between the zones a real steer and a quick re-press: the gas off no longer than calmKickLift s)
+      const quick = CB < 0.5 || (this.lastOff || 0) <= (A.calmKickLift ?? 9);
+      if (throttle > 0.75 && this.liftT < A.kickRise && this.turnT >= A.kickHold && kmh >= A.kickKmh && quick) ask('stab');
       // the flick: the wheel past flickSteer one way, then the other, within flickGap s
-      if (st >= A.flickSteer) {
+      if (st >= flickSteer) {
         const side = Math.sign(this.steerIn);
-        if (this.flickSide && side !== this.flickSide && this.flickT < A.flickGap && kmh >= A.kickKmh) this.intent = 1;
+        if (this.flickSide && side !== this.flickSide && this.flickT < flickGap && kmh >= A.kickKmh) ask('flick');
         this.flickSide = side; this.flickT = 0;
       } else this.flickT = (this.flickT ?? 9) + dt;
       // a big steer held at speed (on the gas a power-over, off it a lift-off): asked for once the tail is out under it
-      this.bigT = st >= A.powerSteer ? (this.bigT ?? 0) + dt : 0;
-      const power = this.bigT >= A.kickHold ? sstep(A.powerSteer, 0.95, st) * sstep(A.kickKmh, A.kickKmh + 20, kmh) : 0;
-      if (power > 0.5 && ab0 > A.holdMinDeg * DEG) this.intent = 1;
+      this.bigT = st >= powerSteer ? (this.bigT ?? 0) + dt : 0;
+      power = this.bigT >= A.kickHold ? sstep(powerSteer, Math.max(0.95, powerSteer + 0.02), st) * sstep(A.kickKmh, A.kickKmh + 20, kmh) : 0;
+      if (power > 0.5 && ab0 > A.holdMinDeg * DEG) ask('big');
       // the ask lasts while the car slides (or the lever is pulled) and fades intentFade s after it straightens
       this.calmT = ab0 > A.intentDeg * DEG || hand > 0.05 ? 0 : (this.calmT ?? 0) + dt;
       if (this.calmT > A.intentKeep || kmh < cart) this.intent = Math.max(0, (this.intent || 0) - dt / A.intentFade);
       grip = LG * (1 - sstep(A.gripFullKmh, Math.max(A.gripOffKmh, A.gripFullKmh + 1), kmh)) * (1 - (this.intent || 0)) * (1 - power);
       if (SA > 0) sa = Math.min(1, SA) * (1 - (this.intent || 0)) * (1 - power)
-        * (1 - sstep(A.aidSteer, Math.max(A.aidSteerOff, A.aidSteer + 0.01), st))
-        * (1 - sstep(A.aidSlipDeg * DEG, Math.max(A.aidSlipOffDeg, A.aidSlipDeg + 0.1) * DEG, ab0));
+        * (1 - sstep(aidSteer, Math.max(aidSteerOff, aidSteer + 0.01), st))
+        * (1 - sstep(aidSlipDeg * DEG, Math.max(aidSlipOffDeg, aidSlipDeg + 0.1) * DEG, ab0));
     }
-    this.grip = grip; this.aid = sa;
+    // 11-26 (4): the catch, between the zones while nothing is asked: gone the step an ask fires (intent is 1 at once)
+    const catchK = CB * (1 - (this.intent || 0)); // (a big steer alone does not end it: it becomes an ask once the tail is out, as in a zone)
+    this.grip = grip; this.aid = sa; this.cb = CB; this.catchK = catchK;
 
     // ---- weight transfer: the longitudinal acceleration of the last step loads one axle and unloads the other
     const shift = C.transferScale * m * this.ax * C.cgHeight / L;
@@ -248,7 +285,10 @@ export class Car {
       // 11-17 (2) the traction control (launch grip above): the wheels' spin held under tcSlip of the peak slip ratio,
       // so the rears keep their side grip; the engine's torque is what gives way
       // 11-25 and the straight aid's, the same hold, biting as the rear tyres begin to slip sideways (sa above)
-      const tc = sa > 0 ? Math.max(grip, sa * sstep(0, A.aidBiteDeg * DEG, Math.abs(alphaR))) : grip;
+      // 11-26 (4) and between the zones while nothing is asked (the catch), whatever the wheel and the slide: a slide there
+      // starts from rear wheels spun up on the GAS (measured: most of the casual breakaways), and nobody asked for one
+      const aidTc = Math.max(sa, catchK * (A.calmTc ?? 1));
+      const tc = aidTc > 0 ? Math.max(grip, aidTc * sstep(0, A.aidBiteDeg * DEG, Math.abs(alphaR))) : grip;
       if (tc > 0) { const wsMax = rvx + vden * kP * A.tcSlip; if (this.ws > wsMax) this.ws -= (this.ws - wsMax) * tc; }
       Frx = force(this.ws); Fry = fy;
       spin = clamp((this.ws - rvx) / Math.max(rvx, 4) / kP - 1, 0, 3) / 3;
@@ -264,6 +304,9 @@ export class Car {
     const ab = Math.abs(beta);
     const over = ab - A.guardDeg * DEG;
     if (over > 0 && hand < 0.05 && u > 0) tq += A.spinGuard * I * 40 * over * Math.sign(beta);
+    // 11-26 (4) the catch (between the zones, nothing asked): a pull that brings the slide back and damps its swing
+    const bdotS = (beta - (this.prevBeta ?? beta)) / dt; this.prevBeta = beta;
+    if (catchK > 0 && u > 4 && hand < 0.05) tq += catchK * I * ((A.calmCatchK || 0) * beta + (A.calmCatchD || 0) * bdotS) * sstep(A.lowSpeedKmh / 3.6, A.lowSpeedKmh / 3.6 + 5, speed);
     // the drift hold (the "tuned for fun" half of the mixed stance): once the tail is out, a pull toward an angle the
     // player chooses: more throttle = more angle, steering into the bend = more, counter-steering = less (and out).
     // The tires still decide where the car goes; this only keeps the slide from running away or dying by accident.
@@ -274,7 +317,8 @@ export class Car {
         // 11-17 (2): a slide nobody asked for, below drift speed, is held toward straight, not toward a drift's angle
         // (launch grip above: grip is 0 in any chosen drift and at drift speed, so there the target is as it was)
         // (11-25: and the straight aid's, which has let go by aidSlipOffDeg, so in practice only a slide it has not yet released)
-        const tgt = clamp(A.holdBaseDeg + A.holdThrottleDeg * throttle + A.holdSteerDeg * into, 0, A.guardDeg) * DEG * (1 - Math.max(grip, sa));
+        // (11-26 (4): and between the zones with nothing asked, the catch's share: the slide is held toward straight)
+        const tgt = clamp(A.holdBaseDeg + A.holdThrottleDeg * throttle + A.holdSteerDeg * into, 0, A.guardDeg) * DEG * (1 - Math.max(grip, sa, catchK));
         const bdot = (ab - (this.prevAb ?? ab)) / dt;
         tq += -sg * on * A.driftHold * I * (A.holdK * (tgt - ab) - A.holdD * bdot);
       }

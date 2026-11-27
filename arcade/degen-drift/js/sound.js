@@ -5,7 +5,7 @@
 // waveshaper and a filter that opens with the throttle), a turbo whistle, a filtered-noise tire squeal, wind, knocks
 // and short interface blips. There is no music in the placeholder (no code-made music: the soundtrack is Eleven's).
 // Audio starts on the first tap or key (iPhone Safari unlocks it only inside a user gesture).
-import { SOUND, VERSION } from './config.js?v=0.1.23';
+import { SOUND, VERSION } from './config.js?v=0.1.24';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 // 11-19 (2): ?debug=sound prints the audio's life (made, state changes, resumes, hidden and shown, rebuilds) to the
@@ -25,8 +25,18 @@ const IOS = typeof navigator !== 'undefined' && (/iP(hone|ad|od)/.test(navigator
 //     on an older iPhone a silent looping media element does the same (paused whenever the page is hidden);
 //   - the pause is the game's state, followed every frame (main.js), so leaving a paused race by Quit or Restart can no
 //     longer leave the car's sound off (before 11-19 (2) it stayed off until the next pause and resume).
+// 11-26 (4), Evrtek on test v23: "at the end of a race the screen locked for a few seconds then advanced to the race summary
+// screen but the audio died and didn't come back." A context can be 'running' with its clock moving and still be dead:
+//   - deaf: what leaves for the speaker (driftaudio.js health(), after the limiter) holds a NaN or an infinity, which a
+//     compressor or a filter keeps in its state for good; or it is digital silence for 2 s while the game expects sound
+//     (a race, its countdown or its results, sound on, volumes up). The next tap, click or key rebuilds the sound;
+//   - suspect: the picture's WebGL context was lost (on an iPhone that is the GPU process restarting, which also carries
+//     the page's audio), so the next tap rebuilds the sound whatever it reports; a main-thread stall over 1.5 s is noted
+//     (and the checks above watch what follows it).
+//   Rebuilds stay three at most until a context runs, and the silence rule asks for two at most a minute (a false alarm
+//   can never loop).
 export class Sound {
-  constructor() { this.ctx = null; this.mod = null; this.muted = false; this.state = { rpm: 900, thr: 0, slip: 0, speed: 0, boost: 0 }; this.redline = 7600; this.hints = {}; this.engineSound = 'newplus'; this.gears = null; this.paused = false; this.track = null; this.view = null; this.log = []; this.rebuilds = 0; this.failedWakes = 0; this.stalled = false; this.plus = null; this.region = null; this.tier = null; this.det = { alphaR: -1, alphaF: -1, loadF: 0, latG: 0, spinV: 0, paint: 0 }; this.ac = { wl: 7, wr: 7, kind: 0 }; }
+  constructor() { this.ctx = null; this.mod = null; this.muted = false; this.state = { rpm: 900, thr: 0, slip: 0, speed: 0, boost: 0 }; this.redline = 7600; this.hints = {}; this.engineSound = 'newplus'; this.gears = null; this.paused = false; this.track = null; this.view = null; this.log = []; this.rebuilds = 0; this.failedWakes = 0; this.stalled = false; this.plus = null; this.region = null; this.tier = null; this.det = { alphaR: -1, alphaF: -1, loadF: 0, latG: 0, spinV: 0, paint: 0 }; this.ac = { wl: 7, wr: 7, kind: 0 }; this.deaf = null; this.suspectWhy = null; this.expect = false; this.silentT = 0; this.deafRebuilds = []; this.health = null; }
   note(what, extra) {
     const e = Object.assign({ t: Math.round(performance.now()), what, state: this.ctx ? this.ctx.state : 'none' }, extra);
     this.log.push(e); if (this.log.length > 120) this.log.shift();
@@ -71,6 +81,8 @@ export class Sound {
       this.session();
       if (this.silentEl && this.silentEl.paused && !document.hidden) this.silentEl.play().catch(() => {});
       if (this.stalled || (c.state !== 'running' && this.failedWakes >= 2)) { this.rebuild(this.stalled ? 'its clock stood still' : 'it would not resume'); return; }
+      // 11-26 (4): running, but dead (deaf), or the picture was lost (suspect): a new context
+      if (this.deaf || this.suspectWhy) { const why = this.deaf || this.suspectWhy; this.deaf = this.suspectWhy = null; this.silentT = 0; this.rebuild(why); return; }
     }
     if (c.state !== 'running' && c.state !== 'closed') { this.resume(why, gesture); if (gesture && this.mod && this.mod.unlock) this.mod.unlock(); }
   }
@@ -102,10 +114,26 @@ export class Sound {
     setInterval(() => {
       const c = this.ctx; if (!c || document.hidden || c.state !== 'running') { this.clockAt = 0; return; }
       const now = performance.now();
+      this.checkHealth(0.5); // 11-26 (4): what leaves for the speaker
       if (!this.clockAt || c.currentTime !== this.clockT) { this.clockAt = now; this.clockT = c.currentTime; if (this.stalled) { this.stalled = false; this.note('clock moving'); } return; }
       if (now - this.clockAt > 1500 && !this.stalled) { this.stalled = true; this.note('clock stood still'); }
     }, 500);
   }
+  // 11-26 (4): what leaves for the speaker, twice a second (watch()): a NaN or an infinity there, or silence for 2 s while the
+  // game expects sound, marks the sound deaf; the next gesture rebuilds it (wake())
+  checkHealth(dt) {
+    const i = this.mod && this.mod.instance && this.mod.instance(); if (!i || !i.health || document.hidden || this.deaf) return;
+    const h = this.health = i.health(); if (!h || h.state !== 'running') { this.silentT = 0; return; }
+    if (h.bad) { this.deaf = 'its output went to NaN'; this.note('deaf', { why: this.deaf }); return; }
+    this.silentT = this.expect && !this.muted && h.db <= -119 ? this.silentT + dt : 0;
+    if (this.silentT >= 2) {
+      const now = performance.now(); this.deafRebuilds = this.deafRebuilds.filter((t) => now - t < 60000); this.silentT = 0;
+      if (this.deafRebuilds.length < 2) { this.deafRebuilds.push(now); this.deaf = 'silent while it should play'; this.note('deaf', { why: this.deaf }); }
+    }
+  }
+  // 11-26 (4): main.js: the picture's context was lost (rebuild at the next gesture), or the main thread stood still (noted)
+  suspect(why) { if (!this.ctx) return; this.suspectWhy = why; this.note('suspect', { why }); }
+  stall(ms) { this.note('main thread stalled', { ms: Math.round(ms) }); }
   // the ring/silent switch mutes Web Audio unless the page's audio session plays back: Safari 16.4+ says so directly;
   // an older iPhone takes a silent looping media element, started in a gesture (and never shown on the lock screen:
   // paused while the page is hidden)

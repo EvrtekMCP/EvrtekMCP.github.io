@@ -3,8 +3,8 @@
 // translucent cyan car driving your best line beside you, at the same moment of the lap. Settings can turn it off.
 // Two draws (a see-through body and its edges), no physics, nothing to collide with. Fed by the HUD every frame of a
 // run and told the result by the results screen, so main.js knows nothing of it.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.23';
-import { BODIES, outlineOf } from './carbodies.js?v=0.1.23';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.24';
+import { BODIES, outlineOf } from './carbodies.js?v=0.1.24';
 
 const KEY = (id) => 'driftline.ghost.v1.' + id;
 const DT = 0.1, TAU = Math.PI * 2;

@@ -2,9 +2,9 @@
 // what it is worth on a course (the ability rating against the course's difficulty), what a run pays, what repairs
 // cost, and the saved progress. Pure JS: the economy simulator (tools/economy.mjs) uses it too.
 // No pay-to-win: credits come from play only, and nothing is ever sold.
-import { TUNING } from './config.js?v=0.1.23';
-import { CARS, carById } from './data/cars.js?v=0.1.23';
-import { CATEGORIES, COSMETICS, SETUP, category, cosmetic } from './data/upgrades.js?v=0.1.23';
+import { TUNING } from './config.js?v=0.1.24';
+import { CARS, carById } from './data/cars.js?v=0.1.24';
+import { CATEGORIES, COSMETICS, SETUP, category, cosmetic } from './data/upgrades.js?v=0.1.24';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 export const PARTS = ['engine', 'fl', 'fr', 'rl', 'rr', 'body'];
