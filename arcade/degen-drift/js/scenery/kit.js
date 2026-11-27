@@ -2,8 +2,8 @@
 // light baked per instance (the sky, the sun and the lamps where it stands); every texture drawn on a small canvas at
 // load. Buildings draw their windows in the shader from their own position, so a whole city is one draw and no image.
 // Everything placed is recorded in ctx.placed for the audit (nothing on the road, nothing floating).
-import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.24';
-import { colorGeom, mergeGeoms } from '../world.js?v=0.1.24';
+import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.25';
+import { colorGeom, mergeGeoms } from '../world.js?v=0.1.25';
 
 const m4 = new THREE.Matrix4(), qq = new THREE.Quaternion(), eu = new THREE.Euler(), v3 = new THREE.Vector3(), sc = new THREE.Vector3();
 function canvas(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return [c, c.getContext('2d')]; }

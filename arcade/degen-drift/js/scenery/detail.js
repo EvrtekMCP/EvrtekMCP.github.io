@@ -11,8 +11,8 @@
 //   beams    searchlights sweeping the neon city's sky.
 // Every layer registers under a five-tap panel switch (TUNING.world: road, sky, water, kit, motion, pools) and asks to be
 // left out of the cars' reflection cube (ctx.noReflect), so the cube passes stay as cheap as 0.1.21's.
-import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.24';
-import { SAFE } from '../glsafe.js?v=0.1.24';
+import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.25';
+import { SAFE } from '../glsafe.js?v=0.1.25';
 
 const m4 = new THREE.Matrix4(), qa = new THREE.Quaternion(), qb = new THREE.Quaternion(), eu = new THREE.Euler(), v3 = new THREE.Vector3(), sc = new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0), nv = new THREE.Vector3();
 export function rng(seed) { let s = seed >>> 0; return () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }

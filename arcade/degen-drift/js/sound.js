@@ -5,7 +5,7 @@
 // waveshaper and a filter that opens with the throttle), a turbo whistle, a filtered-noise tire squeal, wind, knocks
 // and short interface blips. There is no music in the placeholder (no code-made music: the soundtrack is Eleven's).
 // Audio starts on the first tap or key (iPhone Safari unlocks it only inside a user gesture).
-import { SOUND, VERSION } from './config.js?v=0.1.24';
+import { SOUND, VERSION } from './config.js?v=0.1.25';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 // 11-19 (2): ?debug=sound prints the audio's life (made, state changes, resumes, hidden and shown, rebuilds) to the

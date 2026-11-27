@@ -2,34 +2,34 @@
 // countdown, run, pause, results), steps the car at a fixed 120 Hz, feeds the scoring, the effects, the sound and the
 // HUD, and renders. The car list is an array of drivers so a rival car (downhill duels) can join later: each driver is
 // a car, its mesh and where its inputs come from; 0.1.0 has the player alone.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.24';
-import { TUNING, VERSION } from './config.js?v=0.1.24';
-import { installFog, PAL, sunDir } from './look.js?v=0.1.24';
-import { Reflections, LIVE_SIZE, COURSE_SIZE } from './reflect.js?v=0.1.24';
-import { SHARED as PAINT, setWorldLight } from './carpaint.js?v=0.1.24';
-import { Track } from './track.js?v=0.1.24';
-import { courseById } from './courses/index.js?v=0.1.24';
-import { DUELS } from './duel/duel.js?v=0.1.24';
-import { Car } from './car.js?v=0.1.24';
-import { DriftScore } from './scoring.js?v=0.1.24';
-import * as G from './garage.js?v=0.1.24';
-import { buildWorld } from './world.js?v=0.1.24';
-import { CarMesh, WET_VP } from './carmesh.js?v=0.1.24';
-import { Surface } from './carsurface.js?v=0.1.24';
-import { Smoke, Skids, Sparks, SpeedLines } from './fx.js?v=0.1.24';
-import { ChaseCam } from './camera.js?v=0.1.24';
-import { Post } from './post.js?v=0.1.24';
-import { Quality } from './quality.js?v=0.1.24';
-import { Input } from './input.js?v=0.1.24';
-import { Sound } from './sound.js?v=0.1.24';
-import { UI } from './ui.js?v=0.1.24';
-import { Hud } from './hud.js?v=0.1.24';
-import { Debug, loadTuning } from './debug.js?v=0.1.24';
-import { appIcon } from './art.js?v=0.1.24';
-import { Loader, painted } from './loader.js?v=0.1.24';
-import { TipScreen } from './tips.js?v=0.1.24';
-import { view, onFit } from './fit.js?v=0.1.24';
-import { DIAG, installNanView } from './glsafe.js?v=0.1.24';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.25';
+import { TUNING, VERSION } from './config.js?v=0.1.25';
+import { installFog, PAL, sunDir } from './look.js?v=0.1.25';
+import { Reflections, LIVE_SIZE, COURSE_SIZE } from './reflect.js?v=0.1.25';
+import { SHARED as PAINT, setWorldLight } from './carpaint.js?v=0.1.25';
+import { Track } from './track.js?v=0.1.25';
+import { courseById } from './courses/index.js?v=0.1.25';
+import { DUELS } from './duel/duel.js?v=0.1.25';
+import { Car } from './car.js?v=0.1.25';
+import { DriftScore } from './scoring.js?v=0.1.25';
+import * as G from './garage.js?v=0.1.25';
+import { buildWorld } from './world.js?v=0.1.25';
+import { CarMesh, WET_VP } from './carmesh.js?v=0.1.25';
+import { Surface } from './carsurface.js?v=0.1.25';
+import { Smoke, Skids, Sparks, SpeedLines } from './fx.js?v=0.1.25';
+import { ChaseCam } from './camera.js?v=0.1.25';
+import { Post } from './post.js?v=0.1.25';
+import { Quality } from './quality.js?v=0.1.25';
+import { Input } from './input.js?v=0.1.25';
+import { Sound } from './sound.js?v=0.1.25';
+import { UI } from './ui.js?v=0.1.25';
+import { Hud } from './hud.js?v=0.1.25';
+import { Debug, loadTuning } from './debug.js?v=0.1.25';
+import { appIcon } from './art.js?v=0.1.25';
+import { Loader, painted } from './loader.js?v=0.1.25';
+import { TipScreen } from './tips.js?v=0.1.25';
+import { view, onFit } from './fit.js?v=0.1.25';
+import { DIAG, installNanView } from './glsafe.js?v=0.1.25';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const params = new URLSearchParams(location.search);
@@ -404,7 +404,7 @@ class Game {
     if (this.settings.steer === 'tilt') this.input.centreTilt();
     this.sound.setEngine(G.soundHints(this.progress), this.car.T.car.redline, this.car.T.car.gears); // 11-18 (sound builder): the ratios
     this.sound.setView('chase');
-    this.sound.music('race');
+    this.sound.music(this.course.music || 'race'); // 11-27: CLOUDBREAK CROWN plays its boss track; every other course the race pool
     // 11-19 (2): every run starts with its sound on (Restart in pause used to keep the pause's silence) and the context
     // asked to run (iOS may have stopped it on the menu; the touch that launched the race asked first)
     this.sound.setPaused(false); this.sound.wake('race');
@@ -675,7 +675,7 @@ class Game {
 
   // ---------------------------------------------------------------- test hooks (?test): never loaded for players
   async testHooks() {
-    const { Autopilot } = await import('./autopilot.js?v=0.1.24');
+    const { Autopilot } = await import('./autopilot.js?v=0.1.25');
     this.capture = params.has('capture');
     const g = this;
     window.__dl = {

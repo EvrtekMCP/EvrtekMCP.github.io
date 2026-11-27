@@ -14,7 +14,7 @@
 // the gearbox clunk, interface sounds and fanfares are ElevenLabs recordings (audio/sfx). The music is whole
 // ElevenLabs takes, streamed in bar-line chunks after the game starts (audio/music), never at load.
 // Formats: Ogg Opus where the browser plays it, AAC in .mp4 otherwise (Safari). Every URL carries ?v=<version>: the
-// game's stamp when it imports this module stamped (driftaudio.js?v=0.1.24), or opts.version.
+// game's stamp when it imports this module stamped (driftaudio.js?v=0.1.25), or opts.version.
 //
 // THE GAME'S ADAPTER (js/sound.js) uses the module-level functions at the bottom instead: init({ context }) once, then
 // setEngine(preset, hints), setRPM(rpm, redline), setThrottle(t), setSlip(share 0..1), setSpeed(m/s), impact(kind,
@@ -90,7 +90,10 @@ const UI = {
   star: ['fanfare-star'], degenerate: ['fanfare-degenerate'], count: ['ui-count'], go: ['ui-go'],
 };
 const UI_ALIAS = { wipe: 'lost', buy: 'purchase', select: 'click', hover: 'click' };
-const MUSIC_ALIAS = { menu: 'garage', title: 'garage' };
+// 11-27: 'menu', 'race' and 'boss' are pools (music.json pools, Evrtek's picks): each call picks one at random, and a
+// pool deals every track once before any repeats. A manifest without pools falls back to the 0.1.0 loops.
+const MUSIC_ALIAS = { title: 'menu' };
+const OLD_POOLS = { menu: ['garage'], race: ['race1', 'race2'], boss: ['race1', 'race2'] };
 const UI_GAIN = { click: 0.45, back: 0.4, purchase: 0.7, upgrade: 0.75, zone: 0.55, sweet: 0.6, link: 0.6, bank: 0.7, lost: 0.7, star: 0.85, degenerate: 0.9, count: 0.6, go: 0.6 };
 // 11-21 (the launch hum, measured: tools/sound/launch-1121.mjs): the GO take is one held tone, 370 Hz with every
 // harmonic, flat for 0.65 s, and it began exactly as the car could move: at 0.7 it was the loudest thing at the start,
@@ -119,7 +122,7 @@ export function createDriftAudio(opts = {}) {
   let plusSet = Object.assign({}, opts.plus || {}), region = opts.region || 'harbour', acoustic = { wl: 7, wr: 7, kind: 0, given: false }, tierLite = false, spaceKind = 'open';
   let dirty = false, carSpec = { id: opts.engine || 'six', ups: opts.upgrades || [], over: opts.car || {} };
   let meterFn = null, duckHit = 0, duckFan = 0, duckLevel = 1, nosOn = false, nosSrc = null, nosGain = null;
-  let player = null, wantTrack = null, cfg = null, chain = 0, raceTurn = 0, shiftSeen = false, revLast = 0, revT = 0, autoShiftT = 0;
+  let player = null, wantTrack = null, cfg = null, chain = 0, decks = {}, lastDealt = {}, musicSeq = 0, metaP = null, shiftSeen = false, revLast = 0, revT = 0, autoShiftT = 0;
   let engineMode = modeOf(opts.engineSound), recCar = null, recGen = 0, recTimer = null, gears = null, takes2 = null, takes2Bufs = null;
   let lite = opts.lite != null ? !!opts.lite : null; // null: decided when the car starts (the main-thread fallback is lite)
   const recSets = new Map(), voices = new Set(); // voices: each rival's re-sync, run when the mode changes
@@ -628,17 +631,32 @@ export function createDriftAudio(opts = {}) {
       setTimeout(() => { try { this.out.disconnect(); } catch (e) { /* gone */ } }, (fade + 0.3) * 1000);
     }
   }
+  function deal(name, pool) { // a shuffled deck per pool; a new deck never opens on the track that just played
+    let d = decks[name];
+    if (!d || !d.length) {
+      d = pool.slice(); for (let i = d.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [d[i], d[j]] = [d[j], d[i]]; }
+      if (d.length > 1 && d[0] === lastDealt[name]) d.push(d.shift());
+      decks[name] = d;
+    }
+    return (lastDealt[name] = d.shift());
+  }
   async function music(track) {
     track = MUSIC_ALIAS[track] || track;
-    if (track === 'race') { // the two race tracks take turns, one per race
-      if (player && !player.stopped && /^race/.test(player.id)) return;
-      track = raceTurn++ % 2 ? 'race2' : 'race1';
+    const seq = ++musicSeq;
+    if (track && !musicMeta) {
+      if (!metaP) metaP = fetch(url('music/music.json')).then((r) => r.json()).catch((e) => { metaP = null; throw e; });
+      try { musicMeta = await metaP; } catch (e) { console.warn('driftaudio: music.json', e); return; }
+      if (seq !== musicSeq) return; // a later call won
+    }
+    const pools = (musicMeta && musicMeta.pools) || OLD_POOLS, pool = pools[track];
+    if (pool) {
+      if (player && !player.stopped && pool.includes(player.id)) { wantTrack = player.id; return; } // same screen: keep it
+      track = !player && pool.includes(wantTrack) ? wantTrack : deal(track, pool); // waiting for unlock: keep the pick
     }
     wantTrack = track || null;
     if (player && player.id === track && !player.stopped) return;
     if (player) { player.stop(); player = null; }
-    if (!track || !ctx) return;
-    if (!musicMeta) musicMeta = await (await fetch(url('music/music.json'))).json();
+    if (!track || !ctx || !musicMeta) return;
     if (wantTrack !== track || !musicMeta.tracks[track]) return;
     if (ctx.state !== 'running') return; // starts on unlock
     player = new Player(track, musicMeta.tracks[track]);

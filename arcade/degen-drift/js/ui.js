@@ -4,21 +4,21 @@
 // never a system font; panels wear the key art's magenta-to-cyan edge; parts are illustrated; cars are drawn from their
 // own bodies; the results screen has its star and DEGENERATE moments; motion stops for reduced-motion. The garage's
 // actions call garage.js exactly as before (its logic is the cars builder's).
-import { VERSION, TEST_BUILD } from './config.js?v=0.1.24';
-import { CARS, carById } from './data/cars.js?v=0.1.24';
-import { CATEGORIES, COSMETICS, SETUP } from './data/upgrades.js?v=0.1.24';
-import { BODIES } from './carbodies.js?v=0.1.24';
-import { REGIONS, COURSES } from './courses/index.js?v=0.1.24';
-import { courseList, pick, mapSvg } from './courses/select.js?v=0.1.24';
-import * as G from './garage.js?v=0.1.24';
-import { ACTIONS, keyName } from './input.js?v=0.1.24';
-import * as ART from './art.js?v=0.1.24';
-import { Tips } from './tips.js?v=0.1.24';
-import { Ghost } from './ghost.js?v=0.1.24';
-import { Duel, record as duelRecord } from './duel/duelui.js?v=0.1.24';
-import { DUELS, duelPay } from './duel/duel.js?v=0.1.24';
-import { taps } from './loader.js?v=0.1.24';
-import { fsOK, isFs, toggleFs, iphoneHint } from './fit.js?v=0.1.24';
+import { VERSION, TEST_BUILD } from './config.js?v=0.1.25';
+import { CARS, carById } from './data/cars.js?v=0.1.25';
+import { CATEGORIES, COSMETICS, SETUP } from './data/upgrades.js?v=0.1.25';
+import { BODIES } from './carbodies.js?v=0.1.25';
+import { REGIONS, COURSES } from './courses/index.js?v=0.1.25';
+import { courseList, pick, mapSvg } from './courses/select.js?v=0.1.25';
+import * as G from './garage.js?v=0.1.25';
+import { ACTIONS, keyName } from './input.js?v=0.1.25';
+import * as ART from './art.js?v=0.1.25';
+import { Tips } from './tips.js?v=0.1.25';
+import { Ghost } from './ghost.js?v=0.1.25';
+import { Duel, record as duelRecord } from './duel/duelui.js?v=0.1.25';
+import { DUELS, duelPay } from './duel/duel.js?v=0.1.25';
+import { taps } from './loader.js?v=0.1.25';
+import { fsOK, isFs, toggleFs, iphoneHint } from './fit.js?v=0.1.25';
 
 // 11-16 (fit): full screen, where the browser allows it (js/fit.js); the icon shows what a tap will do
 const FS_ICON = ['<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>', '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>'];

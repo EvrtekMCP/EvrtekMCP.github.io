@@ -1,8 +1,8 @@
 // DEGEN DRIFT: the hidden tuning panel (five taps on the version line on the title; nothing else opens it). Every number in
 // config.js TUNING gets a slider; changes apply live, are kept in this browser, and "Copy" puts the changed numbers on
 // the clipboard as JSON, ready to paste back into config.js. Telemetry runs along the top.
-import { TUNING, RANGES, DEFAULTS, getPath, setPath, diffFromDefaults, applyOverrides } from './config.js?v=0.1.24';
-import { DIAG, setDiag } from './glsafe.js?v=0.1.24';
+import { TUNING, RANGES, DEFAULTS, getPath, setPath, diffFromDefaults, applyOverrides } from './config.js?v=0.1.25';
+import { DIAG, setDiag } from './glsafe.js?v=0.1.25';
 
 const KEY = 'driftline.tuning.v1';
 const GROUPS = ['car', 'tires', 'steer', 'assist', 'wall', 'scoring', 'damage', 'nos', 'turbo', 'gearbox', 'camera', 'fx', 'economy', 'reflect', 'world', 'sound']; // 11-26 (3): sound, New+'s layer switches and levels

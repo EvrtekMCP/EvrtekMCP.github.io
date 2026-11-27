@@ -7,9 +7,9 @@
 //              sits (higher = more). A gauge beside it shows the value it is reading and which of the three it uses.
 //   buttons  - plain GAS and BRAKE.
 // Steering on a phone: a floating stick under the left thumb, or tilt (the phone turned like a wheel).
-import { view } from './fit.js?v=0.1.24';
-import { TUNING } from './config.js?v=0.1.24';
-import { shapeStick } from './stick.js?v=0.1.24';
+import { view } from './fit.js?v=0.1.25';
+import { TUNING } from './config.js?v=0.1.25';
+import { shapeStick } from './stick.js?v=0.1.25';
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 // Day 4: every keyboard action can be moved (Settings > Keys); the arrows, E, P and Shift always work as well.
 export const ACTIONS = [

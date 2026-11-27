@@ -2,7 +2,7 @@
 // hot-pink neon on deep violet). The wordmark is built from its own stroke letterforms (never a system font), and the
 // same letters spell the DEGENERATE badge. Part illustrations are neon line drawings. One hidden <svg> holds the shared
 // gradients and the glow filter, so every icon stays a few hundred bytes.
-import { outlineOf } from './carbodies.js?v=0.1.24'; // 11-16 (cars builder, Portero 002): the profiles follow the rebuilt bodies
+import { outlineOf } from './carbodies.js?v=0.1.25'; // 11-16 (cars builder, Portero 002): the profiles follow the rebuilt bodies
 
 // stroke letterforms on a 5 x 10 grid (I is 0 wide, T is 6)
 const GLYPH = {

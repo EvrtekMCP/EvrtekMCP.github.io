@@ -1,5 +1,5 @@
 // DRIFTLINE region 5, Summit: the hard high touge above the clouds at dawn. Narrow, steep, no runoff anywhere.
-import { course } from './route.js?v=0.1.24';
+import { course } from './route.js?v=0.1.25';
 
 export const FROSTLINE = course({
   id: 'frostline-pass', name: 'FROSTLINE PASS', region: 'summit', difficulty: 82, scenery: 'summit',
@@ -18,7 +18,7 @@ export const SKYLINE = course({
 });
 
 export const CLOUDBREAK = course({
-  id: 'cloudbreak-crown', name: 'CLOUDBREAK CROWN', region: 'summit', difficulty: 95, scenery: 'summit',
+  id: 'cloudbreak-crown', name: 'CLOUDBREAK CROWN', region: 'summit', difficulty: 95, scenery: 'summit', music: 'boss',
   blurb: 'The top of the world. Nearly three kilometres of everything, and the walls never let up.',
   route: 'w4.3 S220* g6 L60:50 R50:100 L40:50 S40 L40:90 S60* g9 L18:178 S60 R18:178 S60 L18:178 S60 R18:178 S60 L30:90 g4 S60 R70:40 R40:50 R24:90 L24:90 L40:50 L70:40 S60 g-4 L35:80 R35:160 L35:80 S60 L35:90 g-8 S50 L40:45 R40:90 L40:45 S40 R45:30 R20:150 S50 L20:150 L45:30 S60 g-5 R60:50 L60:50 S60 C40:40',
   zones: { zoneHalf: 2.2, sweetHalf: 0.8 },

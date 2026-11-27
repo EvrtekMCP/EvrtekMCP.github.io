@@ -2,13 +2,13 @@
   "name": "DEGEN DRIFT",
   "short_name": "DEGEN DRIFT",
   "description": "Grip is for quitters. A drift game from REIMERTEK STUDIOS.",
-  "start_url": "./index.html?v=0.1.24",
+  "start_url": "./index.html?v=0.1.25",
   "display": "fullscreen",
   "orientation": "landscape",
   "background_color": "#0b0618",
   "theme_color": "#0b0618",
   "icons": [
-    { "src": "icon-180.png?v=0.1.24", "sizes": "180x180", "type": "image/png" },
-    { "src": "icon-512.png?v=0.1.24", "sizes": "512x512", "type": "image/png" }
+    { "src": "icon-180.png?v=0.1.25", "sizes": "180x180", "type": "image/png" },
+    { "src": "icon-512.png?v=0.1.25", "sizes": "512x512", "type": "image/png" }
   ]
 }
