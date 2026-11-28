@@ -6,17 +6,18 @@
 // Nothing here changes how either car drives.
 // Day 5: the rival is heard (voice.js: its own engine and tyres, placed by distance, pan and Doppler), leaves skid
 // marks like yours (the same ring, wheels 4-7), and grips as the surface under it says, as your car does.
-import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.25';
-import { TUNING } from '../config.js?v=0.1.25';
-import { Car } from '../car.js?v=0.1.25';
-import { CarMesh } from '../carmesh.js?v=0.1.25';
-import { Surface } from '../carsurface.js?v=0.1.25';
-import { carById } from '../data/cars.js?v=0.1.25';
-import * as G from '../garage.js?v=0.1.25';
-import { DUELS, Leg, verdict, suddenDeath, playerLeads, duelPay, carTune, carProgress } from './duel.js?v=0.1.25';
-import { Rival } from './rival.js?v=0.1.25';
-import { RivalVoice } from './voice.js?v=0.1.25';
-import { view } from '../fit.js?v=0.1.25';
+import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.26';
+import { TUNING } from '../config.js?v=0.1.26';
+import { Car } from '../car.js?v=0.1.26';
+import { CarMesh } from '../carmesh.js?v=0.1.26';
+import { Surface } from '../carsurface.js?v=0.1.26';
+import { carById } from '../data/cars.js?v=0.1.26';
+import * as G from '../garage.js?v=0.1.26';
+import { DUELS, Leg, verdict, suddenDeath, playerLeads, duelPay, carTune, carProgress } from './duel.js?v=0.1.26';
+import { Rival } from './rival.js?v=0.1.26';
+import { RivalVoice } from './voice.js?v=0.1.26';
+import { view } from '../fit.js?v=0.1.26';
+import { stamped } from '../levelui.js?v=0.1.26';
 
 const H = 1 / 120;
 const KEY = 'driftline.duels.v1';
@@ -32,11 +33,11 @@ export class Duel {
     this.p = [0, 0, 0]; this.v = new THREE.Vector3(); this.sm = [0, 0]; this.voice = null; this.surf = null; this.rSurf = 'asphalt'; this.lastXZ = null;
     // the duel's HUD panel and the tag over the rival, inside the HUD (hidden unless a duel is on)
     const hud = document.getElementById('hud');
-    hud.insertAdjacentHTML('beforeend', `<div class="duelhud" id="h-duel"><div class="dleg" id="d-leg"></div>
+    hud.insertAdjacentHTML('beforeend', `<div class="duelhud" id="h-duel"><div class="dleg"><img class="rtag-art" id="d-crew" alt="" width="28" height="28"><span id="d-leg"></span></div>
       <div class="dgap"><span class="dpos" id="d-pos"></span><span class="num" id="d-gap"></span></div>
       <div class="dedge"><span class="dl">DRIFT</span><div class="dbar"><i id="d-you"></i><i id="d-riv"></i><b></b></div><span class="num" id="d-edge"></span></div>
       <div class="dout" id="d-out"><i id="d-outfill"></i></div></div><div class="rtag" id="d-tag"><b id="d-tagname"></b><i></i></div>`);
-    this.e = Object.fromEntries(['h-duel', 'd-leg', 'd-pos', 'd-gap', 'd-you', 'd-riv', 'd-edge', 'd-out', 'd-outfill', 'd-tag', 'd-tagname'].map((id) => [id, document.getElementById(id)]));
+    this.e = Object.fromEntries(['h-duel', 'd-crew', 'd-leg', 'd-pos', 'd-gap', 'd-you', 'd-riv', 'd-edge', 'd-out', 'd-outfill', 'd-tag', 'd-tagname'].map((id) => [id, document.getElementById(id)]));
     game.hud.attach(this);
   }
   cfg() { return DUELS[this.g.course.id]; }
@@ -67,6 +68,7 @@ export class Duel {
     this.e['h-duel'].hidden = false;
     this.e['d-leg'].textContent = this.legNo === 3 ? `SUDDEN DEATH · ${lead ? 'YOU LEAD' : 'YOU CHASE'}` : `LEG ${this.legNo} OF 2 · ${lead ? 'YOU LEAD' : 'YOU CHASE'}`;
     this.e['d-tagname'].textContent = cfg.who;
+    const crew = stamped('art/rivals/tag-' + cfg.who.toLowerCase() + '.svg'); if (this.e['d-crew'].getAttribute('src') !== crew) this.e['d-crew'].src = crew; // 11-27 (4): the rival's crew tag (Kalakar)
     g.hud.msg(this.legNo === 3 ? 'SUDDEN DEATH' : lead ? `LEG ${this.legNo}: LEAD` : `LEG ${this.legNo}: CHASE`);
   }
   // the rival: its car (one of the six, with its own share of parts) and its mesh in its colours, made once per course
@@ -119,12 +121,15 @@ export class Duel {
     const v = verdict(this.legs), rec = record(), mine = (rec[c.id] ||= { won: 0, lost: 0 });
     const firstWin = v.won && !mine.won;
     const pay = duelPay(G.payout, p, c, v, firstWin);
+    // 11-27 (4): a duel pays XP too (garage.js runXp: won or lost, the range, the first win on the course)
+    const L0 = G.levelOf(p), S0 = G.starsOf(p), xp0 = p.xp || 0, xp = G.runXp(p, null, c, { won: v.won, firstWin });
     if (v.won) mine.won++; else mine.lost++; keep(rec);
-    p.credits += pay.total; p.earned += pay.total; p.runs++;
+    p.credits += pay.total; p.earned += pay.total; p.runs++; xp.apply();
     G.saveProgress(p);
+    const L1 = G.levelOf(p), X = { from: xp0, total: xp.total, base: xp.base, steps: xp.steps, L0, L1, opened: G.openedBetween(p, L0, S0, L1, G.starsOf(p)) };
     this.active = false; this.leg = null; g.duel = null;
     g.sound.music('results');
-    this.ui.duelResult({ verdict: v, legs: this.legs, pay, cfg, car: carById(cfg.rival), record: mine, firstWin });
+    this.ui.duelResult({ verdict: v, legs: this.legs, pay, xp: X, cfg, car: carById(cfg.rival), record: mine, firstWin });
   }
   // after a leg the rival rolls to a stop rather than freezing (the game only steps it during a run); its engine winds
   // down with it, and goes quiet when you leave the screen
@@ -170,7 +175,7 @@ export class Duel {
     if (ev.type === 'contact' && ev.fault === 'player') { g.hud.pop('Contact: −' + fmt(900), 'wipe'); g.hud.flash(); g.sound.impact('hard', Math.min(1, ev.speed / 8)); }
     else if (ev.type === 'contact') g.sound.impact('scrape', Math.min(1, ev.speed / 10));
     else if (ev.type === 'pass') { g.hud.pop('Passed!', 'link'); g.sound.ui('link'); }
-    else if (ev.type === 'passed') g.hud.pop('Passed by ' + this.cfg().who, 'info');
+    else if (ev.type === 'passed') g.hud.pop(this.cfg().who + ' got by', 'info');
     else if (ev.type === 'rivalFinished') g.hud.pop(this.cfg().who + ' is home', 'info');
   }
   // the rival's tyre smoke, the same rule as yours (main.js effects), through the same smoke

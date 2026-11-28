@@ -2,7 +2,7 @@
 // hot-pink neon on deep violet). The wordmark is built from its own stroke letterforms (never a system font), and the
 // same letters spell the DEGENERATE badge. Part illustrations are neon line drawings. One hidden <svg> holds the shared
 // gradients and the glow filter, so every icon stays a few hundred bytes.
-import { outlineOf } from './carbodies.js?v=0.1.25'; // 11-16 (cars builder, Portero 002): the profiles follow the rebuilt bodies
+import { outlineOf } from './carbodies.js?v=0.1.26'; // 11-16 (cars builder, Portero 002): the profiles follow the rebuilt bodies
 
 // stroke letterforms on a 5 x 10 grid (I is 0 wide, T is 6)
 const GLYPH = {
@@ -46,7 +46,7 @@ const GLYPH = {
   8: [5, 'M1 0H4L5 1V4L4 5H1L0 6V9L1 10H4L5 9V6L4 5H1L0 4V1Z'],
   9: [5, 'M5 5H1L0 4V1L1 0H5V8.6L3.6 10H0.4'],
   '-': [3.4, 'M0 5.4H3.4'],
-  '.': [0, 'M0 9V10'],
+  '.': [0.7, 'M0 8.9V10M0.7 8.9V10'], // 11-27 (4), Kalakar: heavier, so x1.5 never reads x15 at chip size
   ',': [0.8, 'M0.8 9L0 11'],
   ':': [0, 'M0 3V4M0 8V9'],
   '!': [0, 'M0 0V6.6M0 9V10'],
@@ -56,7 +56,8 @@ const GLYPH = {
   '+': [4, 'M0 5H4M2 3V7'],
   '×': [4, 'M0 3L4 9M4 3L0 9'],
   '&': [5, 'M5 10L1 4V1L2 0H3.2L4.2 1V3L0 6.4V9L1 10H3.2L5 7.6'],
-  '%': [5, 'M0 10L5 0M0 0V2M5 8V10'],
+  '%': [5.6, 'M0.5 10L5.1 0M0 0.4V2M0.8 0.4V2M4.8 8V9.6M5.6 8V9.6'], // 11-27 (4), Kalakar: the dots doubled, so it never reads a slash
+  '−': [3.4, 'M0 5.4H3.4'], // the minus sign, as the hyphen
   '·': [0, 'M0 4.6V5.4'],
 };
 // a word as a path: returns { d, w } in grid units (height 10)
@@ -85,6 +86,13 @@ export const DEFS = `<svg width="0" height="0" style="position:absolute" aria-hi
   <linearGradient id="gPlate" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#26114a"/><stop offset="0.62" stop-color="#140828"/><stop offset="1" stop-color="#3a0f3c"/></linearGradient>
   <linearGradient id="gSun" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe08a"/><stop offset="0.5" stop-color="#ff7a3c"/><stop offset="1" stop-color="#ff3fa4"/></linearGradient>
   <radialGradient id="gRubber" cx="0.4" cy="0.35" r="0.7"><stop offset="0" stop-color="#3a3048"/><stop offset="1" stop-color="#0e0916"/></radialGradient>
+  <linearGradient id="tGold" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="10"><stop offset="0" stop-color="#fffbe0"/><stop offset="0.5" stop-color="#ffd36a"/><stop offset="1" stop-color="#ffa83a"/></linearGradient>
+  <linearGradient id="tHot" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="10"><stop offset="0" stop-color="#fff3b0"/><stop offset="0.5" stop-color="#ff8a5c"/><stop offset="1" stop-color="#ff3fa4"/></linearGradient>
+  <linearGradient id="tGrey" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="10"><stop offset="0" stop-color="#e9edfb"/><stop offset="0.5" stop-color="#aab4d4"/><stop offset="1" stop-color="#8792b8"/></linearGradient>
+  <linearGradient id="tCyan" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="10"><stop offset="0" stop-color="#f2ffff"/><stop offset="0.5" stop-color="#7df6ff"/><stop offset="1" stop-color="#36f2ff"/></linearGradient>
+  <linearGradient id="tPink" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="10"><stop offset="0" stop-color="#ffe6f4"/><stop offset="0.5" stop-color="#ff8cc8"/><stop offset="1" stop-color="#ff3fa4"/></linearGradient>
+  <linearGradient id="tGreen" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="10"><stop offset="0" stop-color="#f0fff8"/><stop offset="0.5" stop-color="#8dffc6"/><stop offset="1" stop-color="#5dffb0"/></linearGradient>
+  <linearGradient id="tLilac" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="10"><stop offset="0" stop-color="#f4ecff"/><stop offset="0.5" stop-color="#c9bde6"/><stop offset="1" stop-color="#a99cc8"/></linearGradient>
   <filter id="fGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   <filter id="fBloom" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur stdDeviation="3"/></filter>
 </defs></svg>`;
@@ -107,7 +115,9 @@ export function wordmark() {
 // CSS (height; the width follows the text): <svg class="lt"> scales with the line it sits in.
 export function title(text, cls = '', tone = 'chrome') {
   const L = letters(text, 2.5), pad = 1.6, W = L.w + pad * 2 + 2.4, H = 13.4;
-  const fill = tone === 'gold' ? 'url(#gGold)' : tone === 'neon' ? 'url(#gNeon)' : 'url(#gChrome)';
+  // 11-27 (4): and the bonus text's tones (Kalakar's emblem sheet): hot, grey, cyan, pink, green, lilac, gold2 (her gold)
+  const TONE = { gold: 'url(#gGold)', neon: 'url(#gNeon)', gold2: 'url(#tGold)', hot: 'url(#tHot)', grey: 'url(#tGrey)', cyan: 'url(#tCyan)', pink: 'url(#tPink)', green: 'url(#tGreen)', lilac: 'url(#tLilac)' };
+  const fill = TONE[tone] || 'url(#gChrome)';
   return `<svg class="lt ${cls}" viewBox="0 0 ${W.toFixed(1)} ${H}" style="aspect-ratio:${W.toFixed(1)}/${H}" role="img" aria-label="${String(text).replace(/"/g, '')}"><g transform="translate(${pad + 2} 1.7) skewX(-12)">
     <path d="${L.d}" fill="none" stroke="#14072a" stroke-width="2.35" stroke-linejoin="miter" stroke-linecap="square"/>
     <path d="${L.d}" fill="none" stroke="${fill}" stroke-width="1.5" stroke-linejoin="miter" stroke-linecap="square"/></g></svg>`;

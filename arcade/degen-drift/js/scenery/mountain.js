@@ -1,11 +1,11 @@
 // DRIFTLINE region 3, Mountain pass: blue hour in the high forest. The last of the sun behind the ridge, a moon over
 // the snowfields, dense pines to the rails, rock cut faces on the uphill side, sodium lamps at the hairpins and in the
 // tunnels, concrete bridges over gorges with a river below, cabins with lit windows and a fire lookout on the ridge.
-import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.25';
-import { sstep, fbm, colorGeom, mergeGeoms } from '../world.js?v=0.1.25';
-import * as K from './kit.js?v=0.1.25';
-import * as D from './detail.js?v=0.1.25';
-import * as P from './props.js?v=0.1.25';
+import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.26';
+import { sstep, fbm, colorGeom, mergeGeoms } from '../world.js?v=0.1.26';
+import * as K from './kit.js?v=0.1.26';
+import * as D from './detail.js?v=0.1.26';
+import * as P from './props.js?v=0.1.26';
 
 const C = (h) => new THREE.Color(h);
 

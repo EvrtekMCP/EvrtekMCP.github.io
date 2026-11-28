@@ -5,7 +5,7 @@
 export const EMBER_BAY = {
   id: 'ember-bay',
   name: 'EMBER BAY PASS',
-  blurb: 'A harbour front, a climb through the pines, one hairpin at the top. Link the S on the way down.',
+  blurb: 'Off the harbour front and up through the pines to one hairpin. Link the S on the way back down.',
   region: 'harbour',
   difficulty: 15,           // out of 100; the car's ability rating is weighed against it
   dressing: 'harbour-pass', // the scenery preset (world.js)

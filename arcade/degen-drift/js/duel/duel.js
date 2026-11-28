@@ -10,10 +10,10 @@
 //     behind on points; that leg alone decides.
 //   - The rival is a car like yours (same physics, its own tune and parts) driven by rival.js: real lines, drifts in
 //     the zones, and the odd mistake you can pounce on. It never gets help from the physics.
-import { TUNING } from '../config.js?v=0.1.25';
-import { Steps } from '../scoring.js?v=0.1.25';
-import * as G from '../garage.js?v=0.1.25';
-import { CATEGORIES } from '../data/upgrades.js?v=0.1.25';
+import { TUNING } from '../config.js?v=0.1.26';
+import { Steps } from '../scoring.js?v=0.1.26';
+import * as G from '../garage.js?v=0.1.26';
+import { CATEGORIES } from '../data/upgrades.js?v=0.1.26';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const DEG = 180 / Math.PI;
@@ -27,11 +27,11 @@ const DEG = 180 / Math.PI;
 // 6/15/12/14 -> 3/7/10/8); a few more mistakes each (0.16 -> 0.22, 0.10 -> 0.15) give 10/14/25/35 and 7/12/15/18
 export const DUELS = {
   'dust-devil': { rival: 'vanta', who: 'SIDEWINDER', paint: '#c03c7c', parts: 0.3, pace: 1.0, angle: 33, mistakes: 0.22, outright: 5.0,
-    line: 'Smooth and a touch cautious. Pressure him into the cutbacks.' },
+    line: 'Smooth, but he scares easy. Lean on him into the cutbacks.' },
   'cedar-switchbacks': { rival: 'halberd', who: 'TIMBER', paint: '#2f8a6a', parts: 0.4, pace: 1.0, angle: 35, mistakes: 0.12, outright: 4.5,
-    line: 'Big smoky slides in a heavy V8. Late on the brakes, slow out of the hairpins.' },
+    line: 'Big V8, bigger smoke. Brakes late, then crawls out of the hairpins.' },
   'cloudbreak-crown': { rival: 'zenith', who: 'HALO', paint: '#e6e2f2', parts: 0.9, pace: 1.0, angle: 36, mistakes: 0.15, outright: 4.2,
-    line: 'The fastest driver on the mountain. Rarely wrong; when she is, take it.' },
+    line: 'Fastest on the mountain, and she knows it. She slips once a night. Be there.' },
 };
 export const RULES = {
   gapPts: 1000,      // a second of gap at the line is worth this many drift points

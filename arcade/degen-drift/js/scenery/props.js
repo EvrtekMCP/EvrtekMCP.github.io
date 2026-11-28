@@ -4,7 +4,7 @@
 // copy (detail.js place()); tools/kitglb.mjs exports each one to art/models/dd-kit-<id>.glb for the Asset Console
 // (every 3D asset is a studio asset). Pure geometry: nothing here touches the page, so Node can build them too.
 // Moving pieces return { base, moving, pivot }: the moving part turns about the pivot in the world's frame loop.
-import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.25';
+import * as THREE from '../../vendor/three/three.module.min.js?v=0.1.26';
 
 const col = new THREE.Color();
 // one coloured part: any three.js geometry, moved and turned into place, painted one colour (sRGB hex), emit 0..1

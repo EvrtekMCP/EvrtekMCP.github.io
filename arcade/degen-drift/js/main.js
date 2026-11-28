@@ -2,34 +2,35 @@
 // countdown, run, pause, results), steps the car at a fixed 120 Hz, feeds the scoring, the effects, the sound and the
 // HUD, and renders. The car list is an array of drivers so a rival car (downhill duels) can join later: each driver is
 // a car, its mesh and where its inputs come from; 0.1.0 has the player alone.
-import * as THREE from '../vendor/three/three.module.min.js?v=0.1.25';
-import { TUNING, VERSION } from './config.js?v=0.1.25';
-import { installFog, PAL, sunDir } from './look.js?v=0.1.25';
-import { Reflections, LIVE_SIZE, COURSE_SIZE } from './reflect.js?v=0.1.25';
-import { SHARED as PAINT, setWorldLight } from './carpaint.js?v=0.1.25';
-import { Track } from './track.js?v=0.1.25';
-import { courseById } from './courses/index.js?v=0.1.25';
-import { DUELS } from './duel/duel.js?v=0.1.25';
-import { Car } from './car.js?v=0.1.25';
-import { DriftScore } from './scoring.js?v=0.1.25';
-import * as G from './garage.js?v=0.1.25';
-import { buildWorld } from './world.js?v=0.1.25';
-import { CarMesh, WET_VP } from './carmesh.js?v=0.1.25';
-import { Surface } from './carsurface.js?v=0.1.25';
-import { Smoke, Skids, Sparks, SpeedLines } from './fx.js?v=0.1.25';
-import { ChaseCam } from './camera.js?v=0.1.25';
-import { Post } from './post.js?v=0.1.25';
-import { Quality } from './quality.js?v=0.1.25';
-import { Input } from './input.js?v=0.1.25';
-import { Sound } from './sound.js?v=0.1.25';
-import { UI } from './ui.js?v=0.1.25';
-import { Hud } from './hud.js?v=0.1.25';
-import { Debug, loadTuning } from './debug.js?v=0.1.25';
-import { appIcon } from './art.js?v=0.1.25';
-import { Loader, painted } from './loader.js?v=0.1.25';
-import { TipScreen } from './tips.js?v=0.1.25';
-import { view, onFit } from './fit.js?v=0.1.25';
-import { DIAG, installNanView } from './glsafe.js?v=0.1.25';
+import * as THREE from '../vendor/three/three.module.min.js?v=0.1.26';
+import { TUNING, VERSION } from './config.js?v=0.1.26';
+import { installFog, PAL, sunDir } from './look.js?v=0.1.26';
+import { Reflections, LIVE_SIZE, COURSE_SIZE } from './reflect.js?v=0.1.26';
+import { SHARED as PAINT, setWorldLight } from './carpaint.js?v=0.1.26';
+import { Track } from './track.js?v=0.1.26';
+import { courseById } from './courses/index.js?v=0.1.26';
+import { DUELS } from './duel/duel.js?v=0.1.26';
+import { Car } from './car.js?v=0.1.26';
+import { DriftScore } from './scoring.js?v=0.1.26';
+import * as G from './garage.js?v=0.1.26';
+import { buildWorld } from './world.js?v=0.1.26';
+import { CarMesh, WET_VP } from './carmesh.js?v=0.1.26';
+import { Surface } from './carsurface.js?v=0.1.26';
+import { Smoke, Skids, Sparks, SpeedLines } from './fx.js?v=0.1.26';
+import { ChaseCam } from './camera.js?v=0.1.26';
+import { Post } from './post.js?v=0.1.26';
+import { Quality } from './quality.js?v=0.1.26';
+import { Input } from './input.js?v=0.1.26';
+import { Sound } from './sound.js?v=0.1.26';
+import { UI } from './ui.js?v=0.1.26';
+import { Hud } from './hud.js?v=0.1.26';
+import { Debug, loadTuning } from './debug.js?v=0.1.26';
+import { appIcon } from './art.js?v=0.1.26';
+import { Loader, painted } from './loader.js?v=0.1.26';
+import { TipScreen } from './tips.js?v=0.1.26';
+import { stamped } from './levelui.js?v=0.1.26';
+import { view, onFit } from './fit.js?v=0.1.26';
+import { DIAG, installNanView } from './glsafe.js?v=0.1.26';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const params = new URLSearchParams(location.search);
@@ -206,7 +207,7 @@ class Game {
     let how = 'go';
     this.loading = true;
     try {
-      await T.show(D ? 'Getting ' + D.who + ' to the line' : build ? 'Building ' + course.name : course.name);
+      await T.show(D ? 'Getting ' + D.who + ' to the line' : build ? 'Building ' + course.name : course.name, course.music === 'boss' ? stamped('art/boss/boss-cloudbreak-crown-' + (innerWidth * (devicePixelRatio || 1) > 1400 ? 1920 : 1280) + '.webp') : null); // 11-27 (4): the boss's title card
       if (build) await this.swapCourse(course, (f) => T.step(0.04 + f * 0.76));
       this.chosen = null;
       if (kind === 'duel' && this.ui.duel.needsPrep()) { this.ui.duel.prepare(); await T.step(0.82); }
@@ -418,15 +419,20 @@ class Game {
     if (this.duel && this.duel.lapDone()) return; // a downhill duel takes the lap's end (js/duel/duelui.js, day 4)
     this.score.bank('finish');
     const total = this.score.total, r = DriftScore.rate(total, this.course), p = this.progress;
+    // 11-27 (4): the XP is reckoned before the payout marks the first-time bonuses taken; the level and stars before and
+    // after say what opened
+    const L0 = G.levelOf(p), S0 = G.starsOf(p), xp0 = p.xp || 0, first = !(p.firsts[this.course.id] && p.firsts[this.course.id].clear);
+    const xp = G.runXp(p, { stars: r.stars, top: r.top }, this.course);
     const pay = G.payout(p, { score: total, stars: r.stars, top: r.top }, this.course);
-    pay.apply(); p.credits += pay.total; p.earned += pay.total; p.runs++;
+    pay.apply(); xp.apply(); p.credits += pay.total; p.earned += pay.total; p.runs++;
     const best = p.best[this.course.id];
     const newBest = !best || total > best.score;
-    if (newBest) p.best[this.course.id] = { score: total, stars: r.stars, top: r.top };
+    if (newBest) p.best[this.course.id] = { score: total, stars: Math.max(r.stars, (best && best.stars) || 0), top: r.top || !!(best && best.top) };
     G.saveProgress(p);
+    const L1 = G.levelOf(p), X = { from: xp0, total: xp.total, base: xp.base, steps: xp.steps, L0, L1, opened: G.openedBetween(p, L0, S0, L1, G.starsOf(p)) };
     const t = this.run.time;
     this.state = 'results'; this.hud.show(false); this.showTouch(false);
-    this.lastResult = { score: total, stars: r.stars, top: r.top, newBest, pay, stats: this.score.stats, hits: this.run.hits, time: Math.floor(t / 60) + ':' + (t % 60).toFixed(1).padStart(4, '0') };
+    this.lastResult = { score: total, stars: r.stars, top: r.top, newBest, first, boss: this.course.music === 'boss', pay, xp: X, stats: this.score.stats, hits: this.run.hits, time: Math.floor(t / 60) + ':' + (t % 60).toFixed(1).padStart(4, '0') };
     this.ui.results(this.lastResult);
     this.sound.music('results');
   }
@@ -675,7 +681,7 @@ class Game {
 
   // ---------------------------------------------------------------- test hooks (?test): never loaded for players
   async testHooks() {
-    const { Autopilot } = await import('./autopilot.js?v=0.1.25');
+    const { Autopilot } = await import('./autopilot.js?v=0.1.26');
     this.capture = params.has('capture');
     const g = this;
     window.__dl = {
@@ -703,6 +709,9 @@ class Game {
       cpu() { return (g.cpu || []).slice(); },
       progress() { return JSON.parse(JSON.stringify(g.progress)); },
       setCredits(n) { g.progress.credits = n; G.saveProgress(g.progress); },
+      // 11-27 (4): a level (its XP), and stars on courses, for the tests
+      setLevel(L) { g.progress.xp = G.xpAtLevel(L); G.saveProgress(g.progress); },
+      setStars(map) { for (const [id, n] of Object.entries(map)) { g.progress.best[id] = { score: 1, stars: n, top: false }; g.progress.firsts[id] = { clear: true, stars: n, top: false }; } G.saveProgress(g.progress); },
       fast(on) { g.fastForward = on; },
       // courses: switch, the craft-rule audit, and a lap driven through the game's own simulate() without rendering
       loadCourse(id) { return g.loadCourse(id); },

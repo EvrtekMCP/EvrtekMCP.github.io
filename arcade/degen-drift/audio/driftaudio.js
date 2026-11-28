@@ -14,7 +14,7 @@
 // the gearbox clunk, interface sounds and fanfares are ElevenLabs recordings (audio/sfx). The music is whole
 // ElevenLabs takes, streamed in bar-line chunks after the game starts (audio/music), never at load.
 // Formats: Ogg Opus where the browser plays it, AAC in .mp4 otherwise (Safari). Every URL carries ?v=<version>: the
-// game's stamp when it imports this module stamped (driftaudio.js?v=0.1.25), or opts.version.
+// game's stamp when it imports this module stamped (driftaudio.js?v=0.1.26), or opts.version.
 //
 // THE GAME'S ADAPTER (js/sound.js) uses the module-level functions at the bottom instead: init({ context }) once, then
 // setEngine(preset, hints), setRPM(rpm, redline), setThrottle(t), setSlip(share 0..1), setSpeed(m/s), impact(kind,
@@ -88,13 +88,14 @@ const UI = {
   click: ['ui-click-1', 'ui-click-2'], back: ['ui-click-2'], purchase: ['ui-purchase'], upgrade: ['ui-upgrade'],
   zone: ['ui-zone'], sweet: ['ui-sweet'], link: ['ui-link'], bank: ['ui-bank'], lost: ['ui-lost'],
   star: ['fanfare-star'], degenerate: ['fanfare-degenerate'], count: ['ui-count'], go: ['ui-go'],
+  levelup: ['fanfare-levelup'], // 11-27: the level-up sting (tools/sound/levelup-1127.mjs: four Eleven takes, the neon swell shipped)
 };
 const UI_ALIAS = { wipe: 'lost', buy: 'purchase', select: 'click', hover: 'click' };
 // 11-27: 'menu', 'race' and 'boss' are pools (music.json pools, Evrtek's picks): each call picks one at random, and a
 // pool deals every track once before any repeats. A manifest without pools falls back to the 0.1.0 loops.
 const MUSIC_ALIAS = { title: 'menu' };
 const OLD_POOLS = { menu: ['garage'], race: ['race1', 'race2'], boss: ['race1', 'race2'] };
-const UI_GAIN = { click: 0.45, back: 0.4, purchase: 0.7, upgrade: 0.75, zone: 0.55, sweet: 0.6, link: 0.6, bank: 0.7, lost: 0.7, star: 0.85, degenerate: 0.9, count: 0.6, go: 0.6 };
+const UI_GAIN = { click: 0.45, back: 0.4, purchase: 0.7, upgrade: 0.75, zone: 0.55, sweet: 0.6, link: 0.6, bank: 0.7, lost: 0.7, star: 0.85, degenerate: 0.9, levelup: 0.9, count: 0.6, go: 0.6 };
 // 11-21 (the launch hum, measured: tools/sound/launch-1121.mjs): the GO take is one held tone, 370 Hz with every
 // harmonic, flat for 0.65 s, and it began exactly as the car could move: at 0.7 it was the loudest thing at the start,
 // 8-14 dB over the car (12-23 dB through a phone's speaker), in the engine's own register. It now plays as long as a
@@ -573,7 +574,7 @@ export function createDriftAudio(opts = {}) {
     const id = name === 'click' ? pick('click', list) : list[0];
     const g = UI_GAIN[name] || 0.6, h = play(id, { bus: nodes.ui, gain: g, rate });
     if (h && UI_LEN[name]) { const t = ctx.currentTime + UI_LEN[name]; h.gain.gain.setValueAtTime(g, t); h.gain.gain.linearRampToValueAtTime(0, t + UI_FADE); h.src.stop(t + UI_FADE + 0.01); }
-    if (name === 'star' || name === 'degenerate') { // the fanfare sits on top of the music for its length
+    if (name === 'star' || name === 'degenerate' || name === 'levelup') { // the fanfare sits on top of the music for its length
       const len = (sfxMeta.sounds[id] || { dur: 2 }).dur;
       duckFan++; duck(); setTimeout(() => { duckFan = Math.max(0, duckFan - 1); duck(); }, len * 900);
     }

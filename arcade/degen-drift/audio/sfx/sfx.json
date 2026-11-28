@@ -159,6 +159,13 @@
    "ch": 2,
    "group": "fanfare",
    "take": 2
+  },
+  "fanfare-levelup": {
+   "dur": 2.709,
+   "ch": 2,
+   "group": "fanfare",
+   "take": 1,
+   "flavour": "neon"
   }
  }
 }

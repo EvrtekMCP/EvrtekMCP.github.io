@@ -7,53 +7,53 @@
 //   band (per category, or per level where it differs): cheap 1-3 decent runs, mid 4-8, big 15-30 (the plan's bands).
 export const CATEGORIES = [
   { id: 'tires', name: 'Tires', art: 'tire', band: 'cheap', levels: [
-    { name: 'Sport tires', price: 1800, blurb: 'More bite at both ends.', fx: { muFront: 0.04, muRear: 0.03 } },
-    { name: 'Semi-slicks', price: 3400, blurb: 'Grip to lean on; the slide comes later and cleaner.', fx: { muFront: 0.04, muRear: 0.02 } },
-    { name: 'Drift-spec', price: 5200, blurb: 'Sticky fronts, a predictable, smoky rear.', fx: { muFront: 0.03, muRear: -0.02, slideRear: 0.04 }, sound: { squeal: 'high' } },
-    { name: 'Competition', price: 9000, blurb: 'The best rubber money can buy (with race money).', fx: { muFront: 0.04, muRear: 0.03 } },
+    { name: 'Sport tires', price: 1800, blurb: 'Real rubber at last. More bite at both ends.', fx: { muFront: 0.04, muRear: 0.03 } },
+    { name: 'Semi-slicks', price: 3400, blurb: 'Half race rubber. Lean on it hard, and when it lets go it goes clean.', fx: { muFront: 0.04, muRear: 0.02 } },
+    { name: 'Drift-spec', price: 5200, blurb: 'Glue up front, and a rear that hangs out and screams on cue.', fx: { muFront: 0.03, muRear: -0.02, slideRear: 0.04 }, sound: { squeal: 'high' } },
+    { name: 'Competition', price: 9000, blurb: 'Top-shelf rubber, paid for with money nobody asks about.', fx: { muFront: 0.04, muRear: 0.03 } },
   ] },
   { id: 'brakes', name: 'Brakes', art: 'brake', band: 'cheap', levels: [
-    { name: 'Sport pads', price: 1200, blurb: 'Stop later, steer in sooner.', fx: { brake: 0.12 } },
-    { name: 'Big brake kit', price: 2800, blurb: 'Bigger discs, four-pot calipers.', fx: { brake: 0.12 } },
-    { name: 'Hydraulic handbrake', price: 4200, blurb: 'A sharper pull: the tail comes round on cue.', fx: { handbrakeGrip: -0.08 } },
+    { name: 'Sport pads', price: 1200, blurb: 'Brake later than the other guy, pitch it in sooner.', fx: { brake: 0.12 } },
+    { name: 'Big brake kit', price: 2800, blurb: 'Big discs, four-pot calipers. Stops like it hit a wall, minus the wall.', fx: { brake: 0.12 } },
+    { name: 'Hydraulic handbrake', price: 4200, blurb: 'Yank it and the tail comes round. Every single time.', fx: { handbrakeGrip: -0.08 } },
   ] },
   { id: 'suspension', name: 'Suspension', art: 'coilover', band: 'mid', levels: [
-    { name: 'Coilovers', price: 4800, blurb: 'Lower and stiffer: less roll, sharper response.', fx: { cgHeight: -0.05, transferScale: -0.12, muFront: 0.02 } },
-    { name: 'Adjustable coilovers', price: 8200, blurb: 'Lower again, and the setup sliders unlock: tune the car to your style.', fx: { cgHeight: -0.03, muFront: 0.01 } },
+    { name: 'Coilovers', price: 4800, blurb: 'Slammed and stiff. Turn the wheel and it goes, right now.', fx: { cgHeight: -0.05, transferScale: -0.12, muFront: 0.02 } },
+    { name: 'Adjustable coilovers', price: 8200, blurb: 'Lower still, and the setup sheet opens up. Make it as loose as you dare.', fx: { cgHeight: -0.03, muFront: 0.01 } },
   ] },
   { id: 'diff', name: 'Differential', art: 'diff', band: 'mid', levels: [
-    { name: '1.5-way LSD', price: 4200, blurb: 'Both rears push together: slides start readily and hold.', fx: { driftHold: 0.08, peakSlipRatio: -0.015 } },
-    { name: '2-way LSD', price: 7600, blurb: 'Locked on and off the throttle: steady, deep angles.', fx: { driftHold: 0.08, holdThrottleDeg: 3 } },
+    { name: '1.5-way LSD', price: 4200, blurb: 'Both rears shove together. It kicks out easy and stays out.', fx: { driftHold: 0.08, peakSlipRatio: -0.015 } },
+    { name: '2-way LSD', price: 7600, blurb: 'Locked on the gas and off it. Deep angle, all night long.', fx: { driftHold: 0.08, holdThrottleDeg: 3 } },
   ] },
   { id: 'angle', name: 'Angle kit', art: 'knuckle', band: 'mid', levels: [
-    { name: 'Angle kit', price: 4400, blurb: 'More lock: hold deeper angles, catch more slides.', fx: { lockDeg: 6, counterMaxDeg: 6 } },
-    { name: 'Pro angle kit', price: 8800, blurb: 'Even more lock and a quicker catch.', fx: { lockDeg: 5, counterMaxDeg: 5 } },
-    { name: 'Super lock', price: 15000, blurb: 'Lock like a competition car.', fx: { lockDeg: 5, counterMaxDeg: 5 } },
+    { name: 'Angle kit', price: 4400, blurb: 'More steering lock. Go deeper and save the ones you used to lose.', fx: { lockDeg: 6, counterMaxDeg: 6 } },
+    { name: 'Pro angle kit', price: 8800, blurb: 'Even more lock. It catches the car before your nerve goes.', fx: { lockDeg: 5, counterMaxDeg: 5 } },
+    { name: 'Super lock', price: 15000, blurb: 'Comp-car lock. The front wheels nearly face the wrong way.', fx: { lockDeg: 5, counterMaxDeg: 5 } },
   ] },
   { id: 'weight', name: 'Weight', art: 'seat', band: 'mid', levels: [
-    { name: 'Bucket seats', price: 1600, blurb: '35 kg lighter.', fx: { mass: -35 } },
-    { name: 'Stripped interior', price: 4400, blurb: 'Carpet and trim gone: 50 kg more.', fx: { mass: -50 } },
-    { name: 'Carbon panels', price: 11000, blurb: 'Bonnet, boot and doors in carbon: 60 kg more.', fx: { mass: -60 } },
+    { name: 'Bucket seats', price: 1600, blurb: 'Bolt-in buckets. 35 kg gone, and you stay put sideways.', fx: { mass: -35 } },
+    { name: 'Stripped interior', price: 4400, blurb: 'Carpet and trim in the skip. Another 50 kg gone.', fx: { mass: -50 } },
+    { name: 'Carbon panels', price: 11000, blurb: 'Carbon bonnet, boot and doors. 60 kg lighter, and it looks mean.', fx: { mass: -60 } },
   ] },
   { id: 'exhaust', name: 'Exhaust', art: 'exhaust', band: 'cheap', levels: [
-    { name: 'Cat-back exhaust', price: 1500, blurb: 'A little power and a lot more voice.', fx: { power: 0.03 }, sound: { exhaust: 1 } },
+    { name: 'Cat-back exhaust', price: 1500, blurb: 'A few more horses and a lot more mouth.', fx: { power: 0.03 }, sound: { exhaust: 1 } },
     { name: 'Straight pipe', price: 4200, blurb: 'Crackles on the lift. Neighbours hate it.', fx: { power: 0.04 }, sound: { exhaust: 2 } },
   ] },
   { id: 'transmission', name: 'Transmission', art: 'shifter', band: 'mid', levels: [
-    { name: 'Short shifter', price: 1400, blurb: 'Quicker changes: less of a lull between gears.', fx: { shiftCut: -0.12 } },
-    { name: 'Close-ratio box', price: 6800, blurb: 'Stays in the power band through the corners.', fx: { shiftCut: -0.04, power: 0.03 } },
+    { name: 'Short shifter', price: 1400, blurb: 'Snap-quick changes. No dead air between gears.', fx: { shiftCut: -0.12 } },
+    { name: 'Close-ratio box', price: 6800, blurb: 'Tight gears. It stays on the boil all the way through the corner.', fx: { shiftCut: -0.04, power: 0.03 } },
   ] },
   { id: 'engine', name: 'Engine', art: 'engine', band: 'big', levels: [
-    { name: 'Stage 1', price: 9000, band: 'mid', blurb: 'Intake, exhaust manifold and a tune: +12% power.', fx: { power: 0.12 } },
-    { name: 'Stage 2', price: 19000, blurb: 'Cams, pistons, a bigger throttle body: +14% more.', fx: { power: 0.14, top: 6 }, sound: { harsh: 1 } },
-    { name: 'Stage 3', price: 30000, blurb: 'Built bottom end and a race tune: +16% more.', fx: { power: 0.16, top: 6 }, sound: { harsh: 2 } },
+    { name: 'Stage 1', price: 9000, band: 'mid', blurb: 'Intake, manifold and a tune. +12% power, and it starts to mean it.', fx: { power: 0.12 } },
+    { name: 'Stage 2', price: 19000, blurb: 'Hot cams, forged pistons, a fat throttle body. +14% more, and angrier.', fx: { power: 0.14, top: 6 }, sound: { harsh: 1 } },
+    { name: 'Stage 3', price: 30000, blurb: 'Built bottom end, race tune. +16% more, and it idles like it wants a fight.', fx: { power: 0.16, top: 6 }, sound: { harsh: 2 } },
   ] },
   { id: 'induction', name: 'Forced induction', art: 'turbo', band: 'big', levels: [
-    { name: 'Big turbo', price: 32000, blurb: '+25% once it spools. You will hear it breathe.', fx: { boost: 0.25, top: 10 }, sound: { turbo: 1 } },
+    { name: 'Big turbo', price: 32000, blurb: '+25% once it spools. You hear it coming before it hits.', fx: { boost: 0.25, top: 10 }, sound: { turbo: 1 } },
   ] },
   { id: 'nos', name: 'Nitrous', art: 'nos', band: 'big', levels: [
-    { name: 'Nitrous: small bottle', price: 24000, blurb: 'Drift in the zones to fill the gauge; hit it for a surge.', fx: { nosSeconds: 2.5 } },
-    { name: 'Nitrous: twin bottles', price: 36000, blurb: 'Twice the bottle, twice the fun.', fx: { nosSeconds: 2.0 } },
+    { name: 'Nitrous: small bottle', price: 24000, blurb: 'Drift the zones to fill the gauge. Then hit it and hang on.', fx: { nosSeconds: 2.5 } },
+    { name: 'Nitrous: twin bottles', price: 36000, blurb: 'A second bottle on the rack. More juice, worse decisions.', fx: { nosSeconds: 2.0 } },
   ] },
 ];
 
@@ -92,11 +92,11 @@ export const COSMETICS = [
 // The setup sheet (unlocked by adjustable coilovers): five sliders, each -1..1, kept per car. What each one does is in
 // garage.js deriveTune.
 export const SETUP = [
-  { id: 'balance', name: 'Grip balance', lo: 'Grippy rear', hi: 'Loose rear', blurb: 'Moves grip between the axles: a looser rear slides sooner.' },
-  { id: 'assist', name: 'Slide help', lo: 'Raw', hi: 'Held', blurb: 'How firmly the car holds the angle you ask for.' },
-  { id: 'lock', name: 'Steering lock', lo: 'Less', hi: 'More', blurb: 'Front-wheel lock: more catches deeper slides.' },
-  { id: 'bias', name: 'Brake bias', lo: 'Rear', hi: 'Front', blurb: 'Rear bias rotates the car on the brakes.' },
-  { id: 'gearing', name: 'Gearing', lo: 'Long', hi: 'Short', blurb: 'Short gears pull harder and top out sooner.' },
+  { id: 'balance', name: 'Grip balance', lo: 'Planted', hi: 'Loose', blurb: 'Loose and the rear kicks out early. Planted waits until you mean it.' },
+  { id: 'assist', name: 'Slide help', lo: 'Raw', hi: 'Held', blurb: 'Held, the car babysits your angle. Raw, it is all on you.' },
+  { id: 'lock', name: 'Steering lock', lo: 'Less', hi: 'More', blurb: 'Crank it up to save the slides that already look gone.' },
+  { id: 'bias', name: 'Brake bias', lo: 'Rear', hi: 'Front', blurb: 'Push it rearward and a stab of brake swings the tail.' },
+  { id: 'gearing', name: 'Gearing', lo: 'Long', hi: 'Short', blurb: 'Short gears shove harder and top out early. Long ones keep pulling.' },
 ];
 export const category = (id) => CATEGORIES.find((c) => c.id === id);
 export const cosmetic = (id) => COSMETICS.find((c) => c.id === id);

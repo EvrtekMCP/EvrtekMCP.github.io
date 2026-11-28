@@ -5,7 +5,7 @@
 // waveshaper and a filter that opens with the throttle), a turbo whistle, a filtered-noise tire squeal, wind, knocks
 // and short interface blips. There is no music in the placeholder (no code-made music: the soundtrack is Eleven's).
 // Audio starts on the first tap or key (iPhone Safari unlocks it only inside a user gesture).
-import { SOUND, VERSION } from './config.js?v=0.1.25';
+import { SOUND, VERSION } from './config.js?v=0.1.26';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 // 11-19 (2): ?debug=sound prints the audio's life (made, state changes, resumes, hidden and shown, rebuilds) to the
@@ -271,6 +271,7 @@ export class Sound {
       count: () => { this.tone(520, 0.14, 0.12, 'square'); },
       go: () => { this.tone(1040, 0.4, 0.14, 'square'); },
       star: () => { this.tone(1320, 0.18, 0.09, 'triangle'); },
+      levelup: () => { for (const [f, a] of [[523, 0], [784, 0.08], [1047, 0.16], [1568, 0.26]]) this.tone(f, 0.4, 0.09, 'triangle', a); }, // 11-27: only where the sound module is missing
       degenerate: () => { for (let i = 0; i < 6; i++) this.tone(440 * Math.pow(1.26, i), 0.18, 0.09, 'sawtooth', i * 0.06); },
     }[name];
     if (T) T();

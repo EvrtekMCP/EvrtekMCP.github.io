@@ -13,8 +13,19 @@
 // starts the basics over. The phone's three show only on a phone.
 // Each tip is one short line, as a person would say it, and a small looping picture of the move in the interface's
 // colours (the colour-safe palette recolours the zones, as on the road, css .ldemo .zb/.zs); still for reduced motion.
-import * as ART from './art.js?v=0.1.25';
-import { keyName } from './input.js?v=0.1.25';
+import * as ART from './art.js?v=0.1.26';
+import { keyName } from './input.js?v=0.1.26';
+import { VERSION } from './config.js?v=0.1.26';
+
+// 11-27 (5): Kalakar's tip pictures (art/tips/<id>.svg, 320x200, the slot's 8:5): fetched when a tip shows (not at
+// boot: they would cost the first visit 290 KB) and inlined in place of the drawn picture as soon as they arrive, so the
+// colour-safe palette still recolours their zones (.zb/.zs). The drawn picture below shows until then, and stays if a
+// fetch fails. With reduced motion their <animate> elements are dropped (each one's resting frame is the teaching frame).
+const ART_CACHE = new Map();
+function tipArt(id) {
+  if (!ART_CACHE.has(id)) ART_CACHE.set(id, fetch('art/tips/' + id + '.svg?v=' + VERSION).then((r) => (r.ok ? r.text() : null)).catch(() => null));
+  return ART_CACHE.get(id);
+}
 
 export const MIN_MS = 2500;  // the shortest the tip screen stays up: his "2 to 3 second"
 const GUARD_MS = 350;        // a tap this soon after it appears is the launch's own tap arriving late, not a skip
@@ -222,21 +233,21 @@ const DEMO = {
 
 // the tips: one short line each, as a person would say it (c.pink: the sweet spot's colour word for the palette)
 export const TIPS = [
-  { id: 'start', title: 'START A DRIFT', text: () => 'Turn in, then pull the handbrake, or lift off and stab the gas with the wheel turned. The back end steps out.' },
-  { id: 'zone', title: 'DRIFT IN THE ZONE', text: () => "Every corner has a glowing band. You only score while you're sliding inside it, and the faster you go, the more it pays." },
-  { id: 'sweet', title: 'HIT THE SWEET SPOT', text: (c) => `The ${c.pink} line in the middle of the band pays double. Keep your slide right on it.` },
-  { id: 'hold', title: 'HOLD IT', text: (c) => `Every full second you stay on the ${c.pink} line, still sliding, adds one to your multiplier.` },
-  { id: 'switch', title: 'SWITCHBACKS', text: () => 'Hold a slide one way, then throw it the other way and hold that. Each switchback adds one to the multiplier.' },
-  { id: 'link', title: 'LINK THE CORNERS', text: () => 'Still sliding when a zone ends? Reach the next one before the ring runs out and your multiplier goes up.' },
-  { id: 'outside', title: 'RIDE THE OUTSIDE', text: (c) => `The ${c.pink} line runs close to the outside wall. You can brush it, but hit it and every point you haven't banked is gone.` },
-  { id: 'cap', title: '×10 IS THE TOP', text: () => 'The multiplier tops out at ×10. Your chain banks when the slide ends, so end it before a wall does.' },
-  { id: 'damage', title: 'DENTS AND REPAIRS', text: () => 'Every knock costs a little grip, steering or power. Fix the car up in the garage between runs.' },
-  { id: 'ghost', title: 'RACE YOUR GHOST', text: () => 'Your best run on each course drives beside you, see-through. Beat it, and that run becomes the ghost.' },
-  { id: 'stars', title: 'CHASE THE STARS', text: () => 'Every course has three star scores, and one above them: DEGENERATE. Harder courses pay more.' },
-  { id: 'garage', title: 'THE GARAGE', text: () => 'Every run pays credits. Spend them in the garage on parts, paint and faster cars.' },
-  { id: 'pstick', phone: true, title: 'THE STICK', text: () => 'Put your left thumb down anywhere on the left half of the screen. The stick appears right under it.' },
-  { id: 'ppedals', phone: true, title: 'THE PEDALS', text: () => 'Gas, brake and handbrake sit under your right thumb. Slide between them without lifting.' },
-  { id: 'pways', phone: true, title: 'TILT OR SLIDE', text: () => 'Settings has other ways to drive: a slider or a press-harder gas, and steering by tilting the phone.' },
+  { id: 'start', title: 'START A DRIFT', text: () => 'Turn in. Yank it.' },
+  { id: 'zone', title: 'DRIFT IN THE ZONE', text: () => 'Sideways in the glow = points.' },
+  { id: 'sweet', title: 'HIT THE SWEET SPOT', text: (c) => `${c.pink === 'pink' ? 'Pink' : 'Amber'} pays double.` },
+  { id: 'hold', title: 'HOLD IT', text: (c) => `+1 every second on ${c.pink}.` },
+  { id: 'switch', title: 'SWITCHBACKS', text: () => 'Flick it back. +1.' },
+  { id: 'link', title: 'LINK THE CORNERS', text: () => 'Don\'t straighten up.' },
+  { id: 'outside', title: 'RIDE THE OUTSIDE', text: () => 'Kiss the wall. Never hit it.' },
+  { id: 'cap', title: '×10 IS THE TOP', text: () => 'Bank it or bin it.' },
+  { id: 'damage', title: 'DENTS AND REPAIRS', text: () => 'Dents slow you. Garage fixes.' },
+  { id: 'ghost', title: 'RACE YOUR GHOST', text: () => 'Beat your own best.' },
+  { id: 'stars', title: 'CHASE THE STARS', text: () => 'Three stars. Then DEGENERATE.' },
+  { id: 'garage', title: 'THE GARAGE', text: () => 'Get paid. Blow it on parts.' },
+  { id: 'pstick', phone: true, title: 'THE STICK', text: () => 'Left thumb. Anywhere.' },
+  { id: 'ppedals', phone: true, title: 'THE PEDALS', text: () => 'Slide. Never lift.' },
+  { id: 'pways', phone: true, title: 'TILT OR SLIDE', text: () => 'Hate buttons? Settings.' },
 ];
 const byId = (id) => TIPS.find((t) => t.id === id);
 
@@ -259,6 +270,7 @@ export class Tips {
     write(s);
     return { tip, n };
   }
+  peek() { return this.s.seq < BASICS.length ? BASICS[this.s.seq] : null; }
   // Settings > Show the tips again: the basics from the start
   again() { this.s = { seq: 0, recent: [] }; write(this.s); }
   get fresh() { return this.s.seq === 0; }
@@ -282,10 +294,18 @@ export class TipScreen {
   }
   // up on the frame of the tap that launched it; resolves once that frame is on the screen
   // (upAt: the tap's frame; at: the first frame it is on the screen; doneAt: the course ready; goneAt: it went)
-  async show(label) {
+  // 11-27 (4): boss (a URL): CLOUDBREAK CROWN's title card (Kalakar) behind it, fetched as its race launches
+  async show(label, boss = null) {
     this.upAt = performance.now(); this.doneAt = this.goneAt = 0;
+    for (const old of this.boot.querySelectorAll('.boss-art')) old.remove();
+    if (boss) (this.boot.querySelector('picture') || this.boot.firstElementChild).insertAdjacentHTML('afterend', '<img class="boss-art" alt="" src="' + boss + '">');
     this.shown = this.tips.next(); this.up = true; this.ready = false; this.want = null; this.how = null;
     this.el.innerHTML = this.tips.html(this.shown);
+    { const id = this.shown.tip.id === 'start' && !this.g.input.touch ? 'start-key' : this.shown.tip.id, el = this.el;
+      tipArt(id).then((svg) => { const slot = el.querySelector('.ldemo'); if (!svg || !slot || !el.contains(slot)) return;
+        const t = document.createElement('template'); t.innerHTML = still() ? svg.replace(/<animate[^>]*\/>/g, '') : svg;
+        const art = t.content.querySelector('svg'); if (!art) return; art.setAttribute('class', 'ldemo art'); art.setAttribute('aria-hidden', 'true'); slot.replaceWith(art); });
+      const nx = this.tips.peek && this.tips.peek(); if (nx) tipArt(nx); }
     clearTimeout(this.outT); this.boot.classList.remove('tipout', 'ready'); this.boot.classList.add('tipping');
     await this.L.show(label);
     this.at = performance.now();
@@ -312,6 +332,6 @@ export class TipScreen {
     this.up = false; this.ready = false; clearTimeout(this.timer); this.resolve = null; this.goneAt = performance.now();
     this.L.hide(); this.boot.classList.add('tipout');
     // it fades over 0.6 s (css .boot); the rest of a skipping tap is its for the first 0.4 s of that
-    this.outT = setTimeout(() => { this.boot.classList.remove('tipout'); this.outT = setTimeout(() => { this.boot.classList.remove('tipping', 'ready'); this.el.innerHTML = ''; }, 250); }, 400);
+    this.outT = setTimeout(() => { this.boot.classList.remove('tipout'); this.outT = setTimeout(() => { this.boot.classList.remove('tipping', 'ready'); this.el.innerHTML = ''; for (const b of this.boot.querySelectorAll('.boss-art')) b.remove(); }, 250); }, 400);
   }
 }

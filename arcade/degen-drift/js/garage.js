@@ -2,9 +2,10 @@
 // what it is worth on a course (the ability rating against the course's difficulty), what a run pays, what repairs
 // cost, and the saved progress. Pure JS: the economy simulator (tools/economy.mjs) uses it too.
 // No pay-to-win: credits come from play only, and nothing is ever sold.
-import { TUNING } from './config.js?v=0.1.25';
-import { CARS, carById } from './data/cars.js?v=0.1.25';
-import { CATEGORIES, COSMETICS, SETUP, category, cosmetic } from './data/upgrades.js?v=0.1.25';
+import { TUNING } from './config.js?v=0.1.26';
+import { CARS, carById } from './data/cars.js?v=0.1.26';
+import { CATEGORIES, COSMETICS, SETUP, category, cosmetic } from './data/upgrades.js?v=0.1.26';
+import { COURSES } from './courses/index.js?v=0.1.26';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 export const PARTS = ['engine', 'fl', 'fr', 'rl', 'rr', 'body'];
@@ -20,14 +21,107 @@ function newCarState(car) {
   return { levels, owned, pick, setup, damage: { engine: 0, fl: 0, fr: 0, rl: 0, rr: 0, body: 0 } };
 }
 export function newProgress() {
-  return { v: SAVE_VERSION, credits: TUNING.economy.startCredits, car: CARS[0].id, garage: [CARS[0].id], cars: { [CARS[0].id]: newCarState(CARS[0]) }, best: {}, firsts: {}, runs: 0, earned: 0 };
+  return { v: SAVE_VERSION, credits: TUNING.economy.startCredits, xp: 0, car: CARS[0].id, garage: [CARS[0].id], cars: { [CARS[0].id]: newCarState(CARS[0]) }, best: {}, firsts: {}, runs: 0, earned: 0 };
 }
 export const carState = (p, id = p.car) => (p.cars[id] ||= newCarState(carById(id)));
+
+// ---- levels and progression (Evrtek 11-27 (4); the numbers are config.js TUNING.progression)
+// Levels 1-100 from XP; XP never goes down and is never bought. Courses open by stars (skill is the fast lane); cars and
+// every part tier open by level. A course already finished stays open, and a car or part already owned stays usable.
+const PR = () => TUNING.progression;
+export const MAX_LEVEL = 100;
+// the XP from level L to L + 1: the curve's anchors, and a geometric curve between them
+function stepOf(C, ks, L) {
+  if (L <= ks[0]) return C[ks[0]];
+  if (L >= ks[ks.length - 1]) return C[ks[ks.length - 1]];
+  let i = 0; while (ks[i + 1] < L) i++;
+  const a = ks[i], b = ks[i + 1];
+  return Math.round(C[a] * Math.pow(C[b] / C[a], (L - a) / (b - a)) / 10) * 10;
+}
+// the XP it takes to reach each level (AT[L]), worked out again only when the curve's numbers change (the tuning panel)
+let sig = '', AT = null;
+function table() {
+  const C = PR().curve, s = JSON.stringify(C); if (s === sig) return AT;
+  const ks = Object.keys(C).map(Number).sort((a, b) => a - b); AT = [0, 0];
+  for (let L = 1; L < MAX_LEVEL; L++) AT[L + 1] = AT[L] + stepOf(C, ks, L);
+  sig = s; return AT;
+}
+export const xpToNext = (L) => { const T = table(); return L >= MAX_LEVEL ? 0 : T[L + 1] - T[L]; };
+export const xpAtLevel = (L) => table()[Math.max(1, Math.min(MAX_LEVEL, L))];
+// where a total of XP puts you: the level, the XP into it, the XP it takes, the share of the bar
+export function levelInfo(xp) {
+  const T = table(); xp = Math.max(0, xp || 0);
+  if (xp >= T[MAX_LEVEL]) return { level: MAX_LEVEL, into: 0, need: 0, frac: 1, at: T[MAX_LEVEL], max: true };
+  let lo = 1, hi = MAX_LEVEL; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (T[m] <= xp) lo = m; else hi = m; }
+  const need = T[lo + 1] - T[lo];
+  return { level: lo, into: xp - T[lo], need, frac: (xp - T[lo]) / need, at: T[lo] };
+}
+export const levelOf = (p) => levelInfo(p.xp).level;
+export const starsOf = (p) => Object.values(p.best || {}).reduce((a, b) => a + ((b && b.stars) || 0), 0);
+const openAll = () => !!PR().unlockAll;
+// what a course needs: its region's stars, or its own (the boss's); null when it is open
+export function starsFor(course) { const P = PR(); return Math.max(P.regionStars[course.region] || 0, (P.courseStars || {})[course.id] || 0); }
+export function courseLock(p, course, stars = starsOf(p)) {
+  if (openAll() || (p.best && p.best[course.id])) return null;
+  const need = starsFor(course);
+  return stars >= need ? null : { stars: need, have: stars };
+}
+export const carLevel = (id) => PR().cars[id] || 0;
+export const partLevel = (catId, tier) => ((PR().parts[catId] || {})[tier]) || 0;
+export const carLocked = (p, id, L = levelOf(p)) => !openAll() && !ownsCar(p, id) && L < carLevel(id);
+export const partLocked = (p, catId, tier, L = levelOf(p)) => !openAll() && L < partLevel(catId, tier);
+// the course's suggested level range, and where a level sits against it: in it, normal XP; under it, a bonus; over it, little
+export function range(course) { const r = PR().range[course.id]; return r ? { lo: r.lo, hi: r.hi } : { lo: 1, hi: MAX_LEVEL }; }
+export function fit(L, course) {
+  const P = PR(), r = range(course);
+  if (L < r.lo) return { kind: 'under', mult: 1 + P.underMax * clamp((r.lo - L) / P.underSpan, 0, 1), by: r.lo - L };
+  if (L > r.hi) return { kind: 'over', mult: Math.max(P.overFloor, 1 - (1 - P.overFloor) * (L - r.hi) / P.overSpan), by: L - r.hi };
+  return { kind: 'in', mult: 1, by: 0 };
+}
+export const courseXp = (course) => PR().xpBase * (1 + course.difficulty * PR().xpPerDiff) * ((PR().xpCourse || {})[course.id] || 1);
+// The XP a finished run (or a duel) earns, as the steps the results screen counts through: the base, then each
+// modifier in turn (how it went, the range), then the first-time XP. duel: { won, firstWin } for a duel.
+export function runXp(p, result, course, duel = null) {
+  const P = PR(), base = courseXp(course), L = levelOf(p), first = (p.firsts && p.firsts[course.id]) || { clear: false, stars: 0, top: false };
+  const steps = []; let x = base;
+  const mul = (k, m, extra) => { if (Math.abs(m - 1) < 0.005) return; x *= m; steps.push(Object.assign({ k, mult: m, total: Math.round(x) }, extra)); };
+  const add = (k, v, extra) => { if (v <= 0) return; x += v; steps.push(Object.assign({ k, add: Math.round(v), total: Math.round(x) }, extra)); };
+  if (duel) mul(duel.won ? 'duelwon' : 'duellost', duel.won ? P.duelWin : P.duelLoss);
+  else if (result.top) mul('deg', P.xpDegenerate);
+  else mul('stars', P.xpStars[result.stars] ?? 1, { stars: result.stars });
+  const f = fit(L, course); mul(f.kind, f.mult, { by: f.by });
+  if (duel) { if (duel.won && duel.firstWin) add('firstwin', P.firstDuelWin * base); }
+  else {
+    if (!first.clear) add('first', P.firstClear * base);
+    if (result.stars > first.stars) add('newstar', (result.stars - first.stars) * P.firstStar * base, { n: result.stars - first.stars });
+    if (result.top && !first.top) add('firstdeg', P.firstDegenerate * base);
+  }
+  const total = Math.round(x);
+  return { base: Math.round(base), steps, total, fit: f, apply() { p.xp = (p.xp || 0) + total; } };
+}
+// what opened between two moments (level, stars): regions and the boss by stars, cars and part tiers by level. Cars first,
+// then courses, then the parts the car being driven can take, then the rest.
+export function openedBetween(p, L0, S0, L1, S1) {
+  if (openAll()) return [];
+  const out = [], seen = new Set();
+  for (const c of COURSES) { const need = starsFor(c); if (need > S0 && need <= S1 && !(p.best && p.best[c.id])) { const key = need === (PR().regionStars[c.region] || 0) ? 'region:' + c.region : 'course:' + c.id; if (seen.has(key)) continue; seen.add(key); out.push(key.startsWith('region') ? { kind: 'region', id: c.region, stars: need } : { kind: 'course', id: c.id, name: c.name, stars: need }); } }
+  for (const car of CARS) { const n = carLevel(car.id); if (n > L0 && n <= L1) out.unshift({ kind: 'car', id: car.id, name: car.name, level: n }); }
+  const mine = [], rest = [];
+  for (const cat of CATEGORIES) cat.levels.forEach((lv, i) => { const n = partLevel(cat.id, i + 1); if (n > L0 && n <= L1) (i < maxLevel(p.car, cat.id) ? mine : rest).push({ kind: 'part', id: cat.id, tier: i + 1, name: cat.id === 'induction' ? carById(p.car).induction.name : lv.name, art: cat.art, level: n }); });
+  return out.concat(mine, rest);
+}
+// the next thing a level opens (for a level-up that opened nothing yet, and the badges)
+export function nextUnlock(p, L = levelOf(p)) {
+  let best = null;
+  for (const car of CARS) { const n = carLevel(car.id); if (n > L && (!best || n < best.level)) best = { kind: 'car', id: car.id, name: car.name, level: n }; }
+  for (const cat of CATEGORIES) cat.levels.forEach((lv, i) => { const n = partLevel(cat.id, i + 1); if (n > L && i < maxLevel(p.car, cat.id) && (!best || n < best.level)) best = { kind: 'part', id: cat.id, tier: i + 1, name: cat.id === 'induction' ? carById(p.car).induction.name : lv.name, art: cat.art, level: n }; });
+  return best;
+}
 
 // ---- cars: bought with credits, kept for good; switching is free
 export function ownsCar(p, id) { return p.garage.includes(id); }
 export function buyCar(p, id) {
-  const c = carById(id); if (!c || c.id !== id || ownsCar(p, id) || p.credits < c.price) return false;
+  const c = carById(id); if (!c || c.id !== id || ownsCar(p, id) || p.credits < c.price || carLocked(p, id)) return false;
   p.credits -= c.price; p.garage.push(id); carState(p, id); p.car = id; return true;
 }
 // Evrtek 11-25: sell any car but the one being driven, never the last; it returns a share of the car's price and a
@@ -54,7 +148,7 @@ export function levelPrice(carId, catId, level) { // level is 1-based: the price
 }
 export function nextLevel(p, catId) { const st = carState(p), n = st.levels[catId] + 1; return n <= maxLevel(p.car, catId) ? n : 0; }
 export function buyLevel(p, catId) {
-  const n = nextLevel(p, catId); if (!n) return false;
+  const n = nextLevel(p, catId); if (!n || partLocked(p, catId, n)) return false;
   const price = levelPrice(p.car, catId, n); if (p.credits < price) return false;
   p.credits -= price; carState(p).levels[catId] = n; return true;
 }
@@ -119,12 +213,12 @@ export function deriveTune(p) {
 
 // Ability rating, 0-100: the car's own range (data/cars.js rating [stock, full]), how much of its upgrade tree is
 // fitted (weighted), then its condition.
-export function rating(p, carId = p.car) {
+export function rating(p, carId = p.car, worn = true) {
   const car = carById(carId), st = carState(p, carId);
   let got = 0, all = 0;
   for (const [id, w] of Object.entries(WEIGHT)) { const m = car.levels[id] || 0; if (!m) continue; all += w; got += w * Math.min(st.levels[id], m) / m; }
   const frac = all ? got / all : 0;
-  return Math.round((car.rating[0] + (car.rating[1] - car.rating[0]) * frac) * (1 - 0.25 * (1 - condition(p, carId) / 100)));
+  return Math.round((car.rating[0] + (car.rating[1] - car.rating[0]) * frac) * (worn ? 1 - 0.25 * (1 - condition(p, carId) / 100) : 1));
 }
 export function verdict(carRating, difficulty) {
   const d = carRating - difficulty;
@@ -143,6 +237,7 @@ export function payBoost(difficulty) {
   const t = clamp((difficulty - B.from) / (B.to - B.from), 0, 1), s = (1 - Math.cos(Math.PI * t)) / 2;
   return 1 + B.low + (B.high - B.low) * s;
 }
+// (11-27 (2)'s payCut, the outclassed and bored-crowd cuts, went with the levels, 11-27 (4): the range moves XP instead)
 export function payout(p, result, course) {
   const E = TUNING.economy, f = (1 + course.difficulty * E.payPerDifficulty) * payBoost(course.difficulty), lines = [];
   const first = (p.firsts[course.id] ||= { clear: false, stars: 0, top: false });
@@ -188,7 +283,24 @@ export function repair(p, patch = false) {
 // migration from its version up to now, keeps any field it does not know (a newer build's data survives an older one),
 // and keeps a copy of the save as it was found under BACKUP before the first write of a migrated one. A save that
 // cannot be read is kept in BACKUP too, never thrown away. Each future change of shape adds one step to MIGRATE.
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
+// v3 -> v4 (11-27 (4), the levels): the XP an old save's play would have earned. Every course finished: its first clear,
+// its stars and its first DEGENERATE as first-time XP; every other run as a replay of a course it finished (the average of
+// their base XP at their best stars, in range); every duel course won once (the duel record) its first-win XP. Its cars
+// and parts stay owned and usable whatever its level; every course it finished stays open.
+export function oldXp(s, duelsWon = []) {
+  const P = PR(), done = COURSES.filter((c) => (s.firsts && s.firsts[c.id] && s.firsts[c.id].clear) || (s.best && s.best[c.id]));
+  let xp = 0, rep = 0;
+  for (const c of done) {
+    const f = (s.firsts && s.firsts[c.id]) || {}, b = (s.best && s.best[c.id]) || {}, st = Math.max(f.stars || 0, b.stars || 0), top = !!(f.top || b.top), base = courseXp(c);
+    xp += base * (P.firstClear + st * P.firstStar + (top ? P.firstDegenerate : 0));
+    rep += base * (top ? P.xpDegenerate : P.xpStars[st] ?? 1);
+  }
+  if (done.length) xp += Math.max(0, (s.runs || 0) - done.length) * rep / done.length;
+  for (const id of duelsWon) { const c = COURSES.find((x) => x.id === id); if (c) xp += P.firstDuelWin * courseXp(c); }
+  return Math.round(xp);
+}
+const duelsWonSaved = () => { try { const r = JSON.parse(localStorage.getItem('driftline.duels.v1') || '{}'); return Object.keys(r).filter((k) => r[k] && r[k].won > 0); } catch (e) { return []; } };
 const KEY = 'driftline.progress';            // from v3 on, one key; the version lives inside
 const OLD_KEYS = ['driftline.progress.v2', 'driftline.progress.v1'];
 const BACKUP = 'driftline.progress.backup';
@@ -197,6 +309,8 @@ const MIGRATE = {
   1: (s) => { const n = newProgress(); const st = n.cars.kestrel; Object.assign(st.levels, s.levels || {}); if (s.damage) Object.assign(st.damage, s.damage); return Object.assign(n, { credits: s.credits ?? n.credits, best: s.best || {}, firsts: s.firsts || {}, runs: s.runs || 0, earned: s.earned || 0, v: 2 }); },
   // v2 -> v3: the key loses its version suffix; every car gets the fields added since (setup sheet, decals, glow)
   2: (s) => Object.assign(s, { v: 3 }),
+  // v3 -> v4: XP for what it has done (oldXp above); the 11-27 (2) list of recent courses (the bored crowd) goes
+  3: (s) => { s.xp = oldXp(s, duelsWonSaved()); delete s.recent; s.v = 4; return s; },
 };
 function readSaved() {
   const ls = (() => { try { return localStorage; } catch (e) { return null; } })(); if (!ls) return null;
@@ -218,6 +332,7 @@ export function migrate(s) {
   }
   if (!out.garage.includes(out.car)) out.car = out.garage[0];
   if (!isFinite(out.credits) || out.credits < 0) out.credits = 0;
+  if (!isFinite(out.xp) || out.xp < 0) out.xp = 0;
   return out;
 }
 export function loadProgress() {

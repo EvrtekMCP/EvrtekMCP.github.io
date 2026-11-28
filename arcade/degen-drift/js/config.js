@@ -1,12 +1,14 @@
 // DRIFTLINE: every tuning number in one place. The hidden debug panel (F9, or ?debug) edits these live and can copy
 // the result back out as JSON; nothing else in the game hard-codes a feel number.
 // Units: metres, seconds, kilograms, newtons, radians unless the name says otherwise (Deg, Kmh).
-export const VERSION = '0.1.25';
+export const VERSION = '0.1.26';
 // 11-21 (Evrtek: "an on screen notice of what test version we're looking at"): the test build's number, shown with the
 // version on the title and in the pause menu (js/ui.js testLabel()). From test v18 the version's last number IS the test
 // number (v19 = 0.1.19). `node tools/release.mjs --bump X.Y.Z` sets both: 0.x.N gives N, 1.0.0 and on give null (no
 // label, only the title's quiet version line). The release check fails if the two disagree.
-export const TEST_BUILD = 25;
+export const TEST_BUILD = 26;
+// 11-27 (4), the share button (js/share.js): the game's one address, the only link a shared level ever carries
+export const GAME_URL = 'https://reimertek.com/arcade/degen-drift/';
 
 export const TUNING = {
   car: {
@@ -206,6 +208,54 @@ export const TUNING = {
     patchShare: 0.3,         // a patch-up costs this share of the full repair...
     patchFix: 0.6,           // ...and takes this share off every part's damage
     startCredits: 500,
+    // (11-27 (2)'s credit cuts, outclassed pay and the bored crowd, went with the levels: 11-27 (4). Credits are never cut.)
+  },
+  // Evrtek 11-27 (4), levels and progression (MCP projects/driftline-progression.md and his addenda): levels 1-100 earned
+  // by XP, regions opened by stars, cars and every part tier opened by level. Every number here is a default he may swap;
+  // the XP curve below is fitted by `node tools/economy.mjs --fit` to his pace (level 5 by 10 min, 10 by 25 min, 40 at
+  // 2 h, 60 at 4 h, 70 at 6 h, 80 at 8 h, 100 at about 12 h). js/garage.js does the arithmetic.
+  progression: {
+    unlockAll: 0,            // 1 = every course, car and part open whatever the level and stars (testing; the five-tap switch)
+    // XP for a run = the course's base XP x how it went x where your level sits against the course's range, plus first-time
+    // XP (which the range never touches). Base XP = xpBase x (1 + difficulty x xpPerDiff).
+    xpBase: 100,
+    xpPerDiff: 0.06,         // DRYDOCK (10) 160, RED MESA (26) 256, WIDOWMAKER (58) 448, CLOUDBREAK (95) 670 (x1.5 below)
+    xpCourse: { 'cloudbreak-crown': 1.5 }, // and a course's own share: the boss's lap is half as long again (160 s), so is its XP
+    xpStars: { 0: 0.6, 1: 0.8, 2: 1.0, 3: 1.2 }, // how it went: by stars...
+    xpDegenerate: 1.5,       // ...and a DEGENERATE run in place of three stars
+    firstClear: 1.5,         // first-time XP, in the course's base XP: the first finish...
+    firstStar: 2.5,          // ...each new star...
+    firstDegenerate: 2.5,    // ...the first DEGENERATE...
+    firstDuelWin: 3,         // ...the first duel won on the course
+    duelWin: 2.7,            // a duel (two legs or three) pays the course's base XP times this won...
+    duelLoss: 1.35,          // ...and this lost (then the range, as a run): at even odds, XP a minute like a two-star run
+    // Evrtek 11-27 (his addendum): each course has a suggested level range. Inside it, normal XP; under it, bonus XP rising
+    // to underMax at underSpan levels under (a harder road for you); over it, falling to overFloor within overSpan levels.
+    underMax: 0.5, underSpan: 8,
+    overFloor: 0.1, overSpan: 4,
+    // the ranges, set from the sim's pace so a player at the times above has a course in range open (tools/economy.mjs)
+    range: {
+      'drydock-run': { lo: 1, hi: 8 }, 'ember-bay': { lo: 1, hi: 11 }, 'salt-pier': { lo: 4, hi: 14 },
+      'red-mesa': { lo: 8, hi: 20 }, 'dust-devil': { lo: 11, hi: 26 }, 'scorpion-gulch': { lo: 15, hi: 32 },
+      'pine-hollow': { lo: 22, hi: 36 }, 'cedar-switchbacks': { lo: 27, hi: 42 }, 'widowmaker-gorge': { lo: 32, hi: 48 },
+      'afterglow-boulevard': { lo: 38, hi: 52 }, 'chrome-district': { lo: 44, hi: 58 }, 'midnight-interchange': { lo: 50, hi: 64 },
+      'frostline-pass': { lo: 56, hi: 72 }, 'skyline-ridge': { lo: 62, hi: 86 }, 'cloudbreak-crown': { lo: 72, hi: 100 },
+    },
+    // the XP from each level to the next, at these levels (between them on a smooth geometric curve; level 100 is the top)
+    curve: { 1: 880, 5: 880, 10: 880, 20: 880, 30: 890, 40: 1180, 50: 2070, 60: 2930, 70: 3390, 80: 3530, 90: 3750, 99: 3750 },
+    // courses open by stars only, the stars won across all fifteen (three a course): stars are skill, so skill is the fast
+    // lane (Evrtek 11-27: "if you are just amazing at the game ... get to the end boss within the first hour ... fine").
+    // Each region at its count; CLOUDBREAK CROWN, the boss, at its own (more than the summit's)
+    regionStars: { harbour: 0, canyon: 6, mountain: 13, neon: 22, summit: 30 },
+    courseStars: { 'cloudbreak-crown': 40 },
+    // cars by level (still bought with credits)...
+    cars: { kestrel: 0, vanta: 10, halberd: 25, orbit: 40, spectre: 55, zenith: 72 },
+    // ...and every tier of every part, the same on every car (tier 1 = the first level of the part in data/upgrades.js)
+    parts: {
+      brakes: { 1: 1, 2: 9, 3: 26 }, exhaust: { 1: 1, 2: 10 }, transmission: { 1: 2, 2: 13 }, weight: { 1: 2, 2: 11, 3: 55 },
+      tires: { 1: 3, 2: 8, 3: 20, 4: 42 }, suspension: { 1: 4, 2: 14 }, diff: { 1: 5, 2: 16 }, angle: { 1: 6, 2: 18, 3: 50 },
+      engine: { 1: 6, 2: 22, 3: 60 }, nos: { 1: 6, 2: 68 }, induction: { 1: 45 },
+    },
   },
   nos: {
     seconds: 3.5,            // a full bottle
@@ -318,6 +368,8 @@ export const RANGES = {
   'scoring.wallWipe': [0, 1, 0.05],
   'camera.velocityBlend': [0, 1, 0.01], 'camera.fov': [40, 90, 1], 'camera.fovKick': [0, 30, 1],
   'reflect.coat': [0, 2, 0.05], 'reflect.rough': [0, 1, 0.01],
+  'progression.unlockAll': [0, 1, 1], 'progression.underMax': [0, 2, 0.05], 'progression.overFloor': [0, 1, 0.05], // 11-27 (4)
+  'progression.underSpan': [1, 30, 1], 'progression.overSpan': [1, 30, 1],
   'world.road': [0, 1, 1], 'world.sky': [0, 1, 1], 'world.water': [0, 1, 1], 'world.kit': [0, 1, 1], 'world.motion': [0, 1, 1], 'world.pools': [0, 1, 1],
   // 11-26 (3) the sound's layers: switches, and levels 0..2
   ...Object.fromEntries(['induction', 'mechanical', 'irregular', 'loadTone', 'overrun', 'phoneBass', 'shiftFx', 'turboFx', 'screech', 'fourTyres', 'transitions', 'reflections', 'masterBus'].map((k) => ['sound.' + k, [0, 1, 1]])),

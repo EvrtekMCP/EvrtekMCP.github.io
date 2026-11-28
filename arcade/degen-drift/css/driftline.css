@@ -77,6 +77,8 @@ div.boot-art { background:
   background: linear-gradient(180deg, rgba(34,14,70,0.88), rgba(12,5,28,0.92)) padding-box, var(--edge) border-box; box-shadow: 0 0 2.6rem -0.8rem rgba(255,63,164,0.6), 0 1.2rem 3rem rgba(0,0,0,0.5); animation: rise 0.38s var(--ease) both; }
 .ltip .ldemo { display: block; width: 15rem; height: 9.375rem; border-radius: 0.8rem; background: rgba(0,0,0,0.42); box-shadow: inset 0 0 0 1px rgba(160,120,255,0.25); }
 .ltip .ltext { min-width: 0; }
+.note.tag { font-weight: 900; letter-spacing: 0.2em; font-size: 0.7rem; color: var(--cyan, #5ef2ff); }
+@media (max-height: 500px) and (min-height: 360px) and (orientation: landscape) { .ltip .ldemo { width: 17.2rem; height: 10.75rem; } } /* shorter screens keep the 15rem slot: the bigger one met the loader bar */
 .ltip .ltitle { height: 2rem; margin: 0.35rem 0 0.55rem; }
 .ltip p { margin: 0; font-size: 1.3rem; line-height: 1.32; font-weight: 600; color: #f6f0ff; text-shadow: 0 1px 2px rgba(0,0,0,0.6); }
 .cb-safe .ldemo .zb { stroke: #3d8bff; } .cb-safe .ldemo .zs { stroke: #ffb000; } .cb-safe .ldemo .zsf { fill: #ffb000; }
@@ -534,3 +536,112 @@ html { font-size: clamp(13px, calc(0.55vw + 0.9 * var(--vh1, 1vh)), 19px); } /* 
 .duelres.lost .score-big { opacity: 0.8; }
 .short .duelcard .note:last-of-type { display: none; } .short .duelcard .drow { grid-template-columns: 6rem 1fr; } .short .duelcard .carside { width: 6rem; } .short .dgap .num { font-size: 1.6rem; }
 .short .duelleg .lt { height: 1.45rem; margin: 0.1rem 0 0.35rem; }
+
+/* ---------------------------------------------------------------- 11-27 (4) the levels (js/levelui.js): Kalakar's emblems,
+   rank badges, crests, car badges and stamps. Pictures and numbers, never sentences. */
+.em { display: inline-block; vertical-align: middle; flex: none; overflow: visible; }
+/* the rank badge: a box the size of its hexagon, the frame drawn past it */
+.rank { position: relative; display: inline-block; flex: none; vertical-align: middle; }
+.rank > svg { position: absolute; overflow: visible; pointer-events: none; }
+.lvrow { display: flex; align-items: center; gap: 0.75rem; }
+.lvbar { position: relative; width: 7.5rem; height: 0.45rem; border-radius: 0.3rem; background: rgba(255,255,255,0.1); overflow: hidden; box-shadow: inset 0 0 0 1px rgba(160,120,255,0.3); }
+.lvbar i, .xpbar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: inherit; background: linear-gradient(90deg, var(--cyan), var(--pink)); box-shadow: 0 0 0.6rem rgba(54,242,255,0.7); }
+.icon-btn.lvshare { width: max(40px, 2.5rem); height: max(40px, 2.5rem); color: var(--cyan); }
+.icon-btn.lvshare svg { width: 58%; height: 58%; fill: none; }
+.title-wrap .lvrow { padding: 0.25rem 0.7rem 0.25rem 1.1rem; border-radius: 1rem; background: rgba(8,4,18,0.55); }
+.chead .lvrow { margin-left: auto; }
+.ghead .lvrow { margin-left: auto; gap: 0.55rem; } .ghead .lvbar { width: 5rem; }
+/* the range badge on a course, and the locks */
+.lvr { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.5rem 0.15rem 0.3rem; border-radius: 0.6rem; border: 1px solid; align-self: flex-start; }
+.lvr .lt { height: 0.85rem; }
+.lvr.in { border-color: rgba(93,255,176,0.55); background: rgba(93,255,176,0.08); }
+.lvr.under { border-color: rgba(255,211,106,0.6); background: rgba(255,179,71,0.1); }
+.lvr.over { border-color: rgba(151,163,199,0.45); background: rgba(151,163,199,0.06); }
+.lockb, .lockl { display: inline-flex; align-items: center; gap: 0.3rem; color: var(--dim); }
+.lockb .lt, .lockl .lt { height: 0.85rem; }
+.lockb small { font-size: 0.66rem; font-weight: 800; color: var(--dim); }
+.lkbar { position: relative; width: 3.2rem; height: 0.32rem; border-radius: 0.2rem; background: rgba(255,255,255,0.1); overflow: hidden; }
+.lkbar i { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, #a99cc8, #ffd36a); }
+.ccard.locked .cmap, .ccard.locked .lt.cname { opacity: 0.45; filter: saturate(0.4); }
+.btn .lockl { color: inherit; } .btn .lockl .lt { height: 0.8rem; }
+/* region tabs wear their crests; a locked one is the crest dimmed with the lock and the stars beside it */
+.rtab { flex-direction: row; justify-content: center; gap: 0.45rem; }
+.rtab .rtx { display: flex; flex-direction: column; align-items: flex-start; gap: 0.05rem; min-width: 0; }
+.rtab .crest { width: 1.9rem; height: 1.9rem; flex: none; }
+.rtab.locked .crest { filter: grayscale(0.85) brightness(0.55); }
+.rtab.locked b { color: var(--dim); }
+.rtab small .em { margin-right: 0.1rem; }
+/* the XP on a results screen */
+.xpbox { margin: 0 0 0.6rem; padding: 0.45rem 0.6rem; border-radius: 0.9rem; background: rgba(8,4,18,0.45); border: 1px solid var(--line); }
+.xprow { display: flex; align-items: center; gap: 0.7rem; }
+.xpmid { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.xpbar { position: relative; height: 0.55rem; border-radius: 0.35rem; background: rgba(255,255,255,0.1); overflow: hidden; }
+.xpchips { display: flex; flex-wrap: wrap; gap: 0.3rem; min-height: 1.7rem; }
+.xpgain { display: inline-flex; align-items: center; gap: 0.2rem; }
+.xpgain .lt { height: 1.3rem; filter: drop-shadow(0 0 0.4rem rgba(54,242,255,0.7)); }
+.xpbox.roll .xpbar { animation: roll 0.5s ease-out; }
+.xpbox.roll .xprank { animation: rollbadge 0.5s cubic-bezier(.3,1.6,.5,1); }
+@keyframes roll { 0% { background: rgba(255,224,138,0.9); } 100% { background: rgba(255,255,255,0.1); } }
+@keyframes rollbadge { 0% { transform: scale(1.5); } 100% { transform: none; } }
+/* the bonus text: chips in the house lettering (Kalakar's sheet): dark glass, the emblem, the number, the meaning's colour */
+.chip { --c: #fff; display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.12rem 0.55rem 0.12rem 0.25rem; border-radius: 0.6rem;
+  border: 1.5px solid color-mix(in srgb, var(--c) 62%, transparent); background: linear-gradient(180deg, rgba(34,14,70,0.9), rgba(12,5,28,0.94));
+  box-shadow: 0 0 1rem -0.35rem var(--c), inset 0 0 0.8rem -0.5rem var(--c); }
+.chip .lt { height: 0.95rem; width: auto; filter: drop-shadow(0 0 0.3rem color-mix(in srgb, var(--c) 75%, transparent)); }
+.chip small { font-size: 0.52rem; font-weight: 900; letter-spacing: 0.14em; color: var(--c); }
+.chip.pop { animation: chippop 0.45s cubic-bezier(.2,.9,.25,1) both; }
+@keyframes chippop { 0% { transform: scale(0.3) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.14) rotate(1.5deg); opacity: 1; } 100% { transform: none; opacity: 1; } }
+.chip.gold2 { --c: #ffd36a; } .chip.grey { --c: #97a3c7; } .chip.green { --c: #5dffb0; } .chip.pink { --c: #ff3fa4; } .chip.cyan { --c: #36f2ff; } .chip.hot { --c: #ff7a3c; } .chip.lilac { --c: #a99cc8; }
+/* the stamps around a run's score (Kalakar's group D): tilted, slammed in */
+.results > .pbody > div:first-child { position: relative; }
+.stamps { position: absolute; inset: 0; pointer-events: none; }
+.stamp { position: absolute; width: 6.6rem; height: auto; opacity: 0; filter: drop-shadow(0 0.4rem 0.8rem rgba(0,0,0,0.6)); }
+.stamp.slam { animation: slam 0.5s cubic-bezier(.3,1.6,.5,1) forwards; }
+.stamp.s0 { right: 0; top: 0.2rem; --r: 7deg; } .stamp.s1 { right: 0.4rem; top: 5.4rem; --r: -6deg; } .stamp.s2 { right: 6.8rem; top: 0; --r: -4deg; } .stamp.s3 { right: 7rem; top: 5.2rem; --r: 5deg; }
+@keyframes slam { 0% { opacity: 0; transform: scale(2.2) rotate(calc(var(--r) * 3)); } 60% { opacity: 1; transform: scale(0.94) rotate(var(--r)); } 100% { opacity: 1; transform: rotate(var(--r)); } }
+.bigstars .st img { position: absolute; inset: -18%; width: 136%; height: 136%; opacity: 0; transform: scale(0.4); transition: opacity 0.2s, transform 0.45s cubic-bezier(.2,1.8,.4,1); }
+.bigstars .st.lit img { opacity: 1; transform: none; }
+.bigstars .st.lit svg { opacity: 0; }
+/* the moments: over the screen, through which a finger reaches the buttons; a tap anywhere sends one off */
+.screen > .moment { position: absolute; inset: 0; z-index: 30; pointer-events: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.4rem; animation: momin 0.25s ease-out both; }
+.screen > .moment.out { animation: momout 0.25s ease-in both; }
+.moment [data-act] { pointer-events: auto; }
+@keyframes momin { from { opacity: 0; } } @keyframes momout { to { opacity: 0; } }
+.moment.lvup { background: radial-gradient(ellipse at 50% 42%, rgba(42,12,80,0.82), rgba(8,3,18,0.9) 70%); }
+.lvcore { position: relative; width: 9rem; height: 6.2rem; display: grid; place-items: center; }
+.lvburst { position: absolute; left: 50%; top: 50%; width: 15rem; height: 15rem; transform: translate(-50%, -50%); animation: lvspin 9s linear infinite; }
+.lvburst .em { width: 100%; height: 100%; }
+@keyframes lvspin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+.lvbadge { animation: lvslam 0.55s cubic-bezier(.3,1.6,.5,1) both; }
+.lvbadge.again { animation: lvslam2 0.4s cubic-bezier(.3,1.6,.5,1) both; }
+@keyframes lvslam { 0% { opacity: 0; transform: scale(2.6); } 60% { opacity: 1; transform: scale(0.92); } 100% { transform: none; } }
+@keyframes lvslam2 { 0% { transform: scale(1.8); } 60% { transform: scale(0.94); } 100% { transform: none; } }
+.lvtitle .lt { height: 2.3rem; filter: drop-shadow(0 0 0.9rem rgba(255,179,71,0.8)); animation: lvslam 0.5s 0.12s cubic-bezier(.3,1.6,.5,1) both; }
+.lvtier .lt { height: 1.15rem; filter: drop-shadow(0 0 0.6rem rgba(255,63,164,0.7)); animation: rise 0.4s 0.35s var(--ease) both; }
+.lvopen { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; max-width: 92%; }
+.lvitem { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; animation: rise 0.4s 0.45s var(--ease) both; }
+.lvitem .carbadge { width: 7.5rem; height: auto; }
+.lvitem .art { width: 3.4rem; height: 3.4rem; }
+.lvtag { display: inline-flex; align-items: center; gap: 0.3rem; } .lvtag .lt { height: 0.9rem; }
+.btn.lvbrag { min-height: max(40px, 2.5rem); padding: 0.35rem 1rem; margin-top: 0.2rem; }
+.btn.lvbrag .em { width: 1.2rem; height: 1.2rem; color: #061018; }
+.moment.splash { background: rgba(8,3,18,0.6); }
+.moment.splash img { width: min(92%, 62rem); height: auto; animation: lvslam 0.5s cubic-bezier(.3,1.6,.5,1) both; filter: drop-shadow(0 0 2rem rgba(255,63,164,0.45)); }
+.moment.boss { background: #05020c; }
+.moment.boss img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: bossin 0.7s ease-out both; }
+@keyframes bossin { 0% { opacity: 0; transform: scale(1.08); } 100% { opacity: 1; transform: none; } }
+/* the boss's title card behind CLOUDBREAK CROWN's loading screen */
+.boot .boss-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: brightness(0.62); }
+/* a quiet word at the bottom (the share button: Copied) */
+.toast { position: absolute; left: 50%; bottom: calc(1.2rem + var(--sb)); transform: translateX(-50%); z-index: 40; pointer-events: none; padding: 0.45rem 1rem; border-radius: 0.8rem; background: rgba(12,5,28,0.92); border: 1px solid rgba(54,242,255,0.6); color: var(--text); font-size: 0.8rem; font-weight: 800; letter-spacing: 0.06em; box-shadow: 0 0 1.2rem -0.3rem rgba(54,242,255,0.7); animation: rise 0.3s var(--ease) both; }
+/* car badges in the showroom (a locked car: its silhouette and padlock) and rival crew tags */
+.carcard .carbadge { width: 9.5rem; height: auto; }
+.duelcard .rtag-art { width: 3.4rem; height: 3.4rem; flex: none; }
+.duelres .rtag-art { width: 2.4rem; height: 2.4rem; vertical-align: middle; margin-right: 0.3rem; }
+.duelhud .rtag-art { width: 28px; height: 28px; vertical-align: middle; margin-right: 0.3rem; }
+.short .lvbar { width: 5rem; } .short .xpchips small { display: none; } .short .chip .lt { height: 0.8rem; }
+.short .stamp { width: 4.6rem; } .short .stamp.s1 { top: 3.7rem; } .short .stamp.s2 { right: 4.8rem; } .short .stamp.s3 { right: 4.9rem; top: 3.6rem; }
+.short .lvcore { width: 6rem; height: 4.2rem; } .short .lvburst { width: 10rem; height: 10rem; }
+.short .lvtitle .lt { height: 1.7rem; } .short .lvitem .carbadge { width: 5.5rem; } .short .lvitem .art { width: 2.6rem; height: 2.6rem; }
+.short .rtab .crest { width: 1.45rem; height: 1.45rem; } .short .carcard .carbadge { width: 7rem; }
+.short .xpbox { padding: 0.3rem 0.45rem; margin-bottom: 0.4rem; }

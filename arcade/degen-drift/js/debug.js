@@ -1,11 +1,11 @@
 // DEGEN DRIFT: the hidden tuning panel (five taps on the version line on the title; nothing else opens it). Every number in
 // config.js TUNING gets a slider; changes apply live, are kept in this browser, and "Copy" puts the changed numbers on
 // the clipboard as JSON, ready to paste back into config.js. Telemetry runs along the top.
-import { TUNING, RANGES, DEFAULTS, getPath, setPath, diffFromDefaults, applyOverrides } from './config.js?v=0.1.25';
-import { DIAG, setDiag } from './glsafe.js?v=0.1.25';
+import { TUNING, RANGES, DEFAULTS, getPath, setPath, diffFromDefaults, applyOverrides } from './config.js?v=0.1.26';
+import { DIAG, setDiag } from './glsafe.js?v=0.1.26';
 
 const KEY = 'driftline.tuning.v1';
-const GROUPS = ['car', 'tires', 'steer', 'assist', 'wall', 'scoring', 'damage', 'nos', 'turbo', 'gearbox', 'camera', 'fx', 'economy', 'reflect', 'world', 'sound']; // 11-26 (3): sound, New+'s layer switches and levels
+const GROUPS = ['car', 'tires', 'steer', 'assist', 'wall', 'scoring', 'damage', 'nos', 'turbo', 'gearbox', 'camera', 'fx', 'economy', 'progression', 'reflect', 'world', 'sound']; // 11-26 (3): sound, New+'s layer switches and levels; 11-27 (4): progression (the levels)
 
 export function loadTuning() { try { applyOverrides(JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* none */ } }
 
@@ -33,6 +33,8 @@ export class Debug {
       if (a === 'aid') { TUNING.assist.straightAid = TUNING.assist.straightAid ? 0 : 1; this.save(); this.g.retune(); this.render(); }
       // 11-26 (4): calmer between the sections (car.js step): off is the handling of 0.1.23
       if (a === 'calm') { TUNING.assist.calm = TUNING.assist.calm ? 0 : 1; this.save(); this.g.retune(); this.render(); }
+      // 11-27 (4): everything open whatever the level and stars, for trying the late game (a tuning number: saved like the rest)
+      if (a === 'unlockall') { const P = TUNING.progression; P.unlockAll = P.unlockAll ? 0 : 1; this.save(); this.render(); const u = this.g.ui; if (u && /^(title|courses|course|garage)$/.test(u.name)) u[u.name === 'courses' ? 'courses' : u.name](); }
       // 11-26 (4): the diagnostic switches (js/glsafe.js), each kept and taking effect on a restart (the page reloads)
       if (a === 'nanview') { setDiag('nan', !DIAG.nan); location.reload(); }
       if (a === 'msaa') { setDiag('aa', !DIAG.aa); location.reload(); }
@@ -45,7 +47,7 @@ export class Debug {
   toggle(on = !this.open) { this.open = on; this.el.hidden = !on; if (on) this.render(); }
   render() {
     const lg = TUNING.assist.launchGrip, sa = TUNING.assist.straightAid;
-    let h = `<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn small" data-dbg="copy">Copy changes</button><button class="btn small" data-dbg="reset">Reset all</button><button class="btn small" data-dbg="close">Close</button><button class="btn small" data-dbg="feel" id="dbg-feel" aria-pressed="${lg ? 'true' : 'false'}">Launch grip: ${lg ? 'ON' : 'OFF (the old feel)'}</button><button class="btn small" data-dbg="aid" id="dbg-aid" aria-pressed="${sa ? 'true' : 'false'}">Straight aid: ${sa ? 'ON' : 'OFF (the old feel)'}</button><button class="btn small" data-dbg="calm" id="dbg-calm" aria-pressed="${TUNING.assist.calm ? 'true' : 'false'}">Calm between sections: ${TUNING.assist.calm ? 'ON' : 'OFF (0.1.23)'}</button><button class="btn small" data-dbg="nanview" aria-pressed="${DIAG.nan ? 'true' : 'false'}">NaN view: ${DIAG.nan ? 'ON (magenta = a bad number)' : 'OFF'}</button><button class="btn small" data-dbg="msaa" aria-pressed="${DIAG.aa ? 'true' : 'false'}">MSAA: ${DIAG.aa ? 'ON' : 'OFF (restart to test)'}</button></div><pre id="dbg-tel"></pre><pre id="dbg-out"></pre>`;
+    let h = `<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn small" data-dbg="copy">Copy changes</button><button class="btn small" data-dbg="reset">Reset all</button><button class="btn small" data-dbg="close">Close</button><button class="btn small" data-dbg="feel" id="dbg-feel" aria-pressed="${lg ? 'true' : 'false'}">Launch grip: ${lg ? 'ON' : 'OFF (the old feel)'}</button><button class="btn small" data-dbg="aid" id="dbg-aid" aria-pressed="${sa ? 'true' : 'false'}">Straight aid: ${sa ? 'ON' : 'OFF (the old feel)'}</button><button class="btn small" data-dbg="calm" id="dbg-calm" aria-pressed="${TUNING.assist.calm ? 'true' : 'false'}">Calm between sections: ${TUNING.assist.calm ? 'ON' : 'OFF (0.1.23)'}</button><button class="btn small" data-dbg="unlockall" id="dbg-unlockall" aria-pressed="${TUNING.progression.unlockAll ? 'true' : 'false'}">Unlock everything (testing): ${TUNING.progression.unlockAll ? 'ON' : 'OFF'}</button><button class="btn small" data-dbg="nanview" aria-pressed="${DIAG.nan ? 'true' : 'false'}">NaN view: ${DIAG.nan ? 'ON (magenta = a bad number)' : 'OFF'}</button><button class="btn small" data-dbg="msaa" aria-pressed="${DIAG.aa ? 'true' : 'false'}">MSAA: ${DIAG.aa ? 'ON' : 'OFF (restart to test)'}</button></div><pre id="dbg-tel"></pre><pre id="dbg-out"></pre>`;
     for (const g of GROUPS) {
       h += `<h4 data-dbg="grp" data-g="${g}">${this.shut.has(g) ? '+' : '-'} ${g}</h4>`;
       if (this.shut.has(g)) continue;
